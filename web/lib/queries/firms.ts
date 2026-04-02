@@ -1,0 +1,76 @@
+import { getSupabase, type Tables } from "@/lib/supabase";
+
+export type Firm = Tables<"firms">;
+
+export async function getFirms(limit = 100): Promise<Firm[]> {
+  const { data, error } = await getSupabase()
+    .from("firms")
+    .select("*")
+    .order("name", { ascending: true })
+    .limit(limit);
+
+  if (error) throw new Error(`Failed to fetch firms: ${error.message}`);
+  return data;
+}
+
+export async function getFirmById(id: string): Promise<Firm> {
+  const { data, error } = await getSupabase()
+    .from("firms")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(`Failed to fetch firm: ${error.message}`);
+  return data;
+}
+
+export async function getFirmCount(): Promise<number> {
+  const { count, error } = await getSupabase()
+    .from("firms")
+    .select("*", { count: "exact", head: true });
+
+  if (error) throw new Error(`Failed to count firms: ${error.message}`);
+  return count ?? 0;
+}
+
+async function fetchAllFirms(): Promise<Firm[]> {
+  const { data, error } = await getSupabase().from("firms").select("*");
+  if (error) throw new Error(`Failed to fetch firms: ${error.message}`);
+  return data;
+}
+
+async function fetchAdEventsWithFirm(): Promise<Tables<"ad_events">[]> {
+  const { data, error } = await getSupabase()
+    .from("ad_events")
+    .select("*")
+    .not("firm_id", "is", null);
+  if (error) throw new Error(`Failed to fetch ad events: ${error.message}`);
+  return data;
+}
+
+export async function getTopFirmsByAdSpend(limit = 10): Promise<
+  Array<{ firm_id: string; firm_name: string; total_spend: number; event_count: number }>
+> {
+  const [events, firms] = await Promise.all([fetchAdEventsWithFirm(), fetchAllFirms()]);
+
+  const firmMap = new Map(firms.map((f) => [f.id, f.name]));
+
+  const grouped = new Map<string, { firm_id: string; firm_name: string; total_spend: number; event_count: number }>();
+  for (const event of events) {
+    if (!event.firm_id) continue;
+    const key = event.firm_id;
+    const existing = grouped.get(key) ?? {
+      firm_id: event.firm_id,
+      firm_name: firmMap.get(event.firm_id) ?? "Unknown",
+      total_spend: 0,
+      event_count: 0,
+    };
+    existing.total_spend += Number(event.spend_estimate ?? 0);
+    existing.event_count += 1;
+    grouped.set(key, existing);
+  }
+
+  return Array.from(grouped.values())
+    .sort((a, b) => b.total_spend - a.total_spend)
+    .slice(0, limit);
+}
