@@ -1,0 +1,11 @@
+.DS_Store
+
+# Frontend build artifacts
+web/.next/
+web/node_modules/
+web/.env.local
+
+# Python caches
+__pycache__/
+*.pyc
+
