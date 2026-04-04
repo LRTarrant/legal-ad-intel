@@ -1,119 +1,163 @@
-import { createSupabaseServerClient } from "@/lib/supabase";
+import {
+  getRecentAdEvents,
+  getAdEventCount,
+  getTotalSpend,
+  getFirmCount,
+  getMarketCount,
+  getTopFirmsByAdSpend,
+  getTopMarketsByAdSpend,
+} from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
 export default async function DashboardPage() {
-  const supabase = createSupabaseServerClient();
-
-  const { data: adEvents, error } = await supabase
-    .from("ad_events")
-    .select(
-      "id, event_date, advertiser_name_raw, channel, platform, dma_code, spend_estimate, impressions_estimate",
-    )
-    .order("event_date", { ascending: false })
-    .limit(50);
-
-  if (error) {
-    return (
-      <main className="mx-auto flex w-full max-w-5xl flex-1 px-6 py-10">
-        <div className="w-full rounded-3xl border border-red-200 bg-red-50 p-6 text-red-800">
-          <h1 className="text-xl font-semibold">Dashboard unavailable</h1>
-          <p className="mt-2 text-sm leading-6">
-            Supabase returned an error while loading <code>ad_events</code>:{" "}
-            {error.message}
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  const spendByChannel: Record<string, number> = {};
-
-  for (const row of adEvents ?? []) {
-    const channel = row.channel || "unknown";
-    spendByChannel[channel] =
-      (spendByChannel[channel] || 0) + Number(row.spend_estimate || 0);
-  }
+  const [adEventCount, totalSpend, firmCount, marketCount, recentEvents, topFirms, topMarkets] =
+    await Promise.all([
+      getAdEventCount(),
+      getTotalSpend(),
+      getFirmCount(),
+      getMarketCount(),
+      getRecentAdEvents(10),
+      getTopFirmsByAdSpend(5),
+      getTopMarketsByAdSpend(5),
+    ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
-      <section className="rounded-[2rem] border border-border bg-surface p-8 shadow-[0_24px_80px_rgba(31,41,55,0.06)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-accent">
-          Dashboard
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold text-foreground">
-          Recent legal advertising activity
-        </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
-          This starter dashboard keeps the existing architecture intact and
-          reads directly from <code>ad_events</code>, the project&apos;s core
-          fact table.
-        </p>
-      </section>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Legal Ad Intelligence Dashboard
+          </h1>
+        </div>
+      </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        {Object.entries(spendByChannel).map(([channel, spend]) => (
-          <article
-            key={channel}
-            className="rounded-3xl border border-border bg-surface p-5"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-              {channel}
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-foreground">
-              ${spend.toLocaleString()}
-            </p>
-          </article>
-        ))}
-      </section>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SummaryCard title="Total Ad Events" value={formatNumber(adEventCount)} />
+          <SummaryCard title="Total Spend" value={formatCurrency(totalSpend)} />
+          <SummaryCard title="Firms Tracked" value={formatNumber(firmCount)} />
+          <SummaryCard title="Markets Covered" value={formatNumber(marketCount)} />
+        </div>
 
-      <section className="overflow-hidden rounded-[2rem] border border-border bg-surface">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Recent ad events
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Top Firms by Spend */}
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Top Firms by Ad Spend
+            </h2>
+            {topFirms.length === 0 ? (
+              <p className="mt-4 text-sm text-zinc-500">No firm data available.</p>
+            ) : (
+              <ul className="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800">
+                {topFirms.map((firm) => (
+                  <li key={firm.firm_id} className="flex items-center justify-between py-3">
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {firm.firm_name}
+                    </span>
+                    <span className="text-sm text-zinc-500">
+                      {formatCurrency(firm.total_spend)} ({firm.event_count} events)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Top Markets by Spend */}
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Top Markets by Ad Spend
+            </h2>
+            {topMarkets.length === 0 ? (
+              <p className="mt-4 text-sm text-zinc-500">No market data available.</p>
+            ) : (
+              <ul className="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800">
+                {topMarkets.map((market) => (
+                  <li key={market.market_id} className="flex items-center justify-between py-3">
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {market.market_name}
+                    </span>
+                    <span className="text-sm text-zinc-500">
+                      {formatCurrency(market.total_spend)} ({market.event_count} events)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+
+        {/* Recent Ad Events */}
+        <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Recent Ad Events
           </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-[rgba(234,223,208,0.55)] text-muted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Advertiser</th>
-                <th className="px-4 py-3 font-semibold">Channel</th>
-                <th className="px-4 py-3 font-semibold">Platform</th>
-                <th className="px-4 py-3 font-semibold">DMA</th>
-                <th className="px-4 py-3 text-right font-semibold">Spend</th>
-                <th className="px-4 py-3 text-right font-semibold">
-                  Impressions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {(adEvents ?? []).map((row) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-4 py-3">{row.event_date}</td>
-                  <td className="px-4 py-3">{row.advertiser_name_raw || "—"}</td>
-                  <td className="px-4 py-3">{row.channel || "—"}</td>
-                  <td className="px-4 py-3">{row.platform || "—"}</td>
-                  <td className="px-4 py-3">{row.dma_code || "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    ${Number(row.spend_estimate || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {Number(row.impressions_estimate || 0).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!adEvents?.length ? (
-            <div className="px-6 py-8 text-sm text-muted">
-              No ad events are available yet. Once ETLs begin loading source
-              data, this table will populate.
+          {recentEvents.length === 0 ? (
+            <p className="mt-4 text-sm text-zinc-500">No ad events found.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 text-left text-zinc-500 dark:border-zinc-700">
+                    <th className="pb-2 pr-4 font-medium">Date</th>
+                    <th className="pb-2 pr-4 font-medium">Source</th>
+                    <th className="pb-2 pr-4 font-medium">Channel</th>
+                    <th className="pb-2 pr-4 font-medium">Campaign</th>
+                    <th className="pb-2 pr-4 text-right font-medium">Spend</th>
+                    <th className="pb-2 text-right font-medium">Impressions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {recentEvents.map((event) => (
+                    <tr key={event.id} className="text-zinc-700 dark:text-zinc-300">
+                      <td className="py-2 pr-4">{event.event_date}</td>
+                      <td className="py-2 pr-4">{event.source}</td>
+                      <td className="py-2 pr-4">{event.channel ?? "—"}</td>
+                      <td className="py-2 pr-4">{event.campaign_name ?? "—"}</td>
+                      <td className="py-2 pr-4 text-right">
+                        {event.spend_estimate != null
+                          ? formatCurrency(Number(event.spend_estimate))
+                          : "—"}
+                      </td>
+                      <td className="py-2 text-right">
+                        {event.impressions_estimate != null
+                          ? formatNumber(Number(event.impressions_estimate))
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : null}
-        </div>
-      </section>
-    </main>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function SummaryCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <p className="text-sm font-medium text-zinc-500">{title}</p>
+      <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+        {value}
+      </p>
+    </div>
   );
 }
