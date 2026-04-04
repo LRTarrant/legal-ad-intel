@@ -1,12 +1,21 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   getAdEventCount,
   getTotalSpend,
   getRecentAdEvents,
   getSpendByChannel,
+  getDistinctChannels,
 } from "@/lib/queries/ad-events";
-import { getFirmCount, getTopFirmsBySpend } from "@/lib/queries/firms";
-import { getMarketCount, getTopMarketsBySpend } from "@/lib/queries/markets";
+import { getActiveFirmCount, getTopFirmsBySpend } from "@/lib/queries/firms";
+import {
+  getMarkets,
+  getActiveMarketCount,
+  getTopMarketsBySpend,
+} from "@/lib/queries/markets";
+import { getMassTorts } from "@/lib/queries/mass-torts";
+import type { DashboardFilters } from "@/lib/queries/types";
+import FilterBar from "./filter-bar";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -25,7 +34,23 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+
+  const filters: DashboardFilters = {};
+  if (typeof params.channel === "string") filters.channel = params.channel;
+  if (typeof params.marketId === "string") filters.marketId = params.marketId;
+  if (typeof params.massTortId === "string")
+    filters.massTortId = params.massTortId;
+  if (typeof params.dateFrom === "string") filters.dateFrom = params.dateFrom;
+  if (typeof params.dateTo === "string") filters.dateTo = params.dateTo;
+
+  const hasFilters = Object.keys(filters).length > 0;
+
   const [
     adEventCount,
     totalSpend,
@@ -35,16 +60,35 @@ export default async function DashboardPage() {
     topFirms,
     topMarkets,
     spendByChannel,
+    channels,
+    markets,
+    massTorts,
   ] = await Promise.all([
-    getAdEventCount(),
-    getTotalSpend(),
-    getFirmCount(),
-    getMarketCount(),
-    getRecentAdEvents(20),
-    getTopFirmsBySpend(10),
-    getTopMarketsBySpend(10),
-    getSpendByChannel(),
+    getAdEventCount(filters),
+    getTotalSpend(filters),
+    getActiveFirmCount(filters),
+    getActiveMarketCount(filters),
+    getRecentAdEvents(20, filters),
+    getTopFirmsBySpend(10, filters),
+    getTopMarketsBySpend(10, filters),
+    getSpendByChannel(filters),
+    getDistinctChannels(),
+    getMarkets(),
+    getMassTorts(),
   ]);
+
+  const filterLabels: string[] = [];
+  if (filters.channel) filterLabels.push(filters.channel);
+  if (filters.marketId) {
+    const m = markets.find((mk) => mk.id === filters.marketId);
+    if (m) filterLabels.push(m.market_name);
+  }
+  if (filters.massTortId) {
+    const t = massTorts.find((mt) => mt.id === filters.massTortId);
+    if (t) filterLabels.push(t.name);
+  }
+  if (filters.dateFrom) filterLabels.push(`from ${filters.dateFrom}`);
+  if (filters.dateTo) filterLabels.push(`to ${filters.dateTo}`);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,6 +103,32 @@ export default async function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Filter Bar */}
+        <Suspense
+          fallback={
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-16 animate-pulse" />
+          }
+        >
+          <FilterBar
+            channels={channels}
+            markets={markets.map((m) => ({
+              id: m.id,
+              name: m.market_name,
+            }))}
+            massTorts={massTorts.map((t) => ({ id: t.id, name: t.name }))}
+          />
+        </Suspense>
+
+        {/* Active filter context */}
+        {hasFilters && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              Filtered
+            </span>
+            <span>Showing results for: {filterLabels.join(" \u00b7 ")}</span>
+          </div>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
@@ -114,7 +184,10 @@ export default async function DashboardPage() {
             ) : (
               <ol className="space-y-3">
                 {topMarkets.map((market, i) => (
-                  <li key={market.id} className="flex items-center justify-between">
+                  <li
+                    key={market.id}
+                    className="flex items-center justify-between"
+                  >
                     <span className="text-sm truncate pr-2">
                       <span className="text-gray-400 font-mono mr-2 w-5 inline-block text-right">
                         {i + 1}.

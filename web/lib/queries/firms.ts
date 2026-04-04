@@ -1,4 +1,16 @@
 import { supabase } from "../supabase";
+import type { DashboardFilters } from "./types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFilters(query: any, filters?: DashboardFilters) {
+  if (!filters) return query;
+  if (filters.channel) query = query.eq("channel", filters.channel);
+  if (filters.marketId) query = query.eq("market_id", filters.marketId);
+  if (filters.massTortId) query = query.eq("mass_tort_id", filters.massTortId);
+  if (filters.dateFrom) query = query.gte("event_date", filters.dateFrom);
+  if (filters.dateTo) query = query.lte("event_date", filters.dateTo);
+  return query;
+}
 
 export async function getFirms() {
   const { data, error } = await supabase
@@ -9,16 +21,24 @@ export async function getFirms() {
   return data;
 }
 
-export async function getFirmCount() {
-  const { count, error } = await supabase
-    .from("firms")
-    .select("*", { count: "exact", head: true });
+export async function getActiveFirmCount(filters?: DashboardFilters) {
+  const base = supabase.from("ad_events").select("firm_id");
+  const { data, error } = await applyFilters(base, filters);
   if (error) throw error;
-  return count ?? 0;
+  const ids = new Set(
+    (data ?? [])
+      .map((r: { firm_id: string | null }) => r.firm_id)
+      .filter(Boolean)
+  );
+  return ids.size;
 }
 
-export async function getTopFirmsBySpend(limit = 10) {
-  const { data, error } = await supabase.from("ad_events").select("*");
+export async function getTopFirmsBySpend(
+  limit = 10,
+  filters?: DashboardFilters
+) {
+  const base = supabase.from("ad_events").select("*");
+  const { data, error } = await applyFilters(base, filters);
   if (error) throw error;
 
   const firmSpend = new Map<string, number>();

@@ -1,39 +1,57 @@
 import { supabase } from "../supabase";
+import type { DashboardFilters } from "./types";
 
-export async function getAdEventCount() {
-  const { count, error } = await supabase
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFilters(query: any, filters?: DashboardFilters) {
+  if (!filters) return query;
+  if (filters.channel) query = query.eq("channel", filters.channel);
+  if (filters.marketId) query = query.eq("market_id", filters.marketId);
+  if (filters.massTortId) query = query.eq("mass_tort_id", filters.massTortId);
+  if (filters.dateFrom) query = query.gte("event_date", filters.dateFrom);
+  if (filters.dateTo) query = query.lte("event_date", filters.dateTo);
+  return query;
+}
+
+export async function getAdEventCount(filters?: DashboardFilters) {
+  const base = supabase
     .from("ad_events")
     .select("*", { count: "exact", head: true });
+  const { count, error } = await applyFilters(base, filters);
   if (error) throw error;
   return count ?? 0;
 }
 
-export async function getTotalSpend() {
-  const { data, error } = await supabase.from("ad_events").select("*");
+export async function getTotalSpend(filters?: DashboardFilters) {
+  const base = supabase.from("ad_events").select("spend_estimate");
+  const { data, error } = await applyFilters(base, filters);
   if (error) throw error;
   return (data ?? []).reduce(
-    (sum, row) => sum + (Number(row.spend_estimate) || 0),
+    (sum: number, row: { spend_estimate: number | null }) =>
+      sum + (Number(row.spend_estimate) || 0),
     0
   );
 }
 
-export async function getRecentAdEvents(limit = 20) {
-  const { data, error } = await supabase
-    .from("ad_events")
-    .select("*")
+export async function getRecentAdEvents(
+  limit = 20,
+  filters?: DashboardFilters
+) {
+  let base = supabase.from("ad_events").select("*");
+  base = applyFilters(base, filters);
+  const { data, error } = await base
     .order("event_date", { ascending: false })
     .limit(limit);
   if (error) throw error;
 
   const rows = data ?? [];
   const firmIds = [
-    ...new Set(rows.map((r) => r.firm_id).filter(Boolean)),
+    ...new Set(rows.map((r: { firm_id: string | null }) => r.firm_id).filter(Boolean)),
   ] as string[];
   const marketIds = [
-    ...new Set(rows.map((r) => r.market_id).filter(Boolean)),
+    ...new Set(rows.map((r: { market_id: string | null }) => r.market_id).filter(Boolean)),
   ] as string[];
   const tortIds = [
-    ...new Set(rows.map((r) => r.mass_tort_id).filter(Boolean)),
+    ...new Set(rows.map((r: { mass_tort_id: string | null }) => r.mass_tort_id).filter(Boolean)),
   ] as string[];
 
   const [firmsRes, marketsRes, tortsRes] = await Promise.all([
@@ -66,8 +84,9 @@ export async function getRecentAdEvents(limit = 20) {
   }));
 }
 
-export async function getSpendByChannel() {
-  const { data, error } = await supabase.from("ad_events").select("*");
+export async function getSpendByChannel(filters?: DashboardFilters) {
+  const base = supabase.from("ad_events").select("*");
+  const { data, error } = await applyFilters(base, filters);
   if (error) throw error;
 
   const channelSpend = new Map<string, number>();
@@ -82,4 +101,16 @@ export async function getSpendByChannel() {
   return Array.from(channelSpend.entries())
     .map(([channel, total]) => ({ channel, total }))
     .sort((a, b) => b.total - a.total);
+}
+
+export async function getDistinctChannels() {
+  const { data, error } = await supabase
+    .from("ad_events")
+    .select("channel");
+  if (error) throw error;
+  const channels = new Set<string>();
+  for (const row of data ?? []) {
+    if (row.channel) channels.add(row.channel);
+  }
+  return Array.from(channels).sort();
 }
