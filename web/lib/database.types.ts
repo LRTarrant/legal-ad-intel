@@ -294,6 +294,56 @@ export interface Database {
           created_at?: string;
         };
       };
+      fars_fatalities: {
+        Row: {
+          id: number;
+          st_case: number;
+          state: string;
+          state_fips: number;
+          county_fips: number;
+          county_name: string | null;
+          crash_date: string;
+          fatalities: number;
+          drunk_drivers: number;
+          latitude: number | null;
+          longitude: number | null;
+          year: number;
+          persons: number;
+          vehicles: number;
+        };
+        Insert: {
+          id?: number;
+          st_case: number;
+          state: string;
+          state_fips: number;
+          county_fips: number;
+          county_name?: string | null;
+          crash_date: string;
+          fatalities: number;
+          drunk_drivers?: number;
+          latitude?: number | null;
+          longitude?: number | null;
+          year: number;
+          persons?: number;
+          vehicles?: number;
+        };
+        Update: {
+          id?: number;
+          st_case?: number;
+          state?: string;
+          state_fips?: number;
+          county_fips?: number;
+          county_name?: string | null;
+          crash_date?: string;
+          fatalities?: number;
+          drunk_drivers?: number;
+          latitude?: number | null;
+          longitude?: number | null;
+          year?: number;
+          persons?: number;
+          vehicles?: number;
+        };
+      };
       fatalities: {
         Row: {
           id: string;
@@ -542,7 +592,78 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_fars_counties_by_state: {
+        Args: {
+          state_abbr: string;
+        };
+        Returns: {
+          county_fips: number;
+          county_name: string;
+        }[];
+      };
+      get_fars_distinct_states: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          state: string;
+        }[];
+      };
+      get_fars_drunk_driving_stats: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          drunk_crashes: number;
+          percentage: number;
+          total_crashes: number;
+        }[];
+      };
+      get_fars_fatality_trend_by_year: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+          year: number;
+        }[];
+      };
+      get_fars_state_fatality_trend_by_year: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+          state_abbr: string;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+          year: number;
+        }[];
+      };
+      get_fars_top_states_by_fatalities: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+          result_limit?: number | null;
+        };
+        Returns: {
+          drunk_driving_crashes: number;
+          state: string;
+          total_crashes: number;
+          total_fatalities: number;
+        }[];
+      };
+      get_fars_totals: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;
