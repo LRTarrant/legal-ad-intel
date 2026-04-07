@@ -1,5 +1,3 @@
-import { JpmlTypePanel } from "./jpml-type-panel";
-
 import {
   getJpmlSnapshots,
   getJpmlTypeSummaries,
@@ -11,6 +9,7 @@ import {
   getMdlTotals,
   getMdlTrend,
 } from "@/lib/queries";
+import { JpmlDetailSection } from "./jpml-detail-section";
 import { MdlContent } from "./mdl-content";
 import { MdlFilterBar } from "./mdl-filter-bar";
 
@@ -42,20 +41,20 @@ export default async function MdlTrackerPage({
   const search = getSingleValue(params.search) ?? "";
   const mdl = getSingleValue(params.mdl) ?? "";
 
-  const [reportDates, summaryRows, totals] = await Promise.all([
-    getMdlReportDates(),
-    getMdlSummary(selectedDate),
-    getMdlTotals(selectedDate),
-  ]);
+  const [reportDates, summaryRows, totals, jpmlSummaries, jpmlSnapshots] =
+    await Promise.all([
+      getMdlReportDates(),
+      getMdlSummary(selectedDate),
+      getMdlTotals(selectedDate),
+      getJpmlTypeSummaries().catch(() => []),
+      getJpmlSnapshots().catch(() => []),
+    ]);
 
   const trendEntries = await Promise.all(
     summaryRows.map(async (row) => [row.mdl_number, await getMdlTrend(row.mdl_number)] as const)
   );
 
-  // NEW: JPML snapshot + type summaries
-  const jpmlTypeSummaries = await getJpmlTypeSummaries();
-
-  const jpmlReportDate = jpmlTypeSummaries[0]?.report_date ?? null;
+  const jpmlReportDate = jpmlSummaries[0]?.report_date ?? null;
 
   const trendByMdl = Object.fromEntries(trendEntries);
   return (
@@ -91,10 +90,7 @@ export default async function MdlTrackerPage({
         />
       </div>
 
-      <JpmlTypePanel
-        reportDate={jpmlReportDate}
-        summaries={jpmlTypeSummaries}
-      /> 
+      <JpmlDetailSection summaries={jpmlSummaries} snapshots={jpmlSnapshots} reportDate={jpmlReportDate} />
 
       <MdlContent
         rows={summaryRows}
