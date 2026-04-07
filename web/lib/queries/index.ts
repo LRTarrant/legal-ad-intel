@@ -28,3 +28,4 @@ export {
 export * from "./mdl";
 export * from "./judicial";
 export * from "./fatalities";
+export * from "./jpml";
