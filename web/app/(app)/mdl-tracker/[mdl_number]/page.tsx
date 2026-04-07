@@ -2,10 +2,36 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMdlByNumber, getMdlTrend } from "@/lib/queries/mdl";
 import { getJpmlTypeForMdl } from "@/lib/queries/jpml";
+import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+
+const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  ruling: { bg: "#EFF6FF", text: "#2563EB", label: "Ruling" },
+  verdict: { bg: "#F0FDF4", text: "#16A34A", label: "Verdict" },
+  settlement: { bg: "#FFFBEB", text: "#D97706", label: "Settlement" },
+  "bellwether trial": { bg: "#FAF5FF", text: "#7C3AED", label: "Bellwether Trial" },
+  filing: { bg: "#F9FAFB", text: "#6B7280", label: "Filing" },
+  regulatory: { bg: "#FFF1F2", text: "#E11D48", label: "Regulatory" },
+};
+const DEFAULT_EVENT_COLOR = { bg: "#F1F5F9", text: "#6B7280", label: "Event" };
+
+function getEventColor(eventType: string) {
+  return EVENT_TYPE_COLORS[eventType] ?? DEFAULT_EVENT_COLOR;
+}
+
+function formatEventDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-");
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const m = parseInt(month, 10);
+  const d = parseInt(day, 10);
+  return `${monthNames[m - 1]} ${d}, ${year}`;
+}
 
 function formatMonth(dateStr: string): string {
   const [year, month] = dateStr.split("-");
@@ -143,10 +169,11 @@ export default async function MdlDetailPage({
   const mdlNumber = parseInt(mdl_number, 10);
   if (isNaN(mdlNumber)) notFound();
 
-  const [mdlRow, trendData, jpmlType] = await Promise.all([
+  const [mdlRow, trendData, jpmlType, developments] = await Promise.all([
     getMdlByNumber(mdlNumber),
     getMdlTrend(mdlNumber),
     getJpmlTypeForMdl(mdlNumber),
+    getMdlDevelopments(mdlNumber),
   ]);
 
   if (!mdlRow) notFound();
@@ -299,14 +326,64 @@ export default async function MdlDetailPage({
         </a>
       </div>
 
-      {/* Recent Developments placeholder */}
+      {/* Recent Developments */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-midnight-navy">
           Recent Developments
         </h2>
-        <p className="mt-3 text-sm text-slate-gray">
-          No developments tracked yet for this MDL.
-        </p>
+        {developments.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-gray">
+            No developments tracked yet for this MDL.
+          </p>
+        ) : (
+          <div className="mt-4">
+            {developments.map((dev, i) => {
+              const color = getEventColor(dev.event_type);
+              const isLast = i === developments.length - 1;
+              return (
+                <div
+                  key={dev.id}
+                  className={`relative pl-4 ${isLast ? "" : "pb-4"} border-l-2 border-cloud`}
+                >
+                  <span
+                    className="absolute left-[-5px] top-1 h-2 w-2 rounded-full"
+                    style={{ backgroundColor: color.text }}
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-gray">
+                      {formatEventDate(dev.event_date)}
+                    </span>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs font-medium"
+                      style={{ backgroundColor: color.bg, color: color.text }}
+                    >
+                      {color.label}
+                    </span>
+                  </div>
+                  <p className="mt-1 font-semibold text-midnight-navy">
+                    {dev.title}
+                  </p>
+                  {dev.summary && (
+                    <p className="mt-0.5 text-sm text-slate-gray">
+                      {dev.summary}
+                    </p>
+                  )}
+                  {dev.source_url && dev.source_name && (
+                    <a
+                      href={dev.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Read source: ${dev.source_name}`}
+                      className="mt-1 inline-block text-xs font-medium text-intelligence-teal hover:underline"
+                    >
+                      {dev.source_name} ↗
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
