@@ -2,7 +2,7 @@ import { getSupabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
 import { getJpmlTypesForMdls } from "./jpml";
 
-type MdlRow = Database["public"]["Tables"]["mdls"]["Row"];
+export type MdlRow = Database["public"]["Tables"]["mdls"]["Row"];
 type MdlStatsRow = Database["public"]["Tables"]["mdl_stats_monthly"]["Row"];
 
 export interface MdlTrendPoint {
@@ -237,4 +237,20 @@ export async function enrichMdlSummaryWithJpmlType(
     ...row,
     jpml_type: jpmlTypes.get(row.mdl_number) ?? null,
   }));
+}
+
+/**
+ * Fetch a single MDL row by its mdl_number.
+ * Returns null if not found.
+ */
+export async function getMdlByNumber(mdlNumber: number): Promise<MdlRow | null> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .from("mdls")
+    .select("*")
+    .eq("mdl_number", mdlNumber)
+    .maybeSingle()
+    .throwOnError();
+
+  return (data as MdlRow | null) ?? null;
 }

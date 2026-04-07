@@ -1,0 +1,313 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getMdlByNumber, getMdlTrend } from "@/lib/queries/mdl";
+import { getJpmlTypeForMdl } from "@/lib/queries/jpml";
+import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
+import type { MdlTrendPoint } from "@/lib/queries";
+
+export const dynamic = "force-dynamic";
+
+function formatMonth(dateStr: string): string {
+  const [year, month] = dateStr.split("-");
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const m = parseInt(month, 10);
+  return `${monthNames[m - 1]} '${year.slice(2)}`;
+}
+
+function TrendChart({ data }: { data: MdlTrendPoint[] }) {
+  if (data.length < 2) {
+    return (
+      <p className="py-12 text-center text-sm text-slate-gray">
+        Insufficient data to render a trend chart.
+      </p>
+    );
+  }
+
+  const svgWidth = 600;
+  const svgHeight = 200;
+  const padLeft = 55;
+  const padRight = 20;
+  const padTop = 20;
+  const padBottom = 30;
+
+  const chartWidth = svgWidth - padLeft - padRight;
+  const chartHeight = svgHeight - padTop - padBottom;
+
+  const maxVal = Math.max(...data.map((d) => d.pending_actions)) * 1.1;
+  const minVal = 0;
+
+  const xStep = data.length > 1 ? chartWidth / (data.length - 1) : 0;
+
+  const points = data.map((d, i) => {
+    const x = padLeft + i * xStep;
+    const y =
+      padTop +
+      chartHeight -
+      ((d.pending_actions - minVal) / (maxVal - minVal)) * chartHeight;
+    return { x, y, ...d };
+  });
+
+  const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+  const gridLineCount = 4;
+  const gridLines = Array.from({ length: gridLineCount + 1 }, (_, i) => {
+    const value = minVal + ((maxVal - minVal) / gridLineCount) * i;
+    const y = padTop + chartHeight - (i / gridLineCount) * chartHeight;
+    return { value, y };
+  });
+
+  const labelInterval = Math.max(1, Math.ceil(data.length / 8));
+
+  return (
+    <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full">
+      {gridLines.map((gl) => (
+        <g key={gl.y}>
+          <line
+            x1={padLeft}
+            y1={gl.y}
+            x2={svgWidth - padRight}
+            y2={gl.y}
+            stroke="#F1F5F9"
+            strokeWidth="1"
+            strokeDasharray="4 2"
+          />
+          <text
+            x={padLeft - 8}
+            y={gl.y + 4}
+            textAnchor="end"
+            fill="#6B7280"
+            fontSize="10"
+          >
+            {Math.round(gl.value).toLocaleString()}
+          </text>
+        </g>
+      ))}
+
+      <polyline
+        points={polyline}
+        fill="none"
+        stroke="#1A8C96"
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+
+      {points.map((p) => (
+        <circle
+          key={p.stats_month}
+          cx={p.x}
+          cy={p.y}
+          r="3"
+          fill="#1A8C96"
+        />
+      ))}
+
+      {points.map(
+        (p, i) =>
+          i % labelInterval === 0 && (
+            <text
+              key={p.stats_month}
+              x={p.x}
+              y={svgHeight - 6}
+              textAnchor="middle"
+              fill="#6B7280"
+              fontSize="10"
+            >
+              {formatMonth(p.stats_month)}
+            </text>
+          )
+      )}
+    </svg>
+  );
+}
+
+export default async function MdlDetailPage({
+  params,
+}: {
+  params: Promise<{ mdl_number: string }>;
+}) {
+  const { mdl_number } = await params;
+  const mdlNumber = parseInt(mdl_number, 10);
+  if (isNaN(mdlNumber)) notFound();
+
+  const [mdlRow, trendData, jpmlType] = await Promise.all([
+    getMdlByNumber(mdlNumber),
+    getMdlTrend(mdlNumber),
+    getJpmlTypeForMdl(mdlNumber),
+  ]);
+
+  if (!mdlRow) notFound();
+
+  const cleanTitle = mdlRow.title.replace(/^IN RE:\s*/i, "");
+
+  // Derive MoM change from last two trend rows
+  const momChange =
+    trendData.length >= 2
+      ? trendData[trendData.length - 1].pending_actions -
+        trendData[trendData.length - 2].pending_actions
+      : null;
+
+  const latestPending =
+    trendData.length > 0
+      ? trendData[trendData.length - 1].pending_actions
+      : 0;
+
+  const status =
+    mdlRow.status ??
+    (mdlRow.closed_date ? "Closed" : "Active");
+
+  return (
+    <div className="space-y-8">
+      {/* Back link + header */}
+      <div>
+        <Link
+          href="/mdl-tracker"
+          className="text-sm text-slate-gray hover:text-midnight-navy"
+        >
+          ← Back to MDL Tracker
+        </Link>
+        <h1 className="mt-2 font-heading text-3xl font-bold text-midnight-navy">
+          MDL {mdlNumber}
+        </h1>
+        <p className="mt-1 text-lg text-slate-gray">{cleanTitle}</p>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {/* JPML Type */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            JPML Classification
+          </p>
+          <div className="mt-2">
+            {jpmlType ? (
+              <span
+                className="inline-block rounded-full px-3 py-1 text-sm font-medium"
+                style={{
+                  backgroundColor: `${getTypeColor(jpmlType)}26`,
+                  color: getTypeColor(jpmlType),
+                }}
+              >
+                {getTypeShortLabel(jpmlType)}
+              </span>
+            ) : (
+              <span className="text-lg font-semibold text-midnight-navy">
+                —
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Transferee Judge */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            Transferee Judge
+          </p>
+          <p className="mt-2 text-lg font-semibold text-midnight-navy">
+            {mdlRow.judge_name ?? "—"}
+          </p>
+        </div>
+
+        {/* District */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            District
+          </p>
+          <p className="mt-2 text-lg font-semibold text-midnight-navy">
+            {mdlRow.district ?? "—"}
+          </p>
+        </div>
+
+        {/* Pending Actions */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            Pending Actions
+          </p>
+          <p className="mt-2 text-lg font-semibold text-midnight-navy">
+            {latestPending.toLocaleString()}
+          </p>
+        </div>
+
+        {/* MoM Change */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            Month-over-Month
+          </p>
+          <p
+            className={`mt-2 text-lg font-semibold ${
+              momChange === null
+                ? "text-slate-gray"
+                : momChange > 0
+                  ? "text-success"
+                  : momChange < 0
+                    ? "text-alert"
+                    : "text-slate-gray"
+            }`}
+          >
+            {momChange === null
+              ? "—"
+              : momChange > 0
+                ? `+${momChange.toLocaleString()}`
+                : momChange.toLocaleString()}
+          </p>
+        </div>
+
+        {/* Status */}
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-slate-gray">
+            Status
+          </p>
+          <p className="mt-2 text-lg font-semibold text-midnight-navy">
+            {status}
+          </p>
+        </div>
+      </div>
+
+      {/* Trend Chart */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+          Pending Actions Over Time
+        </h2>
+        <div className="mt-4">
+          <TrendChart data={trendData} />
+        </div>
+      </div>
+
+      {/* CourtListener link */}
+      <div>
+        <a
+          href={`https://www.courtlistener.com/?q=%22MDL+${mdlNumber}%22&type=r`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Search CourtListener RECAP for MDL ${mdlNumber}`}
+          className="inline-block rounded-lg border-2 border-intelligence-teal px-6 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
+        >
+          View on CourtListener ↗
+        </a>
+      </div>
+
+      {/* Recent Developments placeholder */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+          Recent Developments
+        </h2>
+        <p className="mt-3 text-sm text-slate-gray">
+          No developments tracked yet for this MDL.
+        </p>
+      </div>
+    </div>
+  );
+}
