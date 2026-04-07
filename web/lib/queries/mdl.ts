@@ -1,5 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
+import { getJpmlTypesForMdls } from "./jpml";
 
 type MdlRow = Database["public"]["Tables"]["mdls"]["Row"];
 type MdlStatsRow = Database["public"]["Tables"]["mdl_stats_monthly"]["Row"];
@@ -23,6 +24,7 @@ export interface MdlSummaryRow {
   trend: "up" | "down" | "flat";
   latest_report_date: string | null;
   source_url: string | null;
+  jpml_type?: string | null;
 }
 
 export interface MdlTotals {
@@ -219,4 +221,20 @@ export async function getMdlReportDates(): Promise<MdlReportDateOption[]> {
   }
 
   return dates;
+}
+
+/**
+ * Enrich an array of MdlSummaryRows with jpml_type from the JPML snapshots table.
+ * Returns new array with jpml_type populated where a match exists.
+ */
+export async function enrichMdlSummaryWithJpmlType(
+  rows: MdlSummaryRow[]
+): Promise<MdlSummaryRow[]> {
+  const mdlNumbers = rows.map((r) => r.mdl_number);
+  const jpmlTypes = await getJpmlTypesForMdls(mdlNumbers);
+
+  return rows.map((row) => ({
+    ...row,
+    jpml_type: jpmlTypes.get(row.mdl_number) ?? null,
+  }));
 }

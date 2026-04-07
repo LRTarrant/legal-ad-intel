@@ -68,7 +68,7 @@ export function JpmlTypePanel({
                   {row.mdl_count}
                 </span>
                 <span className="text-sm text-slate-gray">
-                  {row.pct_of_total}%
+                  {row.pct_of_total ?? 0}%
                 </span>
               </div>
               <div className="mt-3 h-2 rounded-full bg-cloud">
