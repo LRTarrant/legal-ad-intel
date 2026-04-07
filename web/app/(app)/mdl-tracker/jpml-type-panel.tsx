@@ -1,4 +1,5 @@
 import type { JpmlTypeSummary } from "@/lib/queries";
+import { JpmlDateSelect } from "./jpml-date-select";
 
 function formatReportDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -13,9 +14,13 @@ function formatReportDate(dateStr: string): string {
 export function JpmlTypePanel({
   summaries,
   reportDate,
+  reportDates,
+  selectedDate,
 }: {
   summaries: JpmlTypeSummary[];
   reportDate: string | null;
+  reportDates: string[];
+  selectedDate: string | null;
 }) {
   if (summaries.length === 0) {
     return (
@@ -37,14 +42,40 @@ export function JpmlTypePanel({
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="font-heading text-xl font-semibold text-midnight-navy">
-            JPML by Type
-          </h2>
-          {reportDate && (
-            <p className="mt-1 text-sm text-slate-gray">
-              Report: {formatReportDate(reportDate)}
-            </p>
-          )}
+          <div className="flex items-center gap-3">
+            <h2 className="font-heading text-xl font-semibold text-midnight-navy">
+              JPML by Type
+            </h2>
+            <JpmlDateSelect
+              reportDates={reportDates}
+              selectedDate={selectedDate}
+            />
+          </div>
+          <div className="mt-1 flex items-center gap-3">
+            {reportDate && (
+              <p className="text-sm text-slate-gray">
+                Report: {formatReportDate(reportDate)}
+              </p>
+            )}
+            <span className="text-sm text-slate-gray">·</span>
+            <a
+              href="https://www.jpml.uscourts.gov/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-slate-gray transition hover:text-intelligence-teal"
+            >
+              Source: U.S. Judicial Panel on Multidistrict Litigation
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="h-3 w-3"
+              >
+                <path d="M6.22 8.72a.75.75 0 0 0 1.06 1.06l5.22-5.22v1.69a.75.75 0 0 0 1.5 0v-3.5a.75.75 0 0 0-.75-.75h-3.5a.75.75 0 0 0 0 1.5h1.69L6.22 8.72Z" />
+                <path d="M3.5 6.75c0-.69.56-1.25 1.25-1.25H7A.75.75 0 0 0 7 4H4.75A2.75 2.75 0 0 0 2 6.75v4.5A2.75 2.75 0 0 0 4.75 14h4.5A2.75 2.75 0 0 0 12 11.25V9a.75.75 0 0 0-1.5 0v2.25c0 .69-.56 1.25-1.25 1.25h-4.5c-.69 0-1.25-.56-1.25-1.25v-4.5Z" />
+              </svg>
+            </a>
+          </div>
         </div>
         <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
           {totalActive} Active MDLs

@@ -5,6 +5,7 @@ import {
   getMdlTrend,
   getJpmlTypeSummaries,
   getLatestReportDate,
+  getJpmlReportDates,
 } from "@/lib/queries";
 import { JpmlTypePanel } from "./jpml-type-panel";
 import { MdlContent } from "./mdl-content";
@@ -18,6 +19,7 @@ type SearchParams = Promise<{
   date?: string | string[];
   mdl?: string | string[];
   search?: string | string[];
+  jpml_date?: string | string[];
 }>;
 
 function getSingleValue(value: string | string[] | undefined): string | null {
@@ -37,14 +39,18 @@ export default async function MdlTrackerPage({
   const selectedDate = getSingleValue(params.date);
   const search = getSingleValue(params.search) ?? "";
   const mdl = getSingleValue(params.mdl) ?? "";
+  const jpmlDate = getSingleValue(params.jpml_date);
 
-  const [reportDates, summaryRows, totals, jpmlSummaries, jpmlReportDate] =
+  const [reportDates, summaryRows, totals, jpmlSummaries, jpmlReportDate, jpmlDates] =
     await Promise.all([
       getMdlReportDates(),
       getMdlSummary(selectedDate),
       getMdlTotals(selectedDate),
-      getJpmlTypeSummaries().catch(() => []),
-      getLatestReportDate().catch(() => null),
+      getJpmlTypeSummaries(jpmlDate).catch(() => []),
+      jpmlDate
+        ? Promise.resolve(jpmlDate)
+        : getLatestReportDate().catch(() => null),
+      getJpmlReportDates().catch(() => [] as string[]),
     ]);
 
   const trendEntries = await Promise.all(
@@ -85,7 +91,12 @@ export default async function MdlTrackerPage({
         />
       </div>
 
-      <JpmlTypePanel summaries={jpmlSummaries} reportDate={jpmlReportDate} />
+      <JpmlTypePanel
+        summaries={jpmlSummaries}
+        reportDate={jpmlReportDate}
+        reportDates={jpmlDates}
+        selectedDate={jpmlDate}
+      />
 
       <MdlContent
         rows={summaryRows}

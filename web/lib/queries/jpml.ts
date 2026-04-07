@@ -26,6 +26,30 @@ export interface JpmlTypeSummary {
 }
 
 /**
+ * Get all distinct report dates from jpml_snapshots, most recent first.
+ */
+export async function getJpmlReportDates(): Promise<string[]> {
+  const supabase = getSupabase();
+
+  const { data } = await supabase
+    .from("jpml_type_summaries")
+    .select("report_date")
+    .order("report_date", { ascending: false })
+    .throwOnError();
+
+  const rows = (data ?? []) as { report_date: string }[];
+  const seen = new Set<string>();
+  const dates: string[] = [];
+  for (const row of rows) {
+    if (!seen.has(row.report_date)) {
+      seen.add(row.report_date);
+      dates.push(row.report_date);
+    }
+  }
+  return dates;
+}
+
+/**
  * Get the most recent report_date available in jpml_snapshots.
  */
 export async function getLatestReportDate(): Promise<string | null> {
