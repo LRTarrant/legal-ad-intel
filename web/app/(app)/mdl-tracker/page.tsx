@@ -6,6 +6,7 @@ import {
   getJpmlTypeSummaries,
   getJpmlSnapshots,
   getLatestReportDate,
+  enrichMdlSummaryWithJpmlType,
 } from "@/lib/queries";
 import { JpmlDetailSection } from "./jpml-detail-section";
 import { JpmlTypePanel } from "./jpml-type-panel";
@@ -56,8 +57,12 @@ export default async function MdlTrackerPage({
     getJpmlSnapshots().catch(() => []),
   ]);
 
+  const enrichedRows = await enrichMdlSummaryWithJpmlType(summaryRows).catch(
+    () => summaryRows
+  );
+
   const trendEntries = await Promise.all(
-    summaryRows.map(async (row) => [row.mdl_number, await getMdlTrend(row.mdl_number)] as const)
+    enrichedRows.map(async (row) => [row.mdl_number, await getMdlTrend(row.mdl_number)] as const)
   );
 
   const trendByMdl = Object.fromEntries(trendEntries);
@@ -102,7 +107,7 @@ export default async function MdlTrackerPage({
       />
 
       <MdlContent
-        rows={summaryRows}
+        rows={enrichedRows}
         trendByMdl={trendByMdl}
         search={search}
         mdl={mdl}
