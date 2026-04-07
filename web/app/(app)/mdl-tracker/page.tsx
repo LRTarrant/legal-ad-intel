@@ -15,6 +15,8 @@ type SearchParams = Promise<{
   date?: string | string[];
   mdl?: string | string[];
   search?: string | string[];
+  sort?: string | string[];
+  dir?: string | string[];
 }>;
 
 function getSingleValue(value: string | string[] | undefined): string | null {
@@ -34,6 +36,8 @@ export default async function MdlTrackerPage({
   const selectedDate = getSingleValue(params.date);
   const search = getSingleValue(params.search) ?? "";
   const mdl = getSingleValue(params.mdl) ?? "";
+  const sort = getSingleValue(params.sort) ?? "";
+  const dir = getSingleValue(params.dir) ?? "";
 
   const [reportDates, summaryRows, totals] = await Promise.all([
     getMdlReportDates(),
@@ -84,6 +88,8 @@ export default async function MdlTrackerPage({
         trendByMdl={trendByMdl}
         search={search}
         mdl={mdl}
+        sort={sort}
+        dir={dir}
       />
     </div>
   );

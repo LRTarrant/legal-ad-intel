@@ -9,11 +9,15 @@ export function MdlContent({
   trendByMdl,
   search,
   mdl,
+  sort,
+  dir,
 }: {
   rows: MdlSummaryRow[];
   trendByMdl: Record<number, MdlTrendPoint[]>;
   search: string;
   mdl: string;
+  sort: string;
+  dir: string;
 }) {
   const filteredRows = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -96,7 +100,7 @@ export function MdlContent({
         </div>
       </div>
 
-      <MdlTable rows={filteredRows} trendByMdl={trendByMdl} />
+      <MdlTable rows={filteredRows} trendByMdl={trendByMdl} sort={sort} dir={dir} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
 
 type SortKey =
@@ -77,15 +78,42 @@ function trendArrow(trend: MdlSummaryRow["trend"]) {
   return "→";
 }
 
+const VALID_SORT_KEYS: Set<string> = new Set([
+  "mdl_number",
+  "title",
+  "district",
+  "judge_name",
+  "pending_actions",
+  "mom_change",
+]);
+
+function parseSortKey(value: string): SortKey {
+  return VALID_SORT_KEYS.has(value) ? (value as SortKey) : "pending_actions";
+}
+
+function parseSortDir(value: string): SortDirection {
+  return value === "asc" ? "asc" : "desc";
+}
+
 export function MdlTable({
   rows,
   trendByMdl,
+  sort,
+  dir,
 }: {
   rows: MdlSummaryRow[];
   trendByMdl: Record<number, MdlTrendPoint[]>;
+  sort: string;
+  dir: string;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>("pending_actions");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read sort state from URL — no useState needed
+  const sortKey = parseSortKey(sort);
+  const sortDirection = parseSortDir(dir);
+
   const [expandedMdl, setExpandedMdl] = useState<number | null>(
     rows[0]?.mdl_number ?? null
   );
@@ -94,14 +122,16 @@ export function MdlTable({
     return [...rows].sort((a, b) => compareValues(a, b, sortKey, sortDirection));
   }, [rows, sortDirection, sortKey]);
 
+  // Only update URL in response to user clicks — never in useEffect
   function toggleSort(nextKey: SortKey) {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-      return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextKey === sortKey) {
+      params.set("dir", sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      params.set("sort", nextKey);
+      params.set("dir", nextKey === "pending_actions" || nextKey === "mom_change" ? "desc" : "asc");
     }
-
-    setSortKey(nextKey);
-    setSortDirection(nextKey === "pending_actions" || nextKey === "mom_change" ? "desc" : "asc");
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   function label(text: string, key: SortKey) {
