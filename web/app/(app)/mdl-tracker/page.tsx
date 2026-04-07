@@ -1,3 +1,5 @@
+import { JpmlTypePanel } from "./jpml-type-panel";
+
 import {
   getJpmlSnapshots,
   getJpmlTypeSummaries,
@@ -51,10 +53,7 @@ export default async function MdlTrackerPage({
   );
 
   // NEW: JPML snapshot + type summaries
-  const [jpmlSnapshots, jpmlTypeSummaries] = await Promise.all([
-    getJpmlSnapshots(),
-    getJpmlTypeSummaries(),
-  ]);
+  const jpmlTypeSummaries = await getJpmlTypeSummaries();
 
   const jpmlReportDate = jpmlTypeSummaries[0]?.report_date ?? null;
 
@@ -92,47 +91,10 @@ export default async function MdlTrackerPage({
         />
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm">
-        <div className="flex items-baseline justify-between">
-          <div>
-            <h2 className="font-heading text-xl font-semibold text-midnight-navy">
-              JPML by Type
-            </h2>
-            <p className="mt-1 text-sm text-slate-gray">
-              Pending MDLs by JPML category as of {jpmlReportDate ?? "n/a"}
-            </p>
-          </div>
-          <span className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal">
-            {jpmlSnapshots.length.toLocaleString()} active MDLs
-          </span>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {jpmlTypeSummaries.map((row) => (
-            <div
-              key={`${row.report_date}-${row.mdl_type}`}
-              className="rounded-xl border border-slate-200 p-4"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-midnight-navy">
-                    {row.mdl_type}
-                  </p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-gray">
-                    {row.pct_of_total}% of total
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-heading font-bold text-midnight-navy">
-                    {row.mdl_count}
-                  </p>
-                  <p className="text-xs text-slate-gray">MDLs</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <JpmlTypePanel
+        reportDate={jpmlReportDate}
+        summaries={jpmlTypeSummaries}
+      /> 
 
       <MdlContent
         rows={summaryRows}
