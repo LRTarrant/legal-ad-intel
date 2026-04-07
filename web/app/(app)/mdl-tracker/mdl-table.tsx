@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
+import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
 
 type SortKey =
   | "mdl_number"
@@ -142,6 +143,7 @@ export function MdlTable({
                   {label("Case Name", "title")}
                 </button>
               </th>
+              <th className="py-2 pr-4">JPML Type</th>
               <th className="py-2 pr-4">
                 <button type="button" onClick={() => toggleSort("district")}>
                   {label("District", "district")}
@@ -191,6 +193,22 @@ export function MdlTable({
                     <td className="py-3 pr-4 font-semibold text-midnight-navy">
                       {row.title}
                     </td>
+                    <td className="py-3 pr-4">
+                      {row.jpml_type ? (
+                        <span
+                          className="inline-block max-w-[10rem] truncate rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{
+                            backgroundColor: `${getTypeColor(row.jpml_type)}26`,
+                            color: getTypeColor(row.jpml_type),
+                          }}
+                          title={row.jpml_type}
+                        >
+                          {getTypeShortLabel(row.jpml_type)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-gray">&mdash;</span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4 text-slate-gray">
                       {row.district ?? "n/a"}
                     </td>
@@ -210,7 +228,7 @@ export function MdlTable({
                   </tr>
                   {isExpanded ? (
                     <tr className="border-b border-cloud bg-cloud/35">
-                      <td colSpan={7} className="px-4 py-5">
+                      <td colSpan={8} className="px-4 py-5">
                         <div className="mb-3 flex items-end justify-between gap-4">
                           <div>
                             <h3 className="font-heading text-lg font-semibold text-midnight-navy">
