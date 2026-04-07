@@ -9,6 +9,7 @@ const navItems = [
   { label: "Markets", href: "/markets" },
   { label: "Fatalities", href: "/fatalities" },
   { label: "Judicial Profiles", href: "/judicial-profiles" },
+  { label: "MDL Tracker", href: "/mdl-tracker" },
 ];
 
 export function Sidebar() {
