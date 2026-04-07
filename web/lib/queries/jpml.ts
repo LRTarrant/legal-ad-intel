@@ -26,6 +26,23 @@ export interface JpmlTypeSummary {
 }
 
 /**
+ * Get the most recent report_date available in jpml_snapshots.
+ */
+export async function getLatestReportDate(): Promise<string | null> {
+  const supabase = getSupabase();
+
+  const { data } = await supabase
+    .from("jpml_snapshots")
+    .select("report_date")
+    .order("report_date", { ascending: false })
+    .limit(1)
+    .throwOnError();
+
+  const rows = (data ?? []) as Pick<JpmlSnapshotRow, "report_date">[];
+  return rows[0]?.report_date ?? null;
+}
+
+/**
  * Fetch all JPML snapshots for a given report date.
  * Defaults to the latest report date if none is provided.
  */
@@ -76,7 +93,7 @@ export async function getJpmlSnapshotsByType(
  * Fetch type summaries for a given report date.
  */
 export async function getJpmlTypeSummaries(
-  reportDate?: string
+  reportDate?: string | null
 ): Promise<JpmlTypeSummary[]> {
   const supabase = getSupabase();
   const date = reportDate ?? (await getLatestReportDate());
@@ -90,23 +107,6 @@ export async function getJpmlTypeSummaries(
     .throwOnError();
 
   return (data ?? []) as JpmlTypeSummary[];
-}
-
-/**
- * Get the most recent report_date available in jpml_snapshots.
- */
-export async function getLatestReportDate(): Promise<string | null> {
-  const supabase = getSupabase();
-
-  const { data } = await supabase
-    .from("jpml_snapshots")
-    .select("report_date")
-    .order("report_date", { ascending: false })
-    .limit(1)
-    .throwOnError();
-
-  const rows = (data ?? []) as Pick<JpmlSnapshotRow, "report_date">[];
-  return rows[0]?.report_date ?? null;
 }
 
 /**
