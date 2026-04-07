@@ -587,6 +587,79 @@ export interface Database {
           created_at?: string;
         };
       };
+      jpml_snapshots: {
+        Row: {
+          id: string;
+          report_date: string;
+          mdl_number: number;
+          case_name: string;
+          jpml_type: string;
+          transferee_judge: string | null;
+          district: string | null;
+          master_docket: string | null;
+          date_filed: string | null;
+          date_transferred: string | null;
+          date_closed: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          report_date: string;
+          mdl_number: number;
+          case_name: string;
+          jpml_type: string;
+          transferee_judge?: string | null;
+          district?: string | null;
+          master_docket?: string | null;
+          date_filed?: string | null;
+          date_transferred?: string | null;
+          date_closed?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          report_date?: string;
+          mdl_number?: number;
+          case_name?: string;
+          jpml_type?: string;
+          transferee_judge?: string | null;
+          district?: string | null;
+          master_docket?: string | null;
+          date_filed?: string | null;
+          date_transferred?: string | null;
+          date_closed?: string | null;
+          created_at?: string;
+        };
+      };
+      jpml_type_summaries: {
+        Row: {
+          id: string;
+          report_date: string;
+          mdl_type: string;
+          mdl_count: number;
+          pct_of_total: number | null;
+          total_active_mdls: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          report_date: string;
+          mdl_type: string;
+          mdl_count: number;
+          pct_of_total?: number | null;
+          total_active_mdls: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          report_date?: string;
+          mdl_type?: string;
+          mdl_count?: number;
+          pct_of_total?: number | null;
+          total_active_mdls?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
