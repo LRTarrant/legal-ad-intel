@@ -1,7 +1,7 @@
 import {
   getJpmlSnapshots,
   getJpmlTypeSummaries,
-} from "@/lib/queries/mdl";
+} from "@/lib/queries/jpml";
 
 import {
   getMdlReportDates,
@@ -51,13 +51,12 @@ export default async function MdlTrackerPage({
   );
 
   // NEW: JPML snapshot + type summaries
-  const [
-    { reportDate: jpmlReportDate, rows: jpmlSnapshots },
-    { rows: jpmlTypeSummaries },
-  ] = await Promise.all([
-    getJpmlSnapshots(),          // defaults to latest JPML report
-    getJpmlTypeSummaries(),      // same date as above
+  const [jpmlSnapshots, jpmlTypeSummaries] = await Promise.all([
+    getJpmlSnapshots(),
+    getJpmlTypeSummaries(),
   ]);
+
+  const jpmlReportDate = jpmlTypeSummaries[0]?.report_date ?? null;
 
   const trendByMdl = Object.fromEntries(trendEntries);
   return (
