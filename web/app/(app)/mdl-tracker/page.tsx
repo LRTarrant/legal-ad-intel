@@ -7,7 +7,10 @@ import {
   getJpmlSnapshots,
   getLatestReportDate,
   enrichMdlSummaryWithJpmlType,
+  getLatestDevelopments,
 } from "@/lib/queries";
+import type { MdlDevelopment } from "@/lib/queries";
+import Link from "next/link";
 import { JpmlDetailSection } from "./jpml-detail-section";
 import { JpmlTypePanel } from "./jpml-type-panel";
 import { MdlContent } from "./mdl-content";
@@ -48,6 +51,7 @@ export default async function MdlTrackerPage({
     jpmlSummaries,
     jpmlReportDate,
     jpmlSnapshots,
+    latestDevelopments,
   ] = await Promise.all([
     getMdlReportDates(),
     getMdlSummary(selectedDate),
@@ -55,6 +59,7 @@ export default async function MdlTrackerPage({
     getJpmlTypeSummaries().catch(() => []),
     getLatestReportDate().catch(() => null),
     getJpmlSnapshots().catch(() => []),
+    getLatestDevelopments(5).catch(() => [] as MdlDevelopment[]),
   ]);
 
   const enrichedRows = await enrichMdlSummaryWithJpmlType(summaryRows).catch(
@@ -99,6 +104,10 @@ export default async function MdlTrackerPage({
         />
       </div>
 
+      {latestDevelopments.length > 0 && (
+        <LatestDevelopmentsCard developments={latestDevelopments} />
+      )}
+
       <JpmlTypePanel summaries={jpmlSummaries} reportDate={jpmlReportDate} />
 
       <JpmlDetailSection
@@ -129,6 +138,71 @@ function SummaryCard({
       <p className="mt-1 font-heading text-2xl font-bold text-midnight-navy">
         {value}
       </p>
+    </div>
+  );
+}
+
+const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  ruling: { bg: "#EFF6FF", text: "#2563EB", label: "Ruling" },
+  verdict: { bg: "#F0FDF4", text: "#16A34A", label: "Verdict" },
+  settlement: { bg: "#FFFBEB", text: "#D97706", label: "Settlement" },
+  "bellwether trial": { bg: "#FAF5FF", text: "#7C3AED", label: "Bellwether Trial" },
+  filing: { bg: "#F9FAFB", text: "#6B7280", label: "Filing" },
+  regulatory: { bg: "#FFF1F2", text: "#E11D48", label: "Regulatory" },
+};
+const DEFAULT_EVENT_COLOR = { bg: "#F1F5F9", text: "#6B7280", label: "Event" };
+
+function formatShortDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-");
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const m = parseInt(month, 10);
+  const d = parseInt(day, 10);
+  return `${monthNames[m - 1]} ${d}, ${year}`;
+}
+
+function LatestDevelopmentsCard({
+  developments,
+}: {
+  developments: MdlDevelopment[];
+}) {
+  return (
+    <div className="rounded-xl bg-white p-5 shadow-sm">
+      <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+        Latest Developments
+      </h2>
+      <ul className="mt-3 divide-y divide-cloud">
+        {developments.map((dev) => {
+          const color = EVENT_TYPE_COLORS[dev.event_type] ?? DEFAULT_EVENT_COLOR;
+          return (
+            <li
+              key={dev.id}
+              className="flex items-start gap-3 py-2"
+            >
+              <span className="shrink-0 text-xs text-slate-gray whitespace-nowrap pt-0.5">
+                {formatShortDate(dev.event_date)}
+              </span>
+              <Link
+                href={`/mdl-tracker/${dev.mdl_number}`}
+                className="shrink-0 text-xs font-medium text-intelligence-teal hover:underline pt-0.5"
+              >
+                MDL {dev.mdl_number}
+              </Link>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: color.bg, color: color.text }}
+              >
+                {color.label}
+              </span>
+              <span className="text-sm font-medium text-midnight-navy">
+                {dev.title}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

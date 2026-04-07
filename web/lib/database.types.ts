@@ -132,6 +132,41 @@ export interface Database {
           updated_at?: string;
         };
       };
+      mdl_developments: {
+        Row: {
+          id: string;
+          mdl_number: number;
+          title: string;
+          summary: string | null;
+          source_name: string | null;
+          source_url: string | null;
+          event_date: string;
+          event_type: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          mdl_number: number;
+          title: string;
+          summary?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          event_date: string;
+          event_type: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          mdl_number?: number;
+          title?: string;
+          summary?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          event_date?: string;
+          event_type?: string;
+          created_at?: string | null;
+        };
+      };
       mdls: {
         Row: {
           id: string;

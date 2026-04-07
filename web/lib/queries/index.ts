@@ -26,6 +26,7 @@ export {
 } from "./markets";
 
 export * from "./mdl";
+export * from "./mdl-developments";
 export * from "./judicial";
 export * from "./fatalities";
 export * from "./jpml";
