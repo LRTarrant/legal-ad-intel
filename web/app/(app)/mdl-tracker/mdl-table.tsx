@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import Link from "next/link";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
 import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
 
@@ -187,8 +188,14 @@ export function MdlTable({
                       )
                     }
                   >
-                    <td className="py-3 pr-4 font-mono font-semibold text-intelligence-teal">
-                      {row.mdl_number}
+                    <td className="py-3 pr-4 font-mono font-medium">
+                      <Link
+                        href={`/mdl-tracker/${row.mdl_number}`}
+                        className="text-intelligence-teal hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {row.mdl_number}
+                      </Link>
                     </td>
                     <td className="py-3 pr-4 font-semibold text-midnight-navy">
                       {row.title}
