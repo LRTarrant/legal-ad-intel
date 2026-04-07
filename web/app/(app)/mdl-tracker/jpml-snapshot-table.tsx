@@ -137,10 +137,6 @@ export function JpmlSnapshotTable({
               sorted.map((row) => {
                 const color = getTypeColor(row.jpml_type);
                 const displayName = stripPrefix(row.case_name);
-                const searchQuery = encodeURIComponent(
-                  `${row.master_docket ?? ""} ${row.case_name}`.trim()
-                );
-
                 return (
                   <tr
                     key={row.id}
@@ -179,7 +175,7 @@ export function JpmlSnapshotTable({
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5">
                       <a
-                        href={`https://www.google.com/search?q=${searchQuery}`}
+                        href={`https://www.courtlistener.com/?q=%22MDL+${row.mdl_number}%22&type=r`}
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Search court records for MDL ${row.mdl_number}`}
