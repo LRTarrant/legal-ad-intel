@@ -12,6 +12,7 @@ import {
 } from "@/lib/queries";
 import { FatalitiesFilterBar } from "./fatalities-filter-bar";
 import { FatalitiesHeatmapPanel } from "./fatalities-heatmap-panel";
+import { AdvertisingInsight } from "../components/advertising-insight";
 
 export const metadata = {
   title: "Motor Vehicle Fatalities | Legal Marketing Intelligence",
@@ -117,6 +118,16 @@ export default async function FatalitiesPage({
         selectedState={filters.state ?? null}
         selectedCounty={filters.county ?? null}
       />
+
+      <AdvertisingInsight>
+        <p>
+          <strong>Pinpoint high-opportunity markets for personal injury advertising.</strong> County-level
+          crash and fatality data reveals where accident volume is highest relative to attorney saturation.
+          Filter by state and county to identify underserved markets where your advertising dollar goes
+          further. Pair this data with census demographics to build geo-targeted campaigns that reach the
+          right audiences at the right time.
+        </p>
+      </AdvertisingInsight>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard

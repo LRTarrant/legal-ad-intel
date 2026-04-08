@@ -7,6 +7,7 @@ import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
 import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
 import { JpmlTypeFilter } from "./jpml-type-filter";
 import { MdlTable } from "./mdl-table";
+import { AdvertisingInsight } from "../components/advertising-insight";
 
 export function MdlContent({
   rows,
@@ -61,6 +62,16 @@ export function MdlContent({
 
   return (
     <>
+      <AdvertisingInsight>
+        <p>
+          <strong>Track MDL momentum to time your campaigns.</strong> Rapidly growing MDLs (Top Movers)
+          signal rising plaintiff awareness — the ideal window to launch targeted advertising before market
+          saturation drives up cost-per-lead. Use MDL pending action counts to estimate total addressable
+          market size by litigation, and monitor JPML classifications to identify which practice areas are
+          consolidating fastest.
+        </p>
+      </AdvertisingInsight>
+
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
         <div className="flex items-end justify-between gap-4">
           <div>
