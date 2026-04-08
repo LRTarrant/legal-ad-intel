@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
+import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
+import { JpmlTypeFilter } from "./jpml-type-filter";
 import { MdlTable } from "./mdl-table";
 
 export function MdlContent({
@@ -32,12 +35,28 @@ export function MdlContent({
     });
   }, [mdl, rows, search]);
 
-  const topMovers = useMemo(() => {
+  const searchParams = useSearchParams();
+  const selectedJpmlType = searchParams.get("jpml_type") ?? "";
+
+  const allTopMovers = useMemo(() => {
     return [...filteredRows]
       .filter((row) => row.mom_change > 0)
       .sort((a, b) => Math.abs(b.mom_change) - Math.abs(a.mom_change))
       .slice(0, 10);
   }, [filteredRows]);
+
+  const availableJpmlTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const row of allTopMovers) {
+      if (row.jpml_type) types.add(row.jpml_type);
+    }
+    return [...types].sort();
+  }, [allTopMovers]);
+
+  const topMovers = useMemo(() => {
+    if (!selectedJpmlType) return allTopMovers;
+    return allTopMovers.filter((row) => row.jpml_type === selectedJpmlType);
+  }, [allTopMovers, selectedJpmlType]);
 
   return (
     <>
@@ -51,8 +70,15 @@ export function MdlContent({
               MDLs with the largest month-over-month increase in pending actions.
             </p>
           </div>
-          <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
-            10 fastest-growing dockets
+          <div className="flex items-center gap-4">
+            <JpmlTypeFilter
+              availableTypes={availableJpmlTypes}
+              totalCount={allTopMovers.length}
+              filteredCount={topMovers.length}
+            />
+            <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
+              10 fastest-growing dockets
+            </div>
           </div>
         </div>
 
@@ -62,6 +88,7 @@ export function MdlContent({
               <tr className="border-b border-cloud text-xs uppercase text-slate-gray">
                 <th className="py-2 pr-4">MDL #</th>
                 <th className="py-2 pr-4">Case Name</th>
+                <th className="py-2 pr-4">JPML Type</th>
                 <th className="py-2 pr-4">District</th>
                 <th className="py-2 text-right">MoM Change</th>
               </tr>
@@ -69,7 +96,7 @@ export function MdlContent({
             <tbody>
               {topMovers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-sm text-slate-gray">
+                  <td colSpan={5} className="py-8 text-center text-sm text-slate-gray">
                     No positive month-over-month movers match the current filters.
                   </td>
                 </tr>
@@ -81,6 +108,21 @@ export function MdlContent({
                     </td>
                     <td className="py-3 pr-4 font-semibold text-midnight-navy">
                       {row.title}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {row.jpml_type ? (
+                        <span
+                          className="text-xs font-medium rounded-full px-2 py-0.5"
+                          style={{
+                            backgroundColor: getTypeColor(row.jpml_type) + "22",
+                            color: getTypeColor(row.jpml_type),
+                          }}
+                        >
+                          {getTypeShortLabel(row.jpml_type)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-gray">&mdash;</span>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-slate-gray">
                       {row.district ?? "n/a"}
