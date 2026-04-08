@@ -101,14 +101,14 @@ export function Sidebar() {
           </svg>
         </button>
 
-        <div className="px-5 pt-6 pb-8">
+        <div className="flex items-center justify-center py-6">
           <Image
-            src="/logo-horizontal.svg"
+            src="/logo-stacked.svg"
             alt="Legal Marketing Intelligence"
-            width={200}
-            height={48}
+            width={160}
+            height={160}
             priority
-            className="max-w-[200px] h-auto"
+            className="w-40 h-auto"
           />
         </div>
 
