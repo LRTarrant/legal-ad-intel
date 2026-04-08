@@ -155,7 +155,43 @@ export function MdlContent({
         </div>
       </div>
 
-      <MdlTable rows={filteredRows} trendByMdl={trendByMdl} />
+      <div id="mdl-table" className="scroll-mt-16">
+        <MdlTable rows={filteredRows} trendByMdl={trendByMdl} />
+      </div>
+
+      <div className="flex justify-center py-8">
+        <a
+          href="#filters"
+          className="group flex items-center gap-2 text-sm font-medium rounded-full px-5 py-2 transition-colors"
+          style={{
+            color: "#1A8C96",
+            border: "1px solid #1A8C96",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#1A8C96";
+            e.currentTarget.style.color = "#ffffff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = "#1A8C96";
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 15l-6-6-6 6" />
+          </svg>
+          Back to Top
+        </a>
+      </div>
     </>
   );
 }

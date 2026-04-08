@@ -19,7 +19,7 @@ export function JpmlTypePanel({
 }) {
   if (summaries.length === 0) {
     return (
-      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
+      <div id="jpml-summary" className="scroll-mt-16 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
         <h2 className="font-heading text-xl font-semibold text-midnight-navy">
           JPML by Type
         </h2>
@@ -34,7 +34,7 @@ export function JpmlTypePanel({
   const maxCount = summaries[0]?.mdl_count ?? 1;
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
+    <div id="jpml-summary" className="scroll-mt-16 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="font-heading text-xl font-semibold text-midnight-navy">
