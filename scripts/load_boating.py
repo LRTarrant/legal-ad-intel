@@ -39,10 +39,10 @@ BARD_CSV_URLS = [
     "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2014-2022-ReleasableAccidentes.csv",
     "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2023-2023-ReleasableAccidents.csv",
 ]
-# Fallback: try GitHub raw if CDN fails
+# Fallback: retry CDN (GitHub repo no longer exists)
 BARD_FALLBACK_URLS = [
-    "https://raw.githubusercontent.com/data-liberation-project/uscg-boating-accident-report-database-data/main/data/bard-2014-2022-ReleasableAccidentes.csv",
-    "https://raw.githubusercontent.com/data-liberation-project/uscg-boating-accident-report-database-data/main/data/bard-2023-2023-ReleasableAccidents.csv",
+    "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2014-2022-ReleasableAccidentes.csv",
+    "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2023-2023-ReleasableAccidents.csv",
 ]
 
 YEARS = set(range(2019, 2024))  # 2019-2023
@@ -170,6 +170,8 @@ def build_records(df: pd.DataFrame) -> list[dict]:
             "longitude": safe_float(row.get(lon_col)) if lon_col else None,
             "numbering_id": str(row[numbering_col]).strip() if numbering_col and not pd.isna(row.get(numbering_col)) else None,
         }
+        # Convert float NaN to None for JSON serialization
+        record = {k: (None if isinstance(v, float) and v != v else v) for k, v in record.items()}
         records.append(record)
     return records
 
