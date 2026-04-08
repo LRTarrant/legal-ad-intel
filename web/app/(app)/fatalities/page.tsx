@@ -13,6 +13,7 @@ import {
 import { FatalitiesFilterBar } from "./fatalities-filter-bar";
 import { FatalitiesHeatmapPanel } from "./fatalities-heatmap-panel";
 import { AdvertisingInsight } from "../components/advertising-insight";
+import { Car } from "lucide-react";
 
 export const metadata = {
   title: "Motor Vehicle Fatalities | Legal Marketing Intelligence",
@@ -103,13 +104,16 @@ export default async function FatalitiesPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-          Motor Vehicle Fatalities
-        </h1>
-        <p className="mt-1 text-slate-gray">
-          FARS data · 2019–2023 · Source: NHTSA
-        </p>
+      <div className="flex items-center gap-3">
+        <Car className="w-7 h-7 shrink-0" style={{ color: "#1A8C96" }} />
+        <div>
+          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
+            Motor Vehicle Fatalities
+          </h1>
+          <p className="mt-1 text-slate-gray">
+            FARS data · 2019–2023 · Source: NHTSA
+          </p>
+        </div>
       </div>
 
       <FatalitiesFilterBar

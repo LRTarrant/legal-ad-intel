@@ -345,6 +345,8 @@ export interface Database {
           year: number;
           persons: number;
           vehicles: number;
+          has_motorcycle: boolean | null;
+          has_large_truck: boolean | null;
         };
         Insert: {
           id?: number;
@@ -361,6 +363,8 @@ export interface Database {
           year: number;
           persons?: number;
           vehicles?: number;
+          has_motorcycle?: boolean | null;
+          has_large_truck?: boolean | null;
         };
         Update: {
           id?: number;
@@ -377,6 +381,46 @@ export interface Database {
           year?: number;
           persons?: number;
           vehicles?: number;
+          has_motorcycle?: boolean | null;
+          has_large_truck?: boolean | null;
+        };
+      };
+      boating_accidents: {
+        Row: {
+          id: number;
+          state: string;
+          county_fips: number | null;
+          county_name: string | null;
+          year: number;
+          deaths: number;
+          injuries: number;
+          accidents: number;
+          latitude: number | null;
+          longitude: number | null;
+        };
+        Insert: {
+          id?: number;
+          state: string;
+          county_fips?: number | null;
+          county_name?: string | null;
+          year: number;
+          deaths?: number;
+          injuries?: number;
+          accidents?: number;
+          latitude?: number | null;
+          longitude?: number | null;
+        };
+        Update: {
+          id?: number;
+          state?: string;
+          county_fips?: number | null;
+          county_name?: string | null;
+          year?: number;
+          deaths?: number;
+          injuries?: number;
+          accidents?: number;
+          latitude?: number | null;
+          longitude?: number | null;
         };
       };
       fatalities: {
@@ -770,6 +814,86 @@ export interface Database {
         Returns: {
           total_crashes: number;
           total_fatalities: number;
+        }[];
+      };
+      get_fars_motorcycle_totals: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+        }[];
+      };
+      get_fars_motorcycle_trend_by_year: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+          year: number;
+        }[];
+      };
+      get_fars_large_truck_totals: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+        }[];
+      };
+      get_fars_large_truck_trend_by_year: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_crashes: number;
+          total_fatalities: number;
+          year: number;
+        }[];
+      };
+      get_boating_totals: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_accidents: number;
+          total_deaths: number;
+          total_injuries: number;
+        }[];
+      };
+      get_boating_trend_by_year: {
+        Args: {
+          filter_county?: number | null;
+          filter_state?: string | null;
+        };
+        Returns: {
+          total_accidents: number;
+          total_deaths: number;
+          total_injuries: number;
+          year: number;
+        }[];
+      };
+      get_boating_distinct_states: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          state: string;
+        }[];
+      };
+      get_boating_counties_by_state: {
+        Args: {
+          state_abbr: string;
+        };
+        Returns: {
+          county_fips: number;
+          county_name: string;
         }[];
       };
     };
