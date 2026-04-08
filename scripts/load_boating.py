@@ -33,8 +33,17 @@ load_dotenv("web/.env.local", override=False)
 SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-PRIMARY_URL = "https://data-liberation-project.github.io/uscg-boating-accident-report-database-data/BARD_Accident_file.csv"
-FALLBACK_URL = "https://raw.githubusercontent.com/data-liberation-project/uscg-boating-accident-report-database-data/main/data/BARD_Accident_file.csv"
+# Data Liberation Project CDN — USCG Boating Accident Report Database (BARD)
+# Two files cover 2019-2023: one for 2014-2022 data, one for 2023
+BARD_CSV_URLS = [
+    "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2014-2022-ReleasableAccidentes.csv",
+    "https://dlp-cdn.muckrock.com/USCG%20Boating%20Accident%20Report%20Database%20(BARD)/Converted%20Files/CSV/bard-2023-2023-ReleasableAccidents.csv",
+]
+# Fallback: try GitHub raw if CDN fails
+BARD_FALLBACK_URLS = [
+    "https://raw.githubusercontent.com/data-liberation-project/uscg-boating-accident-report-database-data/main/data/bard-2014-2022-ReleasableAccidentes.csv",
+    "https://raw.githubusercontent.com/data-liberation-project/uscg-boating-accident-report-database-data/main/data/bard-2023-2023-ReleasableAccidents.csv",
+]
 
 YEARS = set(range(2019, 2024))  # 2019-2023
 
@@ -57,18 +66,26 @@ STATE_NAME_TO_ABBR = {
 }
 
 
-def download_csv() -> pd.DataFrame:
-    for url in (PRIMARY_URL, FALLBACK_URL):
-        try:
-            print(f"Fetching {url} ...")
-            resp = requests.get(url, timeout=120)
-            resp.raise_for_status()
-            df = pd.read_csv(io.StringIO(resp.text), low_memory=False)
-            print(f"Downloaded {len(df):,} rows")
-            return df
-        except Exception as e:
-            print(f"  Failed ({e}), trying fallback...")
-    raise RuntimeError("Both primary and fallback URLs failed.")
+def download_csvs() -> pd.DataFrame:
+    """Download and concatenate all BARD CSV files."""
+    frames = []
+    for primary_url, fallback_url in zip(BARD_CSV_URLS, BARD_FALLBACK_URLS):
+        for url in (primary_url, fallback_url):
+            try:
+                print(f"Fetching {url} ...")
+                resp = requests.get(url, timeout=120)
+                resp.raise_for_status()
+                df = pd.read_csv(io.StringIO(resp.text), low_memory=False)
+                print(f"  Downloaded {len(df):,} rows")
+                frames.append(df)
+                break  # success, don't try fallback
+            except Exception as e:
+                print(f"  Failed ({e}), trying fallback...")
+    if not frames:
+        raise RuntimeError("All download URLs failed.")
+    combined = pd.concat(frames, ignore_index=True)
+    print(f"Total rows after concat: {len(combined):,}")
+    return combined
 
 
 def normalize_state(val) -> str | None:
@@ -129,7 +146,7 @@ def build_records(df: pd.DataFrame) -> list[dict]:
     water_col = col(["BODY_OF_WATER", "BODYOFWATER"])
     lat_col = col(["LATITUDE", "LAT"])
     lon_col = col(["LONGITUDE", "LON", "LONG"])
-    numbering_col = col(["NUMBERING_ID", "NUMBERINGID", "VESSEL_1_OFFICIAL_NUMBER"])
+    numbering_col = col(["BARDID", "NUMBERING_ID", "NUMBERINGID", "VESSEL_1_OFFICIAL_NUMBER"])
 
     for _, row in df.iterrows():
         year = safe_int(row.get(year_col)) if year_col else None
@@ -166,7 +183,7 @@ def main():
         print("ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set", file=sys.stderr)
         sys.exit(1)
 
-    df = download_csv()
+    df = download_csvs()
     records = build_records(df)
 
     if not records:
