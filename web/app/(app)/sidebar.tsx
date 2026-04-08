@@ -4,11 +4,28 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Car, Bike, Truck, Ship, ChevronDown, ChevronRight } from "lucide-react";
 
-const navItems = [
+const personalInjuryPaths = [
+  "/fatalities",
+  "/motorcycle-fatalities",
+  "/large-truck-fatalities",
+  "/boating-accidents",
+];
+
+const personalInjuryItems = [
+  { label: "Motor Vehicle Fatalities", href: "/fatalities", Icon: Car },
+  { label: "Motorcycle Fatalities", href: "/motorcycle-fatalities", Icon: Bike },
+  { label: "Large Truck Fatalities", href: "/large-truck-fatalities", Icon: Truck },
+  { label: "Boating Accidents", href: "/boating-accidents", Icon: Ship },
+];
+
+const topNavItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Markets", href: "/markets" },
-  { label: "Fatalities", href: "/fatalities" },
+];
+
+const bottomNavItems = [
   { label: "Judicial Profiles", href: "/judicial-profiles" },
   { label: "MDL Tracker", href: "/mdl-tracker" },
 ];
@@ -16,6 +33,21 @@ const navItems = [
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+
+  const isChildActive = personalInjuryPaths.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
+  const [groupManuallyToggled, setGroupManuallyToggled] = useState(false);
+  const [groupUserOpen, setGroupUserOpen] = useState(true);
+
+  // Group is open if a child is active OR if the user hasn't manually closed it
+  const groupOpen = isChildActive || (groupManuallyToggled ? groupUserOpen : true);
+
+  function toggleGroup() {
+    setGroupManuallyToggled(true);
+    setGroupUserOpen(!groupOpen);
+  }
 
   const closeSidebar = () => setIsOpen(false);
 
@@ -39,6 +71,25 @@ export function Sidebar() {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  function renderNavLink(item: { label: string; href: string }) {
+    const isActive =
+      pathname === item.href || pathname.startsWith(item.href + "/");
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={closeSidebar}
+        className={`flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+          isActive
+            ? "border-l-[3px] border-intelligence-teal bg-white/8"
+            : "border-l-[3px] border-transparent hover:bg-white/5"
+        }`}
+      >
+        {item.label}
+      </Link>
+    );
+  }
 
   return (
     <>
@@ -113,24 +164,50 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 flex flex-col gap-1 px-3">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeSidebar}
-                className={`flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-l-[3px] border-intelligence-teal bg-white/8"
-                    : "border-l-[3px] border-transparent hover:bg-white/5"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {topNavItems.map((item) => renderNavLink(item))}
+
+          {/* Personal Injury group */}
+          <div>
+            <button
+              type="button"
+              onClick={toggleGroup}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-l-[3px] border-transparent hover:bg-white/5"
+            >
+              <span>Personal Injury</span>
+              {groupOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
+              )}
+            </button>
+
+            {groupOpen && (
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {personalInjuryItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={`flex items-center gap-2 pl-8 py-2 text-sm rounded-md transition-colors ${
+                        isActive
+                          ? "bg-white/10 text-white border-l-2 border-intelligence-teal"
+                          : "text-white/70 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <item.Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {bottomNavItems.map((item) => renderNavLink(item))}
         </nav>
 
         <div className="px-5 py-4">
