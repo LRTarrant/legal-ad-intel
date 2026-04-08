@@ -100,8 +100,16 @@ export default async function MdlTrackerPage({
         />
         <SummaryCard
           label="Latest Report Date"
-          value={totals.latest_report_date ?? "n/a"}
-        />
+          value={
+          totals.latest_report_date
+            ? new Date(totals.latest_report_date + "T00:00:00").toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "n/a"
+            }
+        /> 
       </div>
 
       {latestDevelopments.length > 0 && (
