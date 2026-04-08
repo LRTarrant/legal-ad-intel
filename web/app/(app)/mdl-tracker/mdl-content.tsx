@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
 import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
@@ -103,8 +104,13 @@ export function MdlContent({
               ) : (
                 topMovers.map((row) => (
                   <tr key={row.mdl_number} className="border-b border-cloud last:border-0">
-                    <td className="py-3 pr-4 font-mono font-semibold text-intelligence-teal">
-                      {row.mdl_number}
+                    <td className="py-3 pr-4 font-mono font-medium">
+                      <Link
+                        href={`/mdl-tracker/${row.mdl_number}`}
+                        className="text-intelligence-teal hover:underline"
+                      >
+                        {row.mdl_number}
+                      </Link>
                     </td>
                     <td className="py-3 pr-4 font-semibold text-midnight-navy">
                       {row.title}
