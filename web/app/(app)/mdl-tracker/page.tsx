@@ -15,6 +15,7 @@ import { JpmlDetailSection } from "./jpml-detail-section";
 import { JpmlTypePanel } from "./jpml-type-panel";
 import { MdlContent } from "./mdl-content";
 import { MdlFilterBar } from "./mdl-filter-bar";
+import { MdlTrackerNav } from "./mdl-tracker-nav";
 
 export const metadata = {
   title: "MDL Tracker | Legal Marketing Intelligence",
@@ -73,6 +74,8 @@ export default async function MdlTrackerPage({
   const trendByMdl = Object.fromEntries(trendEntries);
   return (
     <div className="space-y-8">
+      <MdlTrackerNav />
+
       <div>
         <h1 className="font-heading text-3xl font-bold text-midnight-navy">
           MDL Tracker
@@ -82,14 +85,16 @@ export default async function MdlTrackerPage({
         </p>
       </div>
 
-      <MdlFilterBar
-        reportDates={reportDates}
-        selectedDate={selectedDate}
-        search={search}
-        mdl={mdl}
-      />
+      <div id="filters" className="scroll-mt-16">
+        <MdlFilterBar
+          reportDates={reportDates}
+          selectedDate={selectedDate}
+          search={search}
+          mdl={mdl}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div id="overview" className="scroll-mt-16 grid grid-cols-1 gap-4 md:grid-cols-3">
         <SummaryCard
           label="Total Active MDLs"
           value={totals.total_active_mdls.toLocaleString()}
@@ -113,7 +118,9 @@ export default async function MdlTrackerPage({
       </div>
 
       {latestDevelopments.length > 0 && (
-        <LatestDevelopmentsCard developments={latestDevelopments} />
+        <div id="developments" className="scroll-mt-16">
+          <LatestDevelopmentsCard developments={latestDevelopments} />
+        </div>
       )}
 
       <JpmlTypePanel summaries={jpmlSummaries} reportDate={jpmlReportDate} />
