@@ -9,6 +9,7 @@ import {
   getSpendByChannel,
 } from "@/lib/queries";
 import Link from "next/link";
+import { AdvertisingInsight } from "../components/advertising-insight";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,16 @@ export default async function DashboardPage() {
   return (
     <>
       <h1 className="text-3xl font-bold text-midnight-navy">Dashboard</h1>
+
+      <AdvertisingInsight>
+        <p>
+          <strong>Your legal marketing command center.</strong> This dashboard aggregates litigation
+          intelligence, accident data, and market demographics to help injury attorneys and mass tort
+          firms make data-driven advertising decisions. Each module below surfaces actionable signals —
+          from MDL growth trends to county-level fatality hotspots — designed to help you maximize lead
+          generation while optimizing your media spend.
+        </p>
+      </AdvertisingInsight>
 
       {/* Summary Cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
