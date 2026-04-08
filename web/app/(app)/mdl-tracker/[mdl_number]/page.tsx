@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMdlByNumber, getMdlTrend } from "@/lib/queries/mdl";
-import { getJpmlTypeForMdl } from "@/lib/queries/jpml";
+import { getJpmlSnapshots } from "@/lib/queries/jpml";
 import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
@@ -169,14 +169,18 @@ export default async function MdlDetailPage({
   const mdlNumber = parseInt(mdl_number, 10);
   if (isNaN(mdlNumber)) notFound();
 
-  const [mdlRow, trendData, jpmlType, developments] = await Promise.all([
+  const [mdlRow, trendData, jpmlSnapshots, developments] = await Promise.all([
     getMdlByNumber(mdlNumber),
     getMdlTrend(mdlNumber),
-    getJpmlTypeForMdl(mdlNumber),
+    getJpmlSnapshots(),
     getMdlDevelopments(mdlNumber),
   ]);
 
   if (!mdlRow) notFound();
+
+  const jpmlSnapshot =
+    jpmlSnapshots.find((s) => s.mdl_number === mdlNumber) ?? null;
+  const jpmlType = jpmlSnapshot?.jpml_type ?? null;
 
   const cleanTitle = mdlRow.title.replace(/^IN RE:\s*/i, "");
 
@@ -301,6 +305,84 @@ export default async function MdlDetailPage({
             {status}
           </p>
         </div>
+
+        {jpmlSnapshot && (
+          <>
+            {/* JPML Case Name */}
+            <div className="rounded-lg bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase text-slate-gray">
+                JPML Case Name
+              </p>
+              <p className="mt-2 text-sm font-medium text-midnight-navy">
+                {jpmlSnapshot.case_name.replace(/^IN RE:\s*/i, "")}
+              </p>
+            </div>
+
+            {/* Master Docket */}
+            <div className="rounded-lg bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase text-slate-gray">
+                Master Docket
+              </p>
+              <p className="mt-2 font-mono text-sm text-midnight-navy">
+                {jpmlSnapshot.master_docket ?? "—"}
+              </p>
+            </div>
+
+            {/* Date Filed */}
+            {jpmlSnapshot.date_filed && (
+              <div className="rounded-lg bg-white p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase text-slate-gray">
+                  Date Filed
+                </p>
+                <p className="mt-2 font-mono text-sm text-midnight-navy">
+                  {new Date(
+                    jpmlSnapshot.date_filed + "T12:00:00"
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Date Transferred */}
+            {jpmlSnapshot.date_transferred && (
+              <div className="rounded-lg bg-white p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase text-slate-gray">
+                  Date Transferred
+                </p>
+                <p className="mt-2 font-mono text-sm text-midnight-navy">
+                  {new Date(
+                    jpmlSnapshot.date_transferred + "T12:00:00"
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Date Closed */}
+            {jpmlSnapshot.date_closed && (
+              <div className="rounded-lg bg-white p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase text-slate-gray">
+                  Date Closed
+                </p>
+                <p className="mt-2 font-mono text-sm text-midnight-navy">
+                  {new Date(
+                    jpmlSnapshot.date_closed + "T12:00:00"
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Trend Chart */}
