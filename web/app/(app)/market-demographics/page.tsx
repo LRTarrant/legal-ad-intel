@@ -58,8 +58,8 @@ export default async function MarketDemographicsPage() {
           </h1>
           <p className="mt-1 text-slate-500">
             ACS 2024 5-Year demographic profiles aggregated to MSA/μSA level
-            from the Census Bureau, covering population, income, education,
-            housing, and health insurance.
+            from the Census Bureau, covering population, race/ethnicity, income,
+            education, housing, and health insurance.
           </p>
         </div>
       </div>
@@ -128,6 +128,18 @@ export default async function MarketDemographicsPage() {
                   Median Age
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">
+                  White %
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">
+                  Black %
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">
+                  Hispanic %
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">
+                  Asian %
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">
                   Median Income
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">
@@ -175,6 +187,18 @@ export default async function MarketDemographicsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
                     {row.median_age != null ? row.median_age.toFixed(1) : "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                    {formatPct(row.pct_white)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                    {formatPct(row.pct_black)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                    {formatPct(row.pct_hispanic)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                    {formatPct(row.pct_asian)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
                     {formatCurrency(row.median_household_income)}
