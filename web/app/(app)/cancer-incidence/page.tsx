@@ -3,10 +3,8 @@ import {
   getCancerByState,
   getCancerDistinctSites,
   getCancerDistinctStates,
-  getCancerHeatmapPoints,
   getCancerTotals,
   getCancerTrendingSites,
-  type CancerHeatmapPoint,
   type CancerFilters,
   type CancerOption,
   type CancerSiteSummary,
@@ -14,7 +12,6 @@ import {
   type CancerTotals,
 } from "@/lib/queries";
 import { AdvertisingInsight } from "../components/advertising-insight";
-import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
 import { CancerFilterBar } from "./cancer-filter-bar";
 import { CancerStateTable } from "./cancer-state-table";
 import { HeartPulse } from "lucide-react";
@@ -102,7 +99,6 @@ export default async function CancerIncidencePage({
   let stateRows: CancerStateSummary[] = [];
   let siteRows: CancerSiteSummary[] = [];
   let trendingSites: CancerSiteSummary[] = [];
-  let heatmapPoints: CancerHeatmapPoint[] = [];
 
   try {
     [
@@ -112,7 +108,6 @@ export default async function CancerIncidencePage({
       stateRows,
       siteRows,
       trendingSites,
-      heatmapPoints,
     ] = await Promise.all([
       getCancerDistinctStates(),
       getCancerDistinctSites(),
@@ -120,7 +115,7 @@ export default async function CancerIncidencePage({
       getCancerByState(filters),
       getCancerBySite(filters),
       getCancerTrendingSites(filters),
-      getCancerHeatmapPoints(filters),
+      // getCancerHeatmapPoints omitted -- lat/lon not yet populated in cancer_incidence table
     ]);
   } catch {
     // The migration may exist before data is loaded. Render an empty dashboard gracefully.
@@ -214,10 +209,25 @@ export default async function CancerIncidencePage({
         </div>
       </section>
 
-      <FatalitiesHeatmapPanel
-        points={heatmapPoints}
-        title={`Cancer incidence rate density for ${filterSummary}`}
-      />
+      {/* Geo heatmap placeholder — county centroids not yet loaded */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold" style={{ fontFamily: "var(--font-dm-sans)", color: "#0B1D3A" }}>
+            County-Level Geo Heatmap
+          </h2>
+          <span
+            className="text-xs font-semibold uppercase tracking-widest rounded-full px-3 py-1"
+            style={{ background: "#F1F5F9", color: "#6B7280" }}
+          >
+            Coming Soon
+          </span>
+        </div>
+        <p className="text-sm" style={{ color: "#6B7280" }}>
+          Geographic heatmap will display cancer incidence hotspots by county once coordinate
+          enrichment is complete. County centroid lat/lon will be joined from Census TIGER data
+          in a future data update.
+        </p>
+      </div>
 
       <CancerStateTable rows={stateRows} />
 
