@@ -183,58 +183,67 @@ export type Database = {
       }
       cancer_incidence: {
         Row: {
-          age_adjusted_rate: number | null
           average_annual_count: number | null
           cancer_site: string
-          county: string | null
-          created_at: string | null
-          data_years: string | null
-          fips: string | null
-          id: number
-          lower_ci_rate: number | null
+          county_name: string
+          created_at: string
+          fips: string
+          id: string
+          incidence_rate: number
+          latitude: number | null
+          longitude: number | null
+          lower_ci: number | null
           recent_trend: number | null
           rural_urban: string | null
+          source_url: string | null
           state: string
-          trend_direction: string | null
+          trend_direction: string
           trend_lower_ci: number | null
           trend_upper_ci: number | null
-          upper_ci_rate: number | null
+          updated_at: string
+          upper_ci: number | null
         }
         Insert: {
-          age_adjusted_rate?: number | null
           average_annual_count?: number | null
           cancer_site: string
-          county?: string | null
-          created_at?: string | null
-          data_years?: string | null
-          fips?: string | null
-          id?: number
-          lower_ci_rate?: number | null
+          county_name: string
+          created_at?: string
+          fips: string
+          id?: string
+          incidence_rate: number
+          latitude?: number | null
+          longitude?: number | null
+          lower_ci?: number | null
           recent_trend?: number | null
           rural_urban?: string | null
+          source_url?: string | null
           state: string
-          trend_direction?: string | null
+          trend_direction?: string
           trend_lower_ci?: number | null
           trend_upper_ci?: number | null
-          upper_ci_rate?: number | null
+          updated_at?: string
+          upper_ci?: number | null
         }
         Update: {
-          age_adjusted_rate?: number | null
           average_annual_count?: number | null
           cancer_site?: string
-          county?: string | null
-          created_at?: string | null
-          data_years?: string | null
-          fips?: string | null
-          id?: number
-          lower_ci_rate?: number | null
+          county_name?: string
+          created_at?: string
+          fips?: string
+          id?: string
+          incidence_rate?: number
+          latitude?: number | null
+          longitude?: number | null
+          lower_ci?: number | null
           recent_trend?: number | null
           rural_urban?: string | null
+          source_url?: string | null
           state?: string
-          trend_direction?: string | null
+          trend_direction?: string
           trend_lower_ci?: number | null
           trend_upper_ci?: number | null
-          upper_ci_rate?: number | null
+          updated_at?: string
+          upper_ci?: number | null
         }
         Relationships: []
       }

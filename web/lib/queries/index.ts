@@ -32,6 +32,7 @@ export * from "./fatalities";
 export * from "./motorcycle";
 export * from "./large-truck";
 export * from "./boating";
+export * from "./cancer";
 export * from "./jpml";
 export * from "./pi-viability";
 export * from "./opportunity";
