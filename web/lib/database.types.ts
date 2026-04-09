@@ -482,6 +482,83 @@ export interface Database {
           longitude?: number | null;
         };
       };
+      storm_events: {
+        Row: {
+          id: number;
+          event_id: number;
+          state: string | null;
+          state_fips: number | null;
+          county_name: string | null;
+          county_fips: number | null;
+          event_type: string | null;
+          begin_date_time: string | null;
+          end_date_time: string | null;
+          year: number | null;
+          month_name: string | null;
+          injuries_direct: number;
+          injuries_indirect: number;
+          deaths_direct: number;
+          deaths_indirect: number;
+          damage_property: number;
+          damage_crops: number;
+          source: string | null;
+          flood_cause: string | null;
+          tor_f_scale: string | null;
+          begin_lat: number | null;
+          begin_lon: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          event_id: number;
+          state?: string | null;
+          state_fips?: number | null;
+          county_name?: string | null;
+          county_fips?: number | null;
+          event_type?: string | null;
+          begin_date_time?: string | null;
+          end_date_time?: string | null;
+          year?: number | null;
+          month_name?: string | null;
+          injuries_direct?: number;
+          injuries_indirect?: number;
+          deaths_direct?: number;
+          deaths_indirect?: number;
+          damage_property?: number;
+          damage_crops?: number;
+          source?: string | null;
+          flood_cause?: string | null;
+          tor_f_scale?: string | null;
+          begin_lat?: number | null;
+          begin_lon?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          event_id?: number;
+          state?: string | null;
+          state_fips?: number | null;
+          county_name?: string | null;
+          county_fips?: number | null;
+          event_type?: string | null;
+          begin_date_time?: string | null;
+          end_date_time?: string | null;
+          year?: number | null;
+          month_name?: string | null;
+          injuries_direct?: number;
+          injuries_indirect?: number;
+          deaths_direct?: number;
+          deaths_indirect?: number;
+          damage_property?: number;
+          damage_crops?: number;
+          source?: string | null;
+          flood_cause?: string | null;
+          tor_f_scale?: string | null;
+          begin_lat?: number | null;
+          begin_lon?: number | null;
+          created_at?: string;
+        };
+      };
       fatalities: {
         Row: {
           id: string;
@@ -1001,6 +1078,92 @@ export interface Database {
           verdict_score: number | null;
           composite_score: number | null;
           updated_at: string | null;
+        }[];
+      };
+      get_storm_event_totals: {
+        Args: {
+          filter_state?: string | null;
+          filter_year?: number | null;
+          filter_event_type?: string | null;
+        };
+        Returns: {
+          total_events: number;
+          total_property_damage: number;
+          total_injuries: number;
+          total_deaths: number;
+        }[];
+      };
+      get_storm_events_by_state: {
+        Args: {
+          filter_state?: string | null;
+          filter_year?: number | null;
+          filter_event_type?: string | null;
+        };
+        Returns: {
+          state: string;
+          total_events: number;
+          total_property_damage: number;
+          total_crop_damage: number;
+          total_injuries: number;
+          total_deaths: number;
+        }[];
+      };
+      get_storm_events_by_type: {
+        Args: {
+          filter_state?: string | null;
+          filter_year?: number | null;
+        };
+        Returns: {
+          event_type: string;
+          total_events: number;
+          total_property_damage: number;
+        }[];
+      };
+      get_storm_event_trend_by_year: {
+        Args: {
+          filter_state?: string | null;
+          filter_event_type?: string | null;
+        };
+        Returns: {
+          year: number;
+          total_events: number;
+          total_property_damage: number;
+        }[];
+      };
+      get_storm_counties_by_state: {
+        Args: {
+          filter_state: string;
+          filter_year?: number | null;
+          filter_event_type?: string | null;
+        };
+        Returns: {
+          county_name: string;
+          county_fips: number;
+          total_events: number;
+          total_property_damage: number;
+        }[];
+      };
+      get_storm_distinct_states: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          state: string;
+        }[];
+      };
+      get_storm_distinct_event_types: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          event_type: string;
+        }[];
+      };
+      get_storm_heatmap_points: {
+        Args: {
+          filter_state?: string | null;
+          filter_year?: number | null;
+          filter_event_type?: string | null;
+        };
+        Returns: {
+          latitude: number;
+          longitude: number;
         }[];
       };
     };

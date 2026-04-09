@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, Bike, Truck, Ship, Target, ChevronDown, ChevronRight } from "lucide-react";
+import { Car, Bike, Truck, Ship, Target, ChevronDown, ChevronRight, CloudLightning } from "lucide-react";
 
 const personalInjuryPaths = [
   "/fatalities",
@@ -18,6 +18,12 @@ const personalInjuryItems = [
   { label: "Motorcycle Fatalities", href: "/motorcycle-fatalities", Icon: Bike },
   { label: "Large Truck Fatalities", href: "/large-truck-fatalities", Icon: Truck },
   { label: "Boating Accidents", href: "/boating-accidents", Icon: Ship },
+];
+
+const propertyDamagePaths = ["/storm-events"];
+
+const propertyDamageItems = [
+  { label: "Storm Events", href: "/storm-events", Icon: CloudLightning },
 ];
 
 const topNavItems = [
@@ -49,6 +55,20 @@ export function Sidebar() {
   function toggleGroup() {
     setGroupManuallyToggled(true);
     setGroupUserOpen(!groupOpen);
+  }
+
+  const isPdChildActive = propertyDamagePaths.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
+  const [pdGroupManuallyToggled, setPdGroupManuallyToggled] = useState(false);
+  const [pdGroupUserOpen, setPdGroupUserOpen] = useState(true);
+
+  const pdGroupOpen = isPdChildActive || (pdGroupManuallyToggled ? pdGroupUserOpen : true);
+
+  function togglePdGroup() {
+    setPdGroupManuallyToggled(true);
+    setPdGroupUserOpen(!pdGroupOpen);
   }
 
   const closeSidebar = () => setIsOpen(false);
@@ -187,6 +207,47 @@ export function Sidebar() {
             {groupOpen && (
               <div className="flex flex-col gap-0.5 mt-0.5">
                 {personalInjuryItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={`flex items-center gap-2 pl-8 py-2 text-sm rounded-md transition-colors ${
+                        isActive
+                          ? "bg-white/10 text-white border-l-2 border-intelligence-teal"
+                          : "text-white/70 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <item.Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Property Damage group */}
+          <div>
+            <button
+              type="button"
+              onClick={togglePdGroup}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-l-[3px] border-transparent hover:bg-white/5"
+            >
+              <span>Property Damage</span>
+              {pdGroupOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
+              )}
+            </button>
+
+            {pdGroupOpen && (
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {propertyDamageItems.map((item) => {
                   const isActive =
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");
