@@ -51,7 +51,12 @@ def download_and_extract_accident(year: int) -> pd.DataFrame:
 
         print(f"  Extracting {accident_file}...")
         with zf.open(accident_file) as f:
-            df = pd.read_csv(f, encoding="utf-8-sig", low_memory=False)
+            try:
+                df = pd.read_csv(f, encoding="utf-8-sig", low_memory=False)
+            except UnicodeDecodeError:
+                # Older NHTSA files (2019-2020) use latin-1 encoding
+                f.seek(0)
+                df = pd.read_csv(f, low_memory=False, encoding="latin-1")
 
     return df
 
