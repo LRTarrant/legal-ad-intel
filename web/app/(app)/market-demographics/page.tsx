@@ -32,7 +32,7 @@ export default async function MarketDemographicsPage() {
     getMsaDemographicCount(),
   ]);
 
-  const metroCount = data.filter((d) => d.cbsa_type === "Metropolitan").length;
+  const metroCount = data.filter((d) => d.cbsa_type .includes("Metropolitan")).length;
   const microCount = data.filter((d) => d.cbsa_type === "Micropolitan").length;
   const totalPop = data.reduce((s, d) => s + (d.total_population ?? 0), 0);
   const avgMedianIncome =
@@ -162,12 +162,12 @@ export default async function MarketDemographicsPage() {
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        row.cbsa_type === "Metropolitan"
+                        row.cbsa_type .includes("Metropolitan")
                           ? "bg-blue-50 text-blue-700"
                           : "bg-amber-50 text-amber-700"
                       }`}
                     >
-                      {row.cbsa_type === "Metropolitan" ? "Metro" : "Micro"}
+                      {row.cbsa_type .includes("Metropolitan") ? "Metro" : "Micro"}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
