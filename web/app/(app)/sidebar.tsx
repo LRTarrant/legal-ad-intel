@@ -14,6 +14,7 @@ import {
   Ship,
   Target,
   Truck,
+    Users,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -52,6 +53,7 @@ const topNavItems = [
 const bottomNavItems = [
   { label: "Judicial Profiles", href: "/judicial-profiles" },
   { label: "PI Viability", href: "/pi-viability" },
+    { label: "Market Demographics", href: "/market-demographics", Icon: Users },
 ];
 
 type NavItem = {
