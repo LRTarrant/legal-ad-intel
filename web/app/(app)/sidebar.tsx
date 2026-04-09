@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, Bike, Truck, Ship, ChevronDown, ChevronRight } from "lucide-react";
+import { Car, Bike, Truck, Ship, Target, ChevronDown, ChevronRight } from "lucide-react";
 
 const personalInjuryPaths = [
   "/fatalities",
@@ -23,6 +23,7 @@ const personalInjuryItems = [
 const topNavItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Markets", href: "/markets" },
+  { label: "Opportunity", href: "/opportunity", Icon: Target },
 ];
 
 const bottomNavItems = [
@@ -73,7 +74,7 @@ export function Sidebar() {
     };
   }, [isOpen]);
 
-  function renderNavLink(item: { label: string; href: string }) {
+  function renderNavLink(item: { label: string; href: string; Icon?: React.ComponentType<{ className?: string }> }) {
     const isActive =
       pathname === item.href || pathname.startsWith(item.href + "/");
     return (
@@ -81,12 +82,13 @@ export function Sidebar() {
         key={item.href}
         href={item.href}
         onClick={closeSidebar}
-        className={`flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
           isActive
             ? "border-l-[3px] border-intelligence-teal bg-white/8"
             : "border-l-[3px] border-transparent hover:bg-white/5"
         }`}
       >
+        {item.Icon && <item.Icon className="w-4 h-4 shrink-0" />}
         {item.label}
       </Link>
     );

@@ -968,6 +968,18 @@ export interface Database {
           total_crashes: number;
         }[];
       };
+      get_state_opportunity_scores: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          state: string;
+          opportunity_score: number;
+          pi_viability_score: number;
+          total_incidents: number;
+          incident_trend_pct: number;
+          negligence_rule: string | null;
+          composite_rank: number;
+        }[];
+      };
       get_pi_viability_scores: {
         Args: {
           filter_state?: string | null;
