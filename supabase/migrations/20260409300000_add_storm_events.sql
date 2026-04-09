@@ -48,13 +48,13 @@ RETURNS TABLE (
 LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT
     COUNT(*)::bigint,
-    COALESCE(SUM(damage_property + damage_crops), 0),
-    COALESCE(SUM(injuries_direct + injuries_indirect), 0)::bigint,
-    COALESCE(SUM(deaths_direct + deaths_indirect), 0)::bigint
-  FROM public.storm_events
-  WHERE (filter_state IS NULL OR state = filter_state)
-    AND (filter_year IS NULL OR year = filter_year)
-    AND (filter_event_type IS NULL OR event_type = filter_event_type);
+    COALESCE(SUM(se.damage_property + se.damage_crops), 0),
+    COALESCE(SUM(se.injuries_direct + se.injuries_indirect), 0)::bigint,
+    COALESCE(SUM(se.deaths_direct + se.deaths_indirect), 0)::bigint
+  FROM public.storm_events se
+  WHERE (filter_state IS NULL OR se.state = filter_state)
+    AND (filter_year IS NULL OR se.year = filter_year)
+    AND (filter_event_type IS NULL OR se.event_type = filter_event_type);
 $$;
 
 -- By state
@@ -73,18 +73,18 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT
-    state,
+    se.state,
     COUNT(*)::bigint,
-    COALESCE(SUM(damage_property), 0),
-    COALESCE(SUM(damage_crops), 0),
-    COALESCE(SUM(injuries_direct + injuries_indirect), 0)::bigint,
-    COALESCE(SUM(deaths_direct + deaths_indirect), 0)::bigint
-  FROM public.storm_events
-  WHERE (filter_state IS NULL OR state = filter_state)
-    AND (filter_year IS NULL OR year = filter_year)
-    AND (filter_event_type IS NULL OR event_type = filter_event_type)
-  GROUP BY state
-  ORDER BY total_property_damage DESC;
+    COALESCE(SUM(se.damage_property), 0),
+    COALESCE(SUM(se.damage_crops), 0),
+    COALESCE(SUM(se.injuries_direct + se.injuries_indirect), 0)::bigint,
+    COALESCE(SUM(se.deaths_direct + se.deaths_indirect), 0)::bigint
+  FROM public.storm_events se
+  WHERE (filter_state IS NULL OR se.state = filter_state)
+    AND (filter_year IS NULL OR se.year = filter_year)
+    AND (filter_event_type IS NULL OR se.event_type = filter_event_type)
+  GROUP BY se.state
+  ORDER BY COALESCE(SUM(se.damage_property), 0) DESC;
 $$;
 
 -- By event type
@@ -99,14 +99,14 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT
-    event_type,
+    se.event_type,
     COUNT(*)::bigint,
-    COALESCE(SUM(damage_property), 0)
-  FROM public.storm_events
-  WHERE (filter_state IS NULL OR state = filter_state)
-    AND (filter_year IS NULL OR year = filter_year)
-  GROUP BY event_type
-  ORDER BY total_events DESC
+    COALESCE(SUM(se.damage_property), 0)
+  FROM public.storm_events se
+  WHERE (filter_state IS NULL OR se.state = filter_state)
+    AND (filter_year IS NULL OR se.year = filter_year)
+  GROUP BY se.event_type
+  ORDER BY COUNT(*) DESC
   LIMIT 15;
 $$;
 
@@ -122,14 +122,14 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT
-    year,
+    se.year,
     COUNT(*)::bigint,
-    COALESCE(SUM(damage_property), 0)
-  FROM public.storm_events
-  WHERE (filter_state IS NULL OR state = filter_state)
-    AND (filter_event_type IS NULL OR event_type = filter_event_type)
-  GROUP BY year
-  ORDER BY year;
+    COALESCE(SUM(se.damage_property), 0)
+  FROM public.storm_events se
+  WHERE (filter_state IS NULL OR se.state = filter_state)
+    AND (filter_event_type IS NULL OR se.event_type = filter_event_type)
+  GROUP BY se.year
+  ORDER BY se.year;
 $$;
 
 -- Counties by state
@@ -146,35 +146,35 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT
-    county_name,
-    county_fips,
+    se.county_name,
+    se.county_fips,
     COUNT(*)::bigint,
-    COALESCE(SUM(damage_property), 0)
-  FROM public.storm_events
-  WHERE state = filter_state
-    AND (filter_year IS NULL OR year = filter_year)
-    AND (filter_event_type IS NULL OR event_type = filter_event_type)
-    AND county_name IS NOT NULL
-  GROUP BY county_name, county_fips
-  ORDER BY total_events DESC;
+    COALESCE(SUM(se.damage_property), 0)
+  FROM public.storm_events se
+  WHERE se.state = filter_state
+    AND (filter_year IS NULL OR se.year = filter_year)
+    AND (filter_event_type IS NULL OR se.event_type = filter_event_type)
+    AND se.county_name IS NOT NULL
+  GROUP BY se.county_name, se.county_fips
+  ORDER BY COUNT(*) DESC;
 $$;
 
 -- Distinct states
 CREATE OR REPLACE FUNCTION public.get_storm_distinct_states()
 RETURNS TABLE (state text)
 LANGUAGE sql STABLE SET search_path = public AS $$
-  SELECT DISTINCT state FROM public.storm_events
-  WHERE NULLIF(TRIM(state), '') IS NOT NULL
-  ORDER BY state;
+  SELECT DISTINCT se.state FROM public.storm_events se
+  WHERE NULLIF(TRIM(se.state), '') IS NOT NULL
+  ORDER BY se.state;
 $$;
 
 -- Distinct event types
 CREATE OR REPLACE FUNCTION public.get_storm_distinct_event_types()
 RETURNS TABLE (event_type text)
 LANGUAGE sql STABLE SET search_path = public AS $$
-  SELECT DISTINCT event_type FROM public.storm_events
-  WHERE NULLIF(TRIM(event_type), '') IS NOT NULL
-  ORDER BY event_type;
+  SELECT DISTINCT se.event_type FROM public.storm_events se
+  WHERE NULLIF(TRIM(se.event_type), '') IS NOT NULL
+  ORDER BY se.event_type;
 $$;
 
 -- Heatmap points
@@ -185,11 +185,11 @@ CREATE OR REPLACE FUNCTION public.get_storm_heatmap_points(
 )
 RETURNS TABLE (latitude double precision, longitude double precision)
 LANGUAGE sql STABLE SET search_path = public AS $$
-  SELECT begin_lat AS latitude, begin_lon AS longitude
-  FROM public.storm_events
-  WHERE begin_lat IS NOT NULL AND begin_lon IS NOT NULL
-    AND (filter_state IS NULL OR state = filter_state)
-    AND (filter_year IS NULL OR year = filter_year)
-    AND (filter_event_type IS NULL OR event_type = filter_event_type)
+  SELECT se.begin_lat AS latitude, se.begin_lon AS longitude
+  FROM public.storm_events se
+  WHERE se.begin_lat IS NOT NULL AND se.begin_lon IS NOT NULL
+    AND (filter_state IS NULL OR se.state = filter_state)
+    AND (filter_year IS NULL OR se.year = filter_year)
+    AND (filter_event_type IS NULL OR se.event_type = filter_event_type)
   LIMIT 5000;
 $$;
