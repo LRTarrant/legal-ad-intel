@@ -145,7 +145,7 @@ export async function getTopStatesByFatalities(
     } as never)
     .throwOnError();
   return ((data ?? []) as TopStateRow[]).map((row) => ({
-    state: row.state,
+    state: row.state ?? "",
     total_fatalities: Number(row.total_fatalities),
     total_crashes: Number(row.total_crashes),
     drunk_driving_crashes: Number(row.drunk_driving_crashes),
@@ -181,20 +181,20 @@ export async function getRecentCrashes(
     .limit(limit)
     .throwOnError();
 
-  return ((data ?? []) as FarsFatalityRow[]).map((row) => ({
+    return ((data ?? []) as FarsFatalityRow[]).map((row) => ({
     id: row.id,
     st_case: row.st_case,
-    state: row.state,
-    county_fips: row.county_fips,
+    state: row.state ?? "",
+    county_fips: row.county_fips ?? 0,
     county_name: row.county_name,
-    crash_date: row.crash_date,
-    fatalities: row.fatalities,
-    drunk_drivers: row.drunk_drivers,
+    crash_date: row.crash_date ?? "",
+    fatalities: row.fatalities ?? 0,
+    drunk_drivers: row.drunk_drivers ?? 0,
     latitude: row.latitude,
     longitude: row.longitude,
-    year: row.year,
-    persons: row.persons,
-    vehicles: row.vehicles,
+    year: row.year ?? 0,
+    persons: row.persons ?? 0,
+    vehicles: row.vehicles ?? 0,
   }));
 }
 
@@ -223,7 +223,7 @@ export async function getDistinctStates(): Promise<FatalityStateOption[]> {
   const supabase = getSupabase();
   const { data } = await supabase.rpc("get_fars_distinct_states").throwOnError();
   return ((data ?? []) as DistinctStateRow[]).map((row) => ({
-    state: row.state,
+    state: row.state ?? "",
   }));
 }
 
