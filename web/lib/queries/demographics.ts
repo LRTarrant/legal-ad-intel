@@ -27,32 +27,38 @@ export type MsaDemographic = {
 export async function getMsaDemographics(
   limit = 500
 ): Promise<MsaDemographic[]> {
-  const { data, error } = await getSupabase()
-    .from("msa_demographics" as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("msa_demographics")
     .select("*")
     .order("total_population", { ascending: false, nullsFirst: false })
     .limit(limit);
 
   if (error) throw new Error(`Failed to fetch MSA demographics: ${error.message}`);
-  return data;
+  return (data ?? []) as MsaDemographic[];
 }
 
 export async function getMsaDemographicByCode(
   cbsaCode: string
 ): Promise<MsaDemographic> {
-  const { data, error } = await getSupabase()
-    .from("msa_demographics" as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("msa_demographics")
     .select("*")
     .eq("cbsa_code", cbsaCode)
     .single();
 
   if (error) throw new Error(`Failed to fetch MSA demographic: ${error.message}`);
-  return data;
+  return data as MsaDemographic;
 }
 
 export async function getMsaDemographicCount(): Promise<number> {
-  const { count, error } = await getSupabase()
-    .from("msa_demographics" as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { count, error } = await sb
+    .from("msa_demographics")
     .select("*", { count: "exact", head: true });
 
   if (error) throw new Error(`Failed to count MSA demographics: ${error.message}`);
