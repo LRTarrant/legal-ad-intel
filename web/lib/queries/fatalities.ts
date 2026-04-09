@@ -244,6 +244,33 @@ export async function getCountiesByState(
   }));
 }
 
+export interface UrbanRuralStat {
+  classification: string;
+  total_fatalities: number;
+  total_crashes: number;
+}
+
+export async function getUrbanRuralStats(
+  filterState?: string,
+  filterCounty?: number,
+  filterMotorcycle?: boolean,
+  filterLargeTruck?: boolean
+): Promise<UrbanRuralStat[]> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.rpc('get_fars_urban_rural_stats', {
+      filter_state: filterState ?? null,
+      filter_county: filterCounty ?? null,
+      filter_motorcycle: filterMotorcycle ?? null,
+      filter_large_truck: filterLargeTruck ?? null,
+    } as never);
+    if (error) throw error;
+    return (data ?? []) as UrbanRuralStat[];
+  } catch {
+    return [];
+  }
+}
+
 export async function getCrashHeatmapPoints(
   filters?: FatalitiesFilters
 ): Promise<HeatmapPoint[]> {

@@ -107,6 +107,12 @@ def transform_accident_data(df: pd.DataFrame, year: int) -> list[dict]:
         except (ValueError, TypeError):
             longitude = None
 
+        # Rural/Urban classification (1=Rural, 2=Urban, 9=Unknown)
+        try:
+            rur_urb = int(row.get("RUR_URB", row.get("Rur_Urb", 9)))
+        except (ValueError, TypeError):
+            rur_urb = 9
+
         # Drunk driving flag
         drunk_dr = int(row.get("DRUNK_DR", row.get("Drunk_Dr", 0)))
 
@@ -127,6 +133,7 @@ def transform_accident_data(df: pd.DataFrame, year: int) -> list[dict]:
             "year": year,
             "persons": int(row.get("PERSONS", row.get("Persons", 0))),
             "vehicles": int(row.get("VE_TOTAL", row.get("Ve_Total", 0))),
+            "rur_urb": rur_urb,
         })
 
     return records

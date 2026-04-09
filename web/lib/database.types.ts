@@ -347,6 +347,7 @@ export interface Database {
           vehicles: number;
           has_motorcycle: boolean | null;
           has_large_truck: boolean | null;
+          rur_urb: number | null;
         };
         Insert: {
           id?: number;
@@ -365,6 +366,7 @@ export interface Database {
           vehicles?: number;
           has_motorcycle?: boolean | null;
           has_large_truck?: boolean | null;
+          rur_urb?: number | null;
         };
         Update: {
           id?: number;
@@ -383,6 +385,63 @@ export interface Database {
           vehicles?: number;
           has_motorcycle?: boolean | null;
           has_large_truck?: boolean | null;
+          rur_urb?: number | null;
+        };
+      };
+      pi_viability_scores: {
+        Row: {
+          id: number;
+          state: string;
+          negligence_rule: string | null;
+          negligence_score: number | null;
+          non_economic_cap: string | null;
+          non_economic_score: number | null;
+          punitive_cap: string | null;
+          punitive_score: number | null;
+          med_mal_cap: string | null;
+          med_mal_score: number | null;
+          statute_of_limitations: string | null;
+          sol_score: number | null;
+          avg_jury_verdict: string | null;
+          verdict_score: number | null;
+          composite_score: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: number;
+          state: string;
+          negligence_rule?: string | null;
+          negligence_score?: number | null;
+          non_economic_cap?: string | null;
+          non_economic_score?: number | null;
+          punitive_cap?: string | null;
+          punitive_score?: number | null;
+          med_mal_cap?: string | null;
+          med_mal_score?: number | null;
+          statute_of_limitations?: string | null;
+          sol_score?: number | null;
+          avg_jury_verdict?: string | null;
+          verdict_score?: number | null;
+          composite_score?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: number;
+          state?: string;
+          negligence_rule?: string | null;
+          negligence_score?: number | null;
+          non_economic_cap?: string | null;
+          non_economic_score?: number | null;
+          punitive_cap?: string | null;
+          punitive_score?: number | null;
+          med_mal_cap?: string | null;
+          med_mal_score?: number | null;
+          statute_of_limitations?: string | null;
+          sol_score?: number | null;
+          avg_jury_verdict?: string | null;
+          verdict_score?: number | null;
+          composite_score?: number | null;
+          updated_at?: string | null;
         };
       };
       boating_accidents: {
@@ -894,6 +953,42 @@ export interface Database {
         Returns: {
           county_fips: number;
           county_name: string;
+        }[];
+      };
+      get_fars_urban_rural_stats: {
+        Args: {
+          filter_state?: string | null;
+          filter_county?: number | null;
+          filter_motorcycle?: boolean | null;
+          filter_large_truck?: boolean | null;
+        };
+        Returns: {
+          classification: string;
+          total_fatalities: number;
+          total_crashes: number;
+        }[];
+      };
+      get_pi_viability_scores: {
+        Args: {
+          filter_state?: string | null;
+        };
+        Returns: {
+          id: number;
+          state: string;
+          negligence_rule: string | null;
+          negligence_score: number | null;
+          non_economic_cap: string | null;
+          non_economic_score: number | null;
+          punitive_cap: string | null;
+          punitive_score: number | null;
+          med_mal_cap: string | null;
+          med_mal_score: number | null;
+          statute_of_limitations: string | null;
+          sol_score: number | null;
+          avg_jury_verdict: string | null;
+          verdict_score: number | null;
+          composite_score: number | null;
+          updated_at: string | null;
         }[];
       };
     };
