@@ -11,9 +11,13 @@ import {
   type CancerStateSummary,
   type CancerTotals,
 } from "@/lib/queries";
+import Link from "next/link";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { CancerFilterBar } from "./cancer-filter-bar";
 import { CancerStateTable } from "./cancer-state-table";
+import { TortMarketPanel } from "./tort-market-panel";
+import { TortSelector } from "./tort-selector";
+import { TORTS, parseTortId } from "./tort-data";
 import { HeartPulse } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -55,27 +59,29 @@ const massTortConnections = [
   },
 ];
 
+const TORT_INSIGHTS: Record<string, string> = {
+  roundup:
+    "Target agricultural states with elevated NHL rates. Iowa, Minnesota, and the Dakotas show NHL rates 20-45% above the national average \u2014 correlating with intensive glyphosate herbicide use. Early Roundup settlers in these states are still in their litigation prime.",
+  pfas:
+    "Military community advertising near documented AFFF contamination sites produces the highest case quality for PFAS claims. Focus on counties within 5 miles of affected military bases where public water tests confirmed PFAS contamination.",
+  camp_lejeune:
+    "The 2-year Camp Lejeune filing window under the CLJA has mostly closed \u2014 focus on states with the highest concentration of Marines and family members who lived at Lejeune between 1953 and 1987.",
+  talc:
+    "Southern states with both high ovarian cancer incidence and strong historical J&J product market penetration represent the highest-density opportunity for talc litigation acquisition.",
+};
+
+const DEFAULT_INSIGHT =
+  "Cancer incidence data reveals where potential mass tort claimants live. Counties with elevated rates of specific cancers linked to active MDLs \u2014 such as Non-Hodgkin Lymphoma near agricultural regions or kidney cancer near military bases \u2014 represent high-value targeting opportunities for case acquisition campaigns.";
+
 type SearchParams = Promise<{
   cancerSite?: string | string[];
   state?: string | string[];
+  tort?: string | string[];
 }>;
 
 function getSingleValue(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
-}
-
-function parseFilters(rawState: string | null, rawCancerSite: string | null): CancerFilters {
-  return {
-    state: rawState?.trim().toUpperCase() || null,
-    cancerSite: rawCancerSite?.trim() || null,
-  };
-}
-
-function trendIcon(direction: string) {
-  if (direction === "Rising") return "↑";
-  if (direction === "Falling") return "↓";
-  return "→";
 }
 
 export default async function CancerIncidencePage({
@@ -84,10 +90,17 @@ export default async function CancerIncidencePage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const filters = parseFilters(
-    getSingleValue(params.state),
-    getSingleValue(params.cancerSite)
-  );
+  const tortId = parseTortId(getSingleValue(params.tort) ?? undefined);
+  const tort = tortId ? TORTS[tortId] : null;
+
+  const rawState = getSingleValue(params.state)?.trim().toUpperCase() || null;
+  const rawCancerSite = getSingleValue(params.cancerSite)?.trim() || null;
+
+  const filters: CancerFilters = {
+    state: rawState,
+    cancerSites: tort ? tort.cancerSites : null,
+    cancerSite: tort ? null : rawCancerSite,
+  };
 
   let states: CancerOption[] = [];
   let cancerSites: CancerOption[] = [];
@@ -115,15 +128,18 @@ export default async function CancerIncidencePage({
       getCancerByState(filters),
       getCancerBySite(filters),
       getCancerTrendingSites(filters),
-      // getCancerHeatmapPoints omitted -- lat/lon not yet populated in cancer_incidence table
     ]);
   } catch {
     // The migration may exist before data is loaded. Render an empty dashboard gracefully.
   }
 
-  const filterSummary = filters.state
-    ? `${filters.state}${filters.cancerSite ? ` · ${filters.cancerSite}` : ""}`
-    : filters.cancerSite ?? "Nationwide";
+  const filterSummary = rawState
+    ? `${rawState}${rawCancerSite ? ` \u00b7 ${rawCancerSite}` : tort ? ` \u00b7 ${tort.shortLabel}` : ""}`
+    : tort
+      ? tort.shortLabel
+      : rawCancerSite ?? "Nationwide";
+
+  const insightText = tortId ? TORT_INSIGHTS[tortId] : DEFAULT_INSIGHT;
 
   return (
     <div className="space-y-8">
@@ -139,17 +155,52 @@ export default async function CancerIncidencePage({
         </div>
       </div>
 
+      <TortSelector />
+
+      {tort && (
+        <div
+          className="rounded-lg p-4 border-l-4"
+          style={{
+            borderColor: tort.color,
+            background: tort.color + "10",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: tort.color }}
+            >
+              {tort.label}
+            </span>
+            {tort.mdls.map((m) => (
+              <Link
+                key={m.number}
+                href={`/mdl-tracker/${m.number}`}
+                className="text-xs text-intelligence-teal hover:underline"
+              >
+                MDL {m.number} &#8599;
+              </Link>
+            ))}
+          </div>
+          <p className="text-sm text-midnight-navy">{tort.description}</p>
+          <p className="text-xs mt-1 text-slate-gray italic">{tort.tagline}</p>
+        </div>
+      )}
+
+      {tort && (
+        <TortMarketPanel tort={tort} stateData={stateRows} />
+      )}
+
       <CancerFilterBar
         states={states}
         cancerSites={cancerSites}
-        selectedState={filters.state ?? null}
-        selectedCancerSite={filters.cancerSite ?? null}
+        selectedState={rawState}
+        selectedCancerSite={tort ? null : rawCancerSite}
+        tortCancerSites={tort ? tort.cancerSites : undefined}
       />
 
       <AdvertisingInsight>
-        <p>
-          Cancer incidence data reveals where potential mass tort claimants live. Counties with elevated rates of specific cancers linked to active MDLs — such as Non-Hodgkin Lymphoma near agricultural regions or kidney cancer near military bases — represent high-value targeting opportunities for case acquisition campaigns.
-        </p>
+        <p>{insightText}</p>
       </AdvertisingInsight>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -285,6 +336,12 @@ export default async function CancerIncidencePage({
       </section>
     </div>
   );
+}
+
+function trendIcon(direction: string) {
+  if (direction === "Rising") return "\u2191";
+  if (direction === "Falling") return "\u2193";
+  return "\u2192";
 }
 
 function SummaryCard({
