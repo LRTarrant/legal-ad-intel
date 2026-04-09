@@ -33,3 +33,4 @@ export * from "./motorcycle";
 export * from "./large-truck";
 export * from "./boating";
 export * from "./jpml";
+export * from "./pi-viability";

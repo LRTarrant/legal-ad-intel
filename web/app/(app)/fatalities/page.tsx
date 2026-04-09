@@ -8,6 +8,7 @@ import {
   getTopStatesByFatalities,
   getTotalCrashes,
   getTotalFatalities,
+  getUrbanRuralStats,
   type FatalitiesFilters,
 } from "@/lib/queries";
 import { FatalitiesFilterBar } from "./fatalities-filter-bar";
@@ -78,7 +79,7 @@ export default async function FatalitiesPage({
       ? counties.find((county) => county.county_fips === filters.county) ?? null
       : null;
 
-  const [totalFatalities, totalCrashes, trend, topStates, drunkStats, recent, heatmapPoints] =
+  const [totalFatalities, totalCrashes, trend, topStates, drunkStats, recent, heatmapPoints, urbanRuralStats] =
     await Promise.all([
       getTotalFatalities(filters),
       getTotalCrashes(filters),
@@ -87,6 +88,7 @@ export default async function FatalitiesPage({
       getDrunkDrivingStats(filters),
       getRecentCrashes(20, filters),
       getCrashHeatmapPoints(filters),
+      getUrbanRuralStats(filters.state ?? undefined, filters.county ?? undefined),
     ]);
 
   const avgFatalitiesPerCrash =
@@ -155,6 +157,28 @@ export default async function FatalitiesPage({
           sub={`${drunkStats.drunk_crashes.toLocaleString()} of ${drunkStats.total_crashes.toLocaleString()} crashes`}
         />
       </div>
+
+      {(() => {
+        const urban = urbanRuralStats.find(s => s.classification === 'Urban');
+        const rural = urbanRuralStats.find(s => s.classification === 'Rural');
+        const total = (urban?.total_fatalities ?? 0) + (rural?.total_fatalities ?? 0);
+        const urbanPct = total > 0 ? Math.round(((urban?.total_fatalities ?? 0) / total) * 100) : 0;
+        const ruralPct = total > 0 ? Math.round(((rural?.total_fatalities ?? 0) / total) * 100) : 0;
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">Urban Fatalities</p>
+              <p className="text-2xl font-bold text-blue-800">{(urban?.total_fatalities ?? 0).toLocaleString()}</p>
+              <p className="text-sm text-blue-600 mt-1">{urbanPct}% of total</p>
+            </div>
+            <div className="bg-green-50 border border-green-100 rounded-lg p-4">
+              <p className="text-xs text-green-600 font-medium uppercase tracking-wide mb-1">Rural Fatalities</p>
+              <p className="text-2xl font-bold text-green-800">{(rural?.total_fatalities ?? 0).toLocaleString()}</p>
+              <p className="text-sm text-green-600 mt-1">{ruralPct}% of total</p>
+            </div>
+          </div>
+        );
+      })()}
 
       <FatalitiesHeatmapPanel
         points={heatmapPoints}

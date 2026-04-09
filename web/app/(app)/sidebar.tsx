@@ -27,6 +27,7 @@ const topNavItems = [
 
 const bottomNavItems = [
   { label: "Judicial Profiles", href: "/judicial-profiles" },
+  { label: "PI Viability", href: "/pi-viability" },
   { label: "MDL Tracker", href: "/mdl-tracker" },
 ];
 
