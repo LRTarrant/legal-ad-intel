@@ -28,7 +28,7 @@ export async function getMsaDemographics(
   limit = 500
 ): Promise<MsaDemographic[]> {
   const { data, error } = await getSupabase()
-    .from("msa_demographics")
+    .from("msa_demographics" as any)
     .select("*")
     .order("total_population", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -41,7 +41,7 @@ export async function getMsaDemographicByCode(
   cbsaCode: string
 ): Promise<MsaDemographic> {
   const { data, error } = await getSupabase()
-    .from("msa_demographics")
+    .from("msa_demographics" as any)
     .select("*")
     .eq("cbsa_code", cbsaCode)
     .single();
@@ -52,7 +52,7 @@ export async function getMsaDemographicByCode(
 
 export async function getMsaDemographicCount(): Promise<number> {
   const { count, error } = await getSupabase()
-    .from("msa_demographics")
+    .from("msa_demographics" as any)
     .select("*", { count: "exact", head: true });
 
   if (error) throw new Error(`Failed to count MSA demographics: ${error.message}`);
