@@ -37,3 +37,4 @@ export * from "./jpml";
 export * from "./pi-viability";
 export * from "./opportunity";
 export * from "./storm-events";
+export * from "./demographics";
