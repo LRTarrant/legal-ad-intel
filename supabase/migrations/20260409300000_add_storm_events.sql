@@ -32,6 +32,8 @@ CREATE INDEX IF NOT EXISTS idx_storm_events_latlon ON public.storm_events (begin
   WHERE begin_lat IS NOT NULL AND begin_lon IS NOT NULL;
 ALTER TABLE public.storm_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon_select" ON public.storm_events FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert" ON public.storm_events FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update" ON public.storm_events FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
 -- Totals
 CREATE OR REPLACE FUNCTION public.get_storm_event_totals(
