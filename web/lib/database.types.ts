@@ -1290,9 +1290,9 @@ export type Database = {
       }
       get_storm_counties_by_state: {
         Args: {
-          filter_event_type?: string
+          filter_event_type?: string | null
           filter_state: string
-          filter_year?: number
+          filter_year?: number | null
         }
         Returns: {
           county_fips: number
@@ -1315,9 +1315,9 @@ export type Database = {
       }
       get_storm_event_totals: {
         Args: {
-          filter_event_type?: string
-          filter_state?: string
-          filter_year?: number
+          filter_event_type?: string | null
+          filter_state?: string | null
+          filter_year?: number | null
         }
         Returns: {
           total_deaths: number
@@ -1327,7 +1327,7 @@ export type Database = {
         }[]
       }
       get_storm_event_trend_by_year: {
-        Args: { filter_event_type?: string; filter_state?: string }
+        Args: { filter_event_type?: string | null; filter_state?: string | null }
         Returns: {
           total_events: number
           total_property_damage: number
@@ -1336,9 +1336,9 @@ export type Database = {
       }
       get_storm_events_by_state: {
         Args: {
-          filter_event_type?: string
-          filter_state?: string
-          filter_year?: number
+          filter_event_type?: string | null
+          filter_state?: string | null
+          filter_year?: number | null
         }
         Returns: {
           state: string
@@ -1350,7 +1350,7 @@ export type Database = {
         }[]
       }
       get_storm_events_by_type: {
-        Args: { filter_state?: string; filter_year?: number }
+        Args: { filter_state?: string | null; filter_year?: number | null }
         Returns: {
           event_type: string
           total_events: number
@@ -1359,9 +1359,9 @@ export type Database = {
       }
       get_storm_heatmap_points: {
         Args: {
-          filter_event_type?: string
-          filter_state?: string
-          filter_year?: number
+          filter_event_type?: string | null
+          filter_state?: string | null
+          filter_year?: number | null
         }
         Returns: {
           latitude: number

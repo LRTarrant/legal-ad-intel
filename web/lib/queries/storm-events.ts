@@ -67,7 +67,7 @@ export async function getStormEventTotals(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_event_totals",
-      toRpcFilters(filters) as never
+      toRpcFilters(filters)
     );
     if (error) throw error;
     const row = ((data ?? []) as StormTotalsRow[])[0];
@@ -77,7 +77,8 @@ export async function getStormEventTotals(
       total_injuries: Number(row?.total_injuries ?? 0),
       total_deaths: Number(row?.total_deaths ?? 0),
     };
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormEventTotals failed:', err);
     return { total_events: 0, total_property_damage: 0, total_injuries: 0, total_deaths: 0 };
   }
 }
@@ -89,7 +90,7 @@ export async function getStormEventsByState(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_events_by_state",
-      toRpcFilters(filters) as never
+      toRpcFilters(filters)
     );
     if (error) throw error;
     return ((data ?? []) as StormByStateRow[]).map((row) => ({
@@ -100,7 +101,8 @@ export async function getStormEventsByState(
       total_injuries: Number(row.total_injuries),
       total_deaths: Number(row.total_deaths),
     }));
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormEventsByState failed:', err);
     return [];
   }
 }
@@ -112,7 +114,7 @@ export async function getStormEventsByType(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_events_by_type",
-      { filter_state: filters?.state ?? null, filter_year: filters?.year ?? null } as never
+      { filter_state: filters?.state ?? null, filter_year: filters?.year ?? null }
     );
     if (error) throw error;
     return ((data ?? []) as StormByTypeRow[]).map((row) => ({
@@ -120,7 +122,8 @@ export async function getStormEventsByType(
       total_events: Number(row.total_events),
       total_property_damage: Number(row.total_property_damage),
     }));
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormEventsByType failed:', err);
     return [];
   }
 }
@@ -132,7 +135,7 @@ export async function getStormEventTrendByYear(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_event_trend_by_year",
-      { filter_state: filters?.state ?? null, filter_event_type: filters?.eventType ?? null } as never
+      { filter_state: filters?.state ?? null, filter_event_type: filters?.eventType ?? null }
     );
     if (error) throw error;
     return ((data ?? []) as StormTrendRow[]).map((row) => ({
@@ -140,7 +143,8 @@ export async function getStormEventTrendByYear(
       total_events: Number(row.total_events),
       total_property_damage: Number(row.total_property_damage),
     }));
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormEventTrendByYear failed:', err);
     return [];
   }
 }
@@ -158,7 +162,7 @@ export async function getStormCountiesByState(
         filter_state: state,
         filter_year: filters?.year ?? null,
         filter_event_type: filters?.eventType ?? null,
-      } as never
+      }
     );
     if (error) throw error;
     return ((data ?? []) as StormCountyRow[]).map((row) => ({
@@ -167,7 +171,8 @@ export async function getStormCountiesByState(
       total_events: Number(row.total_events),
       total_property_damage: Number(row.total_property_damage),
     }));
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormCountiesByState failed:', err);
     return [];
   }
 }
@@ -178,7 +183,8 @@ export async function getStormDistinctStates(): Promise<string[]> {
     const { data, error } = await supabase.rpc("get_storm_distinct_states");
     if (error) throw error;
     return ((data ?? []) as StormStateRow[]).map((row) => row.state);
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormDistinctStates failed:', err);
     return [];
   }
 }
@@ -189,7 +195,8 @@ export async function getStormDistinctEventTypes(): Promise<string[]> {
     const { data, error } = await supabase.rpc("get_storm_distinct_event_types");
     if (error) throw error;
     return ((data ?? []) as StormEventTypeRow[]).map((row) => row.event_type);
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormDistinctEventTypes failed:', err);
     return [];
   }
 }
@@ -201,14 +208,15 @@ export async function getStormHeatmapPoints(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_heatmap_points",
-      toRpcFilters(filters) as never
+      toRpcFilters(filters)
     );
     if (error) throw error;
     return ((data ?? []) as StormHeatmapRow[]).map((row) => ({
       latitude: Number(row.latitude),
       longitude: Number(row.longitude),
     }));
-  } catch {
+  } catch (err) {
+    console.error('[storm-events] getStormHeatmapPoints failed:', err);
     return [];
   }
 }
