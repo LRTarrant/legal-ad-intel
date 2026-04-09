@@ -6,13 +6,16 @@ import {
   getStormDistinctStates,
   getStormDistinctEventTypes,
   getStormCountiesByState,
+  getStormHeatmapPoints,
   type StormFilters,
   type StormEventByState,
   type StormEventByType,
   type StormEventTrendByYear,
   type StormCounty,
+  type HeatmapPoint,
 } from "@/lib/queries";
 import { StormFilterBar } from "./storm-filter-bar";
+import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { CloudLightning } from "lucide-react";
 
@@ -75,7 +78,7 @@ export default async function StormEventsPage({
     getSingleValue(params.event_type)
   );
 
-  const [totals, byState, byType, trend, states, eventTypes] =
+  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints] =
     await Promise.all([
       getStormEventTotals(filters),
       getStormEventsByState(filters),
@@ -83,7 +86,14 @@ export default async function StormEventsPage({
       getStormEventTrendByYear(filters),
       getStormDistinctStates(),
       getStormDistinctEventTypes(),
+      getStormHeatmapPoints(filters),
     ]);
+
+  const heatmapPoints: HeatmapPoint[] = rawHeatmapPoints.map((p) => ({
+    latitude: p.latitude,
+    longitude: p.longitude,
+    intensity: 1,
+  }));
 
   let counties: StormCounty[] = [];
   if (filters.state) {
@@ -153,6 +163,11 @@ export default async function StormEventsPage({
       <EventTypePanel rows={byType} />
 
       <TrendChart data={trend} />
+
+      <FatalitiesHeatmapPanel
+        points={heatmapPoints}
+        title="Storm event locations · 2019–2024"
+      />
 
       {filters.state && counties.length > 0 && (
         <CountyTable rows={counties} state={filters.state} />
