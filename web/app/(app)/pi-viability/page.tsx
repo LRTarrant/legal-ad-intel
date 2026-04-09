@@ -4,6 +4,8 @@ import { PiViabilityFilter } from "./pi-viability-filter";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { Scale } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Plaintiff Favorability By State | Legal Marketing Intelligence",
 };

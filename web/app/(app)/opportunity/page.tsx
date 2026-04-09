@@ -3,6 +3,8 @@ import { OpportunityTable } from "./opportunity-table";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { Target } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Top Opportunity States | Legal Marketing Intelligence",
 };
