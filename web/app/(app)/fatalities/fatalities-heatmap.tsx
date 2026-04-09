@@ -9,6 +9,7 @@ import type { HeatmapPoint } from "@/lib/queries";
 type FatalitiesHeatmapProps = {
   points: HeatmapPoint[];
   title: string;
+  emptyMessage?: string;
 };
 
 function HeatLayer({ points }: { points: HeatmapPoint[] }) {
@@ -58,6 +59,7 @@ function FitBounds({ points }: { points: HeatmapPoint[] }) {
 export function FatalitiesHeatmap({
   points,
   title,
+  emptyMessage,
 }: FatalitiesHeatmapProps) {
   const center: LatLngExpression = points.length
     ? [points[0].latitude, points[0].longitude]
@@ -79,7 +81,7 @@ export function FatalitiesHeatmap({
 
       {points.length === 0 ? (
         <div className="mt-4 flex h-[420px] items-center justify-center rounded-2xl bg-cloud text-sm text-slate-gray">
-          No crash coordinates match the current filter.
+          {emptyMessage ?? "No geographic data matches the current filter."}
         </div>
       ) : (
         <div className="mt-4 overflow-hidden rounded-2xl border border-midnight-navy/10">

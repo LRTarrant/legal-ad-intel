@@ -21,9 +21,11 @@ const FatalitiesHeatmap = dynamic(
 export function FatalitiesHeatmapPanel({
   points,
   title,
+  emptyMessage,
 }: {
   points: HeatmapPoint[];
   title: string;
+  emptyMessage?: string;
 }) {
-  return <FatalitiesHeatmap points={points} title={title} />;
+  return <FatalitiesHeatmap points={points} title={title} emptyMessage={emptyMessage} />;
 }

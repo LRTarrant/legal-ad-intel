@@ -86,7 +86,8 @@ async function fetchCancerRows(filters?: CancerFilters): Promise<CancerRow[]> {
     from += pageSize;
   }
 
-  return rows;
+  // Filter out aggregate rows (e.g. "US (SEER+NPCR)(1)") — only keep valid 2-letter state codes
+  return rows.filter((row) => /^[A-Z]{2}$/.test(row.state));
 }
 
 function average(values: number[]): number {
