@@ -5,6 +5,7 @@ type CancerRow = Database["public"]["Tables"]["cancer_incidence"]["Row"];
 
 export interface CancerFilters {
   cancerSite?: string | null;
+  cancerSites?: string[] | null;
   state?: string | null;
 }
 
@@ -69,7 +70,9 @@ async function fetchCancerRows(filters?: CancerFilters): Promise<CancerRow[]> {
       query = query.eq("state", filters.state.toUpperCase());
     }
 
-    if (filters?.cancerSite) {
+    if (filters?.cancerSites && filters.cancerSites.length > 0) {
+      query = query.in("cancer_site", filters.cancerSites);
+    } else if (filters?.cancerSite) {
       query = query.eq("cancer_site", filters.cancerSite);
     }
 

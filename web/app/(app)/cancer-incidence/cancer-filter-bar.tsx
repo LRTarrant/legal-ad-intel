@@ -9,11 +9,13 @@ export function CancerFilterBar({
   cancerSites,
   selectedState,
   selectedCancerSite,
+  tortCancerSites,
 }: {
   states: CancerOption[];
   cancerSites: CancerOption[];
   selectedState: string | null;
   selectedCancerSite: string | null;
+  tortCancerSites?: string[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -83,23 +85,41 @@ export function CancerFilterBar({
           </select>
         </label>
 
-        <label className="block">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-gray">
-            Cancer Site
-          </span>
-          <select
-            value={selectedCancerSite ?? ""}
-            onChange={(event) => updateParams(selectedState ?? "", event.target.value)}
-            className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
-          >
-            <option value="">All cancer sites</option>
-            {cancerSites.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.value}
-              </option>
-            ))}
-          </select>
-        </label>
+        {tortCancerSites ? (
+          <div className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-gray">
+              Cancer Site
+            </span>
+            <div className="flex flex-wrap gap-2 rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3">
+              {tortCancerSites.map((site) => (
+                <span
+                  key={site}
+                  className="rounded-full bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal"
+                >
+                  {site}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-gray">
+              Cancer Site
+            </span>
+            <select
+              value={selectedCancerSite ?? ""}
+              onChange={(event) => updateParams(selectedState ?? "", event.target.value)}
+              className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
+            >
+              <option value="">All cancer sites</option>
+              {cancerSites.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.value}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
     </div>
   );
