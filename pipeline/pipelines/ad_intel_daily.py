@@ -273,8 +273,10 @@ def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos
 
     platforms = [
         ("meta_ad_library", APIFY_ACTOR_FACEBOOK),
-        ("google_ads_transparency", APIFY_ACTOR_GOOGLE),
-        ("tiktok_ad_library", APIFY_ACTOR_TIKTOK),
+        # Requires $25/mo Apify subscription:
+        # ("google_ads_transparency", APIFY_ACTOR_GOOGLE),
+        # Requires $30/mo Apify subscription:
+        # ("tiktok_ad_library", APIFY_ACTOR_TIKTOK),
     ]
 
     for tort in torts:
