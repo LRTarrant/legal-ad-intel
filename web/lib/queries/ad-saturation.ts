@@ -42,6 +42,18 @@ export async function getTorts(): Promise<Tort[]> {
   return (data ?? []) as Tort[];
 }
 
+export async function getTortBySlug(slug: string): Promise<Tort | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("torts")
+    .select("id, slug, label, category")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw new Error(`Failed to fetch tort: ${error.message}`);
+  return data as Tort | null;
+}
+
 export async function getAdSaturationSummary(opts?: {
   tortSlug?: string;
   geoType?: string;
