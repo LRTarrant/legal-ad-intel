@@ -1,0 +1,424 @@
+#!/usr/bin/env python3
+"""
+ad_intel_daily pipeline — end-to-end ad intelligence refresh.
+
+Runs all 5 steps of the ad intelligence pipeline:
+  1. fetch_raw     → Insert ad observations into ad_observations_raw
+  2. validate_raw  → Check FK integrity and row-count sanity
+  3. normalize     → Aggregate raw → weekly ad_observations_normalized
+  4. score         → Recompute ad_saturation_scores from normalized data
+  5. publish       → Verify final table state and mark run complete
+
+For this first version, step 1 uses realistic seed data drawn from
+the actual advertiser_entities, torts, and geo_targets dimension tables.
+Once a real API source is wired, only step 1 changes.
+
+Usage:
+    python -m pipelines.ad_intel_daily
+    python -m pipelines.ad_intel_daily --dry-run
+    DRY_RUN=true python -m pipelines.ad_intel_daily
+
+Environment variables:
+    SUPABASE_URL         — Supabase project URL (required)
+    SUPABASE_SERVICE_KEY — Supabase service role key (required)
+    DRY_RUN              — "true" to skip all DB writes (optional)
+    PIPELINE_TRIGGER     — "scheduled" | "manual" (optional, default "manual")
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import random
+import sys
+from datetime import date, datetime, timedelta, timezone
+from uuid import uuid4
+
+import httpx
+
+# Add parent dir to path so we can import lib.pipeline
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.pipeline import (
+    PipelineRun, DRY_RUN,
+    _headers, _get, _bulk_insert, _delete,
+    SUPABASE_URL,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def supabase_query(table: str, params: dict) -> list[dict]:
+    """Simple GET query against Supabase REST."""
+    return _get(table, params)
+
+
+def supabase_count(table: str) -> int:
+    """Return the exact row count for a table via HEAD + count header."""
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    headers = {**_headers(), "Prefer": "count=exact"}
+    resp = httpx.head(url, headers=headers, params={"select": "*"}, timeout=30)
+    resp.raise_for_status()
+    # Supabase returns content-range header like "0-49/50"
+    cr = resp.headers.get("content-range", "")
+    if "/" in cr:
+        total = cr.split("/")[-1]
+        return int(total) if total != "*" else 0
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Step 1: Fetch Raw (seed data)
+# ---------------------------------------------------------------------------
+
+def step_fetch_raw(step) -> list[dict]:
+    """
+    Generate realistic seed ad observations from actual dimension tables.
+    In production, this would call Meta Ad Library / Google Ads Transparency APIs.
+    """
+    advertisers = supabase_query("advertiser_entities", {"select": "id,canonical_name,entity_type,segment"})
+    torts = supabase_query("torts", {"select": "id,slug,label"})
+    geos = supabase_query("geo_targets", {"select": "id,geo_name,geo_code"})
+
+    step.set_metadata({
+        "source": "seed_data",
+        "advertisers_available": len(advertisers),
+        "torts_available": len(torts),
+        "geos_available": len(geos),
+    })
+
+    if not advertisers or not torts or not geos:
+        raise ValueError(f"Missing dimension data: advertisers={len(advertisers)}, torts={len(torts)}, geos={len(geos)}")
+
+    # Valid CHECK constraint values for ad_observations_raw
+    sources = ["google_ads_transparency", "mediaradar", "vivvix", "ispot", "manual"]
+    formats = ["search", "display", "video", "social", "tv", "radio"]
+    rows = []
+    today = date.today()
+
+    for _ in range(50):
+        adv = random.choice(advertisers)
+        tort = random.choice(torts)
+        geo = random.choice(geos)
+        days_ago = random.randint(1, 27)
+        obs_date = today - timedelta(days=days_ago)
+        source = random.choice(sources)
+
+        spend_low = round(random.uniform(50, 5000), 2)
+        spend_high = round(spend_low * random.uniform(1.1, 2.0), 2)
+        impressions = random.randint(1000, 500000)
+
+        rows.append({
+            "source": source,
+            "source_id": f"{source}_{uuid4().hex[:12]}",
+            "advertiser_raw": adv["canonical_name"],
+            "advertiser_id": adv["id"],
+            "tort_id": tort["id"],
+            "tort_raw": tort["slug"],
+            "geo_target_id": geo["id"],
+            "geo_raw": geo["geo_name"],
+            "ad_format": random.choice(formats),
+            "creative_url": f"https://example.com/creative/{uuid4().hex[:8]}",
+            "creative_text": f"Attention {geo['geo_name']} residents: You may qualify for {tort['label']} compensation.",
+            "first_seen": obs_date.isoformat(),
+            "last_seen": (obs_date + timedelta(days=random.randint(0, 7))).isoformat(),
+            "estimated_spend_low": spend_low,
+            "estimated_spend_high": spend_high,
+            "impression_count": impressions,
+            "raw_json": json.dumps({"seed": True, "generated_at": datetime.now(timezone.utc).isoformat()}),
+            "ingested_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    count = _bulk_insert("ad_observations_raw", rows)
+    step.set_counts(rows_in=0, rows_out=count)
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Step 2: Validate Raw
+# ---------------------------------------------------------------------------
+
+def step_validate_raw(step, raw_rows: list[dict]) -> dict:
+    """Validate FK integrity on the raw rows we just inserted."""
+    adv_ids = {r["advertiser_id"] for r in raw_rows}
+    existing = supabase_query("advertiser_entities", {
+        "select": "id",
+        "id": f"in.({','.join(adv_ids)})",
+    })
+    orphan_advs = adv_ids - {r["id"] for r in existing}
+
+    tort_ids = {r["tort_id"] for r in raw_rows}
+    existing_torts = supabase_query("torts", {
+        "select": "id",
+        "id": f"in.({','.join(tort_ids)})",
+    })
+    orphan_torts = tort_ids - {r["id"] for r in existing_torts}
+
+    geo_ids = {r["geo_target_id"] for r in raw_rows}
+    existing_geos = supabase_query("geo_targets", {
+        "select": "id",
+        "id": f"in.({','.join(geo_ids)})",
+    })
+    orphan_geos = geo_ids - {r["id"] for r in existing_geos}
+
+    total_orphans = len(orphan_advs) + len(orphan_torts) + len(orphan_geos)
+    result = {
+        "total_raw_rows": len(raw_rows),
+        "orphan_advertiser_ids": len(orphan_advs),
+        "orphan_tort_ids": len(orphan_torts),
+        "orphan_geo_ids": len(orphan_geos),
+        "validation_passed": total_orphans == 0,
+    }
+
+    step.set_counts(rows_in=len(raw_rows), rows_out=len(raw_rows), rows_rejected=total_orphans)
+    step.set_metadata(result)
+
+    if total_orphans > 0:
+        step.set_error_details({
+            "orphan_advertisers": list(orphan_advs),
+            "orphan_torts": list(orphan_torts),
+            "orphan_geos": list(orphan_geos),
+        })
+        raise ValueError(f"FK validation failed: {total_orphans} orphan references found")
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Step 3: Normalize (raw → weekly aggregates)
+# ---------------------------------------------------------------------------
+
+def step_normalize(step) -> int:
+    """Aggregate ad_observations_raw into ad_observations_normalized."""
+    raw = supabase_query("ad_observations_raw", {
+        "select": "advertiser_id,tort_id,geo_target_id,ad_format,first_seen,source,estimated_spend_low,estimated_spend_high,impression_count,creative_url",
+    })
+
+    if not raw:
+        step.set_counts(rows_in=0, rows_out=0)
+        return 0
+
+    # Group by (advertiser, tort, geo, format, week_start)
+    groups: dict[tuple, dict] = {}
+    for r in raw:
+        first_seen = date.fromisoformat(r["first_seen"])
+        week_start = first_seen - timedelta(days=first_seen.weekday())
+
+        key = (r["advertiser_id"], r["tort_id"], r["geo_target_id"], r["ad_format"], week_start.isoformat())
+
+        if key not in groups:
+            groups[key] = {
+                "advertiser_id": r["advertiser_id"],
+                "tort_id": r["tort_id"],
+                "geo_target_id": r["geo_target_id"],
+                "ad_format": r["ad_format"],
+                "week_start": week_start.isoformat(),
+                "observation_count": 0,
+                "unique_creatives": set(),
+                "estimated_spend": 0.0,
+                "impressions": 0,
+                "sources": set(),
+            }
+
+        g = groups[key]
+        g["observation_count"] += 1
+        g["unique_creatives"].add(r.get("creative_url", ""))
+        spend_mid = (float(r.get("estimated_spend_low") or 0) + float(r.get("estimated_spend_high") or 0)) / 2
+        g["estimated_spend"] += spend_mid
+        g["impressions"] += r.get("impression_count") or 0
+        g["sources"].add(r["source"])
+
+    norm_rows = []
+    for g in groups.values():
+        norm_rows.append({
+            "advertiser_id": g["advertiser_id"],
+            "tort_id": g["tort_id"],
+            "geo_target_id": g["geo_target_id"],
+            "ad_format": g["ad_format"],
+            "week_start": g["week_start"],
+            "observation_count": g["observation_count"],
+            "unique_creatives": len(g["unique_creatives"]),
+            "estimated_spend": round(g["estimated_spend"], 2),
+            "impressions": g["impressions"],
+            "source_mix": sorted(list(g["sources"])),
+        })
+
+    # Clear and reload normalized data
+    _delete("ad_observations_normalized", {"id": "not.is.null"})
+
+    count = _bulk_insert("ad_observations_normalized", norm_rows)
+    step.set_counts(rows_in=len(raw), rows_out=count)
+    step.set_metadata({
+        "groups_created": len(groups),
+        "weeks_covered": len(set(g["week_start"] for g in groups.values())),
+    })
+    return count
+
+
+# ---------------------------------------------------------------------------
+# Step 4: Score (normalized → saturation scores)
+# ---------------------------------------------------------------------------
+
+def step_score(step) -> int:
+    """Recompute ad_saturation_scores from normalized data."""
+    norm = supabase_query("ad_observations_normalized", {
+        "select": "advertiser_id,tort_id,geo_target_id,observation_count,unique_creatives,estimated_spend,impressions,week_start",
+    })
+
+    if not norm:
+        step.set_counts(rows_in=0, rows_out=0)
+        return 0
+
+    all_weeks = sorted(set(r["week_start"] for r in norm))
+    period_start = all_weeks[0]
+    period_end = all_weeks[-1]
+
+    # Group by tort × geo
+    groups: dict[tuple, dict] = {}
+    for r in norm:
+        key = (r["tort_id"], r["geo_target_id"])
+        if key not in groups:
+            groups[key] = {
+                "tort_id": r["tort_id"],
+                "geo_target_id": r["geo_target_id"],
+                "advertisers": set(),
+                "total_creatives": 0,
+                "total_observations": 0,
+                "total_spend": 0.0,
+                "total_impressions": 0,
+            }
+        g = groups[key]
+        g["advertisers"].add(r["advertiser_id"])
+        g["total_creatives"] += r.get("unique_creatives") or 0
+        g["total_observations"] += r.get("observation_count") or 0
+        g["total_spend"] += float(r.get("estimated_spend") or 0)
+        g["total_impressions"] += r.get("impressions") or 0
+
+    max_advertisers = max((len(g["advertisers"]) for g in groups.values()), default=1)
+    max_spend = max((g["total_spend"] for g in groups.values()), default=1)
+    max_creatives = max((g["total_creatives"] for g in groups.values()), default=1)
+
+    score_rows = []
+    for g in groups.values():
+        adv_score = len(g["advertisers"]) / max(max_advertisers, 1)
+        spend_score = g["total_spend"] / max(max_spend, 1)
+        creative_score = g["total_creatives"] / max(max_creatives, 1)
+        saturation = round((adv_score * 0.4 + spend_score * 0.35 + creative_score * 0.25) * 100, 1)
+
+        score_rows.append({
+            "tort_id": g["tort_id"],
+            "geo_target_id": g["geo_target_id"],
+            "period_start": period_start,
+            "period_end": period_end,
+            "total_advertisers": len(g["advertisers"]),
+            "total_creatives": g["total_creatives"],
+            "total_observations": g["total_observations"],
+            "estimated_spend": round(g["total_spend"], 2),
+            "estimated_impressions": g["total_impressions"],
+            "saturation_score": saturation,
+            "spend_rank": 0,
+            "format_breakdown": {},
+            "top_advertisers": list(g["advertisers"])[:5],
+            "computed_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    score_rows.sort(key=lambda r: r["estimated_spend"], reverse=True)
+    for i, row in enumerate(score_rows):
+        row["spend_rank"] = i + 1
+
+    # Row-count sanity check (dynamic, not hardcoded)
+    old_count = supabase_count("ad_saturation_scores")
+    new_count = len(score_rows)
+
+    if old_count > 10 and new_count < old_count * 0.5:
+        step.set_metadata({"sanity_check": "WARNING", "old_count": old_count, "new_count": new_count})
+        print(f"  ⚠ Sanity check warning: score count dropping {old_count} → {new_count}")
+        # Don't fail on first pipeline-produced run, but log prominently
+
+    # Clear and reload scores
+    _delete("ad_saturation_scores", {"id": "not.is.null"})
+    count = _bulk_insert("ad_saturation_scores", score_rows)
+
+    step.set_counts(rows_in=len(norm), rows_out=count)
+    step.set_metadata({
+        "tort_geo_combos": len(groups),
+        "period_start": period_start,
+        "period_end": period_end,
+        "old_score_count": old_count,
+        "new_score_count": new_count,
+        "max_saturation_score": max((r["saturation_score"] for r in score_rows), default=0),
+        "min_saturation_score": min((r["saturation_score"] for r in score_rows), default=0),
+    })
+    return count
+
+
+# ---------------------------------------------------------------------------
+# Step 5: Publish
+# ---------------------------------------------------------------------------
+
+def step_publish(step, scores_count: int):
+    """Final verification step."""
+    if DRY_RUN:
+        step.set_counts(rows_in=scores_count, rows_out=scores_count)
+        step.set_metadata({"dry_run": True, "skipped_verification": True})
+        print("\n  [DRY RUN] Skipping final table verification")
+        return
+
+    raw_count = supabase_count("ad_observations_raw")
+    norm_count = supabase_count("ad_observations_normalized")
+    score_count = supabase_count("ad_saturation_scores")
+
+    step.set_counts(rows_in=scores_count, rows_out=score_count)
+    step.set_metadata({
+        "final_raw_count": raw_count,
+        "final_normalized_count": norm_count,
+        "final_scores_count": score_count,
+        "publish_timestamp": datetime.now(timezone.utc).isoformat(),
+    })
+
+    print(f"\n  📊 Final table counts:")
+    print(f"     ad_observations_raw:        {raw_count}")
+    print(f"     ad_observations_normalized: {norm_count}")
+    print(f"     ad_saturation_scores:       {score_count}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(description="Ad Intelligence daily pipeline")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Run without writing to database (overrides DRY_RUN env)")
+    args = parser.parse_args()
+
+    # CLI --dry-run flag overrides env var
+    if args.dry_run:
+        os.environ["DRY_RUN"] = "true"
+        # Re-import to pick up the change
+        import lib.pipeline
+        lib.pipeline.DRY_RUN = True
+
+    trigger = os.environ.get("PIPELINE_TRIGGER", "manual")
+
+    with PipelineRun("ad_intel_daily", trigger=trigger) as run:
+        with run.step("fetch_raw") as step:
+            raw_rows = step_fetch_raw(step)
+
+        with run.step("validate_raw") as step:
+            validation = step_validate_raw(step, raw_rows)
+
+        with run.step("normalize") as step:
+            norm_count = step_normalize(step)
+
+        with run.step("score") as step:
+            score_count = step_score(step)
+
+        with run.step("publish") as step:
+            step_publish(step, score_count)
+
+
+if __name__ == "__main__":
+    main()
