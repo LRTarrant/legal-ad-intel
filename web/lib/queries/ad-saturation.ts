@@ -79,3 +79,54 @@ export async function getAdSaturationKpis(): Promise<{
   }
   return data;
 }
+
+// --- Advertiser Segmentation ---
+
+export type SegmentSummary = {
+  segment: string;
+  advertiser_count: number;
+  total_spend: number;
+  total_creatives: number;
+  avg_spend_per_advertiser: number;
+};
+
+export type TopAdvertiserBySegment = {
+  advertiser_name: string;
+  segment: string;
+  entity_type: string;
+  total_spend: number;
+  total_creatives: number;
+  market_count: number;
+};
+
+export async function getSegmentSummary(
+  tortSlug?: string
+): Promise<SegmentSummary[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_segment_summary", {
+    p_tort_slug: tortSlug ?? null,
+  });
+  if (error) {
+    console.error("Failed to fetch segment summary:", error.message);
+    return [];
+  }
+  return (data ?? []) as SegmentSummary[];
+}
+
+export async function getTopAdvertisersBySegment(
+  tortSlug?: string,
+  limit = 20
+): Promise<TopAdvertiserBySegment[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_top_advertisers_by_segment", {
+    p_tort_slug: tortSlug ?? null,
+    p_limit: limit,
+  });
+  if (error) {
+    console.error("Failed to fetch top advertisers:", error.message);
+    return [];
+  }
+  return (data ?? []) as TopAdvertiserBySegment[];
+}
