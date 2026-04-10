@@ -205,34 +205,34 @@ export default async function TortDrillDownPage({
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">MARKETS</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">MARKETS</p>
           <p className="mt-2 text-2xl font-bold">{uniqueGeos}</p>
-          <p className="text-xs text-zinc-500">DMAs with activity</p>
+          <p className="text-xs text-zinc-400">DMAs with activity</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">ADVERTISERS</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">ADVERTISERS</p>
           <p className="mt-2 text-2xl font-bold">{fmt(totalAdvertisers)}</p>
-          <p className="text-xs text-zinc-500">Active advertisers</p>
+          <p className="text-xs text-zinc-400">Active advertisers</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">CREATIVES</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">CREATIVES</p>
           <p className="mt-2 text-2xl font-bold">{fmt(totalCreatives)}</p>
-          <p className="text-xs text-zinc-500">Unique creatives</p>
+          <p className="text-xs text-zinc-400">Unique creatives</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">OBSERVATIONS</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">OBSERVATIONS</p>
           <p className="mt-2 text-2xl font-bold">{fmt(totalObs)}</p>
-          <p className="text-xs text-zinc-500">Ad placements</p>
+          <p className="text-xs text-zinc-400">Ad placements</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">EST. SPEND</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">EST. SPEND</p>
           <p className="mt-2 text-2xl font-bold">{fmtCur(totalSpend)}</p>
-          <p className="text-xs text-zinc-500">Total estimated</p>
+          <p className="text-xs text-zinc-400">Total estimated</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">AVG SATURATION</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">AVG SATURATION</p>
           <p className={`mt-2 text-2xl font-bold ${scoreCls(avgScore)}`}>{fmtScore(avgScore)}</p>
-          <p className="text-xs text-zinc-500">0 = open \u00b7 100 = saturated</p>
+          <p className="text-xs text-zinc-400">0 = open \u00b7 100 = saturated</p>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ export default async function TortDrillDownPage({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <TrendingUp className="mb-3 h-10 w-10 text-zinc-700" />
             <p className="text-sm font-medium text-zinc-400">Creative movement tracking coming soon</p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-zinc-400">
               New creative launches, paused campaigns, and spend velocity changes
               will appear here as data pipelines are connected.
             </p>
