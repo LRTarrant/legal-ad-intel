@@ -206,27 +206,27 @@ export default async function TortDrillDownPage({
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">MARKETS</p>
-          <p className="mt-2 text-2xl font-bold">{uniqueGeos}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{uniqueGeos}</p>
           <p className="text-xs text-zinc-200">DMAs with activity</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">ADVERTISERS</p>
-          <p className="mt-2 text-2xl font-bold">{fmt(totalAdvertisers)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmt(totalAdvertisers)}</p>
           <p className="text-xs text-zinc-200">Active advertisers</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">CREATIVES</p>
-          <p className="mt-2 text-2xl font-bold">{fmt(totalCreatives)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmt(totalCreatives)}</p>
           <p className="text-xs text-zinc-200">Unique creatives</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">OBSERVATIONS</p>
-          <p className="mt-2 text-2xl font-bold">{fmt(totalObs)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmt(totalObs)}</p>
           <p className="text-xs text-zinc-200">Ad placements</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">EST. SPEND</p>
-          <p className="mt-2 text-2xl font-bold">{fmtCur(totalSpend)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmtCur(totalSpend)}</p>
           <p className="text-xs text-zinc-200">Total estimated</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
