@@ -196,22 +196,22 @@ export default async function AdSaturationPage({
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">TORT CATEGORIES</p>
-          <p className="mt-2 text-2xl font-bold">{uniqueTorts}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{uniqueTorts}</p>
           <p className="text-xs text-zinc-200">Active torts</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">MARKETS</p>
-          <p className="mt-2 text-2xl font-bold">{uniqueGeos}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{uniqueGeos}</p>
           <p className="text-xs text-zinc-200">DMAs tracked</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">AD OBSERVATIONS</p>
-          <p className="mt-2 text-2xl font-bold">{fmt(totalObs)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmt(totalObs)}</p>
           <p className="text-xs text-zinc-200">Placements tracked</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">EST. TOTAL SPEND</p>
-          <p className="mt-2 text-2xl font-bold">{fmtCur(totalSpend)}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{fmtCur(totalSpend)}</p>
           <p className="text-xs text-zinc-200">Across all markets</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
