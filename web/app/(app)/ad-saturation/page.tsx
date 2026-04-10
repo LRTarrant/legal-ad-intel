@@ -387,7 +387,7 @@ export default async function AdSaturationPage({
                 {data.map((row, i) => (
                   <tr key={row.id} className="hover:bg-zinc-800/50">
                     <td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{row.tort_label}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50"><Link href={`/ad-saturation/${row.tort_slug}`} className="hover:text-purple-400 transition">{row.tort_label}</Link></td>
                     <td className="whitespace-nowrap px-4 py-3 text-zinc-300">{row.geo_name}</td>
                     <td className="px-4 py-3">{row.state_abbr ?? "\u2014"}</td>
                     <td className="px-4 py-3 text-right">
