@@ -289,14 +289,21 @@ def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos
                 logger.info("  Searching %s via Apify: '%s' (tort: %s)", source_name, term, slug)
                 if source_name == "meta_ad_library":
                     actor_input = {
-                        "urls": [_facebook_library_url(term)],
+                        "urls": [{"url": _facebook_library_url(term)}],
                         "count": MAX_ADS_PER_TERM_PLATFORM,
+                    }
+                elif source_name == "google_ads_transparency":
+                    actor_input = {
+                        "startUrls": [{
+                            "url": f"https://adstransparency.google.com/?region=US&text={quote_plus(term)}"
+                        }],
+                        "downloadMedia": False,
                     }
                 else:
                     actor_input = {
-                        "searchTerms": [term],
-                        "countryCode": "US",
-                        "maxItems": MAX_ADS_PER_TERM_PLATFORM,
+                        "query": term,
+                        "quickSearch": False,
+                        "maxPages": 1,
                     }
 
                 try:
