@@ -37,6 +37,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+                    META_AD_LIBRARY_TOKEN: ${{ secrets.META_AD_LIBRARY_TOKEN }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
             echo "🔒 Running in DRY-RUN mode"
