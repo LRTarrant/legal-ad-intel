@@ -3,6 +3,8 @@ import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
   getTorts,
+  getAdvertiserCompetitiveSummary,
+  type AdvertiserCompetitiveSummary,
   type SegmentSummary,
   type TopAdvertiserBySegment,
 } from "@/lib/queries";
@@ -17,11 +19,12 @@ export const metadata = {
 const ALL_FILTER_KEY = "__all__";
 
 export default async function AdSaturationPage() {
-  const [allData, torts, allSegments, allTopAdvertisers] = await Promise.all([
+  const [allData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
     getAdSaturationSummary({ limit: 500 }),
     getTorts(),
     getSegmentSummary(),
     getTopAdvertisersBySegment(undefined, 25),
+    getAdvertiserCompetitiveSummary(),
   ]);
 
   const segmentSummaryByTort: Record<string, SegmentSummary[]> = {
@@ -29,6 +32,9 @@ export default async function AdSaturationPage() {
   };
   const topAdvertisersByTort: Record<string, TopAdvertiserBySegment[]> = {
     [ALL_FILTER_KEY]: allTopAdvertisers,
+  };
+  const competitiveSummaryByFilter: Record<string, AdvertiserCompetitiveSummary[]> = {
+    [ALL_FILTER_KEY]: allCompetitiveSummary,
   };
 
   const byTortResults = await Promise.all(
@@ -50,6 +56,7 @@ export default async function AdSaturationPage() {
       torts={torts}
       segmentSummaryByTort={segmentSummaryByTort}
       topAdvertisersByTort={topAdvertisersByTort}
+      initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
     />
   );
 }

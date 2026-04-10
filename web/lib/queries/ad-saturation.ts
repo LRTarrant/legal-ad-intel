@@ -9,6 +9,8 @@ export type Tort = {
 
 export type AdSaturationRow = {
   id: string;
+  tort_id?: string;
+  geo_target_id?: string;
   tort_slug: string;
   tort_label: string;
   tort_category: string | null;
@@ -111,6 +113,28 @@ export type TopAdvertiserBySegment = {
   market_count: number;
 };
 
+export type AdvertiserCompetitiveSummary = {
+  advertiser_name: string;
+  segment: string;
+  entity_type: string;
+  total_spend: number;
+  total_creatives: number;
+  total_observations: number;
+  tort_count: number;
+  market_count: number;
+};
+
+export type TortMarketAdvertiser = {
+  advertiser_id: string;
+  advertiser_name: string;
+  segment: string;
+  entity_type: string;
+  total_spend: number;
+  total_creatives: number;
+  total_observations: number;
+  spend_share_pct: number;
+};
+
 export async function getSegmentSummary(
   tortSlug?: string
 ): Promise<SegmentSummary[]> {
@@ -141,4 +165,42 @@ export async function getTopAdvertisersBySegment(
     return [];
   }
   return (data ?? []) as TopAdvertiserBySegment[];
+}
+
+export async function getAdvertiserCompetitiveSummary(
+  tortSlug?: string,
+  stateAbbr?: string
+): Promise<AdvertiserCompetitiveSummary[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_advertiser_competitive_summary", {
+    p_tort_slug: tortSlug ?? null,
+    p_state_abbr: stateAbbr ?? null,
+  });
+
+  if (error) {
+    console.error("Failed to fetch advertiser competitive summary:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as AdvertiserCompetitiveSummary[];
+}
+
+export async function getTortMarketAdvertisers(
+  tortId: string,
+  geoTargetId: string
+): Promise<TortMarketAdvertiser[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_tort_market_advertisers", {
+    p_tort_id: tortId,
+    p_geo_target_id: geoTargetId,
+  });
+
+  if (error) {
+    console.error("Failed to fetch tort/market advertisers:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as TortMarketAdvertiser[];
 }
