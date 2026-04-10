@@ -4,10 +4,6 @@ import {
   getTorts,
   getSegmentSummary,
   getTopAdvertisersBySegment,
-  type AdSaturationRow,
-  type Tort,
-  type SegmentSummary,
-  type TopAdvertiserBySegment,
 } from "@/lib/queries";
 import { Radio, ArrowLeft, Users, TrendingUp, MapPin, Megaphone, BarChart3 } from "lucide-react";
 import Link from "next/link";
