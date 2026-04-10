@@ -138,8 +138,8 @@ export function Sidebar() {
         onClick={closeSidebar}
         className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
           isActive
-            ? "border-l-[3px] border-intelligence-teal bg-white/8"
-            : "border-l-[3px] border-transparent hover:bg-white/5"
+            ? "bg-white/10 text-white"
+            : "hover:bg-white/5"
         }`}
       >
         {item.Icon ? <item.Icon className="w-4 h-4 shrink-0" /> : null}
@@ -158,7 +158,7 @@ export function Sidebar() {
         onClick={closeSidebar}
         className={`flex items-center gap-2 pl-8 py-2 text-sm rounded-md transition-colors ${
           isActive
-            ? "bg-white/10 text-white border-l-2 border-intelligence-teal"
+            ? "bg-white/10 text-white"
             : "text-white/70 hover:bg-white/5 hover:text-white"
         }`}
       >
@@ -243,7 +243,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={toggleGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-l-[3px] border-transparent hover:bg-white/5"
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
             >
               <span>Personal Injury</span>
               {groupOpen ? (
@@ -264,7 +264,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={togglePdGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-l-[3px] border-transparent hover:bg-white/5"
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
             >
               <span>Property Damage</span>
               {pdGroupOpen ? (
@@ -285,7 +285,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={toggleMassTortGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-l-[3px] border-transparent hover:bg-white/5"
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
             >
               <span>Mass Tort Intelligence</span>
               {massTortOpen ? (
