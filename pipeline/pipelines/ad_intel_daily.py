@@ -87,21 +87,22 @@ META_MAX_PAGES_PER_TORT = 5
 # ---------------------------------------------------------------------------
 
 TORT_SEARCH_TERMS: dict[str, list[str]] = {
-    "camp-lejeune":     ["camp lejeune"],
-    "hair-relaxer":     ["hair relaxer lawsuit"],
-    "roundup":          ["roundup lawsuit"],
-    "glp-1":            ["ozempic lawsuit"],
-    "depo-provera":     ["depo provera lawsuit"],
-    "talcum-powder":    ["talcum powder lawsuit"],
-    "paraquat":         ["paraquat lawsuit"],
-    "firefighter-foam": ["afff firefighting foam lawsuit"],
-    "nec-baby-formula": ["nec baby formula lawsuit"],
-    "tylenol-autism":   ["tylenol autism lawsuit"],
-    "zantac":           ["zantac lawsuit"],
-    "earplug-3m":       ["3m earplug lawsuit"],
-    "asbestos":         ["asbestos mesothelioma lawsuit"],
-    "cpap":             ["cpap recall lawsuit"],
-    "hernia-mesh":      ["hernia mesh lawsuit"],
+    # Slugs match the `torts.slug` column in Supabase (underscore format)
+    "camp_lejeune":      ["camp lejeune water contamination"],
+    "hair_relaxer":      ["hair relaxer lawsuit", "chemical hair straightener cancer"],
+    "roundup":           ["roundup lawsuit", "roundup cancer lawsuit"],
+    "talcum_powder":     ["talcum powder lawsuit", "baby powder ovarian cancer"],
+    "paraquat":          ["paraquat lawsuit", "paraquat parkinsons"],
+    "firefighter_foam":  ["afff firefighting foam lawsuit", "pfas contamination lawsuit"],
+    "nec_baby_formula":  ["nec baby formula lawsuit", "similac enfamil nec"],
+    "tylenol_autism":    ["tylenol autism lawsuit", "acetaminophen pregnancy autism"],
+    "zantac":            ["zantac lawsuit", "ranitidine cancer lawsuit"],
+    "hernia_mesh":       ["hernia mesh lawsuit", "hernia mesh complications"],
+    "social_media":      ["social media addiction lawsuit", "social media harm children"],
+    "motor_vehicle":     ["car accident lawyer", "auto accident attorney"],
+    "truck_accident":    ["truck accident lawyer", "18 wheeler accident attorney"],
+    "nursing_home":      ["nursing home abuse lawyer", "nursing home neglect attorney"],
+    "workers_comp":      ["workers compensation lawyer", "workers comp attorney"],
 }
 
 
