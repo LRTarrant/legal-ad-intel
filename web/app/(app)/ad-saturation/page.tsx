@@ -224,8 +224,8 @@ export default async function AdSaturationPage({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-500">
+            <table className="w-full text-left text-sm text-zinc-100">
+              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300">
                 <tr>
                   <th className="px-4 py-3 text-right w-12">#</th>
                   <th className="px-4 py-3">Tort</th>
@@ -239,16 +239,16 @@ export default async function AdSaturationPage({
                   <th className="px-4 py-3 text-right">Population</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800">
+              <tbody className="divide-y divide-zinc-700/50">
                 {data.map((row, i) => (
                   <tr key={row.id} className="hover:bg-zinc-800/50">
-                    <td className="px-4 py-3 text-right text-zinc-500">
+                    <td className="px-4 py-3 text-right text-zinc-400">
                       {i + 1}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">
                       {row.tort_label}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3 text-zinc-300">
                       {row.geo_name}
                     </td>
                     <td className="px-4 py-3">{row.state_abbr ?? "—"}</td>
@@ -265,19 +265,19 @@ export default async function AdSaturationPage({
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-300">
                       {row.total_advertisers}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-300">
                       {row.total_creatives}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-300">
                       {fmt(row.total_observations)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-300">
                       {fmtCur(row.estimated_spend)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-300">
                       {fmt(row.geo_population)}
                     </td>
                   </tr>
