@@ -11,6 +11,7 @@ import {
   ChevronRight,
   CloudLightning,
   HeartPulse,
+    Radio,
   Ship,
   Target,
   Truck,
@@ -54,6 +55,7 @@ const bottomNavItems = [
   { label: "Judicial Profiles", href: "/judicial-profiles" },
   { label: "PI Viability", href: "/pi-viability" },
     { label: "Market Demographics", href: "/market-demographics", Icon: Users },
+  { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
 ];
 
 type NavItem = {
