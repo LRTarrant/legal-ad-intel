@@ -10,7 +10,7 @@ Runs all 5 steps of the ad intelligence pipeline:
   5. publish       → Verify final table state and mark run complete
 
 Step 1 fetches real ad data from the Meta Ad Library API when
-META_AD_LIBRARY_TOKEN is set. Falls back to seed data otherwise.
+APIFY_TOKEN is set. Falls back to seed data otherwise.
 
 Usage:
     python -m pipelines.ad_intel_daily
@@ -20,7 +20,7 @@ Usage:
 Environment variables:
     SUPABASE_URL            — Supabase project URL (required)
     SUPABASE_SERVICE_KEY    — Supabase service role key (required)
-    META_AD_LIBRARY_TOKEN   — Meta Graph API access token (optional, falls back to seed data)
+    APIFY_TOKEN             — Apify API token (optional, falls back to seed data)
     DRY_RUN                 — "true" to skip all DB writes (optional)
     PIPELINE_TRIGGER        — "scheduled" | "manual" (optional, default "manual")
 """
@@ -34,6 +34,7 @@ import os
 import random
 import sys
 import time
+from urllib.parse import quote_plus
 from datetime import date, datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from uuid import uuid4
@@ -54,36 +55,17 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
-META_AD_LIBRARY_TOKEN = os.environ.get("META_AD_LIBRARY_TOKEN", "")
-META_API_VERSION = "v21.0"
-META_API_BASE = f"https://graph.facebook.com/{META_API_VERSION}"
-META_ADS_ARCHIVE_URL = f"{META_API_BASE}/ads_archive"
-
-# Fields to request from Meta Ad Library (available for ALL ad types)
-META_AD_FIELDS = ",".join([
-    "id",
-    "ad_creation_time",
-    "ad_creative_bodies",
-    "ad_creative_link_captions",
-    "ad_creative_link_descriptions",
-    "ad_creative_link_titles",
-    "ad_delivery_start_time",
-    "ad_delivery_stop_time",
-    "ad_snapshot_url",
-    "page_id",
-    "page_name",
-    "publisher_platforms",
-    "languages",
-])
-
-# Rate limiting: sleep between API requests to stay under ~200 calls/hour
-META_REQUEST_DELAY_SECONDS = 20  # ~180 calls/hour with buffer
-
-# Maximum pages to fetch per tort (prevent runaway pagination)
-META_MAX_PAGES_PER_TORT = 5
+APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+APIFY_API_BASE = "https://api.apify.com/v2"
+APIFY_ACTOR_FACEBOOK = "curious_coder~facebook-ads-library-scraper"
+APIFY_ACTOR_GOOGLE = "lexis-solutions~google-ads-scraper"
+APIFY_ACTOR_TIKTOK = "lexis-solutions~tiktok-ads-scraper"
+APIFY_REQUEST_DELAY_SECONDS = 10
+APIFY_RUN_TIMEOUT_SECONDS = 300
+MAX_ADS_PER_TERM_PLATFORM = 50
 
 # ---------------------------------------------------------------------------
-# Tort → Meta Ad Library search terms mapping
+# Tort → ad platform search terms mapping
 # ---------------------------------------------------------------------------
 
 TORT_SEARCH_TERMS: dict[str, list[str]] = {
@@ -130,7 +112,7 @@ def supabase_count(table: str) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Meta Ad Library API helpers
+# Apify helpers
 # ---------------------------------------------------------------------------
 
 def _fuzzy_match_advertiser(
@@ -151,87 +133,110 @@ def _fuzzy_match_advertiser(
     return best_id if best_score >= threshold else None
 
 
-def _fetch_meta_ads_page(
-    search_term: str,
-    url: str | None = None,
-    params: dict | None = None,
-) -> tuple[list[dict], str | None]:
-    """
-    Fetch a single page of results from Meta Ad Library API.
-    Returns (ads_list, next_page_url_or_none).
-    """
-    if url is None:
-        url = META_ADS_ARCHIVE_URL
-        params = {
-            "access_token": META_AD_LIBRARY_TOKEN,
-            "ad_reached_countries": '["US"]',
-            "search_terms": search_term,
-            "ad_type": "ALL",
-            "ad_active_status": "ALL",
-            "fields": META_AD_FIELDS,
-            "limit": 100,
-        }
+def _run_apify_actor(actor_id: str, actor_input: dict, label: str) -> list[dict]:
+    """Run an Apify actor and return dataset items."""
+    run_resp = httpx.post(
+        f"{APIFY_API_BASE}/acts/{actor_id}/runs",
+        params={"token": APIFY_TOKEN},
+        json=actor_input,
+        timeout=60,
+    )
+    run_resp.raise_for_status()
+    run_data = run_resp.json().get("data", {})
+    run_id = run_data.get("id")
+    if not run_id:
+        raise ValueError(f"Apify actor run id missing for {label}")
 
-    resp = httpx.get(url, params=params, timeout=60)
-    resp.raise_for_status()
-    body = resp.json()
-
-    ads = body.get("data", [])
-    next_url = body.get("paging", {}).get("next")
-    return ads, next_url
-
-
-def _fetch_meta_ads_for_term(search_term: str) -> list[dict]:
-    """Fetch all ads for a search term, handling pagination."""
-    all_ads: list[dict] = []
-    next_url: str | None = None
-    params: dict | None = None
-    pages = 0
-
-    while pages < META_MAX_PAGES_PER_TORT:
-        ads, next_url = _fetch_meta_ads_page(search_term, url=next_url, params=params)
-        all_ads.extend(ads)
-        pages += 1
-
-        if not next_url:
-            break
-
-        # After first page, the next_url includes all params
-        params = None
-        logger.info(
-            "  Fetched page %d for '%s' (%d ads so far)",
-            pages, search_term, len(all_ads),
+    started = time.time()
+    while True:
+        status_resp = httpx.get(
+            f"{APIFY_API_BASE}/actor-runs/{run_id}",
+            params={"token": APIFY_TOKEN},
+            timeout=60,
         )
-        time.sleep(META_REQUEST_DELAY_SECONDS)
+        status_resp.raise_for_status()
+        run_info = status_resp.json().get("data", {})
+        status = run_info.get("status")
 
-    return all_ads
+        if status == "SUCCEEDED":
+            dataset_id = run_info.get("defaultDatasetId")
+            if not dataset_id:
+                return []
+            items_resp = httpx.get(
+                f"{APIFY_API_BASE}/datasets/{dataset_id}/items",
+                params={"token": APIFY_TOKEN},
+                timeout=120,
+            )
+            items_resp.raise_for_status()
+            return items_resp.json()
+
+        if status in {"FAILED", "ABORTED", "TIMED-OUT"}:
+            raise RuntimeError(f"Apify actor {label} ended with status={status}")
+
+        if time.time() - started >= APIFY_RUN_TIMEOUT_SECONDS:
+            raise TimeoutError(f"Apify actor {label} exceeded {APIFY_RUN_TIMEOUT_SECONDS}s timeout")
+
+        time.sleep(5)
 
 
-def _map_meta_ad_to_row(
+def _map_apify_ad_to_row(
     ad: dict,
+    source: str,
     tort_id: str,
     tort_slug: str,
     geo_target_id: str | None,
     advertiser_id: str | None,
 ) -> dict:
-    """Map a single Meta API ad response to ad_observations_raw schema."""
-    creative_bodies = ad.get("ad_creative_bodies") or []
-    creative_text = creative_bodies[0] if creative_bodies else None
+    """Map a single Apify ad response to ad_observations_raw schema."""
+    creative_text = (
+        ad.get("creative_text")
+        or ad.get("adText")
+        or ad.get("ad_creative_body")
+        or ad.get("body")
+        or ad.get("description")
+        or ad.get("caption")
+    )
+    first_seen = ad.get("first_seen") or ad.get("startDate") or ad.get("ad_delivery_start_time") or ad.get("createdAt")
+    last_seen = ad.get("last_seen") or ad.get("endDate") or ad.get("ad_delivery_stop_time")
+    advertiser_raw = (
+        ad.get("advertiser")
+        or ad.get("advertiserName")
+        or ad.get("pageName")
+        or ad.get("page_name")
+        or ad.get("brandName")
+    )
+    creative_url = (
+        ad.get("creative_url")
+        or ad.get("ad_snapshot_url")
+        or ad.get("adUrl")
+        or ad.get("url")
+    )
+    source_id = (
+        ad.get("id")
+        or ad.get("adId")
+        or ad.get("ad_id")
+        or ad.get("archiveId")
+        or ad.get("snapshotId")
+        or uuid4().hex
+    )
+    first_seen = first_seen or datetime.now(timezone.utc).date().isoformat()
+    last_seen = last_seen or first_seen
+    ad_format = "search" if source == "google_ads_transparency" else "social"
 
     return {
-        "source": "meta_ad_library",
-        "source_id": str(ad["id"]),
-        "advertiser_raw": ad.get("page_name"),
+        "source": source,
+        "source_id": str(source_id),
+        "advertiser_raw": advertiser_raw,
         "advertiser_id": advertiser_id,
         "tort_id": tort_id,
         "tort_raw": tort_slug,
         "geo_target_id": geo_target_id,
         "geo_raw": "US",
-        "ad_format": "social",
-        "creative_url": ad.get("ad_snapshot_url"),
+        "ad_format": ad_format,
+        "creative_url": creative_url,
         "creative_text": creative_text,
-        "first_seen": ad.get("ad_delivery_start_time"),
-        "last_seen": ad.get("ad_delivery_stop_time"),
+        "first_seen": first_seen,
+        "last_seen": last_seen,
         "estimated_spend_low": None,
         "estimated_spend_high": None,
         "impression_count": None,
@@ -244,10 +249,17 @@ def _map_meta_ad_to_row(
 # Step 1: Fetch Raw
 # ---------------------------------------------------------------------------
 
-def _fetch_raw_from_meta(step, torts: list[dict], advertisers: list[dict], geos: list[dict]) -> list[dict]:
+def _facebook_library_url(term: str) -> str:
+    encoded = quote_plus(term)
+    return (
+        "https://www.facebook.com/ads/library/"
+        f"?active_status=all&ad_type=all&country=US&q={encoded}&search_type=keyword_unordered"
+    )
+
+
+def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos: list[dict]) -> list[dict]:
     """
-    Fetch real ad observations from Meta Ad Library API.
-    Searches for each active tort using configured search terms.
+    Fetch real ad observations from Apify actors across Facebook/Google/TikTok.
     """
     # Use first US-level geo target, or None
     us_geo = next((g for g in geos if g.get("geo_code") == "US"), None)
@@ -259,6 +271,12 @@ def _fetch_raw_from_meta(step, torts: list[dict], advertisers: list[dict], geos:
     skipped_dupes = 0
     skipped_no_adv = 0
 
+    platforms = [
+        ("meta_ad_library", APIFY_ACTOR_FACEBOOK),
+        ("google_ads_transparency", APIFY_ACTOR_GOOGLE),
+        ("tiktok_ad_library", APIFY_ACTOR_TIKTOK),
+    ]
+
     for tort in torts:
         slug = tort["slug"]
         search_terms = TORT_SEARCH_TERMS.get(slug)
@@ -267,53 +285,72 @@ def _fetch_raw_from_meta(step, torts: list[dict], advertisers: list[dict], geos:
             continue
 
         for term in search_terms:
-            logger.info("  Searching Meta Ad Library: '%s' (tort: %s)", term, slug)
-            try:
-                ads = _fetch_meta_ads_for_term(term)
-            except httpx.HTTPStatusError as e:
-                logger.warning(
-                    "  Meta API error for '%s': %s %s",
-                    term, e.response.status_code, e.response.text[:200],
-                )
-                continue
-            except httpx.HTTPError as e:
-                logger.warning("  Meta API request failed for '%s': %s", term, e)
-                continue
+            for source_name, actor_id in platforms:
+                logger.info("  Searching %s via Apify: '%s' (tort: %s)", source_name, term, slug)
+                if source_name == "meta_ad_library":
+                    actor_input = {
+                        "urls": [_facebook_library_url(term)],
+                        "count": MAX_ADS_PER_TERM_PLATFORM,
+                    }
+                else:
+                    actor_input = {
+                        "searchTerms": [term],
+                        "countryCode": "US",
+                        "maxItems": MAX_ADS_PER_TERM_PLATFORM,
+                    }
 
-            total_api_ads += len(ads)
-            for ad in ads:
-                source_id = str(ad.get("id", ""))
-                if not source_id:
-                    continue
-                if source_id in seen_source_ids:
-                    skipped_dupes += 1
-                    continue
-                seen_source_ids.add(source_id)
-
-                # Fuzzy match advertiser by page_name
-                page_name = ad.get("page_name", "")
-                adv_id = _fuzzy_match_advertiser(page_name, advertisers) if page_name else None
-
-                if adv_id is None:
-                    # Cannot pass NULL advertiser_id to step 2 validate_raw
-                    # without modifying it — skip unmatched ads
-                    skipped_no_adv += 1
+                try:
+                    ads = _run_apify_actor(actor_id, actor_input, f"{source_name}:{term}")[:MAX_ADS_PER_TERM_PLATFORM]
+                except (httpx.HTTPError, RuntimeError, TimeoutError, ValueError) as e:
+                    logger.warning("  Apify fetch failed for %s '%s': %s", source_name, term, e)
+                    time.sleep(APIFY_REQUEST_DELAY_SECONDS)
                     continue
 
-                row = _map_meta_ad_to_row(
-                    ad,
-                    tort_id=tort["id"],
-                    tort_slug=slug,
-                    geo_target_id=geo_target_id,
-                    advertiser_id=adv_id,
-                )
-                rows.append(row)
+                total_api_ads += len(ads)
+                for ad in ads:
+                    raw_source_id = str(
+                        ad.get("id")
+                        or ad.get("adId")
+                        or ad.get("ad_id")
+                        or ad.get("archiveId")
+                        or ""
+                    )
+                    if not raw_source_id:
+                        raw_source_id = uuid4().hex
+                    dedupe_key = f"{source_name}:{raw_source_id}"
+                    if dedupe_key in seen_source_ids:
+                        skipped_dupes += 1
+                        continue
+                    seen_source_ids.add(dedupe_key)
 
-            # Rate limit between search terms
-            time.sleep(META_REQUEST_DELAY_SECONDS)
+                    advertiser_name = (
+                        ad.get("advertiser")
+                        or ad.get("advertiserName")
+                        or ad.get("pageName")
+                        or ad.get("page_name")
+                        or ad.get("brandName")
+                        or ""
+                    )
+                    adv_id = _fuzzy_match_advertiser(advertiser_name, advertisers) if advertiser_name else None
+
+                    if adv_id is None:
+                        skipped_no_adv += 1
+                        continue
+
+                    row = _map_apify_ad_to_row(
+                        ad,
+                        source=source_name,
+                        tort_id=tort["id"],
+                        tort_slug=slug,
+                        geo_target_id=geo_target_id,
+                        advertiser_id=adv_id,
+                    )
+                    rows.append(row)
+
+                time.sleep(APIFY_REQUEST_DELAY_SECONDS)
 
     step.set_metadata({
-        "source": "meta_ad_library",
+        "source": "apify_multi_source",
         "total_api_ads": total_api_ads,
         "unique_ads": len(rows),
         "skipped_duplicates": skipped_dupes,
@@ -327,7 +364,7 @@ def _fetch_raw_from_meta(step, torts: list[dict], advertisers: list[dict], geos:
 def _fetch_raw_seed_data(step, advertisers: list[dict], torts: list[dict], geos: list[dict]) -> list[dict]:
     """
     Generate realistic seed ad observations from actual dimension tables.
-    Used as fallback when META_AD_LIBRARY_TOKEN is not set.
+    Used as fallback when APIFY_TOKEN is not set.
     """
     sources = ["google_ads_transparency", "meta_ad_library", "mediaradar", "vivvix", "ispot", "manual"]
     formats = ["search", "display", "video", "social", "tv", "radio"]
@@ -381,9 +418,9 @@ def step_fetch_raw(step) -> list[dict]:
     """
     Fetch ad observations into ad_observations_raw.
 
-    When META_AD_LIBRARY_TOKEN is set, queries the Meta Ad Library API
-    for each active tort using configured search terms. Falls back to
-    seed data generation when the token is missing.
+    When APIFY_TOKEN is set, queries Apify actor integrations for Facebook,
+    Google, and TikTok ads. Falls back to seed data generation when token
+    is missing.
     """
     advertisers = supabase_query("advertiser_entities", {"select": "id,canonical_name,entity_type,segment"})
     torts = supabase_query("torts", {"select": "id,slug,label"})
@@ -392,14 +429,14 @@ def step_fetch_raw(step) -> list[dict]:
     if not advertisers or not torts or not geos:
         raise ValueError(f"Missing dimension data: advertisers={len(advertisers)}, torts={len(torts)}, geos={len(geos)}")
 
-    if META_AD_LIBRARY_TOKEN:
-        print("  Using Meta Ad Library API (token present)")
-        rows = _fetch_raw_from_meta(step, torts, advertisers, geos)
+    if APIFY_TOKEN:
+        print("  Using Apify multi-source ads fetcher (token present)")
+        rows = _fetch_raw_from_apify(step, torts, advertisers, geos)
         if not rows:
-            print("  WARNING: Meta API returned 0 usable ads, falling back to seed data")
+            print("  WARNING: Apify fetch returned 0 usable ads, falling back to seed data")
             rows = _fetch_raw_seed_data(step, advertisers, torts, geos)
     else:
-        print("  WARNING: META_AD_LIBRARY_TOKEN not set — using seed data")
+        print("  WARNING: APIFY_TOKEN not set — using seed data")
         rows = _fetch_raw_seed_data(step, advertisers, torts, geos)
 
     count = _bulk_insert("ad_observations_raw", rows)
