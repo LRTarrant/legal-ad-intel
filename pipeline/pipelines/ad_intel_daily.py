@@ -9,9 +9,8 @@ Runs all 5 steps of the ad intelligence pipeline:
   4. score         → Recompute ad_saturation_scores from normalized data
   5. publish       → Verify final table state and mark run complete
 
-For this first version, step 1 uses realistic seed data drawn from
-the actual advertiser_entities, torts, and geo_targets dimension tables.
-Once a real API source is wired, only step 1 changes.
+Step 1 fetches real ad data from the Meta Ad Library API when
+META_AD_LIBRARY_TOKEN is set. Falls back to seed data otherwise.
 
 Usage:
     python -m pipelines.ad_intel_daily
@@ -19,20 +18,24 @@ Usage:
     DRY_RUN=true python -m pipelines.ad_intel_daily
 
 Environment variables:
-    SUPABASE_URL         — Supabase project URL (required)
-    SUPABASE_SERVICE_KEY — Supabase service role key (required)
-    DRY_RUN              — "true" to skip all DB writes (optional)
-    PIPELINE_TRIGGER     — "scheduled" | "manual" (optional, default "manual")
+    SUPABASE_URL            — Supabase project URL (required)
+    SUPABASE_SERVICE_KEY    — Supabase service role key (required)
+    META_AD_LIBRARY_TOKEN   — Meta Graph API access token (optional, falls back to seed data)
+    DRY_RUN                 — "true" to skip all DB writes (optional)
+    PIPELINE_TRIGGER        — "scheduled" | "manual" (optional, default "manual")
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import random
 import sys
+import time
 from datetime import date, datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from uuid import uuid4
 
 import httpx
@@ -44,6 +47,62 @@ from lib.pipeline import (
     _headers, _get, _bulk_insert, _delete,
     SUPABASE_URL,
 )
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+META_AD_LIBRARY_TOKEN = os.environ.get("META_AD_LIBRARY_TOKEN", "")
+META_API_VERSION = "v21.0"
+META_API_BASE = f"https://graph.facebook.com/{META_API_VERSION}"
+META_ADS_ARCHIVE_URL = f"{META_API_BASE}/ads_archive"
+
+# Fields to request from Meta Ad Library (available for ALL ad types)
+META_AD_FIELDS = ",".join([
+    "id",
+    "ad_creation_time",
+    "ad_creative_bodies",
+    "ad_creative_link_captions",
+    "ad_creative_link_descriptions",
+    "ad_creative_link_titles",
+    "ad_delivery_start_time",
+    "ad_delivery_stop_time",
+    "ad_snapshot_url",
+    "page_id",
+    "page_name",
+    "publisher_platforms",
+    "languages",
+])
+
+# Rate limiting: sleep between API requests to stay under ~200 calls/hour
+META_REQUEST_DELAY_SECONDS = 20  # ~180 calls/hour with buffer
+
+# Maximum pages to fetch per tort (prevent runaway pagination)
+META_MAX_PAGES_PER_TORT = 5
+
+# ---------------------------------------------------------------------------
+# Tort → Meta Ad Library search terms mapping
+# ---------------------------------------------------------------------------
+
+TORT_SEARCH_TERMS: dict[str, list[str]] = {
+    "camp-lejeune":     ["camp lejeune"],
+    "hair-relaxer":     ["hair relaxer lawsuit"],
+    "roundup":          ["roundup lawsuit"],
+    "glp-1":            ["ozempic lawsuit"],
+    "depo-provera":     ["depo provera lawsuit"],
+    "talcum-powder":    ["talcum powder lawsuit"],
+    "paraquat":         ["paraquat lawsuit"],
+    "firefighter-foam": ["afff firefighting foam lawsuit"],
+    "nec-baby-formula": ["nec baby formula lawsuit"],
+    "tylenol-autism":   ["tylenol autism lawsuit"],
+    "zantac":           ["zantac lawsuit"],
+    "earplug-3m":       ["3m earplug lawsuit"],
+    "asbestos":         ["asbestos mesothelioma lawsuit"],
+    "cpap":             ["cpap recall lawsuit"],
+    "hernia-mesh":      ["hernia mesh lawsuit"],
+}
 
 
 # ---------------------------------------------------------------------------
@@ -70,30 +129,206 @@ def supabase_count(table: str) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Step 1: Fetch Raw (seed data)
+# Meta Ad Library API helpers
 # ---------------------------------------------------------------------------
 
-def step_fetch_raw(step) -> list[dict]:
+def _fuzzy_match_advertiser(
+    page_name: str, advertisers: list[dict], threshold: float = 0.6
+) -> str | None:
+    """Return the advertiser_id of the best fuzzy match, or None."""
+    best_id = None
+    best_score = 0.0
+    page_lower = page_name.lower().strip()
+
+    for adv in advertisers:
+        canonical = adv["canonical_name"].lower().strip()
+        score = SequenceMatcher(None, page_lower, canonical).ratio()
+        if score > best_score:
+            best_score = score
+            best_id = adv["id"]
+
+    return best_id if best_score >= threshold else None
+
+
+def _fetch_meta_ads_page(
+    search_term: str,
+    url: str | None = None,
+    params: dict | None = None,
+) -> tuple[list[dict], str | None]:
     """
-    Generate realistic seed ad observations from actual dimension tables.
-    In production, this would call Meta Ad Library / Google Ads Transparency APIs.
+    Fetch a single page of results from Meta Ad Library API.
+    Returns (ads_list, next_page_url_or_none).
     """
-    advertisers = supabase_query("advertiser_entities", {"select": "id,canonical_name,entity_type,segment"})
-    torts = supabase_query("torts", {"select": "id,slug,label"})
-    geos = supabase_query("geo_targets", {"select": "id,geo_name,geo_code"})
+    if url is None:
+        url = META_ADS_ARCHIVE_URL
+        params = {
+            "access_token": META_AD_LIBRARY_TOKEN,
+            "ad_reached_countries": '["US"]',
+            "search_terms": search_term,
+            "ad_type": "ALL",
+            "ad_active_status": "ALL",
+            "fields": META_AD_FIELDS,
+            "limit": 100,
+        }
+
+    resp = httpx.get(url, params=params, timeout=60)
+    resp.raise_for_status()
+    body = resp.json()
+
+    ads = body.get("data", [])
+    next_url = body.get("paging", {}).get("next")
+    return ads, next_url
+
+
+def _fetch_meta_ads_for_term(search_term: str) -> list[dict]:
+    """Fetch all ads for a search term, handling pagination."""
+    all_ads: list[dict] = []
+    next_url: str | None = None
+    params: dict | None = None
+    pages = 0
+
+    while pages < META_MAX_PAGES_PER_TORT:
+        ads, next_url = _fetch_meta_ads_page(search_term, url=next_url, params=params)
+        all_ads.extend(ads)
+        pages += 1
+
+        if not next_url:
+            break
+
+        # After first page, the next_url includes all params
+        params = None
+        logger.info(
+            "  Fetched page %d for '%s' (%d ads so far)",
+            pages, search_term, len(all_ads),
+        )
+        time.sleep(META_REQUEST_DELAY_SECONDS)
+
+    return all_ads
+
+
+def _map_meta_ad_to_row(
+    ad: dict,
+    tort_id: str,
+    tort_slug: str,
+    geo_target_id: str | None,
+    advertiser_id: str | None,
+) -> dict:
+    """Map a single Meta API ad response to ad_observations_raw schema."""
+    creative_bodies = ad.get("ad_creative_bodies") or []
+    creative_text = creative_bodies[0] if creative_bodies else None
+
+    return {
+        "source": "meta_ad_library",
+        "source_id": str(ad["id"]),
+        "advertiser_raw": ad.get("page_name"),
+        "advertiser_id": advertiser_id,
+        "tort_id": tort_id,
+        "tort_raw": tort_slug,
+        "geo_target_id": geo_target_id,
+        "geo_raw": "US",
+        "ad_format": "social",
+        "creative_url": ad.get("ad_snapshot_url"),
+        "creative_text": creative_text,
+        "first_seen": ad.get("ad_delivery_start_time"),
+        "last_seen": ad.get("ad_delivery_stop_time"),
+        "estimated_spend_low": None,
+        "estimated_spend_high": None,
+        "impression_count": None,
+        "raw_json": json.dumps(ad, default=str),
+        "ingested_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Step 1: Fetch Raw
+# ---------------------------------------------------------------------------
+
+def _fetch_raw_from_meta(step, torts: list[dict], advertisers: list[dict], geos: list[dict]) -> list[dict]:
+    """
+    Fetch real ad observations from Meta Ad Library API.
+    Searches for each active tort using configured search terms.
+    """
+    # Use first US-level geo target, or None
+    us_geo = next((g for g in geos if g.get("geo_code") == "US"), None)
+    geo_target_id = us_geo["id"] if us_geo else (geos[0]["id"] if geos else None)
+
+    seen_source_ids: set[str] = set()
+    rows: list[dict] = []
+    total_api_ads = 0
+    skipped_dupes = 0
+    skipped_no_adv = 0
+
+    for tort in torts:
+        slug = tort["slug"]
+        search_terms = TORT_SEARCH_TERMS.get(slug)
+        if not search_terms:
+            logger.info("  No search terms configured for tort '%s', skipping", slug)
+            continue
+
+        for term in search_terms:
+            logger.info("  Searching Meta Ad Library: '%s' (tort: %s)", term, slug)
+            try:
+                ads = _fetch_meta_ads_for_term(term)
+            except httpx.HTTPStatusError as e:
+                logger.warning(
+                    "  Meta API error for '%s': %s %s",
+                    term, e.response.status_code, e.response.text[:200],
+                )
+                continue
+            except httpx.HTTPError as e:
+                logger.warning("  Meta API request failed for '%s': %s", term, e)
+                continue
+
+            total_api_ads += len(ads)
+            for ad in ads:
+                source_id = str(ad.get("id", ""))
+                if not source_id:
+                    continue
+                if source_id in seen_source_ids:
+                    skipped_dupes += 1
+                    continue
+                seen_source_ids.add(source_id)
+
+                # Fuzzy match advertiser by page_name
+                page_name = ad.get("page_name", "")
+                adv_id = _fuzzy_match_advertiser(page_name, advertisers) if page_name else None
+
+                if adv_id is None:
+                    # Cannot pass NULL advertiser_id to step 2 validate_raw
+                    # without modifying it — skip unmatched ads
+                    skipped_no_adv += 1
+                    continue
+
+                row = _map_meta_ad_to_row(
+                    ad,
+                    tort_id=tort["id"],
+                    tort_slug=slug,
+                    geo_target_id=geo_target_id,
+                    advertiser_id=adv_id,
+                )
+                rows.append(row)
+
+            # Rate limit between search terms
+            time.sleep(META_REQUEST_DELAY_SECONDS)
 
     step.set_metadata({
-        "source": "seed_data",
-        "advertisers_available": len(advertisers),
-        "torts_available": len(torts),
-        "geos_available": len(geos),
+        "source": "meta_ad_library",
+        "total_api_ads": total_api_ads,
+        "unique_ads": len(rows),
+        "skipped_duplicates": skipped_dupes,
+        "skipped_no_advertiser_match": skipped_no_adv,
+        "torts_searched": len([t for t in torts if t["slug"] in TORT_SEARCH_TERMS]),
     })
 
-    if not advertisers or not torts or not geos:
-        raise ValueError(f"Missing dimension data: advertisers={len(advertisers)}, torts={len(torts)}, geos={len(geos)}")
+    return rows
 
-    # Valid CHECK constraint values for ad_observations_raw
-    sources = ["google_ads_transparency", "mediaradar", "vivvix", "ispot", "manual"]
+
+def _fetch_raw_seed_data(step, advertisers: list[dict], torts: list[dict], geos: list[dict]) -> list[dict]:
+    """
+    Generate realistic seed ad observations from actual dimension tables.
+    Used as fallback when META_AD_LIBRARY_TOKEN is not set.
+    """
+    sources = ["google_ads_transparency", "meta_ad_library", "mediaradar", "vivvix", "ispot", "manual"]
     formats = ["search", "display", "video", "social", "tv", "radio"]
     rows = []
     today = date.today()
@@ -130,6 +365,41 @@ def step_fetch_raw(step) -> list[dict]:
             "raw_json": json.dumps({"seed": True, "generated_at": datetime.now(timezone.utc).isoformat()}),
             "ingested_at": datetime.now(timezone.utc).isoformat(),
         })
+
+    step.set_metadata({
+        "source": "seed_data",
+        "advertisers_available": len(advertisers),
+        "torts_available": len(torts),
+        "geos_available": len(geos),
+    })
+
+    return rows
+
+
+def step_fetch_raw(step) -> list[dict]:
+    """
+    Fetch ad observations into ad_observations_raw.
+
+    When META_AD_LIBRARY_TOKEN is set, queries the Meta Ad Library API
+    for each active tort using configured search terms. Falls back to
+    seed data generation when the token is missing.
+    """
+    advertisers = supabase_query("advertiser_entities", {"select": "id,canonical_name,entity_type,segment"})
+    torts = supabase_query("torts", {"select": "id,slug,label"})
+    geos = supabase_query("geo_targets", {"select": "id,geo_name,geo_code"})
+
+    if not advertisers or not torts or not geos:
+        raise ValueError(f"Missing dimension data: advertisers={len(advertisers)}, torts={len(torts)}, geos={len(geos)}")
+
+    if META_AD_LIBRARY_TOKEN:
+        print("  Using Meta Ad Library API (token present)")
+        rows = _fetch_raw_from_meta(step, torts, advertisers, geos)
+        if not rows:
+            print("  WARNING: Meta API returned 0 usable ads, falling back to seed data")
+            rows = _fetch_raw_seed_data(step, advertisers, torts, geos)
+    else:
+        print("  WARNING: META_AD_LIBRARY_TOKEN not set — using seed data")
+        rows = _fetch_raw_seed_data(step, advertisers, torts, geos)
 
     count = _bulk_insert("ad_observations_raw", rows)
     step.set_counts(rows_in=0, rows_out=count)
