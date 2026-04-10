@@ -257,20 +257,20 @@ export default async function AdSaturationPage({
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     <div>
-                      <p className="text-xs text-zinc-400">Advertisers</p>
-                      <p className="text-lg font-bold text-zinc-100">
+                      <p className="text-xs text-zinc-300">Advertisers</p>
+                      <p className="text-lg font-bold text-white">
                         {seg.advertiser_count}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-zinc-400">Est. Spend</p>
-                      <p className="text-lg font-bold text-zinc-100">
+                      <p className="text-xs text-zinc-300">Est. Spend</p>
+                      <p className="text-lg font-bold text-white">
                         {fmtCur(seg.total_spend)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-zinc-400">Creatives</p>
-                      <p className="text-lg font-bold text-zinc-100">
+                      <p className="text-xs text-zinc-300">Creatives</p>
+                      <p className="text-lg font-bold text-white">
                         {fmt(seg.total_creatives)}
                       </p>
                     </div>
