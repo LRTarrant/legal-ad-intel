@@ -195,29 +195,29 @@ export default async function AdSaturationPage({
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">TORT CATEGORIES</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">TORT CATEGORIES</p>
           <p className="mt-2 text-2xl font-bold">{uniqueTorts}</p>
-          <p className="text-xs text-zinc-500">Active torts</p>
+          <p className="text-xs text-zinc-400">Active torts</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">MARKETS</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">MARKETS</p>
           <p className="mt-2 text-2xl font-bold">{uniqueGeos}</p>
-          <p className="text-xs text-zinc-500">DMAs tracked</p>
+          <p className="text-xs text-zinc-400">DMAs tracked</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">AD OBSERVATIONS</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">AD OBSERVATIONS</p>
           <p className="mt-2 text-2xl font-bold">{fmt(totalObs)}</p>
-          <p className="text-xs text-zinc-500">Placements tracked</p>
+          <p className="text-xs text-zinc-400">Placements tracked</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">EST. TOTAL SPEND</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">EST. TOTAL SPEND</p>
           <p className="mt-2 text-2xl font-bold">{fmtCur(totalSpend)}</p>
-          <p className="text-xs text-zinc-500">Across all markets</p>
+          <p className="text-xs text-zinc-400">Across all markets</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">AVG SATURATION</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-300">AVG SATURATION</p>
           <p className={`mt-2 text-2xl font-bold ${scoreCls(avgScore)}`}>{fmtScore(avgScore)}</p>
-          <p className="text-xs text-zinc-500">0 = open \u00b7 100 = saturated</p>
+          <p className="text-xs text-zinc-400">0 = open \u00b7 100 = saturated</p>
         </div>
       </div>
 
