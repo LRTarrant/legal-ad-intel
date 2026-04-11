@@ -31,6 +31,8 @@ def extract_root_domain(url_or_domain: str) -> str:
         "www.morganandmorgan.com" → "morganandmorgan.com"
         "classaction.org" → "classaction.org"
     """
+    if not url_or_domain:
+        return ""
     text = url_or_domain.strip()
     if not text:
         return ""
