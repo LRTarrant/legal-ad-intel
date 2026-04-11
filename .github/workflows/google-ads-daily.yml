@@ -1,0 +1,47 @@
+name: Google Ads Daily Pipeline
+
+on:
+  schedule:
+    # Daily at 11:00 UTC (after ad_intel_daily)
+    - cron: '30 11 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no DB writes)'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run google_ads_daily pipeline
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
+          PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "Running in DRY-RUN mode"
+            python -m pipelines.google_ads_daily --dry-run
+          else
+            python -m pipelines.google_ads_daily
+          fi

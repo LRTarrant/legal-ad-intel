@@ -223,6 +223,26 @@ export async function getTortMarketAdvertisers(
   return (data ?? []) as TortMarketAdvertiser[];
 }
 
+export async function getDistinctAdSources(): Promise<string[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("ad_observations_raw")
+    .select("source")
+    .limit(1000);
+
+  if (error) {
+    console.error("Failed to fetch ad sources:", error.message);
+    return [];
+  }
+
+  const sources = new Set<string>();
+  for (const row of data ?? []) {
+    if (row.source) sources.add(row.source);
+  }
+  return Array.from(sources).sort();
+}
+
 export async function getAdSaturationWindowed(
   windowStart: string,
   windowEnd: string,
