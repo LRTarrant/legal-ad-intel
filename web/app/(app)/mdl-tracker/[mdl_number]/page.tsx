@@ -5,6 +5,7 @@ import { getJpmlSnapshots } from "@/lib/queries/jpml";
 import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
+import OnDocketFirms from "./on-docket-firms";
 
 export const dynamic = "force-dynamic";
 
@@ -408,6 +409,10 @@ export default async function MdlDetailPage({
         </a>
       </div>
 
+
+              {/* On-Docket Firms */}
+        <OnDocketFirms mdlNumber={mdlNumber} />
+      
       {/* Recent Developments */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-midnight-navy">
