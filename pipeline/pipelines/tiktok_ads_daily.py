@@ -134,7 +134,11 @@ def _extract_ads_from_tiktok(response_data: dict, query: str, tort_slug: str,
         advertiser_id = domain_mapper.match(advertiser_name) if advertiser_name else None
 
         # Parse audience metrics
-        impression_count = ad.get("estimated_audience_max") or ad.get("estimated_audience")
+        raw_count = ad.get("estimated_audience_max") or ad.get("estimated_audience")
+        try:
+            impression_count = int(raw_count) if raw_count is not None else None
+        except (ValueError, TypeError):
+            impression_count = None
 
         # Parse date fields
         first_shown = ad.get("first_shown_datetime", "")
