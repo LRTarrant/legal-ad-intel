@@ -85,6 +85,8 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "truck_accident":    ["truck accident lawyer", "18 wheeler accident attorney"],
     "nursing_home":      ["nursing home abuse lawyer", "nursing home neglect attorney"],
     "workers_comp":      ["workers compensation lawyer", "workers comp attorney"],
+    "roblox_abuse":      ["roblox child abuse lawsuit", "roblox predator lawsuit"],
+    "social_media_addiction": ["social media addiction lawsuit", "instagram addiction teens", "tiktok addiction lawsuit"],
 }
 
 
@@ -246,6 +248,16 @@ def _map_apify_ad_to_row(
 
 
 # ---------------------------------------------------------------------------
+# SERP (organic search results, featured snippets) is a separate data domain.
+# Do not mix SERP observations into ad_observations_raw.
+# Future: pipeline/pipelines/serp_intel_daily.py
+# ---------------------------------------------------------------------------
+
+# TODO: Google Ads Transparency — requires Apify actor (e.g. lexis-solutions~google-ads-scraper)
+# or SerpApi Google Ads Transparency Center endpoint. The user has Apify connected;
+# add Google via an Apify actor in a follow-up PR. Do NOT build a custom scraper.
+
+# ---------------------------------------------------------------------------
 # Step 1: Fetch Raw
 # ---------------------------------------------------------------------------
 
@@ -257,9 +269,31 @@ def _facebook_library_url(term: str) -> str:
     )
 
 
+def _run_apify_actor_with_retry(
+    actor_id: str, actor_input: dict, label: str, retries: int = 1
+) -> list[dict]:
+    """Run an Apify actor with retry and exponential backoff."""
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            return _run_apify_actor(actor_id, actor_input, label)
+        except (httpx.HTTPError, RuntimeError, TimeoutError, ValueError) as e:
+            last_err = e
+            if attempt < retries:
+                backoff = 2 ** attempt * APIFY_REQUEST_DELAY_SECONDS
+                logger.warning("  Retry %d/%d for %s after error: %s (backoff %.0fs)",
+                               attempt + 1, retries, label, e, backoff)
+                time.sleep(backoff)
+    raise last_err  # type: ignore[misc]
+
+
 def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos: list[dict]) -> list[dict]:
     """
     Fetch real ad observations from Apify actors across Facebook/Google/TikTok.
+
+    Per-tort error handling: one failed tort does not kill the whole fetch.
+    Includes 30s request timeout (via _run_apify_actor), 1 retry with
+    exponential backoff, and per-tort fetch count logging.
     """
     # Use first US-level geo target, or None
     us_geo = next((g for g in geos if g.get("geo_code") == "US"), None)
@@ -270,10 +304,12 @@ def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos
     total_api_ads = 0
     skipped_dupes = 0
     skipped_no_adv = 0
+    failed_torts: list[str] = []
+    per_tort_counts: dict[str, int] = {}
 
     platforms = [
         ("meta_ad_library", APIFY_ACTOR_FACEBOOK),
-        # Requires $25/mo Apify subscription:
+        # TODO: Google Ads Transparency — enable when Apify actor is configured
         # ("google_ads_transparency", APIFY_ACTOR_GOOGLE),
         # Requires $30/mo Apify subscription:
         # ("tiktok_ad_library", APIFY_ACTOR_TIKTOK),
@@ -286,77 +322,89 @@ def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos
             logger.info("  No search terms configured for tort '%s', skipping", slug)
             continue
 
-        for term in search_terms:
-            for source_name, actor_id in platforms:
-                logger.info("  Searching %s via Apify: '%s' (tort: %s)", source_name, term, slug)
-                if source_name == "meta_ad_library":
-                    actor_input = {
-                        "urls": [{"url": _facebook_library_url(term)}],
-                        "count": MAX_ADS_PER_TERM_PLATFORM,
-                    }
-                elif source_name == "google_ads_transparency":
-                    actor_input = {
-                        "startUrls": [{
-                            "url": f"https://adstransparency.google.com/?region=US&text={quote_plus(term)}"
-                        }],
-                        "downloadMedia": False,
-                    }
-                else:
-                    actor_input = {
-                        "query": term,
-                        "quickSearch": False,
-                        "maxPages": 1,
-                    }
+        tort_ad_count = 0
+        try:
+            for term in search_terms:
+                for source_name, actor_id in platforms:
+                    logger.info("  Searching %s via Apify: '%s' (tort: %s)", source_name, term, slug)
+                    if source_name == "meta_ad_library":
+                        actor_input = {
+                            "urls": [{"url": _facebook_library_url(term)}],
+                            "count": MAX_ADS_PER_TERM_PLATFORM,
+                        }
+                    elif source_name == "google_ads_transparency":
+                        actor_input = {
+                            "startUrls": [{
+                                "url": f"https://adstransparency.google.com/?region=US&text={quote_plus(term)}"
+                            }],
+                            "downloadMedia": False,
+                        }
+                    else:
+                        actor_input = {
+                            "query": term,
+                            "quickSearch": False,
+                            "maxPages": 1,
+                        }
 
-                try:
-                    ads = _run_apify_actor(actor_id, actor_input, f"{source_name}:{term}")[:MAX_ADS_PER_TERM_PLATFORM]
-                except (httpx.HTTPError, RuntimeError, TimeoutError, ValueError) as e:
-                    logger.warning("  Apify fetch failed for %s '%s': %s", source_name, term, e)
+                    try:
+                        ads = _run_apify_actor_with_retry(
+                            actor_id, actor_input, f"{source_name}:{term}"
+                        )[:MAX_ADS_PER_TERM_PLATFORM]
+                    except (httpx.HTTPError, RuntimeError, TimeoutError, ValueError) as e:
+                        logger.warning("  Apify fetch failed for %s '%s': %s", source_name, term, e)
+                        time.sleep(APIFY_REQUEST_DELAY_SECONDS)
+                        continue
+
+                    total_api_ads += len(ads)
+                    for ad in ads:
+                        raw_source_id = str(
+                            ad.get("id")
+                            or ad.get("adId")
+                            or ad.get("ad_id")
+                            or ad.get("archiveId")
+                            or ""
+                        )
+                        if not raw_source_id:
+                            raw_source_id = uuid4().hex
+                        dedupe_key = f"{source_name}:{raw_source_id}"
+                        if dedupe_key in seen_source_ids:
+                            skipped_dupes += 1
+                            continue
+                        seen_source_ids.add(dedupe_key)
+
+                        advertiser_name = (
+                            ad.get("advertiser")
+                            or ad.get("advertiserName")
+                            or ad.get("pageName")
+                            or ad.get("page_name")
+                            or ad.get("brandName")
+                            or ""
+                        )
+                        adv_id = _fuzzy_match_advertiser(advertiser_name, advertisers) if advertiser_name else None
+
+                        if adv_id is None:
+                            skipped_no_adv += 1
+                            continue
+
+                        row = _map_apify_ad_to_row(
+                            ad,
+                            source=source_name,
+                            tort_id=tort["id"],
+                            tort_slug=slug,
+                            geo_target_id=geo_target_id,
+                            advertiser_id=adv_id,
+                        )
+                        rows.append(row)
+                        tort_ad_count += 1
+
                     time.sleep(APIFY_REQUEST_DELAY_SECONDS)
-                    continue
 
-                total_api_ads += len(ads)
-                for ad in ads:
-                    raw_source_id = str(
-                        ad.get("id")
-                        or ad.get("adId")
-                        or ad.get("ad_id")
-                        or ad.get("archiveId")
-                        or ""
-                    )
-                    if not raw_source_id:
-                        raw_source_id = uuid4().hex
-                    dedupe_key = f"{source_name}:{raw_source_id}"
-                    if dedupe_key in seen_source_ids:
-                        skipped_dupes += 1
-                        continue
-                    seen_source_ids.add(dedupe_key)
+        except Exception as e:
+            logger.error("  Tort '%s' failed entirely: %s", slug, e)
+            failed_torts.append(slug)
 
-                    advertiser_name = (
-                        ad.get("advertiser")
-                        or ad.get("advertiserName")
-                        or ad.get("pageName")
-                        or ad.get("page_name")
-                        or ad.get("brandName")
-                        or ""
-                    )
-                    adv_id = _fuzzy_match_advertiser(advertiser_name, advertisers) if advertiser_name else None
-
-                    if adv_id is None:
-                        skipped_no_adv += 1
-                        continue
-
-                    row = _map_apify_ad_to_row(
-                        ad,
-                        source=source_name,
-                        tort_id=tort["id"],
-                        tort_slug=slug,
-                        geo_target_id=geo_target_id,
-                        advertiser_id=adv_id,
-                    )
-                    rows.append(row)
-
-                time.sleep(APIFY_REQUEST_DELAY_SECONDS)
+        per_tort_counts[slug] = tort_ad_count
+        logger.info("  Tort '%s': fetched %d usable ads", slug, tort_ad_count)
 
     step.set_metadata({
         "source": "apify_multi_source",
@@ -365,7 +413,12 @@ def _fetch_raw_from_apify(step, torts: list[dict], advertisers: list[dict], geos
         "skipped_duplicates": skipped_dupes,
         "skipped_no_advertiser_match": skipped_no_adv,
         "torts_searched": len([t for t in torts if t["slug"] in TORT_SEARCH_TERMS]),
+        "per_tort_counts": per_tort_counts,
+        "failed_torts": failed_torts,
     })
+
+    if failed_torts:
+        logger.warning("  %d tort(s) failed: %s", len(failed_torts), ", ".join(failed_torts))
 
     return rows
 
@@ -510,7 +563,7 @@ def step_validate_raw(step, raw_rows: list[dict]) -> dict:
 def step_normalize(step) -> int:
     """Aggregate ad_observations_raw into ad_observations_normalized."""
     raw = supabase_query("ad_observations_raw", {
-        "select": "advertiser_id,tort_id,geo_target_id,ad_format,first_seen,source,estimated_spend_low,estimated_spend_high,impression_count,creative_url",
+        "select": "advertiser_id,tort_id,geo_target_id,ad_format,first_seen,last_seen,source,estimated_spend_low,estimated_spend_high,impression_count,creative_url",
     })
 
     if not raw:
@@ -537,6 +590,8 @@ def step_normalize(step) -> int:
                 "estimated_spend": 0.0,
                 "impressions": 0,
                 "sources": set(),
+                "earliest_seen": first_seen,
+                "latest_seen": None,
             }
 
         g = groups[key]
@@ -546,6 +601,15 @@ def step_normalize(step) -> int:
         g["estimated_spend"] += spend_mid
         g["impressions"] += r.get("impression_count") or 0
         g["sources"].add(r["source"])
+
+        # Track temporal boundaries: MIN(first_seen), MAX(last_seen)
+        if first_seen < g["earliest_seen"]:
+            g["earliest_seen"] = first_seen
+        last_seen_str = r.get("last_seen")
+        if last_seen_str:
+            last_seen_date = date.fromisoformat(last_seen_str)
+            if g["latest_seen"] is None or last_seen_date > g["latest_seen"]:
+                g["latest_seen"] = last_seen_date
 
     norm_rows = []
     for g in groups.values():
@@ -560,6 +624,8 @@ def step_normalize(step) -> int:
             "estimated_spend": round(g["estimated_spend"], 2),
             "impressions": g["impressions"],
             "source_mix": sorted(list(g["sources"])),
+            "earliest_seen": g["earliest_seen"].isoformat(),
+            "latest_seen": g["latest_seen"].isoformat() if g["latest_seen"] else None,
         })
 
     # Clear and reload normalized data
