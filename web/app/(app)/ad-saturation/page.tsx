@@ -4,6 +4,7 @@ import {
   getTopAdvertisersBySegment,
   getTorts,
   getAdvertiserCompetitiveSummary,
+  getDistinctAdSources,
   type AdSaturationRow,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
@@ -31,12 +32,13 @@ export default async function AdSaturationPage({
   const sp = await searchParams;
   const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
 
-  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
+  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary, adSources] = await Promise.all([
     getAdSaturationWindowed(windowStart, windowEnd),
     getTorts(),
     getSegmentSummary(),
     getTopAdvertisersBySegment(undefined, 25),
     getAdvertiserCompetitiveSummary(),
+    getDistinctAdSources(),
   ]);
 
   // Map windowed rows to AdSaturationRow shape for the client component
@@ -96,6 +98,19 @@ export default async function AdSaturationPage({
           <Radio className="h-6 w-6 text-purple-400" />
           Ad Saturation
         </h1>
+        {adSources.length > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs font-medium uppercase text-zinc-500">Sources</span>
+            {adSources.map((src) => (
+              <span
+                key={src}
+                className="inline-flex rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-300"
+              >
+                {src.replace(/_/g, " ")}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <Suspense fallback={null}>

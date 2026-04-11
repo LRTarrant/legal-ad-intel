@@ -11,11 +11,12 @@ import {
   ChevronRight,
   CloudLightning,
   HeartPulse,
-    Radio,
+  Radio,
+  Search,
   Ship,
   Target,
   Truck,
-    Users,
+  Users,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -56,6 +57,7 @@ const bottomNavItems = [
   { label: "PI Viability", href: "/pi-viability" },
     { label: "Market Demographics", href: "/market-demographics", Icon: Users },
   { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
+  { label: "Search Visibility", href: "/search-visibility", Icon: Search },
 ];
 
 type NavItem = {
