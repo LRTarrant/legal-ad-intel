@@ -115,6 +115,7 @@ export default async function AdSaturationPage({
         segmentSummaryByTort={segmentSummaryByTort}
         topAdvertisersByTort={topAdvertisersByTort}
         initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
+        activePlatform={activePlatform}
       />
     </div>
   );

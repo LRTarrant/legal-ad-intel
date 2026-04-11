@@ -6,6 +6,10 @@ Searches Google for tort-related keywords, extracts sponsored/paid ad results,
 and inserts them into the existing ad_observations_raw pipeline with
 source='google_ads'.
 
+Note: YouTube paid ads are treated as part of the Google Ads Transparency
+Center ingestion model, so they are intentionally not handled in a separate
+pipeline.
+
 Usage:
     python -m pipelines.google_ads_daily
     python -m pipelines.google_ads_daily --dry-run
