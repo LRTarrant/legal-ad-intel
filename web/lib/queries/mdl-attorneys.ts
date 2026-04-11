@@ -19,7 +19,8 @@ export interface MdlAttorneyScorecard {
 export async function getMdlFirmSummary(
   mdlNumber: number
 ): Promise<MdlFirmSummary[]> {
-  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
   const { data, error } = await supabase.rpc("get_mdl_firm_summary", {
     p_mdl_number: mdlNumber,
   });
@@ -30,7 +31,8 @@ export async function getMdlFirmSummary(
 export async function getMdlAttorneyScorecard(
   mdlNumber: number
 ): Promise<MdlAttorneyScorecard | null> {
-  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
   const { data, error } = await supabase.rpc("get_mdl_attorney_scorecard", {
     p_mdl_number: mdlNumber,
   });
@@ -43,7 +45,8 @@ export async function getMdlAttorneyScorecard(
 export async function hasMdlAttorneyData(
   mdlNumber: number
 ): Promise<boolean> {
-  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
   const { count, error } = await supabase
     .from("mdl_attorneys")
     .select("id", { count: "exact", head: true })
