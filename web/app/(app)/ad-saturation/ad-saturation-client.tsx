@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Radio } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   getAdvertiserCompetitiveSummary,
   getTortMarketAdvertisers,
@@ -141,13 +141,6 @@ export function AdSaturationClient({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Radio className="h-6 w-6 text-purple-400" />
-          Ad Saturation
-        </h1>
-      </div>
-
       <div className="flex flex-wrap gap-3">{/* filters omitted for brevity style parity */}
         <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">Tort</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedTort(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedTort ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{torts.map((t) => (<button key={t.slug} type="button" onClick={() => startTransition(() => setSelectedTort(t.slug))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedTort === t.slug ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{t.label}</button>))}</div></div>
         <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">State</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedState(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedState ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{states.map((st) => (<button key={st} type="button" onClick={() => startTransition(() => setSelectedState(st))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedState === st ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{st}</button>))}</div></div>

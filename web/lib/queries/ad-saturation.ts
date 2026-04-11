@@ -124,6 +124,24 @@ export type AdvertiserCompetitiveSummary = {
   market_count: number;
 };
 
+export type AdSaturationWindowedRow = {
+  tort_slug: string;
+  tort_label: string;
+  tort_category: string;
+  geo_name: string;
+  state_abbr: string | null;
+  geo_code: string;
+  geo_type: string;
+  geo_population: number | null;
+  total_advertisers: number;
+  total_creatives: number;
+  total_observations: number;
+  estimated_spend: number;
+  saturation_score: number | null;
+  tort_id: string;
+  geo_target_id: string;
+};
+
 export type TortMarketAdvertiser = {
   advertiser_id: string;
   advertiser_name: string;
@@ -203,4 +221,27 @@ export async function getTortMarketAdvertisers(
   }
 
   return (data ?? []) as TortMarketAdvertiser[];
+}
+
+export async function getAdSaturationWindowed(
+  windowStart: string,
+  windowEnd: string,
+  tortSlug?: string,
+  state?: string
+): Promise<AdSaturationWindowedRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_ad_saturation_windowed", {
+    p_window_start: windowStart,
+    p_window_end: windowEnd,
+    p_tort_slug: tortSlug ?? null,
+    p_state: state ?? null,
+  });
+
+  if (error) {
+    console.error("Failed to fetch windowed saturation:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as AdSaturationWindowedRow[];
 }
