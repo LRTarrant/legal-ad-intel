@@ -67,11 +67,9 @@ export async function getAdSaturationSummary(opts?: {
     .from("ad_saturation_summary")
     .select("*")
     .order("saturation_score", { ascending: false, nullsFirst: false });
-
   if (opts?.tortSlug) query = query.eq("tort_slug", opts.tortSlug);
   if (opts?.geoType) query = query.eq("geo_type", opts.geoType);
   if (opts?.limit) query = query.limit(opts.limit);
-
   const { data, error } = await query;
   if (error) throw new Error(`Failed to fetch ad saturation: ${error.message}`);
   return (data ?? []) as AdSaturationRow[];
@@ -86,9 +84,7 @@ export async function getAdSaturationKpis(): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
   const { data, error } = await sb.rpc("get_ad_saturation_kpis").single();
-
   if (error) {
-    // RPC may not exist yet; return zeros
     return { totalTorts: 0, totalGeos: 0, totalObservations: 0, avgScore: null };
   }
   return data;
@@ -154,12 +150,14 @@ export type TortMarketAdvertiser = {
 };
 
 export async function getSegmentSummary(
-  tortSlug?: string
+  tortSlug?: string,
+  source?: string
 ): Promise<SegmentSummary[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
   const { data, error } = await sb.rpc("get_segment_summary", {
     p_tort_slug: tortSlug ?? null,
+    p_source: source ?? null,
   });
   if (error) {
     console.error("Failed to fetch segment summary:", error.message);
@@ -170,13 +168,15 @@ export async function getSegmentSummary(
 
 export async function getTopAdvertisersBySegment(
   tortSlug?: string,
-  limit = 20
+  limit = 20,
+  source?: string
 ): Promise<TopAdvertiserBySegment[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
   const { data, error } = await sb.rpc("get_top_advertisers_by_segment", {
     p_tort_slug: tortSlug ?? null,
     p_limit: limit,
+    p_source: source ?? null,
   });
   if (error) {
     console.error("Failed to fetch top advertisers:", error.message);
@@ -187,20 +187,20 @@ export async function getTopAdvertisersBySegment(
 
 export async function getAdvertiserCompetitiveSummary(
   tortSlug?: string,
-  stateAbbr?: string
+  stateAbbr?: string,
+  source?: string
 ): Promise<AdvertiserCompetitiveSummary[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
   const { data, error } = await sb.rpc("get_advertiser_competitive_summary", {
     p_tort_slug: tortSlug ?? null,
     p_state_abbr: stateAbbr ?? null,
+    p_source: source ?? null,
   });
-
   if (error) {
     console.error("Failed to fetch advertiser competitive summary:", error.message);
     return [];
   }
-
   return (data ?? []) as AdvertiserCompetitiveSummary[];
 }
 
@@ -214,12 +214,10 @@ export async function getTortMarketAdvertisers(
     p_tort_id: tortId,
     p_geo_target_id: geoTargetId,
   });
-
   if (error) {
     console.error("Failed to fetch tort/market advertisers:", error.message);
     return [];
   }
-
   return (data ?? []) as TortMarketAdvertiser[];
 }
 
@@ -230,12 +228,10 @@ export async function getDistinctAdSources(): Promise<string[]> {
     .from("ad_observations_raw")
     .select("source")
     .limit(1000);
-
   if (error) {
     console.error("Failed to fetch ad sources:", error.message);
     return [];
   }
-
   const sources = new Set<string>();
   for (const row of data ?? []) {
     if (row.source) sources.add(row.source);
@@ -259,11 +255,9 @@ export async function getAdSaturationWindowed(
     p_state: state ?? null,
     p_source: source ?? null,
   });
-
   if (error) {
     console.error("Failed to fetch windowed saturation:", error.message);
     return [];
   }
-
   return (data ?? []) as AdSaturationWindowedRow[];
 }
