@@ -37,9 +37,9 @@ export default async function AdSaturationPage({
   const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
     getAdSaturationWindowed(windowStart, windowEnd, undefined, undefined, sourceFilter),
     getTorts(),
-    getSegmentSummary(),
-    getTopAdvertisersBySegment(undefined, 25),
-    getAdvertiserCompetitiveSummary(),
+    getSegmentSummary(undefined, sourceFilter),
+    getTopAdvertisersBySegment(undefined, 25, sourceFilter),
+    getAdvertiserCompetitiveSummary(undefined, undefined, sourceFilter),
   ]);
 
   // Map windowed rows to AdSaturationRow shape for the client component
@@ -82,11 +82,10 @@ export default async function AdSaturationPage({
   const byTortResults = await Promise.all(
     torts.map(async (tort) => ({
       slug: tort.slug,
-      segments: await getSegmentSummary(tort.slug),
-      advertisers: await getTopAdvertisersBySegment(tort.slug, 25),
+      segments: await getSegmentSummary(tort.slug, sourceFilter),
+      advertisers: await getTopAdvertisersBySegment(tort.slug, 25, sourceFilter),
     }))
   );
-
   byTortResults.forEach((result) => {
     segmentSummaryByTort[result.slug] = result.segments;
     topAdvertisersByTort[result.slug] = result.advertisers;
