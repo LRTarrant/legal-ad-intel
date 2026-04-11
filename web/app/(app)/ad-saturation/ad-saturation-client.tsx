@@ -3,10 +3,13 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { StateDropdown } from "./_components/StateDropdown";
 import {
+  getAdvertiserPlatforms,
   getAdvertiserCompetitiveSummary,
   getTortMarketAdvertisers,
   type AdSaturationRow,
+  type AdvertiserPlatforms,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
   type TopAdvertiserBySegment,
@@ -66,18 +69,46 @@ function segmentBg(seg: string): string {
   return "bg-zinc-800 border-zinc-700";
 }
 
+const PLATFORM_META: Record<string, { label: string; className: string }> = {
+  google_ads: { label: "Google Ads", className: "bg-blue-500/20 border-blue-500/40 text-blue-200" },
+  google_ads_transparency: {
+    label: "Google Transparency",
+    className: "bg-sky-500/20 border-sky-500/40 text-sky-200",
+  },
+  tiktok_ads: { label: "TikTok Ads", className: "bg-zinc-700 border-zinc-500 text-zinc-100" },
+  meta_ad_library: { label: "Meta Ads", className: "bg-indigo-500/20 border-indigo-500/40 text-indigo-200" },
+  mediaradar: { label: "MediaRadar", className: "bg-emerald-500/20 border-emerald-500/40 text-emerald-200" },
+  ispot: { label: "iSpot", className: "bg-orange-500/20 border-orange-500/40 text-orange-200" },
+  vivvix: { label: "Vivvix", className: "bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-200" },
+  manual: { label: "Manual", className: "bg-zinc-500/20 border-zinc-500/40 text-zinc-200" },
+};
+
+function normalizePlatform(platform: string): string {
+  return platform?.toLowerCase().trim();
+}
+
+function platformLabel(platform: string): string {
+  return PLATFORM_META[platform]?.label ?? platform.replaceAll("_", " ");
+}
+
+function platformBadgeClass(platform: string): string {
+  return PLATFORM_META[platform]?.className ?? "bg-zinc-600/20 border-zinc-600/40 text-zinc-200";
+}
+
 export function AdSaturationClient({
   allData,
   torts,
   segmentSummaryByTort,
   topAdvertisersByTort,
   initialCompetitiveSummary,
+  activePlatform,
 }: {
   allData: AdSaturationRow[];
   torts: Tort[];
   segmentSummaryByTort: Record<string, SegmentSummary[]>;
   topAdvertisersByTort: Record<string, TopAdvertiserBySegment[]>;
   initialCompetitiveSummary: AdvertiserCompetitiveSummary[];
+  activePlatform: string;
 }) {
   const [selectedTort, setSelectedTort] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
@@ -85,17 +116,21 @@ export function AdSaturationClient({
 
   const [competitiveAdvertisers, setCompetitiveAdvertisers] = useState(initialCompetitiveSummary);
   const [competitiveLoading, setCompetitiveLoading] = useState(false);
+  const [advertiserPlatforms, setAdvertiserPlatforms] = useState<AdvertiserPlatforms[]>([]);
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const [drilldownLoadingKey, setDrilldownLoadingKey] = useState<string | null>(null);
   const [drilldownByRowKey, setDrilldownByRowKey] = useState<Record<string, TortMarketAdvertiser[]>>({});
 
-  const states = useMemo(
-    () =>
-      Array.from(
-        new Set(allData.map((d) => d.state_abbr).filter(Boolean) as string[])
-      ).sort(),
-    [allData]
-  );
+  const platformsByAdvertiser = useMemo(() => {
+    const byId = new Map<string, string[]>();
+    const byName = new Map<string, string[]>();
+    advertiserPlatforms.forEach((row) => {
+      const platforms = (row.platforms ?? []).map(normalizePlatform).filter(Boolean);
+      if (row.advertiser_id) byId.set(row.advertiser_id, platforms);
+      if (row.advertiser_name) byName.set(row.advertiser_name.trim().toLowerCase(), platforms);
+    });
+    return { byId, byName };
+  }, [advertiserPlatforms]);
 
   const data = useMemo(
     () =>
@@ -123,7 +158,8 @@ export function AdSaturationClient({
       setCompetitiveLoading(true);
       const rows = await getAdvertiserCompetitiveSummary(
         selectedTort ?? undefined,
-        selectedState ?? undefined
+        selectedState ?? undefined,
+        activePlatform === "all" ? undefined : activePlatform
       );
       if (!cancelled) {
         setCompetitiveAdvertisers(rows);
@@ -135,7 +171,48 @@ export function AdSaturationClient({
     return () => {
       cancelled = true;
     };
-  }, [selectedState, selectedTort]);
+  }, [selectedState, selectedTort, activePlatform]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      const rows = await getAdvertiserPlatforms(
+        selectedTort ?? undefined,
+        selectedState ?? undefined,
+        activePlatform === "all" ? undefined : activePlatform
+      );
+      if (!cancelled) {
+        setAdvertiserPlatforms(rows);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedState, selectedTort, activePlatform]);
+
+  function renderPlatformBadges(advertiserId?: string | null, advertiserName?: string | null) {
+    const byId = advertiserId ? platformsByAdvertiser.byId.get(advertiserId) : undefined;
+    const byName = advertiserName
+      ? platformsByAdvertiser.byName.get(advertiserName.trim().toLowerCase())
+      : undefined;
+    const platforms = byId ?? byName ?? [];
+    if (!platforms.length) return <span className="text-xs text-zinc-500">\u2014</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {platforms.map((platform) => (
+          <span
+            key={`${advertiserName}-${platform}`}
+            className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${platformBadgeClass(platform)}`}
+          >
+            {platformLabel(platform)}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
 
 
@@ -143,7 +220,7 @@ export function AdSaturationClient({
     <div className="space-y-8">
       <div className="flex flex-wrap gap-3">{/* filters omitted for brevity style parity */}
         <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">Tort</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedTort(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedTort ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{torts.map((t) => (<button key={t.slug} type="button" onClick={() => startTransition(() => setSelectedTort(t.slug))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedTort === t.slug ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{t.label}</button>))}</div></div>
-        <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">State</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedState(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedState ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{states.map((st) => (<button key={st} type="button" onClick={() => startTransition(() => setSelectedState(st))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedState === st ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{st}</button>))}</div></div>
+        <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">State</span><StateDropdown selectedState={selectedState} onSelectState={(state) => startTransition(() => setSelectedState(state))} /></div>
       </div>
 
       {isPending && <div className="h-1 w-full animate-pulse rounded-full bg-zinc-700" />}
@@ -152,7 +229,7 @@ export function AdSaturationClient({
         {segments.length > 0 && data.length > 0 && (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900">
             <div className="border-b border-zinc-800 px-5 py-4"><h3 className="text-base font-semibold">Top Advertisers by Segment</h3></div>
-            <div className="overflow-x-auto"><table className="w-full text-left text-sm text-zinc-100"><thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Type</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Markets</th></tr></thead><tbody className="divide-y divide-zinc-700/50">{topAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3 text-zinc-300">{adv.entity_type}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full text-left text-sm text-zinc-100"><thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Platforms</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Markets</th></tr></thead><tbody className="divide-y divide-zinc-700/50">{topAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3 text-zinc-300">{adv.entity_type}</td><td className="px-4 py-3">{renderPlatformBadges(adv.advertiser_id, adv.advertiser_name)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}</tbody></table></div>
           </div>
         )}
 
@@ -163,8 +240,8 @@ export function AdSaturationClient({
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-100">
-              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="w-12 px-4 py-3 text-right">#</th><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Torts</th><th className="px-4 py-3 text-right">Markets</th></tr></thead>
-              <tbody className="divide-y divide-zinc-700/50">{competitiveAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.tort_count}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}{!competitiveLoading && competitiveAdvertisers.length === 0 && (<tr><td className="px-4 py-4 text-center text-zinc-400" colSpan={7}>No advertiser leaderboard data for this selection.</td></tr>)}</tbody>
+              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="w-12 px-4 py-3 text-right">#</th><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Platforms</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Torts</th><th className="px-4 py-3 text-right">Markets</th></tr></thead>
+              <tbody className="divide-y divide-zinc-700/50">{competitiveAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3">{renderPlatformBadges(adv.advertiser_id, adv.advertiser_name)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.tort_count}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}{!competitiveLoading && competitiveAdvertisers.length === 0 && (<tr><td className="px-4 py-4 text-center text-zinc-400" colSpan={8}>No advertiser leaderboard data for this selection.</td></tr>)}</tbody>
             </table>
           </div>
         </div>

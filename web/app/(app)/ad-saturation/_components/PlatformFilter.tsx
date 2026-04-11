@@ -43,13 +43,24 @@ export function PlatformFilter({ active }: { active: string }) {
           onClick={() => handleSelect(p.key)}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             active === p.key
-              ? "bg-purple-600 text-white"
-              : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+              ? "bg-purple-600 text-white ring-1 ring-purple-300/60 shadow-[0_0_16px_rgba(168,85,247,0.45)]"
+              : p.key === "all" && active !== "all"
+                ? "bg-zinc-900 text-zinc-500"
+                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
           }`}
         >
           {p.label}
         </button>
       ))}
+      {active !== "all" && (
+        <button
+          onClick={() => handleSelect("all")}
+          className="inline-flex items-center gap-1 rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white"
+        >
+          <span className="text-sm leading-none">×</span>
+          Clear
+        </button>
+      )}
     </div>
   );
 }
