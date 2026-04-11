@@ -13,6 +13,7 @@ import {
   type Tort,
   type TortMarketAdvertiser,
 } from "@/lib/queries";
+import { PlatformPills } from "./_components/platform-pills";
 
 function fmt(n: number | null): string {
   if (n == null) return "\u2014";
@@ -72,15 +73,18 @@ export function AdSaturationClient({
   segmentSummaryByTort,
   topAdvertisersByTort,
   initialCompetitiveSummary,
+  advertiserPlatforms,
+  selectedStates,
 }: {
   allData: AdSaturationRow[];
   torts: Tort[];
   segmentSummaryByTort: Record<string, SegmentSummary[]>;
   topAdvertisersByTort: Record<string, TopAdvertiserBySegment[]>;
   initialCompetitiveSummary: AdvertiserCompetitiveSummary[];
+  advertiserPlatforms: Record<string, string[]>;
+  selectedStates: string[];
 }) {
   const [selectedTort, setSelectedTort] = useState<string | null>(null);
-  const [selectedState, setSelectedState] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [competitiveAdvertisers, setCompetitiveAdvertisers] = useState(initialCompetitiveSummary);
@@ -89,12 +93,9 @@ export function AdSaturationClient({
   const [drilldownLoadingKey, setDrilldownLoadingKey] = useState<string | null>(null);
   const [drilldownByRowKey, setDrilldownByRowKey] = useState<Record<string, TortMarketAdvertiser[]>>({});
 
-  const states = useMemo(
-    () =>
-      Array.from(
-        new Set(allData.map((d) => d.state_abbr).filter(Boolean) as string[])
-      ).sort(),
-    [allData]
+  const stateSet = useMemo(
+    () => (selectedStates.length > 0 ? new Set(selectedStates) : null),
+    [selectedStates]
   );
 
   const data = useMemo(
@@ -102,9 +103,9 @@ export function AdSaturationClient({
       allData.filter(
         (d) =>
           (!selectedTort || d.tort_slug === selectedTort) &&
-          (!selectedState || d.state_abbr === selectedState)
+          (!stateSet || (d.state_abbr != null && stateSet.has(d.state_abbr)))
       ),
-    [allData, selectedTort, selectedState]
+    [allData, selectedTort, stateSet]
   );
 
   const segments = useMemo(
@@ -123,7 +124,7 @@ export function AdSaturationClient({
       setCompetitiveLoading(true);
       const rows = await getAdvertiserCompetitiveSummary(
         selectedTort ?? undefined,
-        selectedState ?? undefined
+        undefined
       );
       if (!cancelled) {
         setCompetitiveAdvertisers(rows);
@@ -135,15 +136,14 @@ export function AdSaturationClient({
     return () => {
       cancelled = true;
     };
-  }, [selectedState, selectedTort]);
+  }, [selectedTort]);
 
 
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap gap-3">{/* filters omitted for brevity style parity */}
+      <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">Tort</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedTort(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedTort ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{torts.map((t) => (<button key={t.slug} type="button" onClick={() => startTransition(() => setSelectedTort(t.slug))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedTort === t.slug ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{t.label}</button>))}</div></div>
-        <div className="flex items-center gap-2"><span className="text-xs font-medium uppercase text-zinc-500">State</span><div className="flex flex-wrap gap-1"><button type="button" onClick={() => startTransition(() => setSelectedState(null))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${!selectedState ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>All</button>{states.map((st) => (<button key={st} type="button" onClick={() => startTransition(() => setSelectedState(st))} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${selectedState === st ? "border-purple-500 bg-purple-500/20 text-purple-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>{st}</button>))}</div></div>
       </div>
 
       {isPending && <div className="h-1 w-full animate-pulse rounded-full bg-zinc-700" />}
@@ -152,7 +152,7 @@ export function AdSaturationClient({
         {segments.length > 0 && data.length > 0 && (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900">
             <div className="border-b border-zinc-800 px-5 py-4"><h3 className="text-base font-semibold">Top Advertisers by Segment</h3></div>
-            <div className="overflow-x-auto"><table className="w-full text-left text-sm text-zinc-100"><thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Type</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Markets</th></tr></thead><tbody className="divide-y divide-zinc-700/50">{topAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3 text-zinc-300">{adv.entity_type}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full text-left text-sm text-zinc-100"><thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Platforms</th><th className="px-4 py-3">Type</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Markets</th></tr></thead><tbody className="divide-y divide-zinc-700/50">{topAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3"><PlatformPills platforms={advertiserPlatforms[adv.advertiser_name] ?? []} /></td><td className="px-4 py-3 text-zinc-300">{adv.entity_type}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}</tbody></table></div>
           </div>
         )}
 
@@ -163,8 +163,8 @@ export function AdSaturationClient({
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-100">
-              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="w-12 px-4 py-3 text-right">#</th><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Torts</th><th className="px-4 py-3 text-right">Markets</th></tr></thead>
-              <tbody className="divide-y divide-zinc-700/50">{competitiveAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.tort_count}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}{!competitiveLoading && competitiveAdvertisers.length === 0 && (<tr><td className="px-4 py-4 text-center text-zinc-400" colSpan={7}>No advertiser leaderboard data for this selection.</td></tr>)}</tbody>
+              <thead className="border-b border-zinc-800 text-xs uppercase text-zinc-300"><tr><th className="w-12 px-4 py-3 text-right">#</th><th className="px-4 py-3">Advertiser</th><th className="px-4 py-3">Segment</th><th className="px-4 py-3">Platforms</th><th className="px-4 py-3 text-right">Est. Spend</th><th className="px-4 py-3 text-right">Creatives</th><th className="px-4 py-3 text-right">Torts</th><th className="px-4 py-3 text-right">Markets</th></tr></thead>
+              <tbody className="divide-y divide-zinc-700/50">{competitiveAdvertisers.map((adv, i) => (<tr key={`${adv.advertiser_name}-${i}`} className="hover:bg-zinc-800/50"><td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td><td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50">{adv.advertiser_name}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${segmentBg(adv.segment)} ${segmentColor(adv.segment)}`}>{segmentLabel(adv.segment)}</span></td><td className="px-4 py-3"><PlatformPills platforms={advertiserPlatforms[adv.advertiser_name] ?? []} /></td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmtCur(adv.total_spend)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{fmt(adv.total_creatives)}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.tort_count}</td><td className="px-4 py-3 text-right tabular-nums text-zinc-300">{adv.market_count}</td></tr>))}{!competitiveLoading && competitiveAdvertisers.length === 0 && (<tr><td className="px-4 py-4 text-center text-zinc-400" colSpan={8}>No advertiser leaderboard data for this selection.</td></tr>)}</tbody>
             </table>
           </div>
         </div>
