@@ -47,10 +47,10 @@ export default async function OnDocketFirms({ mdlNumber }: Props) {
 
       {/* Firm table */}
       {firms.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-zinc-900 text-left text-xs uppercase tracking-wide text-slate-400">
+              <tr className="bg-zinc-800 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-4 py-3">Firm</th>
                 <th className="px-4 py-3 text-right">Attorneys</th>
                 <th className="px-4 py-3 text-right">Parties</th>
@@ -60,21 +60,19 @@ export default async function OnDocketFirms({ mdlNumber }: Props) {
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {firms.map((f) => (
-                <tr key={f.firm_name} className="hover:bg-zinc-900/60 transition-colors">
+                <tr key={f.firm_name} className="hover:bg-zinc-800/60 transition-colors">
                   <td className="px-4 py-3 text-white font-medium">{f.firm_name}</td>
                   <td className="px-4 py-3 text-right text-slate-300">{f.attorney_count}</td>
                   <td className="px-4 py-3 text-right text-slate-300">{f.party_count}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {f.roles.map((r) => (
+                      {(f.roles ?? []).map((r) => (
                         <span
                           key={r}
                           className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
                             r.toLowerCase().includes("plaintiff")
-                              ? "bg-purple-500/20 text-purple-300"
-                              : r.toLowerCase().includes("defendant")
-                                ? "bg-red-500/20 text-red-300"
-                                : "bg-zinc-700 text-zinc-300"
+                              ? "bg-purple-900/40 text-purple-300"
+                              : "bg-zinc-800 text-slate-300"
                           }`}
                         >
                           {r}
@@ -82,10 +80,12 @@ export default async function OnDocketFirms({ mdlNumber }: Props) {
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">
+                  <td className="px-4 py-3 text-slate-300">
                     {f.attorneys.slice(0, 3).join(", ")}
                     {f.attorneys.length > 3 && (
-                      <span className="text-slate-500"> +{f.attorneys.length - 3} more</span>
+                      <span className="text-slate-500 ml-1">
+                        +{f.attorneys.length - 3} more
+                      </span>
                     )}
                   </td>
                 </tr>
