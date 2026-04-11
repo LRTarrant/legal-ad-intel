@@ -143,8 +143,8 @@ def _extract_ads_from_tiktok(response_data: dict, query: str, tort_slug: str,
         # Parse date fields
         first_shown = ad.get("first_shown_datetime", "")
         last_shown = ad.get("last_shown_datetime", "")
-            first_seen = first_shown[:10] if first_shown and len(first_shown) >= 10 else now.date().isoformat()
-            last_seen = last_shown[:10] if last_shown and len(last_shown) >= 10 else now.date().isoformat()
+        first_seen = first_shown[:10] if first_shown and len(first_shown) >= 10 else now.date().isoformat()
+        last_seen = last_shown[:10] if last_shown and len(last_shown) >= 10 else now.date().isoformat()
 
         source_id = f"tiktok_ads:{tort_slug}:{query}:{ad_id or i}:{now.strftime('%Y%m%d')}"
 
