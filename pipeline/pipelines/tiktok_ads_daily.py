@@ -143,8 +143,8 @@ def _extract_ads_from_tiktok(response_data: dict, query: str, tort_slug: str,
         # Parse date fields
         first_shown = ad.get("first_shown_datetime", "")
         last_shown = ad.get("last_shown_datetime", "")
-        first_seen = first_shown[:10] if first_shown and len(first_shown) >= 10 else now.date().isoformat()
-        last_seen = last_shown[:10] if last_shown and len(last_shown) >= 10 else now.date().isoformat()
+        first_seen = first_shown[:10] if first_shown else now.date().isoformat()
+        last_seen = last_shown[:10] if last_shown else now.date().isoformat()
 
         source_id = f"tiktok_ads:{tort_slug}:{query}:{ad_id or i}:{now.strftime('%Y%m%d')}"
 
@@ -284,9 +284,6 @@ def step_fetch_raw(step) -> list[dict]:
         "unmatched_domains": list(domain_mapper.unmatched_domains)[:50],
     })
 
-        if rows:
-        print(f"  Inserting {len(rows)} TikTok ad rows. First row keys: {list(rows[0].keys())}")
-        print(f"  First row sample: source_id={rows[0]['source_id'][:50]}, first_seen={rows[0]['first_seen']}, impression_count={rows[0]['impression_count']}")
     count = _bulk_insert("ad_observations_raw", rows)
     step.set_counts(rows_in=0, rows_out=count)
     return rows
