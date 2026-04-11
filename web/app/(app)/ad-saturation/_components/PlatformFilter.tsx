@@ -5,8 +5,14 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 const PLATFORMS = [
   { key: "all", label: "All" },
+  { key: "meta_ad_library", label: "Meta Ads" },
   { key: "google_ads", label: "Google Ads" },
+  { key: "google_ads_transparency", label: "Google Transparency" },
   { key: "tiktok_ads", label: "TikTok Ads" },
+  { key: "mediaradar", label: "MediaRadar" },
+  { key: "ispot", label: "iSpot" },
+  { key: "vivvix", label: "Vivvix" },
+  { key: "manual", label: "Manual" },
 ] as const;
 
 export function PlatformFilter({ active }: { active: string }) {
@@ -29,26 +35,21 @@ export function PlatformFilter({ active }: { active: string }) {
   );
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-medium uppercase text-zinc-500">
-        Platform
-      </span>
-      {PLATFORMS.map(({ key, label }) => {
-        const isActive = active === key;
-        return (
-          <button
-            key={key}
-            onClick={() => handleSelect(key)}
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              isActive
-                ? "bg-purple-600 text-white"
-                : "border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-            }`}
-          >
-            {label}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-sm font-medium text-zinc-400 mr-1">PLATFORM</span>
+      {PLATFORMS.map((p) => (
+        <button
+          key={p.key}
+          onClick={() => handleSelect(p.key)}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            active === p.key
+              ? "bg-purple-600 text-white"
+              : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
     </div>
   );
 }
