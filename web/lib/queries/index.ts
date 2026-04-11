@@ -41,3 +41,11 @@ export * from "./demographics";
 
 export * from "./ad-saturation";
 export * from "./serp-visibility";
+
+export {
+  getMdlFirmSummary,
+  getMdlAttorneyScorecard,
+  hasMdlAttorneyData,
+  type MdlFirmSummary,
+  type MdlAttorneyScorecard,
+} from "./mdl-attorneys";
