@@ -1,14 +1,19 @@
 import {
-  getAdSaturationSummary,
+  getAdSaturationWindowed,
   getSegmentSummary,
   getTopAdvertisersBySegment,
   getTorts,
   getAdvertiserCompetitiveSummary,
+  type AdSaturationRow,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
   type TopAdvertiserBySegment,
 } from "@/lib/queries";
 import { AdSaturationClient } from "./ad-saturation-client";
+import { TimeWindowSelector } from "./_components/TimeWindowSelector";
+import { computeDateRange } from "./_components/time-window-utils";
+import { Suspense } from "react";
+import { Radio } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +23,48 @@ export const metadata = {
 
 const ALL_FILTER_KEY = "__all__";
 
-export default async function AdSaturationPage() {
-  const [allData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
-    getAdSaturationSummary({ limit: 500 }),
+export default async function AdSaturationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ window?: string; from?: string; to?: string }>;
+}) {
+  const sp = await searchParams;
+  const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
+
+  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
+    getAdSaturationWindowed(windowStart, windowEnd),
     getTorts(),
     getSegmentSummary(),
     getTopAdvertisersBySegment(undefined, 25),
     getAdvertiserCompetitiveSummary(),
   ]);
+
+  // Map windowed rows to AdSaturationRow shape for the client component
+  const allData: AdSaturationRow[] = windowedData.map((row, i) => ({
+    id: `${row.tort_id}:${row.geo_target_id}`,
+    tort_id: row.tort_id,
+    geo_target_id: row.geo_target_id,
+    tort_slug: row.tort_slug,
+    tort_label: row.tort_label,
+    tort_category: row.tort_category,
+    geo_type: row.geo_type ?? "",
+    geo_code: row.geo_code ?? "",
+    geo_name: row.geo_name,
+    state_abbr: row.state_abbr,
+    geo_population: row.geo_population,
+    period_start: windowStart,
+    period_end: windowEnd,
+    total_advertisers: row.total_advertisers,
+    total_creatives: row.total_creatives,
+    total_observations: row.total_observations,
+    estimated_spend: row.estimated_spend,
+    estimated_impressions: null,
+    saturation_score: row.saturation_score,
+    spend_rank: i + 1,
+    format_breakdown: null,
+    top_advertisers: null,
+    computed_at: new Date().toISOString(),
+  }));
 
   const segmentSummaryByTort: Record<string, SegmentSummary[]> = {
     [ALL_FILTER_KEY]: allSegments,
@@ -51,12 +90,25 @@ export default async function AdSaturationPage() {
   });
 
   return (
-    <AdSaturationClient
-      allData={allData}
-      torts={torts}
-      segmentSummaryByTort={segmentSummaryByTort}
-      topAdvertisersByTort={topAdvertisersByTort}
-      initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
-    />
+    <div className="space-y-8">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Radio className="h-6 w-6 text-purple-400" />
+          Ad Saturation
+        </h1>
+      </div>
+
+      <Suspense fallback={null}>
+        <TimeWindowSelector />
+      </Suspense>
+
+      <AdSaturationClient
+        allData={allData}
+        torts={torts}
+        segmentSummaryByTort={segmentSummaryByTort}
+        topAdvertisersByTort={topAdvertisersByTort}
+        initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
+      />
+    </div>
   );
 }

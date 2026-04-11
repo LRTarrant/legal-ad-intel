@@ -1,13 +1,17 @@
 import {
-  getAdSaturationSummary,
+  getAdSaturationWindowed,
   getTortBySlug,
   getTorts,
   getSegmentSummary,
   getTopAdvertisersBySegment,
+  type AdSaturationRow,
 } from "@/lib/queries";
 import { Radio, ArrowLeft, Users, TrendingUp, MapPin, Megaphone, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { TimeWindowSelector } from "../_components/TimeWindowSelector";
+import { computeDateRange } from "../_components/time-window-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -76,21 +80,49 @@ export default async function TortDrillDownPage({
   searchParams,
 }: {
   params: Promise<{ tortSlug: string }>;
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; window?: string; from?: string; to?: string }>;
 }) {
   const { tortSlug } = await params;
   const sp = await searchParams;
   const stateFilter = sp.state || undefined;
+  const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
 
   const tort = await getTortBySlug(tortSlug);
   if (!tort) notFound();
 
-  const [allData, segments, topAdvertisers, allTorts] = await Promise.all([
-    getAdSaturationSummary({ tortSlug, limit: 500 }),
+  const [windowedData, segments, topAdvertisers, allTorts] = await Promise.all([
+    getAdSaturationWindowed(windowStart, windowEnd, tortSlug),
     getSegmentSummary(tortSlug),
     getTopAdvertisersBySegment(tortSlug, 30),
     getTorts(),
   ]);
+
+  // Map windowed rows to AdSaturationRow shape
+  const allData: AdSaturationRow[] = windowedData.map((row, i) => ({
+    id: `${row.tort_id}:${row.geo_target_id}`,
+    tort_id: row.tort_id,
+    geo_target_id: row.geo_target_id,
+    tort_slug: row.tort_slug,
+    tort_label: row.tort_label,
+    tort_category: row.tort_category,
+    geo_type: row.geo_type ?? "",
+    geo_code: row.geo_code ?? "",
+    geo_name: row.geo_name,
+    state_abbr: row.state_abbr,
+    geo_population: row.geo_population,
+    period_start: windowStart,
+    period_end: windowEnd,
+    total_advertisers: row.total_advertisers,
+    total_creatives: row.total_creatives,
+    total_observations: row.total_observations,
+    estimated_spend: row.estimated_spend,
+    estimated_impressions: null,
+    saturation_score: row.saturation_score,
+    spend_rank: i + 1,
+    format_breakdown: null,
+    top_advertisers: null,
+    computed_at: new Date().toISOString(),
+  }));
 
   const data = stateFilter ? allData.filter((d) => d.state_abbr === stateFilter) : allData;
 
@@ -126,8 +158,22 @@ export default async function TortDrillDownPage({
   function filterUrl(state: string | undefined) {
     const p = new URLSearchParams();
     if (state) p.set("state", state);
+    // Preserve time window params
+    if (sp.window && sp.window !== "30d") p.set("window", sp.window);
+    if (sp.window === "custom" && sp.from) p.set("from", sp.from);
+    if (sp.window === "custom" && sp.to) p.set("to", sp.to);
     const qs = p.toString();
     return `/ad-saturation/${tortSlug}${qs ? `?${qs}` : ""}`;
+  }
+
+  // Build tort switcher URLs that preserve time window params
+  function tortUrl(slug: string) {
+    const p = new URLSearchParams();
+    if (sp.window && sp.window !== "30d") p.set("window", sp.window);
+    if (sp.window === "custom" && sp.from) p.set("from", sp.from);
+    if (sp.window === "custom" && sp.to) p.set("to", sp.to);
+    const qs = p.toString();
+    return `/ad-saturation/${slug}${qs ? `?${qs}` : ""}`;
   }
 
   return (
@@ -153,7 +199,7 @@ export default async function TortDrillDownPage({
           {allTorts.map((t) => (
             <Link
               key={t.slug}
-              href={`/ad-saturation/${t.slug}`}
+              href={tortUrl(t.slug)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                 t.slug === tortSlug
                   ? "border-purple-500 bg-purple-500/20 text-purple-300"
@@ -165,6 +211,11 @@ export default async function TortDrillDownPage({
           ))}
         </div>
       </div>
+
+      {/* Time Window Selector */}
+      <Suspense fallback={null}>
+        <TimeWindowSelector />
+      </Suspense>
 
       {/* State Filter */}
       {states.length > 1 && (
@@ -228,7 +279,7 @@ export default async function TortDrillDownPage({
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-medium uppercase tracking-wider text-white">AVG SATURATION</p>
           <p className={`mt-2 text-2xl font-bold ${scoreCls(avgScore)}`}>{fmtScore(avgScore)}</p>
-          <p className="text-xs text-zinc-200">0 = open \u00b7 100 = saturated</p>
+          <p className="text-xs text-zinc-200">0 = open · 100 = saturated</p>
         </div>
       </div>
 
@@ -321,7 +372,7 @@ export default async function TortDrillDownPage({
           </h2>
           <p className="text-sm text-zinc-400">
             {topMarkets.length} markets ranked by saturation score
-            {stateFilter ? ` \u00b7 ${stateFilter}` : ""}
+            {stateFilter ? ` · ${stateFilter}` : ""}
           </p>
         </div>
         {topMarkets.length === 0 ? (
