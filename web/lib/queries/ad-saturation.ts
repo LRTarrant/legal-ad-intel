@@ -247,7 +247,8 @@ export async function getAdSaturationWindowed(
   windowStart: string,
   windowEnd: string,
   tortSlug?: string,
-  state?: string
+  state?: string,
+  source?: string
 ): Promise<AdSaturationWindowedRow[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
@@ -256,6 +257,7 @@ export async function getAdSaturationWindowed(
     p_window_end: windowEnd,
     p_tort_slug: tortSlug ?? null,
     p_state: state ?? null,
+    p_source: source ?? null,
   });
 
   if (error) {

@@ -4,7 +4,6 @@ import {
   getTopAdvertisersBySegment,
   getTorts,
   getAdvertiserCompetitiveSummary,
-  getDistinctAdSources,
   type AdSaturationRow,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
@@ -12,6 +11,7 @@ import {
 } from "@/lib/queries";
 import { AdSaturationClient } from "./ad-saturation-client";
 import { TimeWindowSelector } from "./_components/TimeWindowSelector";
+import { PlatformFilter } from "./_components/PlatformFilter";
 import { computeDateRange } from "./_components/time-window-utils";
 import { Suspense } from "react";
 import { Radio } from "lucide-react";
@@ -27,18 +27,19 @@ const ALL_FILTER_KEY = "__all__";
 export default async function AdSaturationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ window?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ window?: string; from?: string; to?: string; platform?: string }>;
 }) {
   const sp = await searchParams;
   const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
+  const activePlatform = sp.platform || "all";
+  const sourceFilter = activePlatform === "all" ? undefined : activePlatform;
 
-  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary, adSources] = await Promise.all([
-    getAdSaturationWindowed(windowStart, windowEnd),
+  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
+    getAdSaturationWindowed(windowStart, windowEnd, undefined, undefined, sourceFilter),
     getTorts(),
     getSegmentSummary(),
     getTopAdvertisersBySegment(undefined, 25),
     getAdvertiserCompetitiveSummary(),
-    getDistinctAdSources(),
   ]);
 
   // Map windowed rows to AdSaturationRow shape for the client component
@@ -98,19 +99,11 @@ export default async function AdSaturationPage({
           <Radio className="h-6 w-6 text-purple-400" />
           Ad Saturation
         </h1>
-        {adSources.length > 0 && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs font-medium uppercase text-zinc-500">Sources</span>
-            {adSources.map((src) => (
-              <span
-                key={src}
-                className="inline-flex rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-300"
-              >
-                {src.replace(/_/g, " ")}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="mt-2">
+          <Suspense fallback={null}>
+            <PlatformFilter active={activePlatform} />
+          </Suspense>
+        </div>
       </div>
 
       <Suspense fallback={null}>
