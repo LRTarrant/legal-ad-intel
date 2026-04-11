@@ -95,7 +95,7 @@ def _searchapi_tiktok(query: str) -> dict:
                 "engine": "tiktok_ads_library",
                 "q": query,
                 "api_key": SEARCHAPI_API_KEY,
-                "country": "us",
+                "country": "all",
             }, timeout=30)
 
             if resp.status_code == 429:
