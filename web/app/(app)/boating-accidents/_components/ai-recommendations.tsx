@@ -4,8 +4,10 @@ import {
   AlertTriangle,
   Target,
   TrendingUp,
+  Anchor,
+  Waves,
 } from "lucide-react";
-import type { BoatingHotspotCounty, BoatingSeverityStats } from "@/lib/queries";
+import type { BoatingHotspotCounty, BoatingHotspotWaterbody, BoatingSeverityStats } from "@/lib/queries";
 
 type Recommendation = {
   icon: React.ReactNode;
@@ -15,16 +17,20 @@ type Recommendation = {
 
 type AIRecommendationsProps = {
   hotspots: BoatingHotspotCounty[];
+  waterbodyHotspots: BoatingHotspotWaterbody[];
   severity: BoatingSeverityStats;
   selectedState: string | null;
+  selectedWaterbody: string | null;
   nationalTotal: number;
   stateTotal: number;
 };
 
 function generateRecommendations({
   hotspots,
+  waterbodyHotspots,
   severity,
   selectedState,
+  selectedWaterbody,
   nationalTotal,
   stateTotal,
 }: AIRecommendationsProps): Recommendation[] {
@@ -40,7 +46,41 @@ function generateRecommendations({
     });
   }
 
-  // 2. Seasonal timing (generic — monthly data unavailable)
+  // 2. Waterbody targeting — top waterbody (when state selected)
+  if (selectedState && waterbodyHotspots.length > 0 && !selectedWaterbody) {
+    const top = waterbodyHotspots[0];
+    cards.push({
+      icon: <Anchor className="h-5 w-5 text-intelligence-teal" />,
+      title: `Target ${top.waterbody_name}`,
+      description: `${top.waterbody_name} leads ${selectedState} with ${top.total_accidents.toLocaleString()} boating accidents — target marinas, boat ramps, and marine dealers along this ${top.waterbody_type} for maximum claimant reach.`,
+    });
+  }
+
+  // 3. Multi-waterbody concentration (top 3 > 40% of state)
+  if (selectedState && waterbodyHotspots.length >= 3 && stateTotal > 0 && !selectedWaterbody) {
+    const top3 = waterbodyHotspots.slice(0, 3);
+    const top3Total = top3.reduce((sum, w) => sum + w.total_accidents, 0);
+    const pct = (top3Total / stateTotal) * 100;
+    if (pct > 40) {
+      const names = top3.map((w) => w.waterbody_name).join(", ");
+      cards.push({
+        icon: <Waves className="h-5 w-5 text-intelligence-teal" />,
+        title: `Top 3 waterbodies = ${pct.toFixed(0)}% of ${selectedState}`,
+        description: `${names} account for ${pct.toFixed(0)}% of ${selectedState} boating accidents. Concentrate geo-targeted campaigns around these three waterbodies.`,
+      });
+    }
+  }
+
+  // 4. Waterbody-specific severity (when waterbody selected and fatality rate is notable)
+  if (selectedWaterbody && severity.fatality_rate > 3) {
+    cards.push({
+      icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+      title: `${selectedWaterbody} — high fatality rate`,
+      description: `${selectedWaterbody} has a ${severity.fatality_rate.toFixed(1)}% fatality rate — significantly above average. Emphasize wrongful death and survivor benefit messaging for this market.`,
+    });
+  }
+
+  // 5. Seasonal timing (generic — monthly data unavailable)
   cards.push({
     icon: <Sun className="h-5 w-5 text-intelligence-teal" />,
     title: "Plan campaigns for peak boating season",
@@ -48,22 +88,24 @@ function generateRecommendations({
       "Boating injuries peak from May through September. Schedule ad flights to coincide with summer boating activity when injury rates are highest and claimant volume is greatest.",
   });
 
-  // 3. Severity-based messaging
-  if (severity.fatality_rate > 3) {
-    cards.push({
-      icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
-      title: "High fatality rate — focus on wrongful death cases",
-      description: `The ${severity.fatality_rate.toFixed(1)}% fatality rate indicates a significant proportion of accidents involve deaths. Consider messaging around wrongful death claims, survivor benefits, and family compensation.`,
-    });
-  } else if (severity.pct_fatal > 5) {
-    cards.push({
-      icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
-      title: "Meaningful fatal accident share",
-      description: `${severity.pct_fatal.toFixed(1)}% of boating accidents result in at least one death. Include wrongful death practice areas alongside personal injury in campaign targeting.`,
-    });
+  // 6. Severity-based messaging (skip if waterbody-specific card already shown)
+  if (!selectedWaterbody) {
+    if (severity.fatality_rate > 3) {
+      cards.push({
+        icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+        title: "High fatality rate — focus on wrongful death cases",
+        description: `The ${severity.fatality_rate.toFixed(1)}% fatality rate indicates a significant proportion of accidents involve deaths. Consider messaging around wrongful death claims, survivor benefits, and family compensation.`,
+      });
+    } else if (severity.pct_fatal > 5) {
+      cards.push({
+        icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+        title: "Meaningful fatal accident share",
+        description: `${severity.pct_fatal.toFixed(1)}% of boating accidents result in at least one death. Include wrongful death practice areas alongside personal injury in campaign targeting.`,
+      });
+    }
   }
 
-  // 4. Geographic concentration
+  // 7. Geographic concentration
   if (hotspots.length >= 5) {
     const top5Total = hotspots
       .slice(0, 5)
@@ -81,7 +123,7 @@ function generateRecommendations({
     }
   }
 
-  // 5. Scale opportunity — state vs national
+  // 8. Scale opportunity — state vs national
   if (selectedState && nationalTotal > 0 && stateTotal > 0) {
     const pctOfNational = (stateTotal / nationalTotal) * 100;
     cards.push({

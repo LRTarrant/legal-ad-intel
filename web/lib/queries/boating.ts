@@ -10,10 +10,14 @@ type BoatingCountyNameRow = RpcFunctions["get_boating_counties_by_state_name"]["
 type BoatingHotspotRow = RpcFunctions["get_boating_hotspot_counties"]["Returns"][number];
 type BoatingSeverityRow = RpcFunctions["get_boating_severity_stats"]["Returns"][number];
 type BoatingCountyTrendRow = RpcFunctions["get_boating_county_trend"]["Returns"][number];
+type BoatingWaterbodyRow = RpcFunctions["get_boating_waterbodies_by_state"]["Returns"][number];
+type BoatingHotspotWaterbodyRow = RpcFunctions["get_boating_hotspot_waterbodies"]["Returns"][number];
+type BoatingWaterbodyTrendRow = RpcFunctions["get_boating_waterbody_trend"]["Returns"][number];
 
 export interface BoatingFilters {
   state?: string | null;
   county?: string | null; // county_name text, NOT county_fips
+  waterbodyId?: number | null;
 }
 
 export interface BoatingTrendByYear {
@@ -40,6 +44,24 @@ export interface BoatingCountyNameOption {
 export interface BoatingHeatmapPoint {
   latitude: number;
   longitude: number;
+}
+
+export interface BoatingWaterbodyOption {
+  waterbody_id: number;
+  waterbody_name: string;
+  waterbody_type: string;
+  total_accidents: number;
+}
+
+export interface BoatingHotspotWaterbody {
+  waterbody_id: number;
+  waterbody_name: string;
+  waterbody_type: string;
+  total_accidents: number;
+  total_deaths: number;
+  total_injuries: number;
+  avg_lat: number;
+  avg_lng: number;
 }
 
 export interface BoatingHotspotCounty {
@@ -72,6 +94,7 @@ export async function getBoatingTotals(
     {
       filter_state: filters?.state ?? null,
       filter_county_name: filters?.county ?? null,
+      filter_waterbody_id: filters?.waterbodyId ?? null,
     } as never
   );
   if (error) throw error;
@@ -92,6 +115,7 @@ export async function getBoatingTrendByYear(
     {
       filter_state: filters?.state ?? null,
       filter_county_name: filters?.county ?? null,
+      filter_waterbody_id: filters?.waterbodyId ?? null,
     } as never
   );
   if (error) throw error;
@@ -169,7 +193,8 @@ export async function getBoatingHotspotCounties(
 
 export async function getBoatingSeverityStats(
   state?: string | null,
-  countyName?: string | null
+  countyName?: string | null,
+  waterbodyId?: number | null
 ): Promise<BoatingSeverityStats> {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc(
@@ -177,6 +202,7 @@ export async function getBoatingSeverityStats(
     {
       filter_state: state ?? null,
       filter_county_name: countyName ?? null,
+      filter_waterbody_id: waterbodyId ?? null,
     } as never
   );
   if (error) throw error;
@@ -231,11 +257,58 @@ export async function getBoatingHeatmapPoints(
     query = query.eq("county_name", filters.county);
   }
 
+  if (filters?.waterbodyId) {
+    query = query.eq("waterbody_id", filters.waterbodyId);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
   return ((data ?? []) as { latitude: number; longitude: number }[]).map((row) => ({
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     intensity: 1,
+  }));
+}
+
+export async function getWaterbodiesByState(
+  stateAbbr: string
+): Promise<BoatingWaterbodyOption[]> {
+  if (!stateAbbr) return [];
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_boating_waterbodies_by_state",
+    { state_abbr: stateAbbr } as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as BoatingWaterbodyRow[]).map((row) => ({
+    waterbody_id: Number(row.waterbody_id),
+    waterbody_name: row.waterbody_name,
+    waterbody_type: row.waterbody_type,
+    total_accidents: Number(row.total_accidents),
+  }));
+}
+
+export async function getHotspotWaterbodies(
+  state?: string | null,
+  topN: number = 20
+): Promise<BoatingHotspotWaterbody[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_boating_hotspot_waterbodies",
+    {
+      filter_state: state ?? null,
+      top_n: topN,
+    } as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as BoatingHotspotWaterbodyRow[]).map((row) => ({
+    waterbody_id: Number(row.waterbody_id),
+    waterbody_name: row.waterbody_name,
+    waterbody_type: row.waterbody_type,
+    total_accidents: Number(row.total_accidents),
+    total_deaths: Number(row.total_deaths),
+    total_injuries: Number(row.total_injuries),
+    avg_lat: Number(row.avg_lat),
+    avg_lng: Number(row.avg_lng),
   }));
 }
