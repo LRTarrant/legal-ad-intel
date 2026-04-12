@@ -6,8 +6,9 @@ import {
   TrendingUp,
   Anchor,
   Waves,
+  Store,
 } from "lucide-react";
-import type { BoatingHotspotCounty, BoatingHotspotWaterbody, BoatingSeverityStats } from "@/lib/queries";
+import type { BoatingHotspotCounty, BoatingHotspotWaterbody, BoatingSeverityStats, BoatingPoiTarget } from "@/lib/queries";
 
 type Recommendation = {
   icon: React.ReactNode;
@@ -23,6 +24,7 @@ type AIRecommendationsProps = {
   selectedWaterbody: string | null;
   nationalTotal: number;
   stateTotal: number;
+  poiTargets?: BoatingPoiTarget[];
 };
 
 function generateRecommendations({
@@ -33,6 +35,7 @@ function generateRecommendations({
   selectedWaterbody,
   nationalTotal,
   stateTotal,
+  poiTargets: poiTargetsProp,
 }: AIRecommendationsProps): Recommendation[] {
   const cards: Recommendation[] = [];
 
@@ -80,7 +83,24 @@ function generateRecommendations({
     });
   }
 
-  // 5. Seasonal timing (generic — monthly data unavailable)
+  // 5. POI targeting — top advertising target
+  const poiTargets = poiTargetsProp ?? [];
+  if (poiTargets.length > 0) {
+    const top = poiTargets[0];
+    const categoryLabel: Record<string, string> = {
+      marina: "marina",
+      boat_ramp: "boat ramp",
+      marine_dealer: "marine dealer",
+      fuel_dock: "fuel dock",
+    };
+    cards.push({
+      icon: <Store className="h-5 w-5 text-intelligence-teal" />,
+      title: `Target ${top.poi_name}`,
+      description: `${top.poi_name} (${categoryLabel[top.category] ?? top.category}) in ${top.state} has an ad value score of ${top.ad_value_score.toLocaleString()} with ${top.nearby_incidents.toLocaleString()} boating incidents nearby — a high-value location for geo-targeted legal advertising.`,
+    });
+  }
+
+  // 6. Seasonal timing (generic — monthly data unavailable)
   cards.push({
     icon: <Sun className="h-5 w-5 text-intelligence-teal" />,
     title: "Plan campaigns for peak boating season",
@@ -88,7 +108,7 @@ function generateRecommendations({
       "Boating injuries peak from May through September. Schedule ad flights to coincide with summer boating activity when injury rates are highest and claimant volume is greatest.",
   });
 
-  // 6. Severity-based messaging (skip if waterbody-specific card already shown)
+  // 7. Severity-based messaging (skip if waterbody-specific card already shown)
   if (!selectedWaterbody) {
     if (severity.fatality_rate > 3) {
       cards.push({
@@ -105,7 +125,7 @@ function generateRecommendations({
     }
   }
 
-  // 7. Geographic concentration
+  // 8. Geographic concentration
   if (hotspots.length >= 5) {
     const top5Total = hotspots
       .slice(0, 5)
@@ -123,7 +143,7 @@ function generateRecommendations({
     }
   }
 
-  // 8. Scale opportunity — state vs national
+  // 9. Scale opportunity — state vs national
   if (selectedState && nationalTotal > 0 && stateTotal > 0) {
     const pctOfNational = (stateTotal / nationalTotal) * 100;
     cards.push({

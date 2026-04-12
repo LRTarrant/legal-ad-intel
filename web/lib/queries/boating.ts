@@ -239,6 +239,104 @@ export async function getBoatingCountyTrend(
   }));
 }
 
+/* ------------------------------------------------------------------ */
+/*  POI (Points of Interest) queries                                  */
+/* ------------------------------------------------------------------ */
+
+export interface BoatingPoiTarget {
+  poi_id: number;
+  poi_name: string;
+  category: string;
+  lat: number;
+  lng: number;
+  state: string;
+  website: string | null;
+  nearby_incidents: number;
+  nearby_fatalities: number;
+  nearby_injuries: number;
+  ad_value_score: number;
+}
+
+export interface BoatingPoiCategory {
+  category: string;
+  count: number;
+}
+
+export interface BoatingPoiCountsByState {
+  state: string;
+  total_pois: number;
+  marinas: number;
+  boat_ramps: number;
+  marine_dealers: number;
+  fuel_docks: number;
+}
+
+export async function getBoatingPoiTargets(
+  state?: string | null,
+  category?: string | null,
+  yearStart?: number | null,
+  yearEnd?: number | null
+): Promise<BoatingPoiTarget[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_boating_poi_targets" as never,
+    {
+      p_state: state || null,
+      p_category: category || null,
+      p_year_start: yearStart || null,
+      p_year_end: yearEnd || null,
+      p_limit: 25,
+    } as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as BoatingPoiTarget[]).map((row) => ({
+    poi_id: Number(row.poi_id),
+    poi_name: row.poi_name,
+    category: row.category,
+    lat: Number(row.lat),
+    lng: Number(row.lng),
+    state: row.state,
+    website: row.website,
+    nearby_incidents: Number(row.nearby_incidents),
+    nearby_fatalities: Number(row.nearby_fatalities),
+    nearby_injuries: Number(row.nearby_injuries),
+    ad_value_score: Number(row.ad_value_score),
+  }));
+}
+
+export async function getBoatingPoiCategories(
+  state?: string | null
+): Promise<BoatingPoiCategory[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_boating_poi_categories" as never,
+    {
+      p_state: state || null,
+    } as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as BoatingPoiCategory[]).map((row) => ({
+    category: row.category,
+    count: Number(row.count),
+  }));
+}
+
+export async function getBoatingPoiCountsByState(): Promise<BoatingPoiCountsByState[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_boating_poi_counts_by_state" as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as BoatingPoiCountsByState[]).map((row) => ({
+    state: row.state,
+    total_pois: Number(row.total_pois),
+    marinas: Number(row.marinas),
+    boat_ramps: Number(row.boat_ramps),
+    marine_dealers: Number(row.marine_dealers),
+    fuel_docks: Number(row.fuel_docks),
+  }));
+}
+
 export async function getBoatingHeatmapPoints(
   filters?: BoatingFilters
 ): Promise<{ latitude: number; longitude: number; intensity: number }[]> {
