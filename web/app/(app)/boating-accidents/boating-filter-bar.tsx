@@ -2,43 +2,68 @@
 
 import { startTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { BoatingStateOption, BoatingCountyNameOption } from "@/lib/queries";
+import type { BoatingStateOption, BoatingCountyNameOption, BoatingWaterbodyOption } from "@/lib/queries";
 
 type BoatingFilterBarProps = {
   states: BoatingStateOption[];
   counties: BoatingCountyNameOption[];
+  waterbodies: BoatingWaterbodyOption[];
   selectedState: string | null;
   selectedCounty: string | null;
+  selectedWaterbody: string | null;
 };
 
 export function BoatingFilterBar({
   states,
   counties,
+  waterbodies,
   selectedState,
   selectedCounty,
+  selectedWaterbody,
 }: BoatingFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function updateParams(nextState: string, nextCounty: string) {
+  function updateParams(updates: { state?: string; county?: string; waterbody?: string }) {
     const params = new URLSearchParams(searchParams.toString());
 
-    if (nextState) {
-      params.set("state", nextState);
-    } else {
-      params.delete("state");
+    if (updates.state !== undefined) {
+      if (updates.state) {
+        params.set("state", updates.state);
+      } else {
+        params.delete("state");
+      }
+      // Clear county and waterbody when state changes
+      params.delete("county");
+      params.delete("waterbody");
     }
 
-    if (nextCounty && nextState) {
-      params.set("county", nextCounty);
-    } else {
-      params.delete("county");
+    if (updates.county !== undefined) {
+      if (updates.county) {
+        params.set("county", updates.county);
+      } else {
+        params.delete("county");
+      }
+    }
+
+    if (updates.waterbody !== undefined) {
+      if (updates.waterbody) {
+        params.set("waterbody", updates.waterbody);
+      } else {
+        params.delete("waterbody");
+      }
     }
 
     const query = params.toString();
     startTransition(() => {
       router.push(query ? `${pathname}?${query}` : pathname);
+    });
+  }
+
+  function clearAll() {
+    startTransition(() => {
+      router.push(pathname);
     });
   }
 
@@ -53,13 +78,13 @@ export function BoatingFilterBar({
             Narrow the boating signal
           </h2>
           <p className="mt-1 text-sm text-slate-gray">
-            Slice by state and county to focus the summaries, heatmap, and trend data.
+            Slice by state, county, and body of water to focus the summaries, heatmap, and trend data.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => updateParams("", "")}
+          onClick={clearAll}
           className="rounded-full border border-midnight-navy/10 px-4 py-2 text-sm font-medium text-slate-gray transition hover:border-intelligence-teal hover:text-intelligence-teal"
         >
           Clear filters
@@ -73,7 +98,7 @@ export function BoatingFilterBar({
           </span>
           <select
             value={selectedState ?? ""}
-            onChange={(event) => updateParams(event.target.value, "")}
+            onChange={(event) => updateParams({ state: event.target.value })}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
             <option value="">All states</option>
@@ -91,7 +116,7 @@ export function BoatingFilterBar({
           </span>
           <select
             value={selectedCounty ?? ""}
-            onChange={(event) => updateParams(selectedState ?? "", event.target.value)}
+            onChange={(event) => updateParams({ county: event.target.value })}
             disabled={!selectedState}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition enabled:focus:border-intelligence-teal disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -111,14 +136,20 @@ export function BoatingFilterBar({
             Body of Water
           </span>
           <select
-            disabled
-            className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition disabled:cursor-not-allowed disabled:opacity-60"
+            value={selectedWaterbody ?? ""}
+            onChange={(event) => updateParams({ waterbody: event.target.value })}
+            disabled={!selectedState}
+            className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition enabled:focus:border-intelligence-teal disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option>Requires data enrichment</option>
+            <option value="">
+              {selectedState ? "All waterbodies" : "Select a state first"}
+            </option>
+            {waterbodies.map((option) => (
+              <option key={option.waterbody_id} value={String(option.waterbody_id)}>
+                {option.waterbody_name} ({option.total_accidents})
+              </option>
+            ))}
           </select>
-          <p className="mt-1 text-xs text-slate-gray/70">
-            Waterbody data not yet available
-          </p>
         </label>
       </div>
     </div>

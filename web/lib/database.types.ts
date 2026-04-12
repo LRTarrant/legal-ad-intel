@@ -2440,7 +2440,19 @@ export type Database = {
         }[]
       }
       get_boating_severity_stats: {
-        Args: { filter_county_name?: string; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
+        Returns: {
+          avg_deaths_per_accident: number
+          avg_injuries_per_accident: number
+          fatality_rate: number
+          pct_fatal: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
+      get_boating_severity_stats_by_waterbody: {
+        Args: { filter_waterbody_id: number }
         Returns: {
           avg_deaths_per_accident: number
           avg_injuries_per_accident: number
@@ -2452,7 +2464,7 @@ export type Database = {
         }[]
       }
       get_boating_totals: {
-        Args: { filter_county_name?: string; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
         Returns: {
           total_accidents: number
           total_deaths: number
@@ -2460,7 +2472,7 @@ export type Database = {
         }[]
       }
       get_boating_trend_by_year: {
-        Args: { filter_county_name?: string; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
         Returns: {
           total_accidents: number
           total_deaths: number
@@ -2468,11 +2480,35 @@ export type Database = {
           year: number
         }[]
       }
+      get_boating_hotspot_waterbodies: {
+        Args: { filter_state?: string; top_n?: number }
+        Returns: {
+          avg_lat: number
+          avg_lng: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          waterbody_id: number
+          waterbody_name: string
+          waterbody_type: string
+        }[]
+      }
       get_boating_waterbodies_by_state: {
         Args: { state_abbr: string }
         Returns: {
-          body_of_water: string
           total_accidents: number
+          waterbody_id: number
+          waterbody_name: string
+          waterbody_type: string
+        }[]
+      }
+      get_boating_waterbody_trend: {
+        Args: { filter_waterbody_id: number }
+        Returns: {
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          year: number
         }[]
       }
       get_fars_counties_by_state: {
