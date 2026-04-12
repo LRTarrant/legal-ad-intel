@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { TrendLineChart } from "./_components/TrendLineChart";
 import { RegionalMap } from "./_components/RegionalMap";
+import { RelatedQueries } from "./_components/RelatedQueries";
 import { TortSelector } from "./_components/TortSelector";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,17 @@ async function getTrendData(tortSlug: string) {
   return data ?? [];
 }
 
+async function getRelatedQueries(tortSlug: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("google_trends_related_queries")
+    .select("query_type, position, query_text, display_value, extracted_value")
+    .eq("tort_slug", tortSlug)
+    .order("observed_at", { ascending: false })
+    .limit(100);
+  return data ?? [];
+}
+
 export default async function GoogleTrendsPage({
   searchParams,
 }: {
@@ -38,14 +50,26 @@ export default async function GoogleTrendsPage({
   const torts = await getTorts();
   const activeTort = sp.tort || torts[0]?.slug || "camp_lejeune";
 
-  const allData = await getTrendData(activeTort);
+  const [allData, relatedData] = await Promise.all([
+    getTrendData(activeTort),
+    getRelatedQueries(activeTort),
+  ]);
 
   const timeseriesData = allData
     .filter((r) => r.data_type === "timeseries")
     .sort((a, b) => (a.period_label > b.period_label ? 1 : -1));
 
-  const geoData = allData.filter((r) => r.data_type === "geo_map");
   const geoDataUS = allData.filter((r) => r.data_type === "geo_map_us");
+
+  // Deduplicate related queries — keep only most recent per query_text
+  const topQueries = relatedData
+    .filter((r: any) => r.query_type === "top")
+    .filter((r: any, i: number, arr: any[]) => arr.findIndex((a: any) => a.query_text === r.query_text) === i)
+    .slice(0, 25);
+  const risingQueries = relatedData
+    .filter((r: any) => r.query_type === "rising")
+    .filter((r: any, i: number, arr: any[]) => arr.findIndex((a: any) => a.query_text === r.query_text) === i)
+    .slice(0, 25);
 
   const activeTortLabel = torts.find((t) => t.slug === activeTort)?.label ?? activeTort;
 
@@ -83,12 +107,20 @@ export default async function GoogleTrendsPage({
             <TrendLineChart data={timeseriesData} />
           </div>
 
-          {/* Regional Map */}
+          {/* State-Level Regional Interest */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
             <h2 className="text-sm font-medium text-zinc-300 mb-4">
-              Interest by Region &mdash; <span className="text-purple-400">{activeTortLabel}</span>
+              State-Level Interest &mdash; <span className="text-purple-400">{activeTortLabel}</span>
             </h2>
-            <RegionalMap data={geoDataUS} worldData={geoData} />
+            <RegionalMap data={geoDataUS} />
+          </div>
+
+          {/* Related Queries */}
+          <div>
+            <h2 className="text-sm font-medium text-zinc-300 mb-4">
+              Related Queries &mdash; <span className="text-purple-400">{activeTortLabel}</span>
+            </h2>
+            <RelatedQueries topQueries={topQueries} risingQueries={risingQueries} />
           </div>
         </>
       )}

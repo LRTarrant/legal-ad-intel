@@ -20,7 +20,6 @@ type GeoRow = {
 
 interface RegionalMapProps {
   data: GeoRow[];
-  worldData?: GeoRow[];
 }
 
 /** Extract 2-letter postal code from a geo row.
@@ -42,47 +41,7 @@ function purpleInterpolator(t: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-function WorldFallback({ data }: { data: GeoRow[] }) {
-  const sorted = [...data]
-    .filter((d) => d.interest_value !== null)
-    .sort((a, b) => (b.interest_value ?? 0) - (a.interest_value ?? 0));
-
-  const maxValue = sorted[0]?.interest_value ?? 100;
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-zinc-500 mb-3">
-        No US state-level data available yet. Showing worldwide regional
-        interest (0-100 relative scale).
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-        {sorted.slice(0, 51).map((row, i) => {
-          const val = row.interest_value ?? 0;
-          const pct = maxValue > 0 ? (val / maxValue) * 100 : 0;
-          return (
-            <div key={`${row.region_code}-${i}`} className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400 w-28 truncate shrink-0">
-                {row.region_name ?? row.region_code ?? "Unknown"}
-              </span>
-              <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: purpleInterpolator(val / 100),
-                  }}
-                />
-              </div>
-              <span className="text-xs text-zinc-300 w-6 text-right">{val}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function RegionalMap({ data, worldData = [] }: RegionalMapProps) {
+export function RegionalMap({ data }: RegionalMapProps) {
   // Build postal code → interest value lookup from US data
   const stateMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -101,14 +60,10 @@ export function RegionalMap({ data, worldData = [] }: RegionalMapProps) {
 
   const hasUSData = stateMap.size > 0;
 
-  // Fallback: no US data → show worldwide bar chart
   if (!hasUSData) {
-    if (worldData.length > 0) {
-      return <WorldFallback data={worldData} />;
-    }
     return (
-      <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">
-        No regional data available.
+      <div className="flex items-center justify-center h-32 text-zinc-500 text-sm">
+        No US state-level data yet. Run the pipeline to populate.
       </div>
     );
   }
@@ -134,9 +89,9 @@ export function RegionalMap({ data, worldData = [] }: RegionalMapProps) {
         <div className="flex-1 min-w-0">
           <ComposableMap
             projection="geoAlbersUsa"
-            projectionConfig={{ scale: 1000 }}
+            projectionConfig={{ scale: 900 }}
             width={800}
-            height={500}
+            height={400}
             style={{ width: "100%", height: "auto" }}
           >
             <Geographies geography={US_TOPO_URL}>
