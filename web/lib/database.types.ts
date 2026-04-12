@@ -2452,7 +2452,7 @@ export type Database = {
         }[]
       }
       get_boating_totals: {
-        Args: { filter_county?: number; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string }
         Returns: {
           total_accidents: number
           total_deaths: number
@@ -2460,7 +2460,7 @@ export type Database = {
         }[]
       }
       get_boating_trend_by_year: {
-        Args: { filter_county?: number; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string }
         Returns: {
           total_accidents: number
           total_deaths: number

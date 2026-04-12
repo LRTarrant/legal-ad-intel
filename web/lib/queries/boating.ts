@@ -62,12 +62,6 @@ export interface BoatingSeverityStats {
   pct_fatal: number;
 }
 
-function toRpcFilters(filters?: BoatingFilters) {
-  return {
-    filter_state: filters?.state ?? null,
-    filter_county: filters?.county ? undefined : null,
-  };
-}
 
 export async function getBoatingTotals(
   filters?: BoatingFilters
@@ -77,6 +71,7 @@ export async function getBoatingTotals(
     "get_boating_totals",
     {
       filter_state: filters?.state ?? null,
+      filter_county_name: filters?.county ?? null,
     } as never
   );
   if (error) throw error;
@@ -96,6 +91,7 @@ export async function getBoatingTrendByYear(
     "get_boating_trend_by_year",
     {
       filter_state: filters?.state ?? null,
+      filter_county_name: filters?.county ?? null,
     } as never
   );
   if (error) throw error;
