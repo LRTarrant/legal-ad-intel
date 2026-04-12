@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""
+google_trends_daily pipeline — Google Trends observations via Searchapi.io.
+
+For each tort keyword, fetches interest-over-time data and regional breakdown
+and inserts into the google_trends_observations table.
+
+Usage:
+    python -m pipelines.google_trends_daily
+    python -m pipelines.google_trends_daily --dry-run
+
+Environment variables:
+    SUPABASE_URL         — Supabase project URL (required)
+    SUPABASE_SERVICE_KEY — Supabase service role key (required)
+    SEARCHAPI_API_KEY    — Searchapi.io API key (required for real data)
+    DRY_RUN              — "true" to skip all DB writes (optional)
+    PIPELINE_TRIGGER     — "scheduled" | "manual" (optional, default "manual")
+"""
+from __future__ import annotations
+
+import json
+import logging
+import os
+import sys
+import time
+from datetime import datetime, timezone
+
+import httpx
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.pipeline import (
+    PipelineRun,
+    DRY_RUN,
+    _get,
+    _bulk_insert,
+    SUPABASE_URL,
+)
+
+logger = logging.getLogger(__name__)
+
+SEARCHAPI_API_KEY = os.environ.get("SEARCHAPI_API_KEY", "")
+SEARCHAPI_BASE = "https://www.searchapi.io/api/v1/search"
+REQUEST_DELAY_SECONDS = 2.0
+MAX_RETRIES = 3
+
+# Reuse tort keywords from google_ads_daily
+TORT_SEARCH_TERMS: dict[str, list[str]] = {
+    "camp_lejeune": ["camp lejeune lawsuit"],
+    "hair_relaxer": ["hair relaxer lawsuit"],
+    "roundup": ["roundup lawsuit"],
+    "talcum_powder": ["talcum powder lawsuit"],
+    "paraquat": ["paraquat lawsuit"],
+    "firefighter_foam": ["afff firefighting foam lawsuit"],
+    "nec_baby_formula": ["nec baby formula lawsuit"],
+    "tylenol_autism": ["tylenol autism lawsuit"],
+    "zantac": ["zantac lawsuit"],
+    "hernia_mesh": ["hernia mesh lawsuit"],
+    "social_media": ["social media addiction lawsuit"],
+    "motor_vehicle": ["car accident lawyer"],
+    "truck_accident": ["truck accident lawyer"],
+    "nursing_home": ["nursing home abuse lawyer"],
+    "workers_comp": ["workers compensation lawyer"],
+    "roblox_abuse": ["roblox child abuse lawsuit"],
+    "social_media_addiction": ["social media addiction lawsuit teens"],
+}
+
+
+def _searchapi_trends(keyword: str) -> dict:
+    """Call Searchapi.io Google Trends and return the JSON response."""
+    if not SEARCHAPI_API_KEY:
+        return {}
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = httpx.get(
+                SEARCHAPI_BASE,
+                params={
+                    "engine": "google_trends",
+                    "q": keyword,
+                    "api_key": SEARCHAPI_API_KEY,
+                    "data_type": "TIMESERIES",
+                    "date": "today 12-m",
+                    "geo": "",
+                    "hl": "en",
+                },
+                timeout=30,
+            )
+            if resp.status_code == 429:
+                backoff = 2 ** attempt * REQUEST_DELAY_SECONDS
+                logger.warning("Rate limited for '%s', backing off %.1fs", keyword, backoff)
+                time.sleep(backoff)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            if attempt < MAX_RETRIES - 1:
+                logger.warning("Searchapi error for '%s': %s, retrying", keyword, e)
+                time.sleep(2 ** attempt * REQUEST_DELAY_SECONDS)
+            else:
+                logger.error("Searchapi failed for '%s' after %d attempts: %s", keyword, MAX_RETRIES, e)
+                return {}
+    return {}
+
+
+def _searchapi_trends_geo(keyword: str) -> dict:
+    """Fetch regional breakdown for a keyword."""
+    if not SEARCHAPI_API_KEY:
+        return {}
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = httpx.get(
+                SEARCHAPI_BASE,
+                params={
+                    "engine": "google_trends",
+                    "q": keyword,
+                    "api_key": SEARCHAPI_API_KEY,
+                    "data_type": "GEO_MAP",
+                    "date": "today 12-m",
+                    "geo": "",
+                    "resolution": "REGION",
+                    "hl": "en",
+                },
+                timeout=30,
+            )
+            if resp.status_code == 429:
+                backoff = 2 ** attempt * REQUEST_DELAY_SECONDS
+                time.sleep(backoff)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** attempt * REQUEST_DELAY_SECONDS)
+            else:
+                logger.error("Geo trends failed for '%s': %s", keyword, e)
+                return {}
+    return {}
+
+
+def _extract_timeseries_rows(
+    data: dict,
+    keyword: str,
+    tort_slug: str,
+    tort_id: str,
+) -> list[dict]:
+    """Extract interest-over-time rows from Searchapi.io Google Trends response."""
+    rows = []
+    now = datetime.now(timezone.utc)
+    timeline = data.get("interest_over_time", {}).get("timeline_data", [])
+    for point in timeline:
+        date_str = point.get("date", "")
+        values = point.get("values", [])
+        interest_value = values[0].get("value") if values else None
+        if interest_value is None:
+            continue
+        try:
+            interest_int = int(interest_value)
+        except (ValueError, TypeError):
+            interest_int = None
+        rows.append({
+            "tort_slug": tort_slug,
+            "tort_id": tort_id,
+            "keyword": keyword,
+            "data_type": "timeseries",
+            "region_code": None,
+            "region_name": None,
+            "period_label": date_str,
+            "interest_value": interest_int,
+            "raw_json": json.dumps(point, default=str),
+            "observed_at": now.isoformat(),
+        })
+    return rows
+
+
+def _extract_geo_rows(
+    data: dict,
+    keyword: str,
+    tort_slug: str,
+    tort_id: str,
+) -> list[dict]:
+    """Extract regional breakdown rows."""
+    rows = []
+    now = datetime.now(timezone.utc)
+    geo_map = data.get("interest_by_region", [])
+    for region in geo_map:
+        region_code = region.get("geo", "")
+        region_name = region.get("location", "")
+        value = region.get("value", None)
+        max_value = region.get("max_value_index", None)
+        try:
+            interest_int = int(value) if value is not None else None
+        except (ValueError, TypeError):
+            interest_int = None
+        rows.append({
+            "tort_slug": tort_slug,
+            "tort_id": tort_id,
+            "keyword": keyword,
+            "data_type": "geo_map",
+            "region_code": region_code or None,
+            "region_name": region_name or None,
+            "period_label": "today 12-m",
+            "interest_value": interest_int,
+            "raw_json": json.dumps(region, default=str),
+            "observed_at": now.isoformat(),
+        })
+    return rows
+
+
+def step_fetch_raw(step) -> list[dict]:
+    """Fetch Google Trends data (timeseries + geo) for all tort keywords."""
+    torts = _get("torts", {"select": "id,slug,label"})
+    if not torts:
+        raise ValueError("No torts found in DB")
+
+    tort_by_slug = {t["slug"]: t for t in torts}
+    all_rows: list[dict] = []
+    per_tort_counts: dict[str, int] = {}
+    failed_torts: list[str] = []
+
+    if not SEARCHAPI_API_KEY:
+        logger.warning("SEARCHAPI_API_KEY not set — inserting zero rows")
+        step.set_metadata({"source": "no_api_key"})
+        step.set_counts(rows_in=0, rows_out=0)
+        return []
+
+    for slug, terms in TORT_SEARCH_TERMS.items():
+        tort = tort_by_slug.get(slug)
+        if not tort:
+            logger.info("Tort '%s' not in DB, skipping", slug)
+            continue
+        tort_count = 0
+        for keyword in terms:
+            try:
+                logger.info("Fetching trends timeseries: '%s' (tort: %s)", keyword, slug)
+                ts_data = _searchapi_trends(keyword)
+                ts_rows = _extract_timeseries_rows(ts_data, keyword, slug, tort["id"])
+                all_rows.extend(ts_rows)
+                tort_count += len(ts_rows)
+                time.sleep(REQUEST_DELAY_SECONDS)
+
+                logger.info("Fetching trends geo: '%s' (tort: %s)", keyword, slug)
+                geo_data = _searchapi_trends_geo(keyword)
+                geo_rows = _extract_geo_rows(geo_data, keyword, slug, tort["id"])
+                all_rows.extend(geo_rows)
+                tort_count += len(geo_rows)
+                time.sleep(REQUEST_DELAY_SECONDS)
+
+            except Exception as e:
+                logger.error("Tort '%s' keyword '%s' failed: %s", slug, keyword, e)
+                failed_torts.append(f"{slug}:{keyword}")
+
+        per_tort_counts[slug] = tort_count
+
+    step.set_metadata({
+        "source": "searchapi_google_trends",
+        "total_rows": len(all_rows),
+        "per_tort_counts": per_tort_counts,
+        "failed_torts": failed_torts,
+    })
+
+    count = _bulk_insert("google_trends_observations", all_rows)
+    step.set_counts(rows_in=0, rows_out=count)
+    return all_rows
+
+
+def step_publish(step, raw_count: int):
+    """Verify final state."""
+    if DRY_RUN:
+        step.set_counts(rows_in=raw_count, rows_out=raw_count)
+        step.set_metadata({"dry_run": True})
+        return
+    step.set_counts(rows_in=raw_count, rows_out=raw_count)
+    step.set_metadata({"publish_timestamp": datetime.now(timezone.utc).isoformat()})
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Google Trends daily pipeline")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    if args.dry_run:
+        os.environ["DRY_RUN"] = "true"
+        import lib.pipeline
+        lib.pipeline.DRY_RUN = True
+
+    trigger = os.environ.get("PIPELINE_TRIGGER", "manual")
+    with PipelineRun("google_trends_daily", trigger=trigger) as run:
+        with run.step("fetch_raw") as step:
+            raw_rows = step_fetch_raw(step)
+        with run.step("publish") as step:
+            step_publish(step, len(raw_rows))
+
+
+if __name__ == "__main__":
+    main()
