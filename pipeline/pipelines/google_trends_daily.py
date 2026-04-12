@@ -10,11 +10,11 @@ Usage:
     python -m pipelines.google_trends_daily --dry-run
 
 Environment variables:
-    SUPABASE_URL         — Supabase project URL (required)
-    SUPABASE_SERVICE_KEY — Supabase service role key (required)
-    SEARCHAPI_API_KEY    — Searchapi.io API key (required for real data)
-    DRY_RUN              — "true" to skip all DB writes (optional)
-    PIPELINE_TRIGGER     — "scheduled" | "manual" (optional, default "manual")
+    SUPABASE_URL          — Supabase project URL (required)
+    SUPABASE_SERVICE_KEY  — Supabase service role key (required)
+    SEARCHAPI_API_KEY     — Searchapi.io API key (required for real data)
+    DRY_RUN               — "true" to skip all DB writes (optional)
+    PIPELINE_TRIGGER      — "scheduled" | "manual" (optional, default "manual")
 """
 from __future__ import annotations
 
@@ -183,11 +183,12 @@ def _extract_geo_rows(
     geo_map = data.get("interest_by_region", [])
     for region in geo_map:
         region_code = region.get("geo", "")
-        region_name = region.get("location", "")
-        value = region.get("value", None)
-        max_value = region.get("max_value_index", None)
+        region_name = region.get("name", "")  # API returns 'name', not 'location'
+        # API returns values as a list: [{"query": "...", "value": "73", ...}]
+        values_list = region.get("values", [])
+        raw_value = values_list[0].get("value") if values_list else None
         try:
-            interest_int = int(value) if value is not None else None
+            interest_int = int(raw_value) if raw_value is not None else None
         except (ValueError, TypeError):
             interest_int = None
         rows.append({
@@ -210,8 +211,8 @@ def step_fetch_raw(step) -> list[dict]:
     torts = _get("torts", {"select": "id,slug,label"})
     if not torts:
         raise ValueError("No torts found in DB")
-
     tort_by_slug = {t["slug"]: t for t in torts}
+
     all_rows: list[dict] = []
     per_tort_counts: dict[str, int] = {}
     failed_torts: list[str] = []
@@ -243,11 +244,9 @@ def step_fetch_raw(step) -> list[dict]:
                 all_rows.extend(geo_rows)
                 tort_count += len(geo_rows)
                 time.sleep(REQUEST_DELAY_SECONDS)
-
             except Exception as e:
                 logger.error("Tort '%s' keyword '%s' failed: %s", slug, keyword, e)
                 failed_torts.append(f"{slug}:{keyword}")
-
         per_tort_counts[slug] = tort_count
 
     step.set_metadata({
@@ -256,7 +255,6 @@ def step_fetch_raw(step) -> list[dict]:
         "per_tort_counts": per_tort_counts,
         "failed_torts": failed_torts,
     })
-
     count = _bulk_insert("google_trends_observations", all_rows)
     step.set_counts(rows_in=0, rows_out=count)
     return all_rows
