@@ -54,9 +54,9 @@ export interface StormCounty {
 
 function toRpcFilters(filters?: StormFilters) {
   return {
-    filter_state: filters?.state ?? null,
-    filter_year: filters?.year ?? null,
-    filter_event_type: filters?.eventType ?? null,
+    filter_state: filters?.state ?? undefined,
+    filter_year: filters?.year ?? undefined,
+    filter_event_type: filters?.eventType ?? undefined,
   };
 }
 
@@ -114,7 +114,7 @@ export async function getStormEventsByType(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_events_by_type",
-      { filter_state: filters?.state ?? null, filter_year: filters?.year ?? null }
+      { filter_state: filters?.state ?? undefined, filter_year: filters?.year ?? undefined }
     );
     if (error) throw error;
     return ((data ?? []) as StormByTypeRow[]).map((row) => ({
@@ -135,7 +135,7 @@ export async function getStormEventTrendByYear(
     const supabase = getSupabase();
     const { data, error } = await supabase.rpc(
       "get_storm_event_trend_by_year",
-      { filter_state: filters?.state ?? null, filter_event_type: filters?.eventType ?? null }
+      { filter_state: filters?.state ?? undefined, filter_event_type: filters?.eventType ?? undefined }
     );
     if (error) throw error;
     return ((data ?? []) as StormTrendRow[]).map((row) => ({
@@ -160,8 +160,8 @@ export async function getStormCountiesByState(
       "get_storm_counties_by_state",
       {
         filter_state: state,
-        filter_year: filters?.year ?? null,
-        filter_event_type: filters?.eventType ?? null,
+        filter_year: filters?.year ?? undefined,
+        filter_event_type: filters?.eventType ?? undefined,
       }
     );
     if (error) throw error;

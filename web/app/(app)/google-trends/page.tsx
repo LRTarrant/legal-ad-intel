@@ -57,7 +57,7 @@ export default async function GoogleTrendsPage({
 
   const timeseriesData = allData
     .filter((r) => r.data_type === "timeseries")
-    .sort((a, b) => (a.period_label > b.period_label ? 1 : -1));
+    .sort((a, b) => ((a.period_label ?? "") > (b.period_label ?? "") ? 1 : -1));
 
   const geoDataUS = allData.filter((r) => r.data_type === "geo_map_us");
 

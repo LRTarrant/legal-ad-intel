@@ -119,21 +119,63 @@ def _delete(table: str, params: dict) -> None:
     resp.raise_for_status()
 
 
-def _bulk_insert(table: str, rows: list[dict]) -> int:
-    """Bulk insert rows. In dry-run mode, logs summary. Returns count."""
+BULK_CHUNK_SIZE = 500
+
+
+def _bulk_insert(
+    table: str,
+    rows: list[dict],
+    *,
+    on_conflict: str | None = None,
+    resolution: str = "ignore-duplicates",
+) -> int:
+    """Bulk insert rows in chunks. In dry-run mode, logs summary.
+
+    Args:
+        table: Supabase table name.
+        rows: List of row dicts to insert.
+        on_conflict: Comma-separated column names for the ON CONFLICT target.
+                     Required when the table has multiple unique constraints.
+        resolution: PostgREST resolution strategy.
+                    'ignore-duplicates' (default) — skip rows that conflict.
+                    'merge-duplicates' — upsert (update on conflict).
+    Returns:
+        Number of rows sent.
+    """
     if not rows:
         return 0
     if DRY_RUN:
         print(f"  [DRY RUN] Would insert {len(rows)} rows into {table}")
         return len(rows)
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
+
+    base_url = f"{SUPABASE_URL}/rest/v1/{table}"
+    params: list[str] = []
+    if on_conflict:
+        params.append(f"on_conflict={on_conflict}")
+    if params:
+        base_url += "?" + "&".join(params)
+    prefer_parts = ["return=minimal"]
+    if resolution:
+        prefer_parts.append(f"resolution={resolution}")
     headers = {
         **_headers(),
-        "Prefer": "return=minimal,resolution=merge-duplicates",
+        "Prefer": ",".join(prefer_parts),
     }
-    resp = httpx.post(url, headers=headers, json=rows, timeout=60)
-    resp.raise_for_status()
-    return len(rows)
+    import logging
+    logger = logging.getLogger(__name__)
+    total_sent = 0
+    for i in range(0, len(rows), BULK_CHUNK_SIZE):
+        chunk = rows[i : i + BULK_CHUNK_SIZE]
+        logger.info("Inserting chunk %d-%d of %d into %s", i, i + len(chunk), len(rows), table)
+        resp = httpx.post(base_url, headers=headers, json=chunk, timeout=120)
+        if resp.status_code >= 400:
+            logger.error(
+                "Bulk insert error %d for %s: %s",
+                resp.status_code, table, resp.text[:500],
+            )
+        resp.raise_for_status()
+        total_sent += len(chunk)
+    return total_sent
 
 
 # ---------------------------------------------------------------------------

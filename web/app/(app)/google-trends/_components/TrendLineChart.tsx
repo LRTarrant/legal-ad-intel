@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 type DataPoint = {
-  period_label: string;
+  period_label: string | null;
   interest_value: number | null;
   keyword: string;
 };
@@ -31,7 +31,7 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
 
   // Format data for recharts — use period_label as x-axis
   const chartData = data.map((d) => ({
-    label: d.period_label,
+    label: d.period_label ?? "",
     value: d.interest_value ?? 0,
   }));
 
@@ -61,7 +61,7 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
             color: "#f4f4f5",
             fontSize: 12,
           }}
-          formatter={(value: number) => [value, "Interest"]}
+          formatter={(value) => [Number(value), "Interest"]}
         />
         <Line
           type="monotone"
