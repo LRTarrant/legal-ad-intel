@@ -8,9 +8,13 @@ import {
   getBoatingSeverityStats,
   getWaterbodiesByState,
   getHotspotWaterbodies,
+  getBoatingPoiTargets,
+  getBoatingPoiCategories,
   type BoatingFilters,
   type BoatingWaterbodyOption,
   type BoatingHotspotWaterbody,
+  type BoatingPoiTarget,
+  type BoatingPoiCategory,
 } from "@/lib/queries";
 import { BoatingFilterBar } from "./boating-filter-bar";
 import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
@@ -18,7 +22,7 @@ import { HotspotTable } from "./_components/hotspot-table";
 import { WaterbodyHotspotTable } from "./_components/waterbody-hotspot-table";
 import { SeverityCards } from "./_components/severity-cards";
 import { AIRecommendations } from "./_components/ai-recommendations";
-import { POIPlaceholder } from "./_components/poi-placeholder";
+import { PoiTargetsTable } from "./_components/poi-targets-table";
 import { Ship } from "lucide-react";
 
 export const metadata = {
@@ -108,6 +112,18 @@ export default async function BoatingAccidentsPage({
     avg_injuries_per_accident: 0,
     pct_fatal: 0,
   };
+
+  // POI data
+  let poiTargets: BoatingPoiTarget[] = [];
+  let poiCategories: BoatingPoiCategory[] = [];
+  try {
+    [poiTargets, poiCategories] = await Promise.all([
+      getBoatingPoiTargets(filters.state),
+      getBoatingPoiCategories(filters.state),
+    ]);
+  } catch {
+    // POI data may not exist yet
+  }
 
   // Fetch national total for AI recommendations (always needed)
   let nationalTotal = 0;
@@ -250,6 +266,13 @@ export default async function BoatingAccidentsPage({
         </div>
       </div>
 
+      {/* POI advertising targets */}
+      <PoiTargetsTable
+        pois={poiTargets}
+        categories={poiCategories}
+        selectedState={filters.state ?? null}
+      />
+
       {/* AI recommendation cards */}
       <AIRecommendations
         hotspots={hotspots}
@@ -259,10 +282,8 @@ export default async function BoatingAccidentsPage({
         selectedWaterbody={selectedWaterbodyName}
         nationalTotal={nationalTotal}
         stateTotal={totals.total_accidents}
+        poiTargets={poiTargets}
       />
-
-      {/* POI placeholder */}
-      <POIPlaceholder />
     </div>
   );
 }
