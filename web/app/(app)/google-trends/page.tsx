@@ -45,6 +45,7 @@ export default async function GoogleTrendsPage({
     .sort((a, b) => (a.period_label > b.period_label ? 1 : -1));
 
   const geoData = allData.filter((r) => r.data_type === "geo_map");
+  const geoDataUS = allData.filter((r) => r.data_type === "geo_map_us");
 
   const activeTortLabel = torts.find((t) => t.slug === activeTort)?.label ?? activeTort;
 
@@ -87,7 +88,7 @@ export default async function GoogleTrendsPage({
             <h2 className="text-sm font-medium text-zinc-300 mb-4">
               Interest by Region &mdash; <span className="text-purple-400">{activeTortLabel}</span>
             </h2>
-            <RegionalMap data={geoData} />
+            <RegionalMap data={geoDataUS} worldData={geoData} />
           </div>
         </>
       )}

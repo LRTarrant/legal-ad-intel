@@ -136,6 +136,41 @@ def _searchapi_trends_geo(keyword: str) -> dict:
     return {}
 
 
+def _searchapi_trends_geo_us(keyword: str) -> dict:
+    """Fetch US state-level regional breakdown for a keyword."""
+    if not SEARCHAPI_API_KEY:
+        return {}
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = httpx.get(
+                SEARCHAPI_BASE,
+                params={
+                    "engine": "google_trends",
+                    "q": keyword,
+                    "api_key": SEARCHAPI_API_KEY,
+                    "data_type": "GEO_MAP",
+                    "date": "today 12-m",
+                    "geo": "US",
+                    "resolution": "REGION",
+                    "hl": "en",
+                },
+                timeout=30,
+            )
+            if resp.status_code == 429:
+                backoff = 2 ** attempt * REQUEST_DELAY_SECONDS
+                time.sleep(backoff)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** attempt * REQUEST_DELAY_SECONDS)
+            else:
+                logger.error("US geo trends failed for '%s': %s", keyword, e)
+                return {}
+    return {}
+
+
 def _extract_timeseries_rows(
     data: dict,
     keyword: str,
@@ -206,6 +241,40 @@ def _extract_geo_rows(
     return rows
 
 
+def _extract_geo_us_rows(
+    data: dict,
+    keyword: str,
+    tort_slug: str,
+    tort_id: str,
+) -> list[dict]:
+    """Extract US state-level regional breakdown rows (stored as geo_map_us)."""
+    rows = []
+    now = datetime.now(timezone.utc)
+    geo_map = data.get("interest_by_region", [])
+    for region in geo_map:
+        region_code = region.get("geo", "")
+        region_name = region.get("name", "")
+        values_list = region.get("values", [])
+        raw_value = values_list[0].get("value") if values_list else None
+        try:
+            interest_int = int(raw_value) if raw_value is not None else None
+        except (ValueError, TypeError):
+            interest_int = None
+        rows.append({
+            "tort_slug": tort_slug,
+            "tort_id": tort_id,
+            "keyword": keyword,
+            "data_type": "geo_map_us",
+            "region_code": region_code or None,
+            "region_name": region_name or None,
+            "period_label": "today 12-m",
+            "interest_value": interest_int,
+            "raw_json": json.dumps(region, default=str),
+            "observed_at": now.isoformat(),
+        })
+    return rows
+
+
 def step_fetch_raw(step) -> list[dict]:
     """Fetch Google Trends data (timeseries + geo) for all tort keywords."""
     torts = _get("torts", {"select": "id,slug,label"})
@@ -243,6 +312,13 @@ def step_fetch_raw(step) -> list[dict]:
                 geo_rows = _extract_geo_rows(geo_data, keyword, slug, tort["id"])
                 all_rows.extend(geo_rows)
                 tort_count += len(geo_rows)
+                time.sleep(REQUEST_DELAY_SECONDS)
+
+                logger.info("Fetching trends geo US: '%s' (tort: %s)", keyword, slug)
+                geo_us_data = _searchapi_trends_geo_us(keyword)
+                geo_us_rows = _extract_geo_us_rows(geo_us_data, keyword, slug, tort["id"])
+                all_rows.extend(geo_us_rows)
+                tort_count += len(geo_us_rows)
                 time.sleep(REQUEST_DELAY_SECONDS)
             except Exception as e:
                 logger.error("Tort '%s' keyword '%s' failed: %s", slug, keyword, e)
