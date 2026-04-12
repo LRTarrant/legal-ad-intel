@@ -2,8 +2,10 @@
 """
 google_trends_daily pipeline — Google Trends observations via Searchapi.io.
 
-For each tort keyword, fetches interest-over-time data and regional breakdown
-and inserts into the google_trends_observations table.
+For each tort keyword, fetches interest-over-time data, U.S. state-level
+regional breakdown, and related queries (top + rising). Inserts observations
+into google_trends_observations and related queries into
+google_trends_related_queries.
 
 Usage:
     python -m pipelines.google_trends_daily
@@ -101,8 +103,8 @@ def _searchapi_trends(keyword: str) -> dict:
     return {}
 
 
-def _searchapi_trends_geo(keyword: str) -> dict:
-    """Fetch regional breakdown for a keyword."""
+def _searchapi_trends_geo_us(keyword: str) -> dict:
+    """Fetch US state-level regional breakdown for a keyword."""
     if not SEARCHAPI_API_KEY:
         return {}
     for attempt in range(MAX_RETRIES):
@@ -115,8 +117,8 @@ def _searchapi_trends_geo(keyword: str) -> dict:
                     "api_key": SEARCHAPI_API_KEY,
                     "data_type": "GEO_MAP",
                     "date": "today 12-m",
-                    "geo": "",
-                    "resolution": "REGION",
+                    "geo": "US",
+                    "region": "REGION",
                     "hl": "en",
                 },
                 timeout=30,
@@ -131,9 +133,66 @@ def _searchapi_trends_geo(keyword: str) -> dict:
             if attempt < MAX_RETRIES - 1:
                 time.sleep(2 ** attempt * REQUEST_DELAY_SECONDS)
             else:
-                logger.error("Geo trends failed for '%s': %s", keyword, e)
+                logger.error("US geo trends failed for '%s': %s", keyword, e)
                 return {}
     return {}
+
+
+def _searchapi_trends_related_queries(keyword: str) -> dict:
+    """Fetch related queries (top + rising) for a keyword.
+
+    Uses a 60s timeout (longer than other endpoints) and a single retry
+    with a 3s delay on timeout or HTTP error.
+    """
+    if not SEARCHAPI_API_KEY:
+        return {}
+    for attempt in range(2):  # at most 1 retry
+        try:
+            resp = httpx.get(
+                SEARCHAPI_BASE,
+                params={
+                    "engine": "google_trends",
+                    "q": keyword,
+                    "api_key": SEARCHAPI_API_KEY,
+                    "data_type": "RELATED_QUERIES",
+                    "date": "today 12-m",
+                    "geo": "US",
+                    "hl": "en",
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.TimeoutException, httpx.HTTPStatusError) as e:
+            if attempt == 0:
+                logger.warning("Related queries for '%s' failed (%s), retrying in 3s", keyword, e)
+                time.sleep(3)
+            else:
+                logger.error("Related queries failed for '%s' after retry: %s", keyword, e)
+                return {}
+    return {}
+
+
+def _extract_related_query_rows(data: dict, keyword: str, tort_slug: str, tort_id: str) -> list[dict]:
+    """Extract top and rising related query rows."""
+    rows = []
+    now = datetime.now(timezone.utc)
+    related = data.get("related_queries", {})
+    for query_type in ("top", "rising"):
+        for item in related.get(query_type, []):
+            rows.append({
+                "tort_slug": tort_slug,
+                "tort_id": tort_id,
+                "keyword": keyword,
+                "query_type": query_type,
+                "position": item.get("position"),
+                "query_text": item.get("query", ""),
+                "display_value": str(item.get("values", "")),
+                "extracted_value": item.get("extracted_value"),
+                "link": item.get("link"),
+                "observed_at": now.isoformat(),
+            })
+    return rows
 
 
 def _extract_timeseries_rows(
@@ -161,8 +220,8 @@ def _extract_timeseries_rows(
             "tort_id": tort_id,
             "keyword": keyword,
             "data_type": "timeseries",
-            "region_code": None,
-            "region_name": None,
+            "region_code": "",
+            "region_name": "",
             "period_label": date_str,
             "interest_value": interest_int,
             "raw_json": json.dumps(point, default=str),
@@ -171,33 +230,38 @@ def _extract_timeseries_rows(
     return rows
 
 
-def _extract_geo_rows(
+def _extract_geo_us_rows(
     data: dict,
     keyword: str,
     tort_slug: str,
     tort_id: str,
 ) -> list[dict]:
-    """Extract regional breakdown rows."""
+    """Extract US state-level regional breakdown rows (stored as geo_map_us)."""
     rows = []
     now = datetime.now(timezone.utc)
     geo_map = data.get("interest_by_region", [])
     for region in geo_map:
         region_code = region.get("geo", "")
-        region_name = region.get("name", "")  # API returns 'name', not 'location'
-        # API returns values as a list: [{"query": "...", "value": "73", ...}]
+        region_name = region.get("name", region.get("location", ""))
         values_list = region.get("values", [])
+        # Single-keyword queries: extracted_value is an int, value may have "%"
+        raw_extracted = values_list[0].get("extracted_value") if values_list else None
         raw_value = values_list[0].get("value") if values_list else None
         try:
-            interest_int = int(raw_value) if raw_value is not None else None
+            interest_int = (
+                int(raw_extracted)
+                if raw_extracted is not None
+                else int(str(raw_value).rstrip("%")) if raw_value is not None else None
+            )
         except (ValueError, TypeError):
             interest_int = None
         rows.append({
             "tort_slug": tort_slug,
             "tort_id": tort_id,
             "keyword": keyword,
-            "data_type": "geo_map",
-            "region_code": region_code or None,
-            "region_name": region_name or None,
+            "data_type": "geo_map_us",
+            "region_code": region_code or "",
+            "region_name": region_name or "",
             "period_label": "today 12-m",
             "interest_value": interest_int,
             "raw_json": json.dumps(region, default=str),
@@ -214,6 +278,7 @@ def step_fetch_raw(step) -> list[dict]:
     tort_by_slug = {t["slug"]: t for t in torts}
 
     all_rows: list[dict] = []
+    all_rq_rows: list[dict] = []
     per_tort_counts: dict[str, int] = {}
     failed_torts: list[str] = []
 
@@ -238,11 +303,17 @@ def step_fetch_raw(step) -> list[dict]:
                 tort_count += len(ts_rows)
                 time.sleep(REQUEST_DELAY_SECONDS)
 
-                logger.info("Fetching trends geo: '%s' (tort: %s)", keyword, slug)
-                geo_data = _searchapi_trends_geo(keyword)
-                geo_rows = _extract_geo_rows(geo_data, keyword, slug, tort["id"])
-                all_rows.extend(geo_rows)
-                tort_count += len(geo_rows)
+                logger.info("Fetching trends geo US: '%s' (tort: %s)", keyword, slug)
+                geo_us_data = _searchapi_trends_geo_us(keyword)
+                geo_us_rows = _extract_geo_us_rows(geo_us_data, keyword, slug, tort["id"])
+                all_rows.extend(geo_us_rows)
+                tort_count += len(geo_us_rows)
+                time.sleep(REQUEST_DELAY_SECONDS)
+
+                logger.info("Fetching related queries: '%s' (tort: %s)", keyword, slug)
+                rq_data = _searchapi_trends_related_queries(keyword)
+                rq_rows = _extract_related_query_rows(rq_data, keyword, slug, tort["id"])
+                all_rq_rows.extend(rq_rows)
                 time.sleep(REQUEST_DELAY_SECONDS)
             except Exception as e:
                 logger.error("Tort '%s' keyword '%s' failed: %s", slug, keyword, e)
@@ -252,11 +323,21 @@ def step_fetch_raw(step) -> list[dict]:
     step.set_metadata({
         "source": "searchapi_google_trends",
         "total_rows": len(all_rows),
+        "related_query_rows": len(all_rq_rows),
         "per_tort_counts": per_tort_counts,
         "failed_torts": failed_torts,
     })
-    count = _bulk_insert("google_trends_observations", all_rows)
-    step.set_counts(rows_in=0, rows_out=count)
+    count = _bulk_insert(
+        "google_trends_observations",
+        all_rows,
+        on_conflict="tort_slug,keyword,data_type,region_code,period_label",
+    )
+    rq_count = _bulk_insert(
+        "google_trends_related_queries",
+        all_rq_rows,
+        on_conflict="tort_slug,keyword,query_type,position",
+    )
+    step.set_counts(rows_in=0, rows_out=count + rq_count)
     return all_rows
 
 
