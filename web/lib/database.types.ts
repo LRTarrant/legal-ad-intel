@@ -2405,10 +2405,50 @@ export type Database = {
           county_name: string
         }[]
       }
+      get_boating_counties_by_state_name: {
+        Args: { state_abbr: string }
+        Returns: {
+          county_name: string
+          total_accidents: number
+        }[]
+      }
+      get_boating_county_trend: {
+        Args: { filter_county_name: string; filter_state: string }
+        Returns: {
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          year: number
+        }[]
+      }
       get_boating_distinct_states: {
         Args: never
         Returns: {
           state: string
+        }[]
+      }
+      get_boating_hotspot_counties: {
+        Args: { filter_state?: string; top_n?: number }
+        Returns: {
+          avg_lat: number
+          avg_lng: number
+          county_name: string
+          state: string
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
+      get_boating_severity_stats: {
+        Args: { filter_county_name?: string; filter_state?: string }
+        Returns: {
+          avg_deaths_per_accident: number
+          avg_injuries_per_accident: number
+          fatality_rate: number
+          pct_fatal: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
         }[]
       }
       get_boating_totals: {
@@ -2426,6 +2466,13 @@ export type Database = {
           total_deaths: number
           total_injuries: number
           year: number
+        }[]
+      }
+      get_boating_waterbodies_by_state: {
+        Args: { state_abbr: string }
+        Returns: {
+          body_of_water: string
+          total_accidents: number
         }[]
       }
       get_fars_counties_by_state: {
