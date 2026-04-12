@@ -17,6 +17,7 @@ import {
   Target,
   Truck,
   Users,
+  TrendingUp,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -58,6 +59,7 @@ const bottomNavItems = [
     { label: "Market Demographics", href: "/market-demographics", Icon: Users },
   { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
   { label: "Search Visibility", href: "/search-visibility", Icon: Search },
+  { label: "Google Trends", href: "/google-trends", Icon: TrendingUp },
 ];
 
 type NavItem = {
