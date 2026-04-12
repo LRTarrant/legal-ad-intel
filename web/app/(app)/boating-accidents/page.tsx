@@ -2,13 +2,18 @@ import {
   getBoatingTotals,
   getBoatingTrendByYear,
   getBoatingDistinctStates,
-  getBoatingCountiesByState,
+  getBoatingCountiesByStateName,
   getBoatingHeatmapPoints,
+  getBoatingHotspotCounties,
+  getBoatingSeverityStats,
   type BoatingFilters,
 } from "@/lib/queries";
 import { BoatingFilterBar } from "./boating-filter-bar";
 import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
-import { AdvertisingInsight } from "../components/advertising-insight";
+import { HotspotTable } from "./_components/hotspot-table";
+import { SeverityCards } from "./_components/severity-cards";
+import { AIRecommendations } from "./_components/ai-recommendations";
+import { POIPlaceholder } from "./_components/poi-placeholder";
 import { Ship } from "lucide-react";
 
 export const metadata = {
@@ -27,14 +32,12 @@ function getSingleValue(value: string | string[] | undefined): string | null {
 
 function parseFilters(rawState: string | null, rawCounty: string | null): BoatingFilters {
   const state = rawState?.trim().toUpperCase() || null;
-  const countyNumber = rawCounty ? Number.parseInt(rawCounty, 10) : null;
-  const county =
-    state && countyNumber != null && Number.isFinite(countyNumber) ? countyNumber : null;
+  const county = state && rawCounty?.trim() ? rawCounty.trim() : null;
   return { state, county };
 }
 
-function getFilterSummary(state: string | null, countyName: string | null): string {
-  if (state && countyName) return `${countyName}, ${state}`;
+function getFilterSummary(state: string | null, county: string | null): string {
+  if (state && county) return `${county}, ${state}`;
   if (state) return `${state} statewide`;
   return "Nationwide";
 }
@@ -57,29 +60,45 @@ export default async function BoatingAccidentsPage({
     // Data may not exist yet
   }
 
-  let counties: { county_fips: number; county_name: string }[] = [];
+  let counties: { county_name: string; total_accidents: number }[] = [];
   if (filters.state) {
     try {
-      counties = await getBoatingCountiesByState(filters.state);
+      counties = await getBoatingCountiesByStateName(filters.state);
     } catch {
       // Data may not exist yet
     }
   }
 
-  const selectedCounty =
-    filters.county != null
-      ? counties.find((c) => c.county_fips === filters.county) ?? null
-      : null;
-
   let totals = { total_deaths: 0, total_injuries: 0, total_accidents: 0 };
   let trend: { year: number; total_deaths: number; total_injuries: number; total_accidents: number }[] = [];
   let heatmapPoints: { latitude: number; longitude: number; intensity: number }[] = [];
+  let hotspots: Awaited<ReturnType<typeof getBoatingHotspotCounties>> = [];
+  let severity = {
+    total_accidents: 0,
+    total_deaths: 0,
+    total_injuries: 0,
+    fatality_rate: 0,
+    avg_deaths_per_accident: 0,
+    avg_injuries_per_accident: 0,
+    pct_fatal: 0,
+  };
+
+  // Fetch national total for AI recommendations (always needed)
+  let nationalTotal = 0;
+  try {
+    const nt = await getBoatingTotals();
+    nationalTotal = nt.total_accidents;
+  } catch {
+    // Gracefully fallback
+  }
 
   try {
-    [totals, trend, heatmapPoints] = await Promise.all([
+    [totals, trend, heatmapPoints, hotspots, severity] = await Promise.all([
       getBoatingTotals(filters),
       getBoatingTrendByYear(filters),
       getBoatingHeatmapPoints(filters),
+      getBoatingHotspotCounties(filters.state),
+      getBoatingSeverityStats(filters.state, filters.county),
     ]);
   } catch {
     // Data may not exist yet — gracefully show zeros
@@ -90,11 +109,12 @@ export default async function BoatingAccidentsPage({
     : 0;
   const filterSummary = getFilterSummary(
     filters.state ?? null,
-    selectedCounty?.county_name ?? null
+    filters.county ?? null
   );
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Ship className="w-7 h-7 shrink-0" style={{ color: "#1A8C96" }} />
         <div>
@@ -107,6 +127,7 @@ export default async function BoatingAccidentsPage({
         </div>
       </div>
 
+      {/* Filter bar */}
       <BoatingFilterBar
         states={states}
         counties={counties}
@@ -114,16 +135,8 @@ export default async function BoatingAccidentsPage({
         selectedCounty={filters.county ?? null}
       />
 
-      <AdvertisingInsight>
-        <p>
-          <strong>Reach boating injury victims in waterway-heavy markets.</strong> Boating accident
-          data highlights coastal counties and inland waterways with the highest incident rates. Use
-          this to time seasonal campaigns — boating injuries peak in summer months — and geo-target
-          advertising in lake and coastal communities.
-        </p>
-      </AdvertisingInsight>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Summary scorecards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryCard
           label="Total Deaths"
           value={totals.total_deaths.toLocaleString()}
@@ -139,13 +152,28 @@ export default async function BoatingAccidentsPage({
           value={totals.total_accidents.toLocaleString()}
           sub={filterSummary}
         />
+        <SeverityCards severity={severity} filterSummary={filterSummary} />
       </div>
 
-      <FatalitiesHeatmapPanel
-        points={heatmapPoints}
-        title={`Boating accident density for ${filterSummary}`}
+      {/* Hotspot table */}
+      <HotspotTable
+        hotspots={hotspots}
+        selectedState={filters.state ?? null}
       />
 
+      {/* Heatmap */}
+      <div>
+        <FatalitiesHeatmapPanel
+          points={heatmapPoints}
+          title={`Boating accident density for ${filterSummary}`}
+        />
+        <p className="mt-2 text-xs text-slate-gray">
+          Note: Only 14.7% of records include coordinates. Map shows
+          geo-coded incidents only &mdash; actual hotspot volumes may be higher.
+        </p>
+      </div>
+
+      {/* Year-over-year trend */}
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h2 className="font-heading text-xl font-semibold text-midnight-navy">
           Boating Deaths by Year
@@ -185,6 +213,18 @@ export default async function BoatingAccidentsPage({
           )}
         </div>
       </div>
+
+      {/* AI recommendation cards */}
+      <AIRecommendations
+        hotspots={hotspots}
+        severity={severity}
+        selectedState={filters.state ?? null}
+        nationalTotal={nationalTotal}
+        stateTotal={totals.total_accidents}
+      />
+
+      {/* POI placeholder */}
+      <POIPlaceholder />
     </div>
   );
 }
