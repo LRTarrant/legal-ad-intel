@@ -139,10 +139,14 @@ def _searchapi_trends_geo_us(keyword: str) -> dict:
 
 
 def _searchapi_trends_related_queries(keyword: str) -> dict:
-    """Fetch related queries (top + rising) for a keyword."""
+    """Fetch related queries (top + rising) for a keyword.
+
+    Uses a 60s timeout (longer than other endpoints) and a single retry
+    with a 3s delay on timeout or HTTP error.
+    """
     if not SEARCHAPI_API_KEY:
         return {}
-    for attempt in range(MAX_RETRIES):
+    for attempt in range(2):  # at most 1 retry
         try:
             resp = httpx.get(
                 SEARCHAPI_BASE,
@@ -155,19 +159,16 @@ def _searchapi_trends_related_queries(keyword: str) -> dict:
                     "geo": "US",
                     "hl": "en",
                 },
-                timeout=30,
+                timeout=60,
             )
-            if resp.status_code == 429:
-                backoff = 2 ** attempt * REQUEST_DELAY_SECONDS
-                time.sleep(backoff)
-                continue
             resp.raise_for_status()
             return resp.json()
-        except httpx.HTTPError as e:
-            if attempt < MAX_RETRIES - 1:
-                time.sleep(2 ** attempt * REQUEST_DELAY_SECONDS)
+        except (httpx.TimeoutException, httpx.HTTPStatusError) as e:
+            if attempt == 0:
+                logger.warning("Related queries for '%s' failed (%s), retrying in 3s", keyword, e)
+                time.sleep(3)
             else:
-                logger.error("Related queries failed for '%s': %s", keyword, e)
+                logger.error("Related queries failed for '%s' after retry: %s", keyword, e)
                 return {}
     return {}
 

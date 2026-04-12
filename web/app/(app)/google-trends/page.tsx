@@ -55,9 +55,27 @@ export default async function GoogleTrendsPage({
     getRelatedQueries(activeTort),
   ]);
 
+  /**
+   * Parse the start date from a period_label like "Apr 6 – 12, 2025".
+   * For year-spanning ranges (e.g. "Dec 29 – Jan 4, 2025"), the trailing
+   * year belongs to the end date, so the Dec start date is the prior year.
+   */
+  function parsePeriodStart(label: string): number {
+    const m = label.match(/^(\w{3})\s+(\d{1,2})\s*[–-].*?,\s*(\d{4})$/);
+    if (!m) return 0;
+    const [, mon, day, yearStr] = m;
+    let year = parseInt(yearStr, 10);
+    // If the label starts with Dec but the year-end belongs to a Jan end-date,
+    // the Dec date is actually in the previous year.
+    if (mon === "Dec" && label.match(/[–-]\s*Jan/)) {
+      year -= 1;
+    }
+    return new Date(`${mon} ${day}, ${year}`).getTime();
+  }
+
   const timeseriesData = allData
     .filter((r) => r.data_type === "timeseries")
-    .sort((a, b) => ((a.period_label ?? "") > (b.period_label ?? "") ? 1 : -1));
+    .sort((a, b) => parsePeriodStart(a.period_label ?? "") - parsePeriodStart(b.period_label ?? ""));
 
   const geoDataUS = allData.filter((r) => r.data_type === "geo_map_us");
 
