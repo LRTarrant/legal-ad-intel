@@ -45,7 +45,9 @@ CL_BASE = "https://www.courtlistener.com/api/rest/v4"
 REQUEST_DELAY = 2.0
 MAX_RETRIES = 3
 MAX_RETRIES_RATE_LIMIT = 5
+GLOBAL_429_THRESHOLD = 6
 MAX_SEARCH_PAGES = 5  # Cap pages per MDL to avoid excessive API calls
+_global_429_count = 0
 
 
 def normalise_role(party_type: str) -> str:
@@ -79,20 +81,21 @@ def _cl_headers() -> dict:
 
 def _cl_get(url: str, params: dict | None = None) -> dict | list:
     """GET from CourtListener API with retry logic."""
-    consecutive_429s = 0
+    global _global_429_count
     for attempt in range(MAX_RETRIES):
         try:
             resp = httpx.get(url, headers=_cl_headers(), params=params or {}, timeout=30)
             if resp.status_code == 429:
-                consecutive_429s += 1
-                if consecutive_429s >= MAX_RETRIES_RATE_LIMIT:
-                    logger.warning("Hit 429 rate limit %d consecutive times for %s, giving up", consecutive_429s, url)
+                _global_429_count += 1
+                if _global_429_count >= GLOBAL_429_THRESHOLD:
+                    logger.warning("Global rate limit threshold reached, skipping remaining API calls")
                     return {}
                 wait = 2 ** attempt * 5
                 logger.warning("Rate limited, backing off %ds", wait)
                 time.sleep(wait)
                 continue
             resp.raise_for_status()
+            _global_429_count = 0
             return resp.json()
         except httpx.HTTPError as e:
             if attempt < MAX_RETRIES - 1:
@@ -323,10 +326,20 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         mdl_dockets[mdl_num] = mdl_dockets[mdl_num][:MAX_DOCKETS_PER_MDL]
 
     scraped_enrichment: int = 0
+    if _global_429_count >= GLOBAL_429_THRESHOLD:
+        logger.warning("Skipping Phase 2 enrichment due to rate limiting")
+
+    stop_phase_2 = False
     for mdl_num, docket_ids in mdl_dockets.items():
+        if _global_429_count >= GLOBAL_429_THRESHOLD:
+            stop_phase_2 = True
+            break
         for docket_id in docket_ids:
             logger.info("MDL %d: Phase 2 -- fetching parties via API for docket %d", mdl_num, docket_id)
             api_rows = fetch_parties_api(docket_id)
+            if _global_429_count >= GLOBAL_429_THRESHOLD:
+                stop_phase_2 = True
+                break
             matches_found = 0
             for hr in api_rows:
                 key = _normalise_name(hr.get("attorney_name") or "")
@@ -345,6 +358,8 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
                             matches_found += 1
             logger.info("MDL %d: docket %d — %d attorney matches found", mdl_num, docket_id, matches_found)
             time.sleep(REQUEST_DELAY)
+        if stop_phase_2:
+            break
 
     # Post-Phase-2: for rows still missing role, fall back to normalise_role(party_type)
     for row in all_rows:
