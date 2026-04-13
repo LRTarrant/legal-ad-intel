@@ -191,7 +191,7 @@ async function fetchLiveAttorneys(
   token: string
 ): Promise<ClAttorneyRecord[]> {
   const records: ClAttorneyRecord[] = [];
-  let url: string | null = `${CL_BASE}/dockets/${docketId}/parties/?format=json`;
+  let url: string | null = `${CL_BASE}/parties/?docket=${docketId}&format=json`;
 
   while (url) {
     const res = await fetch(url, {
