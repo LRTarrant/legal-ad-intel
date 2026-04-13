@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   CloudLightning,
+  HardHat,
   HeartPulse,
   Radio,
   Search,
@@ -25,6 +26,7 @@ const personalInjuryPaths = [
   "/motorcycle-fatalities",
   "/large-truck-fatalities",
   "/boating-accidents",
+  "/construction",
 ];
 
 const personalInjuryItems = [
@@ -32,6 +34,7 @@ const personalInjuryItems = [
   { label: "Motorcycle Fatalities", href: "/motorcycle-fatalities", Icon: Bike },
   { label: "Large Truck Fatalities", href: "/large-truck-fatalities", Icon: Truck },
   { label: "Boating Accidents", href: "/boating-accidents", Icon: Ship },
+  { label: "Construction", href: "/construction", Icon: HardHat },
 ];
 
 const propertyDamagePaths = ["/storm-events"];
