@@ -6,6 +6,7 @@ import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
 import OnDocketFirms from "./on-docket-firms";
+import AttorneySection from "./attorney-section";
 
 export const dynamic = "force-dynamic";
 
@@ -410,9 +411,15 @@ export default async function MdlDetailPage({
       </div>
 
 
-              {/* On-Docket Firms */}
-        <OnDocketFirms mdlNumber={mdlNumber} />
-      
+      {/* On-Docket Firms */}
+      <OnDocketFirms mdlNumber={mdlNumber} />
+
+      {/* Plaintiff Attorneys */}
+      <AttorneySection mdlNumber={mdlNumber} role="Plaintiff" />
+
+      {/* Defendant Attorneys */}
+      <AttorneySection mdlNumber={mdlNumber} role="Defendant" defaultCollapsed />
+
       {/* Recent Developments */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-midnight-navy">

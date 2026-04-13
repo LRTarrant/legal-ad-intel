@@ -1367,13 +1367,16 @@ export type Database = {
           cl_docket_id: number | null
           cl_org_id: number | null
           created_at: string | null
+          email: string | null
           fetched_at: string | null
           firm_name: string | null
           id: number
           mdl_number: number
           party_name: string | null
           party_type: string | null
+          phone: string | null
           role: string | null
+          source_url: string | null
         }
         Insert: {
           attorney_name: string
@@ -1381,13 +1384,16 @@ export type Database = {
           cl_docket_id?: number | null
           cl_org_id?: number | null
           created_at?: string | null
+          email?: string | null
           fetched_at?: string | null
           firm_name?: string | null
           id?: never
           mdl_number: number
           party_name?: string | null
           party_type?: string | null
+          phone?: string | null
           role?: string | null
+          source_url?: string | null
         }
         Update: {
           attorney_name?: string
@@ -1395,13 +1401,16 @@ export type Database = {
           cl_docket_id?: number | null
           cl_org_id?: number | null
           created_at?: string | null
+          email?: string | null
           fetched_at?: string | null
           firm_name?: string | null
           id?: never
           mdl_number?: number
           party_name?: string | null
           party_type?: string | null
+          phone?: string | null
           role?: string | null
+          source_url?: string | null
         }
         Relationships: []
       }
