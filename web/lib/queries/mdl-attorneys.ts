@@ -16,6 +16,15 @@ export interface MdlAttorneyScorecard {
   plaintiff_firms: number;
 }
 
+export interface MdlAttorneyRow {
+  id: number;
+  attorney_name: string;
+  firm_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+}
+
 export async function getMdlFirmSummary(
   mdlNumber: number
 ): Promise<MdlFirmSummary[]> {
@@ -53,4 +62,30 @@ export async function hasMdlAttorneyData(
     .eq("mdl_number", mdlNumber);
   if (error) return false;
   return (count ?? 0) > 0;
+}
+
+/**
+ * Fetch attorneys for a given MDL filtered by role (case-insensitive).
+ * Used by the Plaintiff / Defendant Attorneys sections on the detail page.
+ */
+export async function getMdlAttorneysByRole(
+  mdlNumber: number,
+  role: string
+): Promise<MdlAttorneyRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
+  const { data, error } = await supabase
+    .from("mdl_attorneys")
+    .select("id, attorney_name, firm_name, email, phone, role")
+    .eq("mdl_number", mdlNumber)
+    .ilike("role", role)
+    .order("firm_name", { ascending: true, nullsFirst: false })
+    .order("attorney_name", { ascending: true });
+
+  if (error) {
+    console.error(`Failed to fetch ${role} attorneys for MDL ${mdlNumber}:`, error.message);
+    return [];
+  }
+
+  return (data ?? []) as MdlAttorneyRow[];
 }
