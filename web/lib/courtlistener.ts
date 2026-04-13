@@ -1,10 +1,6 @@
 /**
  * CourtListener REST API v4 utility
  * https://www.courtlistener.com/api/rest/v4/
- *
- * TODO: Replace stub data with live API calls once COURTLISTENER_API_TOKEN
- * is configured. The stubs below mirror the real API shape so the UI can
- * be built and reviewed without a token.
  */
 
 const CL_BASE = "https://www.courtlistener.com/api/rest/v4";
@@ -17,6 +13,12 @@ export interface ClAttorneyRecord {
   role: string; // "Plaintiff" | "Defendant" | "Third Party" etc.
   party_name: string | null;
   cl_attorney_id: number | null;
+}
+
+export interface CourtListenerSourceRef {
+  docketId: number | null;
+  docketNumber: string | null;
+  court: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,16 +68,41 @@ const STUB_ATTORNEYS: Record<number, ClAttorneyRecord[]> = {
 // Extract docket ID from a CourtListener URL
 // ---------------------------------------------------------------------------
 
-/**
- * Given a CourtListener URL like
- *   https://www.courtlistener.com/docket/6245245/in-re-johnson-johnson-talcum-powder/
- * returns the numeric docket ID (6245245).
- *
- * Returns null for search-style or non-docket URLs.
- */
+function parseSourceRef(sourceUrl: string): CourtListenerSourceRef {
+  try {
+    const url = new URL(sourceUrl);
+
+    // Direct docket URL shape:
+    //   https://www.courtlistener.com/docket/6245245/in-re-.../
+    const directMatch = url.pathname.match(/\/docket\/(\d+)(?:\/|$)/);
+    if (directMatch) {
+      return {
+        docketId: parseInt(directMatch[1], 10),
+        docketNumber: null,
+        court: null,
+      };
+    }
+
+    // Search URL shape:
+    //   https://www.courtlistener.com/?type=r&docket_number=2:16-md-02738&court=njd
+    const docketNumber = url.searchParams.get("docket_number");
+    const court = url.searchParams.get("court");
+    if (docketNumber && court) {
+      return {
+        docketId: null,
+        docketNumber,
+        court,
+      };
+    }
+  } catch {
+    // no-op
+  }
+
+  return { docketId: null, docketNumber: null, court: null };
+}
+
 export function extractDocketId(sourceUrl: string): number | null {
-  const match = sourceUrl.match(/courtlistener\.com\/docket\/(\d+)\//);
-  return match ? parseInt(match[1], 10) : null;
+  return parseSourceRef(sourceUrl).docketId;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +141,47 @@ export async function fetchDocketAttorneys(
   return [];
 }
 
+export async function resolveDocketIdFromSourceUrl(
+  sourceUrl: string
+): Promise<number | null> {
+  const sourceRef = parseSourceRef(sourceUrl);
+  if (sourceRef.docketId) {
+    return sourceRef.docketId;
+  }
+
+  if (!sourceRef.docketNumber || !sourceRef.court) {
+    return null;
+  }
+
+  const token = process.env.COURTLISTENER_API_TOKEN;
+  if (!token) {
+    return null;
+  }
+
+  const url = new URL(`${CL_BASE}/dockets/`);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("docket_number", sourceRef.docketNumber);
+  url.searchParams.set("court", sourceRef.court);
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Token ${token}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    console.error(
+      `CourtListener docket lookup failed: ${res.status} ${res.statusText} for ${url}`
+    );
+    return null;
+  }
+
+  const json = await res.json();
+  const docket = json.results?.[0];
+  return typeof docket?.id === "number" ? docket.id : null;
+}
+
 // ---------------------------------------------------------------------------
 // Live API implementation (requires token)
 // ---------------------------------------------------------------------------
@@ -142,19 +210,32 @@ async function fetchLiveAttorneys(
 
     const json = await res.json();
 
-    // Each result is a party with nested attorneys
+    // Each result is a party with nested attorneys.
     for (const party of json.results ?? []) {
       const partyName: string = party.name ?? "Unknown";
       const partyType: string = party.party_type?.name ?? party.type ?? "";
       const role = normaliseRole(partyType);
 
       for (const att of party.attorneys ?? []) {
+        const attorneyRole = Array.isArray(att.roles)
+          ? normaliseRole(
+              att.roles
+                .map((r: { role?: string }) => r.role ?? "")
+                .filter(Boolean)
+                .join(", ")
+            )
+          : role;
+
         records.push({
           attorney_name: att.name ?? "Unknown",
-          firm_name: parseContactField(att.contact, "firm") ?? null,
-          email: parseContactField(att.contact, "email") ?? null,
-          phone: parseContactField(att.contact, "phone") ?? null,
-          role,
+          firm_name:
+            att.firm_name ??
+            att.organization ??
+            parseContactField(att.contact, "firm") ??
+            null,
+          email: att.email ?? parseContactField(att.contact, "email") ?? null,
+          phone: att.phone ?? parseContactField(att.contact, "phone") ?? null,
+          role: attorneyRole,
           party_name: partyName,
           cl_attorney_id: att.id ?? null,
         });

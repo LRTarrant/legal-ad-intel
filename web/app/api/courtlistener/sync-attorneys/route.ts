@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { extractDocketId, fetchDocketAttorneys } from "@/lib/courtlistener";
+import {
+  extractDocketId,
+  fetchDocketAttorneys,
+  resolveDocketIdFromSourceUrl,
+} from "@/lib/courtlistener";
 
 /**
  * POST /api/courtlistener/sync-attorneys
@@ -53,14 +57,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // Extract docket ID from the source_url
-  const docketId = mdl.source_url ? extractDocketId(mdl.source_url) : null;
+  // Extract direct docket ID or resolve via docket_number + court search URL
+  let docketId = mdl.source_url ? extractDocketId(mdl.source_url) : null;
+  if (!docketId && mdl.source_url) {
+    docketId = await resolveDocketIdFromSourceUrl(mdl.source_url);
+  }
 
-  // Fetch attorneys (will use stubs if no docket ID or no API token)
-  const attorneys = await fetchDocketAttorneys(
-    docketId ?? 0,
-    mdlNumber
-  );
+  // Fetch attorneys (uses live API when token is present)
+  const attorneys = docketId
+    ? await fetchDocketAttorneys(docketId, mdlNumber)
+    : [];
 
   if (attorneys.length === 0) {
     return NextResponse.json({
