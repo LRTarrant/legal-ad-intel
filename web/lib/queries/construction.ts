@@ -60,6 +60,31 @@ export interface ConstructionStatePriority {
   rate_vs_national: number | null;
 }
 
+export interface ConstructionStatePriorityV2 {
+  state_abbr: string;
+  state_name: string;
+  all_industry_fatalities_2024: number;
+  construction_fatality_rate_2024: number | null;
+  overall_fatality_rate_2024: number | null;
+  construction_fatalities_est: number | null;
+  construction_employment_est: number | null;
+  small_sample_flag: boolean;
+  priority_tier: string;
+  volume_tier: string;
+  rate_vs_national: number | null;
+}
+
+export interface ConstructionDemographic {
+  year: number;
+  dimension: string;
+  category: string;
+  fatalities: number;
+  pct_of_total: number;
+  fatality_rate: number | null;
+  data_source: string;
+  data_note: string | null;
+}
+
 // ── Query functions ──────────────────────────────────────────────────────
 
 export async function getConstructionNationalSummary(
@@ -187,5 +212,65 @@ export async function getConstructionStatePriority(): Promise<
     priority_tier: String(row.priority_tier ?? "Unknown"),
     rate_vs_national:
       row.rate_vs_national != null ? Number(row.rate_vs_national) : null,
+  }));
+}
+
+export async function getConstructionStatePriorityV2(): Promise<
+  ConstructionStatePriorityV2[]
+> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "get_construction_state_priority_v2" as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as ConstructionStatePriorityV2[]).map((row) => ({
+    state_abbr: String(row.state_abbr ?? ""),
+    state_name: String(row.state_name ?? ""),
+    all_industry_fatalities_2024: Number(row.all_industry_fatalities_2024 ?? 0),
+    construction_fatality_rate_2024:
+      row.construction_fatality_rate_2024 != null
+        ? Number(row.construction_fatality_rate_2024)
+        : null,
+    overall_fatality_rate_2024:
+      row.overall_fatality_rate_2024 != null
+        ? Number(row.overall_fatality_rate_2024)
+        : null,
+    construction_fatalities_est:
+      row.construction_fatalities_est != null
+        ? Number(row.construction_fatalities_est)
+        : null,
+    construction_employment_est:
+      row.construction_employment_est != null
+        ? Number(row.construction_employment_est)
+        : null,
+    small_sample_flag: Boolean(row.small_sample_flag),
+    priority_tier: String(row.priority_tier ?? "Unknown"),
+    volume_tier: String(row.volume_tier ?? "Low-Volume"),
+    rate_vs_national:
+      row.rate_vs_national != null ? Number(row.rate_vs_national) : null,
+  }));
+}
+
+export async function getConstructionDemographics(
+  year: number = 2024,
+  dimension: string | null = null
+): Promise<ConstructionDemographic[]> {
+  const supabase = getSupabase();
+  const params: Record<string, unknown> = { p_year: year };
+  if (dimension) params.p_dimension = dimension;
+  const { data, error } = await supabase.rpc(
+    "get_construction_demographics" as never,
+    params as never
+  );
+  if (error) throw error;
+  return ((data ?? []) as ConstructionDemographic[]).map((row) => ({
+    year: Number(row.year ?? year),
+    dimension: String(row.dimension ?? ""),
+    category: String(row.category ?? ""),
+    fatalities: Number(row.fatalities ?? 0),
+    pct_of_total: Number(row.pct_of_total ?? 0),
+    fatality_rate: row.fatality_rate != null ? Number(row.fatality_rate) : null,
+    data_source: String(row.data_source ?? ""),
+    data_note: row.data_note != null ? String(row.data_note) : null,
   }));
 }
