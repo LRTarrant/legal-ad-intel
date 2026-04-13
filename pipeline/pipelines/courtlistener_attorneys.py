@@ -300,33 +300,49 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         if key:
             atty_index.setdefault(key, []).append(idx)
 
-    # Get unique primary docket IDs per MDL (use lowest docket_id as primary)
-    primary_dockets: dict[int, int] = {}  # mdl_number -> cl_docket_id
+    # Get ALL unique docket IDs per MDL, capped at 5 per MDL
+    MAX_DOCKETS_PER_MDL = 5
+    mdl_dockets: dict[int, list[int]] = {}  # mdl_number -> [cl_docket_ids]
     for row in all_rows:
         mdl_num = row["mdl_number"]
         did = row.get("cl_docket_id")
-        if did and (mdl_num not in primary_dockets or did < primary_dockets[mdl_num]):
-            primary_dockets[mdl_num] = did
+        if did:
+            mdl_dockets.setdefault(mdl_num, [])
+            if did not in mdl_dockets[mdl_num]:
+                mdl_dockets[mdl_num].append(did)
+
+    # Cap each MDL to MAX_DOCKETS_PER_MDL docket IDs
+    for mdl_num in mdl_dockets:
+        mdl_dockets[mdl_num] = mdl_dockets[mdl_num][:MAX_DOCKETS_PER_MDL]
 
     scraped_enrichment: int = 0
-    for mdl_num, docket_id in primary_dockets.items():
-        logger.info("MDL %d: Phase 2 -- fetching parties via API for docket %d", mdl_num, docket_id)
-        api_rows = fetch_parties_api(docket_id)
-        for hr in api_rows:
-            key = _normalise_name(hr.get("attorney_name") or "")
-            if key in atty_index:
-                for idx in atty_index[key]:
-                    if all_rows[idx]["mdl_number"] == mdl_num:
-                        # Use normalised role from party_type heading
-                        party_type_raw = hr.get("party_type")
-                        all_rows[idx]["party_type"] = party_type_raw
-                        all_rows[idx]["role"] = hr.get("role") or normalise_role(party_type_raw or "")
-                        if not all_rows[idx].get("party_name"):
-                            all_rows[idx]["party_name"] = hr.get("party_name")
-                        if not all_rows[idx].get("firm_name") and hr.get("firm_name"):
-                            all_rows[idx]["firm_name"] = hr.get("firm_name")
-                        scraped_enrichment += 1
-        time.sleep(REQUEST_DELAY)
+    for mdl_num, docket_ids in mdl_dockets.items():
+        for docket_id in docket_ids:
+            logger.info("MDL %d: Phase 2 -- fetching parties via API for docket %d", mdl_num, docket_id)
+            api_rows = fetch_parties_api(docket_id)
+            matches_found = 0
+            for hr in api_rows:
+                key = _normalise_name(hr.get("attorney_name") or "")
+                if key in atty_index:
+                    for idx in atty_index[key]:
+                        if all_rows[idx]["mdl_number"] == mdl_num:
+                            # Use normalised role from party_type heading
+                            party_type_raw = hr.get("party_type")
+                            all_rows[idx]["party_type"] = party_type_raw
+                            all_rows[idx]["role"] = hr.get("role") or normalise_role(party_type_raw or "")
+                            if not all_rows[idx].get("party_name"):
+                                all_rows[idx]["party_name"] = hr.get("party_name")
+                            if not all_rows[idx].get("firm_name") and hr.get("firm_name"):
+                                all_rows[idx]["firm_name"] = hr.get("firm_name")
+                            scraped_enrichment += 1
+                            matches_found += 1
+            logger.info("MDL %d: docket %d — %d attorney matches found", mdl_num, docket_id, matches_found)
+            time.sleep(REQUEST_DELAY)
+
+    # Post-Phase-2: for rows still missing role, fall back to normalise_role(party_type)
+    for row in all_rows:
+        if row.get("role") is None and row.get("party_type"):
+            row["role"] = normalise_role(row["party_type"])
 
     logger.info("Phase 2 enriched %d attorney rows with party_type/role", scraped_enrichment)
     step.set_metadata({

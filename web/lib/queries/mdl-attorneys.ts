@@ -89,3 +89,27 @@ export async function getMdlAttorneysByRole(
 
   return (data ?? []) as MdlAttorneyRow[];
 }
+
+/**
+ * Fetch ALL attorneys for a given MDL regardless of role.
+ * Used as a fallback when role-filtered queries return no results.
+ */
+export async function getMdlAttorneysAll(
+  mdlNumber: number
+): Promise<MdlAttorneyRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
+  const { data, error } = await supabase
+    .from("mdl_attorneys")
+    .select("id, attorney_name, firm_name, email, phone, role")
+    .eq("mdl_number", mdlNumber)
+    .order("firm_name", { ascending: true, nullsFirst: false })
+    .order("attorney_name", { ascending: true });
+
+  if (error) {
+    console.error(`Failed to fetch all attorneys for MDL ${mdlNumber}:`, error.message);
+    return [];
+  }
+
+  return (data ?? []) as MdlAttorneyRow[];
+}
