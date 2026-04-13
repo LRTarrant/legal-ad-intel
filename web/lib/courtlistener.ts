@@ -21,6 +21,13 @@ export interface CourtListenerSourceRef {
   court: string | null;
 }
 
+export interface FetchDocketAttorneysResult {
+  attorneys: ClAttorneyRecord[];
+  partial: boolean;
+  pagesFetched: number;
+  hadError: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Stub data for 3 well-known MDLs (used when no API token is available)
 // ---------------------------------------------------------------------------
@@ -122,7 +129,7 @@ export function extractDocketId(sourceUrl: string): number | null {
 export async function fetchDocketAttorneys(
   docketId: number,
   mdlNumber?: number
-): Promise<ClAttorneyRecord[]> {
+): Promise<FetchDocketAttorneysResult> {
   const token = process.env.COURTLISTENER_API_TOKEN;
 
   if (token) {
@@ -135,10 +142,20 @@ export async function fetchDocketAttorneys(
 
   // Fall back to stub data keyed by MDL number
   if (mdlNumber && STUB_ATTORNEYS[mdlNumber]) {
-    return STUB_ATTORNEYS[mdlNumber];
+    return {
+      attorneys: STUB_ATTORNEYS[mdlNumber],
+      partial: false,
+      pagesFetched: 0,
+      hadError: false,
+    };
   }
 
-  return [];
+  return {
+    attorneys: [],
+    partial: false,
+    pagesFetched: 0,
+    hadError: false,
+  };
 }
 
 export async function resolveDocketIdFromSourceUrl(
@@ -189,26 +206,47 @@ export async function resolveDocketIdFromSourceUrl(
 async function fetchLiveAttorneys(
   docketId: number,
   token: string
-): Promise<ClAttorneyRecord[]> {
+): Promise<FetchDocketAttorneysResult> {
   const records: ClAttorneyRecord[] = [];
   let url: string | null = `${CL_BASE}/parties/?docket=${docketId}&format=json`;
+  let pagesFetched = 0;
 
   while (url) {
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Token ${token}`,
-        Accept: "application/json",
-      },
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Token ${token}`,
+          Accept: "application/json",
+        },
+      });
+    } catch (error) {
+      console.warn(
+        `CourtListener parties fetch failed after ${pagesFetched} pages for docket ${docketId}; returning partial results (${records.length} attorneys).`,
+        error
+      );
+      return {
+        attorneys: records,
+        partial: true,
+        pagesFetched,
+        hadError: true,
+      };
+    }
 
     if (!res.ok) {
-      console.error(
-        `CourtListener API error: ${res.status} ${res.statusText} for ${url}`
+      console.warn(
+        `CourtListener API error after ${pagesFetched} pages: ${res.status} ${res.statusText} for ${url}; returning partial results (${records.length} attorneys).`
       );
-      break;
+      return {
+        attorneys: records,
+        partial: true,
+        pagesFetched,
+        hadError: true,
+      };
     }
 
     const json = await res.json();
+    pagesFetched += 1;
 
     // Each result is a party with nested attorneys.
     for (const party of json.results ?? []) {
@@ -245,7 +283,12 @@ async function fetchLiveAttorneys(
     url = json.next ?? null;
   }
 
-  return records;
+  return {
+    attorneys: records,
+    partial: false,
+    pagesFetched,
+    hadError: false,
+  };
 }
 
 /**

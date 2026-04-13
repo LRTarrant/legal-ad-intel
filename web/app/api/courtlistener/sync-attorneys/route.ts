@@ -64,14 +64,37 @@ export async function POST(request: Request) {
   }
 
   // Fetch attorneys (uses live API when token is present)
-  const attorneys = docketId
+  const fetchResult = docketId
     ? await fetchDocketAttorneys(docketId, mdlNumber)
-    : [];
+    : {
+        attorneys: [],
+        partial: false,
+        pagesFetched: 0,
+        hadError: false,
+      };
+  const attorneys = fetchResult.attorneys;
 
   if (attorneys.length === 0) {
+    if (fetchResult.hadError) {
+      return NextResponse.json(
+        {
+          error: "Failed to fetch any attorney data from CourtListener",
+          mdl_number: mdlNumber,
+          synced: 0,
+          partial: fetchResult.partial,
+          pages_fetched: fetchResult.pagesFetched,
+          docket_id: docketId,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       mdl_number: mdlNumber,
       synced: 0,
+      partial: fetchResult.partial,
+      pages_fetched: fetchResult.pagesFetched,
+      docket_id: docketId,
       message: "No attorney data available for this MDL",
     });
   }
@@ -108,6 +131,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     mdl_number: mdlNumber,
     synced: attorneys.length,
+    partial: fetchResult.partial,
+    pages_fetched: fetchResult.pagesFetched,
     docket_id: docketId,
   });
 }
