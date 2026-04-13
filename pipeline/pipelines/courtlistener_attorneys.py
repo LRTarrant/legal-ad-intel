@@ -21,7 +21,6 @@ Environment variables:
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import sys
@@ -38,10 +37,6 @@ from lib.pipeline import (
     DRY_RUN,
     _bulk_insert,
     _get,
-    _post,
-    _patch,
-    SUPABASE_URL,
-    _headers,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +47,28 @@ REQUEST_DELAY = 1.0
 MAX_RETRIES = 3
 MAX_SEARCH_PAGES = 5  # Cap pages per MDL to avoid excessive API calls
 CL_BASE_HTML = "https://www.courtlistener.com"  # for HTML parties page scraping
+
+
+def normalise_role(party_type: str) -> str:
+    """Normalise CourtListener party_type into a standard role label.
+
+    Mirrors the TypeScript normaliseRole() in web/lib/courtlistener.ts.
+    """
+    lower = (party_type or "").lower()
+    if any(term in lower for term in ("plaintiff", "petitioner", "claimant")):
+        return "Plaintiff"
+    if any(term in lower for term in ("defendant", "respondent")):
+        return "Defendant"
+    if "third party" in lower:
+        return "Third Party"
+    if "amicus" in lower:
+        return "Amicus"
+    return party_type or None
+
+
+def _normalise_name(name: str) -> str:
+    """Lowercase and collapse whitespace for attorney name matching."""
+    return re.sub(r"\s+", " ", name.strip().lower())
 
 
 def _cl_headers() -> dict:
@@ -261,12 +278,29 @@ class PartiesHTMLParser(HTMLParser):
         self._current_party_name = None
 
 
+def _cl_html_headers() -> dict:
+    """Headers for CourtListener HTML page requests (authenticated)."""
+    h = {"Accept": "text/html"}
+    if CL_API_TOKEN:
+        h["Authorization"] = f"Token {CL_API_TOKEN}"
+    return h
+
+
 def scrape_parties_page(docket_id: int) -> list[dict]:
     """Scrape HTML parties page for a CL docket and return parsed rows."""
     url = f"{CL_BASE_HTML}/docket/{docket_id}/parties/"
     logger.info("  Scraping parties page: %s", url)
+    headers = _cl_html_headers()
+    if "Authorization" not in headers:
+        logger.warning("  No COURTLISTENER_API_TOKEN set — HTML request will likely 403")
     try:
-        resp = httpx.get(url, headers={"Accept": "text/html"}, timeout=30, follow_redirects=True)
+        resp = httpx.get(url, headers=headers, timeout=30, follow_redirects=True)
+        if resp.status_code == 403:
+            logger.error(
+                "  403 Forbidden for %s — check COURTLISTENER_API_TOKEN is valid",
+                url,
+            )
+            return []
         resp.raise_for_status()
     except httpx.HTTPError as e:
         logger.warning("  Parties page fetch failed for docket %s: %s", docket_id, e)
@@ -306,45 +340,51 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
             logger.error("MDL %d failed: %s", mdl_number, e)
             failed_mdls.append(mdl_number)
 
-    
-        # Phase 2: scrape HTML parties pages to enrich party_type and role
-        # Build a lookup: attorney_name.lower() -> list of indices in all_rows
-        atty_index: dict[str, list[int]] = {}
-        for idx, row in enumerate(all_rows):
-            key = (row.get("attorney_name") or "").lower().strip()
-            if key:
-                atty_index.setdefault(key, []).append(idx)
+    # Phase 2: scrape HTML parties pages to enrich party_type and role
+    # Build a lookup: normalised attorney name -> list of indices in all_rows
+    atty_index: dict[str, list[int]] = {}
+    for idx, row in enumerate(all_rows):
+        key = _normalise_name(row.get("attorney_name") or "")
+        if key:
+            atty_index.setdefault(key, []).append(idx)
 
-        # Get unique primary docket IDs per MDL (use lowest docket_id as primary)
-        primary_dockets: dict[int, int] = {}  # mdl_number -> cl_docket_id
-        for row in all_rows:
-            mdl_num = row["mdl_number"]
-            did = row.get("cl_docket_id")
-            if did and (mdl_num not in primary_dockets or did < primary_dockets[mdl_num]):
-                primary_dockets[mdl_num] = did
+    # Get unique primary docket IDs per MDL (use lowest docket_id as primary)
+    primary_dockets: dict[int, int] = {}  # mdl_number -> cl_docket_id
+    for row in all_rows:
+        mdl_num = row["mdl_number"]
+        did = row.get("cl_docket_id")
+        if did and (mdl_num not in primary_dockets or did < primary_dockets[mdl_num]):
+            primary_dockets[mdl_num] = did
 
-        scraped_enrichment: int = 0
-        for mdl_num, docket_id in primary_dockets.items():
-            logger.info(" MDL %d: Phase 2 -- scraping parties page for docket %d", mdl_num, docket_id)
-            html_rows = scrape_parties_page(docket_id)
-            for hr in html_rows:
-                key = (hr.get("attorney_name") or "").lower().strip()
-                if key in atty_index:
-                    for idx in atty_index[key]:
-                        if all_rows[idx]["mdl_number"] == mdl_num:
-                            all_rows[idx]["party_type"] = hr.get("party_type")
-                            all_rows[idx]["role"] = hr.get("role")
-                            if not all_rows[idx].get("party_name"):
-                                all_rows[idx]["party_name"] = hr.get("party_name")
-                            if not all_rows[idx].get("firm_name") and hr.get("firm_name"):
-                                all_rows[idx]["firm_name"] = hr.get("firm_name")
-                            scraped_enrichment += 1
-            time.sleep(REQUEST_DELAY)
+    scraped_enrichment: int = 0
+    for mdl_num, docket_id in primary_dockets.items():
+        logger.info("MDL %d: Phase 2 -- scraping parties page for docket %d", mdl_num, docket_id)
+        html_rows = scrape_parties_page(docket_id)
+        logger.info("  Parsed %d attorney entries from parties HTML", len(html_rows))
+        for hr in html_rows:
+            key = _normalise_name(hr.get("attorney_name") or "")
+            if key in atty_index:
+                for idx in atty_index[key]:
+                    if all_rows[idx]["mdl_number"] == mdl_num:
+                        # Use normalised role from party_type heading
+                        party_type_raw = hr.get("party_type")
+                        all_rows[idx]["party_type"] = party_type_raw
+                        all_rows[idx]["role"] = hr.get("role") or normalise_role(party_type_raw or "")
+                        if not all_rows[idx].get("party_name"):
+                            all_rows[idx]["party_name"] = hr.get("party_name")
+                        if not all_rows[idx].get("firm_name") and hr.get("firm_name"):
+                            all_rows[idx]["firm_name"] = hr.get("firm_name")
+                        scraped_enrichment += 1
+        time.sleep(REQUEST_DELAY)
 
-        logger.info("Phase 2 enriched %d attorney rows with party_type/role", scraped_enrichment)
-        step.set_metadata({
-                                    "total_mdls": len(mdls), "failed_mdls": failed_mdls, "total_attorney_rows": len(all_rows), "enriched_rows": scraped_enrichment})
-            
+    logger.info("Phase 2 enriched %d attorney rows with party_type/role", scraped_enrichment)
+    step.set_metadata({
+        "total_mdls": len(mdls),
+        "failed_mdls": failed_mdls,
+        "total_attorney_rows": len(all_rows),
+        "enriched_rows": scraped_enrichment,
+    })
+
     count = _bulk_insert("mdl_attorneys", all_rows)
     step.set_counts(rows_in=len(mdls), rows_out=count)
     return all_rows
