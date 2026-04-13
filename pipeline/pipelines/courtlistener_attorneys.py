@@ -316,7 +316,7 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
             atty_index.setdefault(key, []).append(idx)
 
     # Get ALL unique docket IDs per MDL, capped at 5 per MDL
-    MAX_DOCKETS_PER_MDL = 5
+    MAX_DOCKETS_PER_MDL = 3
     mdl_dockets: dict[int, list[int]] = {}  # mdl_number -> [cl_docket_ids]
     for row in all_rows:
         mdl_num = row["mdl_number"]
