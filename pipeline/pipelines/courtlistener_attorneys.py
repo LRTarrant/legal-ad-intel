@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 courtlistener_attorneys pipeline -- Fetches attorney/firm data for active MDLs
-from the CourtListener REST API v4 and HTML parties pages.
+from the CourtListener REST API v4.
 Two-phase approach:
   Phase 1: Search API for bulk attorney+firm discovery (fast)
-  Phase 2: HTML parties page scraping for party_type + role enrichment
+  Phase 2: Parties REST API for party_type + role enrichment
 
 Usage:
     python -m pipelines.courtlistener_attorneys
@@ -25,7 +25,6 @@ import logging
 import os
 import sys
 import re
-from html.parser import HTMLParser
 import time
 from datetime import datetime, timezone
 
@@ -46,7 +45,6 @@ CL_BASE = "https://www.courtlistener.com/api/rest/v4"
 REQUEST_DELAY = 1.0
 MAX_RETRIES = 3
 MAX_SEARCH_PAGES = 5  # Cap pages per MDL to avoid excessive API calls
-CL_BASE_HTML = "https://www.courtlistener.com"  # for HTML parties page scraping
 
 
 def normalise_role(party_type: str) -> str:
@@ -181,134 +179,88 @@ def search_mdl_attorneys(mdl_number: int) -> list[dict]:
     return rows
 
 
-class PartiesHTMLParser(HTMLParser):
-    """Parse CourtListener /docket/{id}/parties/ HTML page."""
-
-    def __init__(self):
-        super().__init__()
-        self.rows: list[dict] = []
-        self._current_party_type: str | None = None
-        self._current_party_name: str | None = None
-        self._current_atty_name: str | None = None
-        self._current_firm: str | None = None
-        self._current_roles: list[str] = []
-        self._in_party_type_h2 = False
-        self._in_party_h3 = False
-        self._in_atty_h4 = False
-        self._in_role_span = False
-        self._tag_stack: list[str] = []
-        self._addr_lines: list[str] = []
-        self._addr_count = 0
-
-    def handle_starttag(self, tag, attrs):
-        self._tag_stack.append(tag)
-        attrs_dict = dict(attrs)
-        cls = attrs_dict.get("class", "")
-        # party type heading: <h3 class="..."><i class="..."></i> Defendant</h3>
-        if tag == "h3" and "litigant-header" in cls:
-            self._flush_attorney()
-            self._flush_party()
-            self._in_party_type_h2 = True
-        # party name: <h4 class="litigant-name">
-        elif tag == "h4" and "litigant-name" in cls:
-            self._flush_attorney()
-            self._flush_party()
-            self._in_party_h3 = True
-        # attorney name: <h5 class="attorney-name">
-        elif tag == "h5" and "attorney-name" in cls:
-            self._flush_attorney()
-            self._in_atty_h4 = True
-            self._addr_count = 0
-            self._addr_lines = []
-        # role span
-        elif tag == "span" and "role" in cls:
-            self._in_role_span = True
-
-    def handle_endtag(self, tag):
-        if self._tag_stack:
-            self._tag_stack.pop()
-        if tag == "h3":
-            self._in_party_type_h2 = False
-        elif tag == "h4":
-            self._in_party_h3 = False
-        elif tag == "h5":
-            self._in_atty_h4 = False
-        elif tag == "span":
-            self._in_role_span = False
-
-    def handle_data(self, data):
-        text = data.strip()
-        if not text:
-            return
-        if self._in_party_type_h2:
-            # e.g. "Defendant", "Plaintiff"
-            self._current_party_type = text
-        elif self._in_party_h3:
-            self._current_party_name = text
-        elif self._in_atty_h4:
-            self._current_atty_name = text
-        elif self._in_role_span:
-            self._current_roles.append(text)
-        elif self._current_atty_name and not self._in_atty_h4:
-            # Address lines come after attorney name -- first non-phone line is firm
-            if re.match(r'^\(\d{3}\)', text) or re.match(r'^\d{3}[.-]', text):
-                pass  # phone number
-            elif text.startswith("Fax:") or re.match(r'^\d', text):
-                pass  # fax label or numeric street
-            elif self._addr_count == 0 and not re.match(r'^\d', text) and len(text) > 3:
-                self._current_firm = text  # first non-numeric line = firm name
-                self._addr_count += 1
-
-    def _flush_attorney(self):
-        if self._current_atty_name:
-            self.rows.append({
-                "party_name": self._current_party_name,
-                "party_type": self._current_party_type,
-                "attorney_name": self._current_atty_name,
-                "firm_name": self._current_firm,
-                "role": ", ".join(self._current_roles) if self._current_roles else None,
-            })
-        self._current_atty_name = None
-        self._current_firm = None
-        self._current_roles = []
-        self._addr_count = 0
-        self._addr_lines = []
-
-    def _flush_party(self):
-        self._current_party_name = None
+# CourtListener attorney role integer mapping
+_CL_ROLE_MAP = {
+    1: "Lead attorney",
+    2: "Attorney to be noticed",
+    3: "Attorney in charge",
+}
 
 
-def _cl_html_headers() -> dict:
-    """Headers for CourtListener HTML page requests (authenticated)."""
-    h = {"Accept": "text/html"}
-    if CL_API_TOKEN:
-        h["Authorization"] = f"Token {CL_API_TOKEN}"
-    return h
+def fetch_parties_api(docket_id: int) -> list[dict]:
+    """Fetch party/attorney data via the CourtListener REST API v4 parties endpoint.
 
+    Returns a list of dicts with keys matching the downstream enrichment format:
+    party_name, party_type, attorney_name, firm_name, role.
+    """
+    rows: list[dict] = []
+    url = f"{CL_BASE}/parties/"
+    params = {"docket": docket_id}
+    page = 0
 
-def scrape_parties_page(docket_id: int) -> list[dict]:
-    """Scrape HTML parties page for a CL docket and return parsed rows."""
-    url = f"{CL_BASE_HTML}/docket/{docket_id}/parties/"
-    logger.info("  Scraping parties page: %s", url)
-    headers = _cl_html_headers()
-    if "Authorization" not in headers:
-        logger.warning("  No COURTLISTENER_API_TOKEN set — HTML request will likely 403")
-    try:
-        resp = httpx.get(url, headers=headers, timeout=30, follow_redirects=True)
-        if resp.status_code == 403:
-            logger.error(
-                "  403 Forbidden for %s — check COURTLISTENER_API_TOKEN is valid",
-                url,
-            )
-            return []
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        logger.warning("  Parties page fetch failed for docket %s: %s", docket_id, e)
-        return []
-    parser = PartiesHTMLParser()
-    parser.feed(resp.text)
-    parser._flush_attorney()  # flush last attorney
-    return parser.rows
+    while url:
+        page += 1
+        data = _cl_get(url, params) if page == 1 else _cl_get(url)
+
+        if not isinstance(data, dict):
+            break
+
+        for party in data.get("results", []):
+            party_name = (party.get("name") or "").strip() or None
+            party_type_obj = party.get("party_type") or {}
+            party_type = (party_type_obj.get("name") or "").strip() or None
+
+            for atty_entry in party.get("attorneys", []):
+                # Resolve attorney name from nested attorney object or URL
+                attorney_obj = atty_entry.get("attorney")
+                if isinstance(attorney_obj, dict):
+                    attorney_name = (attorney_obj.get("name") or "").strip() or None
+                elif isinstance(attorney_obj, str) and attorney_obj:
+                    # attorney field is a URL -- fetch the attorney detail
+                    atty_detail = _cl_get(attorney_obj)
+                    attorney_name = (atty_detail.get("name") or "").strip() if isinstance(atty_detail, dict) else None
+                else:
+                    attorney_name = None
+
+                if not attorney_name:
+                    continue
+
+                # Extract firm name from organizations
+                orgs = atty_entry.get("organizations") or []
+                firm_name = None
+                if orgs:
+                    first_org = orgs[0]
+                    if isinstance(first_org, dict):
+                        firm_name = (first_org.get("name") or "").strip() or None
+                    elif isinstance(first_org, str):
+                        firm_name = first_org.strip() or None
+
+                # Map role integers to human-readable labels
+                roles_list = atty_entry.get("roles") or []
+                role_labels = []
+                for r in roles_list:
+                    if isinstance(r, dict):
+                        role_int = r.get("role")
+                        label = _CL_ROLE_MAP.get(role_int, f"Role {role_int}")
+                        role_labels.append(label)
+                role = ", ".join(role_labels) if role_labels else None
+
+                rows.append({
+                    "party_name": party_name,
+                    "party_type": party_type,
+                    "attorney_name": attorney_name,
+                    "firm_name": firm_name,
+                    "role": role,
+                })
+
+        url = data.get("next")
+        if url:
+            params = None  # next URL has all params embedded
+            time.sleep(REQUEST_DELAY)
+
+    logger.info("  Parties API returned %d parties, %d attorney entries",
+                len(set(r["party_name"] for r in rows if r["party_name"])), len(rows))
+    return rows
 
 
 def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
@@ -340,7 +292,7 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
             logger.error("MDL %d failed: %s", mdl_number, e)
             failed_mdls.append(mdl_number)
 
-    # Phase 2: scrape HTML parties pages to enrich party_type and role
+    # Phase 2: fetch parties via REST API to enrich party_type and role
     # Build a lookup: normalised attorney name -> list of indices in all_rows
     atty_index: dict[str, list[int]] = {}
     for idx, row in enumerate(all_rows):
@@ -358,10 +310,9 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
 
     scraped_enrichment: int = 0
     for mdl_num, docket_id in primary_dockets.items():
-        logger.info("MDL %d: Phase 2 -- scraping parties page for docket %d", mdl_num, docket_id)
-        html_rows = scrape_parties_page(docket_id)
-        logger.info("  Parsed %d attorney entries from parties HTML", len(html_rows))
-        for hr in html_rows:
+        logger.info("MDL %d: Phase 2 -- fetching parties via API for docket %d", mdl_num, docket_id)
+        api_rows = fetch_parties_api(docket_id)
+        for hr in api_rows:
             key = _normalise_name(hr.get("attorney_name") or "")
             if key in atty_index:
                 for idx in atty_index[key]:
