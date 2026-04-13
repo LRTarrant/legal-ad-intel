@@ -336,7 +336,7 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         "enriched_rows": scraped_enrichment,
     })
 
-    count = _bulk_insert("mdl_attorneys", all_rows)
+    count = _bulk_insert("mdl_attorneys", all_rows, on_conflict="mdl_number,cl_attorney_id", resolution="merge-duplicates")
     step.set_counts(rows_in=len(mdls), rows_out=count)
     return all_rows
 
