@@ -108,8 +108,8 @@ def _cl_get(url: str, params: dict | None = None) -> dict | list:
 
 
 def search_mdl_attorneys(mdl_number: int) -> list[dict]:
-    """Search CourtListener RECAP for an MDL and extract unique attorney+firm pairs."""
-    seen: set[tuple] = set()  # (attorney_name, firm_name) dedup key
+    """Search CourtListener RECAP for an MDL and extract unique attorney rows."""
+    seen: set[tuple] = set()  # (attorney_name, cl_attorney_id) dedup key
     rows: list[dict] = []
     now = datetime.now(timezone.utc).isoformat()
 
@@ -141,25 +141,24 @@ def search_mdl_attorneys(mdl_number: int) -> list[dict]:
         for hit in results:
             attorneys = hit.get("attorney", []) or []
             attorney_ids = hit.get("attorney_id", []) or []
-            firms = hit.get("firm", []) or []
             firm_ids = hit.get("firm_id", []) or []
             parties = hit.get("party", []) or []
             party_ids = hit.get("party_id", []) or []
             docket_id = hit.get("docket_id")
 
-            # Each attorney may map to a firm at the same index
             for i, atty_name in enumerate(attorneys):
                 atty_name = (atty_name or "").strip()
                 if not atty_name:
                     continue
 
                 cl_attorney_id = attorney_ids[i] if i < len(attorney_ids) else None
-                firm_name = (firms[i] if i < len(firms) else "") or ""
-                firm_name = firm_name.strip() or None
+                # Search API attorney[]/firm[] arrays are not reliably aligned.
+                # Keep firm_id as a fallback only; authoritative firm mapping is
+                # set in Phase 2 from the Parties API nested structure.
                 cl_firm_id = firm_ids[i] if i < len(firm_ids) else None
 
-                # Dedup by attorney name + firm name
-                dedup_key = (atty_name.lower(), (firm_name or "").lower())
+                # Dedup by attorney name + attorney id
+                dedup_key = (atty_name.lower(), cl_attorney_id)
                 if dedup_key in seen:
                     continue
                 seen.add(dedup_key)
@@ -173,7 +172,7 @@ def search_mdl_attorneys(mdl_number: int) -> list[dict]:
                     "cl_docket_id": docket_id,
                     "attorney_name": atty_name,
                     "cl_attorney_id": cl_attorney_id,
-                    "firm_name": firm_name,
+                    "firm_name": None,
                     "cl_org_id": cl_firm_id,
                     "party_name": party_name,
                     "party_type": party_type,
@@ -238,12 +237,17 @@ def fetch_parties_api(docket_id: int) -> list[dict]:
                 # Extract firm name from organizations
                 orgs = atty_entry.get("organizations") or []
                 firm_name = None
+                cl_org_id = None
                 if orgs:
                     first_org = orgs[0]
                     if isinstance(first_org, dict):
                         firm_name = (first_org.get("name") or "").strip() or None
+                        cl_org_id = first_org.get("id")
                     elif isinstance(first_org, str):
                         firm_name = first_org.strip() or None
+                        m = re.search(r"/organizations/(\d+)/?$", first_org)
+                        if m:
+                            cl_org_id = int(m.group(1))
 
                 # Map role integers to human-readable labels
                 roles_list = atty_entry.get("roles") or []
@@ -260,6 +264,7 @@ def fetch_parties_api(docket_id: int) -> list[dict]:
                     "party_type": party_type,
                     "attorney_name": attorney_name,
                     "firm_name": firm_name,
+                    "cl_org_id": cl_org_id,
                     "role": role,
                 })
 
@@ -310,8 +315,8 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         if key:
             atty_index.setdefault(key, []).append(idx)
 
-    # Get ALL unique docket IDs per MDL, capped at 3 per MDL
-    MAX_DOCKETS_PER_MDL = 3
+    # Get ALL unique docket IDs per MDL, capped at 5 per MDL
+    MAX_DOCKETS_PER_MDL = 5
     mdl_dockets: dict[int, list[int]] = {}  # mdl_number -> [cl_docket_ids]
     for row in all_rows:
         mdl_num = row["mdl_number"]
@@ -352,8 +357,10 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
                             all_rows[idx]["role"] = hr.get("role") or normalise_role(party_type_raw or "")
                             if not all_rows[idx].get("party_name"):
                                 all_rows[idx]["party_name"] = hr.get("party_name")
-                            if not all_rows[idx].get("firm_name") and hr.get("firm_name"):
+                            if hr.get("firm_name"):
                                 all_rows[idx]["firm_name"] = hr.get("firm_name")
+                            if hr.get("cl_org_id") is not None:
+                                all_rows[idx]["cl_org_id"] = hr.get("cl_org_id")
                             scraped_enrichment += 1
                             matches_found += 1
             logger.info("MDL %d: docket %d — %d attorney matches found", mdl_num, docket_id, matches_found)
