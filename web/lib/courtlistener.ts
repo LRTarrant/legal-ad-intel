@@ -265,19 +265,10 @@ async function fetchLiveAttorneys(
     // Each result is a party with nested attorneys.
     for (const party of json.results ?? []) {
       const partyName: string = party.name ?? "Unknown";
-      const partyType: string = party.party_type?.name ?? party.type ?? "";
+      const partyType: string = party.party_type?.name ?? party.party_type ?? "";
       const role = normaliseRole(partyType);
 
       for (const att of party.attorneys ?? []) {
-        const attorneyRole = Array.isArray(att.roles)
-          ? normaliseRole(
-              att.roles
-                .map((r: { role?: string }) => r.role ?? "")
-                .filter(Boolean)
-                .join(", ")
-            )
-          : role;
-
         records.push({
           attorney_name: att.name ?? "Unknown",
           firm_name:
@@ -287,7 +278,7 @@ async function fetchLiveAttorneys(
             null,
           email: att.email ?? parseContactField(att.contact, "email") ?? null,
           phone: att.phone ?? parseContactField(att.contact, "phone") ?? null,
-          role: attorneyRole,
+          role,
           party_name: partyName,
           cl_attorney_id: att.id ?? null,
         });
