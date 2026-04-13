@@ -42,8 +42,9 @@ logger = logging.getLogger(__name__)
 
 CL_API_TOKEN = os.environ.get("COURTLISTENER_API_TOKEN", "")
 CL_BASE = "https://www.courtlistener.com/api/rest/v4"
-REQUEST_DELAY = 1.0
+REQUEST_DELAY = 2.0
 MAX_RETRIES = 3
+MAX_RETRIES_RATE_LIMIT = 5
 MAX_SEARCH_PAGES = 5  # Cap pages per MDL to avoid excessive API calls
 
 
@@ -78,11 +79,16 @@ def _cl_headers() -> dict:
 
 def _cl_get(url: str, params: dict | None = None) -> dict | list:
     """GET from CourtListener API with retry logic."""
+    consecutive_429s = 0
     for attempt in range(MAX_RETRIES):
         try:
             resp = httpx.get(url, headers=_cl_headers(), params=params or {}, timeout=30)
             if resp.status_code == 429:
-                wait = 2 ** attempt * 2
+                consecutive_429s += 1
+                if consecutive_429s >= MAX_RETRIES_RATE_LIMIT:
+                    logger.warning("Hit 429 rate limit %d consecutive times for %s, giving up", consecutive_429s, url)
+                    return {}
+                wait = 2 ** attempt * 5
                 logger.warning("Rate limited, backing off %ds", wait)
                 time.sleep(wait)
                 continue
@@ -217,6 +223,7 @@ def fetch_parties_api(docket_id: int) -> list[dict]:
                     attorney_name = (attorney_obj.get("name") or "").strip() or None
                 elif isinstance(attorney_obj, str) and attorney_obj:
                     # attorney field is a URL -- fetch the attorney detail
+                    time.sleep(REQUEST_DELAY)
                     atty_detail = _cl_get(attorney_obj)
                     attorney_name = (atty_detail.get("name") or "").strip() if isinstance(atty_detail, dict) else None
                 else:
@@ -300,8 +307,8 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         if key:
             atty_index.setdefault(key, []).append(idx)
 
-    # Get ALL unique docket IDs per MDL, capped at 5 per MDL
-    MAX_DOCKETS_PER_MDL = 5
+    # Get ALL unique docket IDs per MDL, capped at 3 per MDL
+    MAX_DOCKETS_PER_MDL = 3
     mdl_dockets: dict[int, list[int]] = {}  # mdl_number -> [cl_docket_ids]
     for row in all_rows:
         mdl_num = row["mdl_number"]
