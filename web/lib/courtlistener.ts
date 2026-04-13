@@ -207,11 +207,25 @@ async function fetchLiveAttorneys(
   docketId: number,
   token: string
 ): Promise<FetchDocketAttorneysResult> {
+  const startedAt = Date.now();
+  const maxElapsedMs = 240 * 1000; // 4 minutes to leave buffer for downstream work
   const records: ClAttorneyRecord[] = [];
   let url: string | null = `${CL_BASE}/parties/?docket=${docketId}&format=json`;
   let pagesFetched = 0;
 
   while (url) {
+    if (Date.now() - startedAt > maxElapsedMs) {
+      console.warn(
+        `CourtListener parties fetch timed out after ${pagesFetched} pages for docket ${docketId}; returning partial results (${records.length} attorneys).`
+      );
+      return {
+        attorneys: records,
+        partial: true,
+        pagesFetched,
+        hadError: false,
+      };
+    }
+
     let res: Response;
     try {
       res = await fetch(url, {
