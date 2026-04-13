@@ -1,9 +1,12 @@
 import {
   getCountiesByState,
+  getCountyHotspots,
   getCrashHeatmapPoints,
   getDistinctStates,
   getDrunkDrivingStats,
   getFatalityTrendByYear,
+  getMvPoiCategories,
+  getMvPoiTargets,
   getRecentCrashes,
   getTopStatesByFatalities,
   getTotalCrashes,
@@ -14,6 +17,9 @@ import {
 import { FatalitiesFilterBar } from "./fatalities-filter-bar";
 import { FatalitiesHeatmapPanel } from "./fatalities-heatmap-panel";
 import { AdvertisingInsight } from "../components/advertising-insight";
+import { CountyHotspotTable } from "./_components/county-hotspot-table";
+import { MvPoiTargetsTable } from "./_components/mv-poi-targets-table";
+import { MvAIRecommendations } from "./_components/mv-ai-recommendations";
 import { Car } from "lucide-react";
 
 export const metadata = {
@@ -79,7 +85,7 @@ export default async function FatalitiesPage({
       ? counties.find((county) => county.county_fips === filters.county) ?? null
       : null;
 
-  const [totalFatalities, totalCrashes, trend, topStates, drunkStats, recent, heatmapPoints, urbanRuralStats] =
+  const [totalFatalities, totalCrashes, trend, topStates, drunkStats, recent, heatmapPoints, urbanRuralStats, nationalCrashes] =
     await Promise.all([
       getTotalFatalities(filters),
       getTotalCrashes(filters),
@@ -89,7 +95,16 @@ export default async function FatalitiesPage({
       getRecentCrashes(20, filters),
       getCrashHeatmapPoints(filters),
       getUrbanRuralStats(filters.state ?? undefined, filters.county ?? undefined),
+      getTotalCrashes(),
     ]);
+
+  const [countyHotspots, poiTargets, poiCategories] = filters.state
+    ? await Promise.all([
+        getCountyHotspots(filters.state),
+        getMvPoiTargets(filters.state),
+        getMvPoiCategories(filters.state),
+      ])
+    : [[], [], []];
 
   const avgFatalitiesPerCrash =
     totalCrashes > 0
@@ -102,7 +117,7 @@ export default async function FatalitiesPage({
   const filterSummary = getFilterSummary(filters.state ?? null, selectedCounty?.county_name ?? null);
   const topStatesTitle = filters.state
     ? `Filtered view · ${filterSummary}`
-    : "Top States by Fatalities (2019–2023)";
+    : "Top States by Fatalities (2019–2024)";
 
   return (
     <div className="space-y-8">
@@ -113,7 +128,7 @@ export default async function FatalitiesPage({
             Motor Vehicle Fatalities
           </h1>
           <p className="mt-1 text-slate-gray">
-            FARS data · 2019–2023 · Source: NHTSA
+            FARS data · 2019–2024 · Source: NHTSA
           </p>
         </div>
       </div>
@@ -290,6 +305,31 @@ export default async function FatalitiesPage({
           </table>
         </div>
       </div>
+
+      {filters.state && countyHotspots.length > 0 && (
+        <CountyHotspotTable
+          hotspots={countyHotspots}
+          selectedState={filters.state}
+        />
+      )}
+
+      {filters.state && poiTargets.length > 0 && (
+        <MvPoiTargetsTable
+          pois={poiTargets}
+          categories={poiCategories}
+          selectedState={filters.state}
+        />
+      )}
+
+      <MvAIRecommendations
+        hotspots={countyHotspots}
+        poiTargets={poiTargets}
+        selectedState={filters.state ?? null}
+        totalCrashes={totalCrashes}
+        totalFatalities={totalFatalities}
+        nationalCrashes={nationalCrashes}
+        drunkPct={drunkStats.percentage}
+      />
 
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h2 className="font-heading text-xl font-semibold text-midnight-navy">
