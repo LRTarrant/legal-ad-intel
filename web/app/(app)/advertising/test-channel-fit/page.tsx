@@ -1,11 +1,12 @@
 import { getChannelFitScores, type ChannelFitScore } from "@/lib/queries";
 import Link from "next/link";
 import { Radio, Zap, BarChart3, TrendingUp } from "lucide-react";
+import { AdvertisingInsight } from "../../components/advertising-insight";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Channel Strategy | Legal Marketing Intelligence",
+  title: "Advertising Channel Planner | Legal Marketing Intelligence",
 };
 
 /* ── Config ─────────────────────────────────────────────── */
@@ -360,12 +361,43 @@ export default async function TestChannelFitPage({
         </div>
         <div>
           <h1 className="text-2xl font-bold text-midnight-navy">
-            Channel Strategy
+            Advertising Channel Planner
           </h1>
           <p className="text-sm text-slate-gray">
-            Audience-weighted channel recommendations by tort and market
+            See which advertising channels best reach your target audience in each market.
           </p>
         </div>
+      </div>
+
+      {/* Explainer */}
+      <div className="mt-5">
+        <AdvertisingInsight>
+          <p>
+            This tool scores each advertising channel based on how well it
+            reaches the typical claimant audience for a given tort type and
+            market. Use it to prioritize your media mix before building a
+            campaign.
+          </p>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            <li>
+              <strong>Pick a tort</strong> to set the audience profile (e.g.,
+              Auto Injury skews working-age; Roundup skews 55+).
+            </li>
+            <li>
+              <strong>Pick a market</strong> to reflect local media-consumption
+              patterns (e.g., a TV-heavy DMA vs. a digital-first metro).
+            </li>
+            <li>
+              <strong>Read the scores</strong> as relative audience-channel
+              alignment — the top channel is normalized to 100%.
+            </li>
+          </ul>
+          <p className="mt-2 text-slate-gray">
+            Note: Scores reflect audience fit only. They do not account for
+            media cost, competitive saturation, or expected ROI. Use them as a
+            starting point alongside your own pricing and market knowledge.
+          </p>
+        </AdvertisingInsight>
       </div>
 
       {/* Selectors */}
