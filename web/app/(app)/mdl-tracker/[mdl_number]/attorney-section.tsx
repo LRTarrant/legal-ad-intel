@@ -23,13 +23,13 @@ export default async function AttorneySection({
           <AttorneyTable
             attorneys={allAttorneys}
             defaultCollapsed={defaultCollapsed}
-            role="All Attorneys (role classification pending)"
+            role="All Attorneys"
           />
         );
       }
       return (
         <section className="mt-10">
-          <h2 className="text-xl font-semibold text-white mb-4">
+          <h2 className="mb-4 text-xl font-bold text-white">
             {role} Attorneys
           </h2>
           <p className="text-sm text-slate-400">
