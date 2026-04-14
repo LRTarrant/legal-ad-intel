@@ -8,12 +8,19 @@ export const metadata = {
   title: "Channel-Fit Scores | Legal Marketing Intelligence",
 };
 
-/* ── Available tort profiles ────────────────────────────── */
+/* ── Config ─────────────────────────────────────────────── */
 
 const TORTS = [
   { id: "AUTO_INJURY", label: "Auto Injury" },
   { id: "TRUCK_ACCIDENT", label: "Truck Accident" },
   { id: "ROUNDUP", label: "Roundup" },
+] as const;
+
+const MARKETS = [
+  { id: "US_TEST", label: "US Benchmark" },
+  { id: "OLDER_TV_DMA", label: "Older / TV-Heavy DMA" },
+  { id: "DIGITAL_YOUNG_DMA", label: "Digital-First DMA" },
+  { id: "BALANCED_SUBURBAN_DMA", label: "Balanced Suburban DMA" },
 ] as const;
 
 /* ── Helpers ────────────────────────────────────────────── */
@@ -43,26 +50,33 @@ function scoreColor(normalized: number): string {
 
 /* ── Components ─────────────────────────────────────────── */
 
-function TortSelector({
-  activeTortId,
+function PillSelector<T extends string>({
+  items,
+  activeId,
+  paramName,
+  otherParams,
 }: {
-  activeTortId: string;
+  items: readonly { id: T; label: string }[];
+  activeId: T;
+  paramName: string;
+  otherParams: Record<string, string>;
 }) {
   return (
     <nav className="flex gap-2 flex-wrap">
-      {TORTS.map((t) => {
-        const isActive = t.id === activeTortId;
+      {items.map((item) => {
+        const isActive = item.id === activeId;
+        const params = new URLSearchParams({ ...otherParams, [paramName]: item.id });
         return (
           <Link
-            key={t.id}
-            href={`/advertising/test-channel-fit?tort_id=${t.id}`}
+            key={item.id}
+            href={`/advertising/test-channel-fit?${params.toString()}`}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-intelligence-teal text-white shadow-sm"
                 : "bg-white text-charcoal hover:bg-cloud border border-cloud"
             }`}
           >
-            {t.label}
+            {item.label}
           </Link>
         );
       })}
@@ -102,13 +116,15 @@ function ScoreBar({ score }: { score: ChannelFitScore }) {
 export default async function TestChannelFitPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tort_id?: string }>;
+  searchParams: Promise<{ tort_id?: string; market_id?: string }>;
 }) {
   const sp = await searchParams;
+
   const tortId = TORTS.find((t) => t.id === sp.tort_id)?.id ?? TORTS[0].id;
+  const marketId = MARKETS.find((m) => m.id === sp.market_id)?.id ?? MARKETS[0].id;
   const tortLabel = TORTS.find((t) => t.id === tortId)!.label;
+  const marketLabel = MARKETS.find((m) => m.id === marketId)!.label;
   const profileName = "default";
-  const marketId = "US_TEST";
 
   let scores: ChannelFitScore[] = [];
   let errorMsg: string | null = null;
@@ -131,14 +147,35 @@ export default async function TestChannelFitPage({
             Channel-Fit Scores
           </h1>
           <p className="text-sm text-slate-gray">
-            Weighted audience–channel alignment · {marketId}
+            Weighted audience–channel alignment by tort and market
           </p>
         </div>
       </div>
 
-      {/* Tort selector pills */}
-      <div className="mt-5">
-        <TortSelector activeTortId={tortId} />
+      {/* Selectors */}
+      <div className="mt-5 space-y-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+            Tort
+          </p>
+          <PillSelector
+            items={TORTS}
+            activeId={tortId}
+            paramName="tort_id"
+            otherParams={{ market_id: marketId }}
+          />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+            Market
+          </p>
+          <PillSelector
+            items={MARKETS}
+            activeId={marketId}
+            paramName="market_id"
+            otherParams={{ tort_id: tortId }}
+          />
+        </div>
       </div>
 
       {/* Results */}
@@ -148,7 +185,7 @@ export default async function TestChannelFitPage({
         </div>
       ) : scores.length === 0 ? (
         <p className="mt-6 text-sm text-slate-gray">
-          No scores returned. Check that seed data exists for {tortId} / {marketId}.
+          No scores returned. Check seed data for {tortId} / {marketId}.
         </p>
       ) : (
         <section className="mt-6 rounded-lg bg-white p-6 shadow-sm">
@@ -156,7 +193,7 @@ export default async function TestChannelFitPage({
             {tortLabel}
           </h2>
           <p className="text-xs text-slate-gray mb-4">
-            Profile: {profileName} · Market: {marketId}
+            Market: {marketLabel} · Profile: {profileName}
           </p>
 
           <table className="w-full">
