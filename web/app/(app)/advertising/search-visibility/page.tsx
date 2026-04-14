@@ -1,7 +1,7 @@
 import { getSerpVisibilityWindowed } from "@/lib/queries/serp-visibility";
 import { getTorts } from "@/lib/queries/ad-saturation";
-import { computeDateRange } from "../ad-saturation/_components/time-window-utils";
-import { TimeWindowSelector } from "../ad-saturation/_components/TimeWindowSelector";
+import { computeDateRange } from "../saturation/_components/time-window-utils";
+import { TimeWindowSelector } from "../saturation/_components/TimeWindowSelector";
 import { SearchVisibilityClient } from "./search-visibility-client";
 import { Suspense } from "react";
 import { Search } from "lucide-react";

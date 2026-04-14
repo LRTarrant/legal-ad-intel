@@ -235,7 +235,7 @@ function PillSelector<T extends string>({
         return (
           <Link
             key={item.id}
-            href={`/advertising/test-channel-fit?${params.toString()}`}
+            href={`/advertising/channel-planner?${params.toString()}`}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-intelligence-teal text-white shadow-sm"

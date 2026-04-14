@@ -163,7 +163,7 @@ export default async function TortDrillDownPage({
     if (sp.window === "custom" && sp.from) p.set("from", sp.from);
     if (sp.window === "custom" && sp.to) p.set("to", sp.to);
     const qs = p.toString();
-    return `/ad-saturation/${tortSlug}${qs ? `?${qs}` : ""}`;
+    return `/advertising/saturation/${tortSlug}${qs ? `?${qs}` : ""}`;
   }
 
   // Build tort switcher URLs that preserve time window params
@@ -173,7 +173,7 @@ export default async function TortDrillDownPage({
     if (sp.window === "custom" && sp.from) p.set("from", sp.from);
     if (sp.window === "custom" && sp.to) p.set("to", sp.to);
     const qs = p.toString();
-    return `/ad-saturation/${slug}${qs ? `?${qs}` : ""}`;
+    return `/advertising/saturation/${slug}${qs ? `?${qs}` : ""}`;
   }
 
   return (
@@ -181,7 +181,7 @@ export default async function TortDrillDownPage({
       {/* Header + Breadcrumb */}
       <div>
         <Link
-          href="/ad-saturation"
+          href="/advertising/saturation"
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-purple-400 transition"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Ad Saturation

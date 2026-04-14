@@ -259,7 +259,7 @@ export function AdSaturationClient({
                   <Fragment key={row.id}>
                     <tr className="hover:bg-zinc-800/50">
                       <td className="px-4 py-3 text-right text-zinc-400">{i + 1}</td>
-                      <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50"><Link href={`/ad-saturation/${row.tort_slug}`} className="transition hover:text-purple-400">{row.tort_label}</Link></td>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-50"><Link href={`/advertising/saturation/${row.tort_slug}`} className="transition hover:text-purple-400">{row.tort_label}</Link></td>
                       <td className="whitespace-nowrap px-4 py-3 text-zinc-300">{row.geo_name}</td>
                       <td className="px-4 py-3">{row.state_abbr ?? "\u2014"}</td>
                       <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-2"><div className="h-2 w-16 overflow-hidden rounded-full bg-zinc-800"><div className={`h-full rounded-full ${scoreBg(row.saturation_score)}`} style={{ width: `${Math.min(row.saturation_score ?? 0, 100)}%` }} /></div><span className={`tabular-nums font-semibold ${scoreCls(row.saturation_score)}`}>{fmtScore(row.saturation_score)}</span></div></td>

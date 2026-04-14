@@ -57,14 +57,24 @@ const topNavItems = [
   { label: "Opportunity", href: "/opportunity", Icon: Target },
 ];
 
+const advertisingPaths = [
+  "/advertising/channel-planner",
+  "/advertising/saturation",
+  "/advertising/search-visibility",
+  "/advertising/trends",
+];
+
+const advertisingItems = [
+  { label: "Channel Planner", href: "/advertising/channel-planner", Icon: BarChart3 },
+  { label: "Ad Saturation", href: "/advertising/saturation", Icon: Radio },
+  { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Search },
+  { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
+];
+
 const bottomNavItems = [
   { label: "Judicial Profiles", href: "/judicial-profiles" },
   { label: "PI Viability", href: "/pi-viability" },
-    { label: "Market Demographics", href: "/market-demographics", Icon: Users },
-  { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
-  { label: "Search Visibility", href: "/search-visibility", Icon: Search },
-  { label: "Google Trends", href: "/google-trends", Icon: TrendingUp },
-  { label: "Channel Planner", href: "/advertising/test-channel-fit", Icon: BarChart3 },
+  { label: "Market Demographics", href: "/market-demographics", Icon: Users },
 ];
 
 type NavItem = {
@@ -93,6 +103,8 @@ export function Sidebar() {
   const [pdGroupUserOpen, setPdGroupUserOpen] = useState(true);
   const [massTortManuallyToggled, setMassTortManuallyToggled] = useState(false);
   const [massTortUserOpen, setMassTortUserOpen] = useState(true);
+  const [adManuallyToggled, setAdManuallyToggled] = useState(false);
+  const [adUserOpen, setAdUserOpen] = useState(true);
 
   const groupOpen = isChildActive || (groupManuallyToggled ? groupUserOpen : true);
   const pdGroupOpen =
@@ -100,6 +112,12 @@ export function Sidebar() {
   const massTortOpen =
     isMassTortChildActive ||
     (massTortManuallyToggled ? massTortUserOpen : true);
+
+  const isAdChildActive = advertisingPaths.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+  const adGroupOpen =
+    isAdChildActive || (adManuallyToggled ? adUserOpen : true);
 
   function toggleGroup() {
     setGroupManuallyToggled(true);
@@ -114,6 +132,11 @@ export function Sidebar() {
   function toggleMassTortGroup() {
     setMassTortManuallyToggled(true);
     setMassTortUserOpen(!massTortOpen);
+  }
+
+  function toggleAdGroup() {
+    setAdManuallyToggled(true);
+    setAdUserOpen(!adGroupOpen);
   }
 
   const closeSidebar = () => setIsOpen(false);
@@ -307,6 +330,27 @@ export function Sidebar() {
             {massTortOpen && (
               <div className="flex flex-col gap-0.5 mt-0.5">
                 {massTortItems.map((item) => renderGroupLink(item))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={toggleAdGroup}
+              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+            >
+              <span>Advertising Intelligence</span>
+              {adGroupOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
+              )}
+            </button>
+
+            {adGroupOpen && (
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {advertisingItems.map((item) => renderGroupLink(item))}
               </div>
             )}
           </div>
