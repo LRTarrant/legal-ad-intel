@@ -245,7 +245,7 @@ export function Sidebar() {
           />
         </div>
 
-        <nav className="flex-1 flex flex-col gap-1 px-3">
+        <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto no-scrollbar">
           {topNavItems.map((item) => renderNavLink(item))}
 
           <div>
