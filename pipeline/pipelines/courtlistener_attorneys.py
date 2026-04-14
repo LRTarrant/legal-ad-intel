@@ -1,22 +1,13 @@
 #!/usr/bin/env python3
 """
-courtlistener_attorneys pipeline -- Fetches attorney/firm data for active MDLs
-from the CourtListener REST API v4.
-Two-phase approach:
-  Phase 1: Search API for bulk attorney+firm discovery (fast)
-  Phase 2: Parties REST API for party_type + role enrichment
+CourtListener attorney pipeline.
+
+Rewritten to use CourtListener Parties API + Attorney detail API only.
 
 Usage:
     python -m pipelines.courtlistener_attorneys
     python -m pipelines.courtlistener_attorneys --dry-run
     python -m pipelines.courtlistener_attorneys --mdl 3060
-
-Environment variables:
-    SUPABASE_URL            -- Supabase project URL (required)
-    SUPABASE_SERVICE_KEY    -- Supabase service role key (required)
-    COURTLISTENER_API_TOKEN -- CourtListener API token (required for real data)
-    DRY_RUN                 -- "true" to skip all DB writes (optional)
-    PIPELINE_TRIGGER        -- "scheduled" | "manual" (optional)
 """
 from __future__ import annotations
 
@@ -24,14 +15,13 @@ import argparse
 import logging
 import os
 import sys
-import re
 import time
 from datetime import datetime, timezone
 
 import httpx
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from lib.pipeline import (
+from lib.pipeline import (  # noqa: E402
     PipelineRun,
     DRY_RUN,
     _bulk_insert,
@@ -42,347 +32,302 @@ logger = logging.getLogger(__name__)
 
 CL_API_TOKEN = os.environ.get("COURTLISTENER_API_TOKEN", "")
 CL_BASE = "https://www.courtlistener.com/api/rest/v4"
-REQUEST_DELAY = 2.0
+REQUEST_DELAY_SECONDS = 3.0
+RATE_LIMIT_WAIT_SECONDS = 60
 MAX_RETRIES = 3
-MAX_RETRIES_RATE_LIMIT = 5
-GLOBAL_429_THRESHOLD = 6
-MAX_SEARCH_PAGES = 5  # Cap pages per MDL to avoid excessive API calls
-_global_429_count = 0
+GLOBAL_429_THRESHOLD = 10
 
-
-def normalise_role(party_type: str) -> str:
-    """Normalise CourtListener party_type into a standard role label.
-
-    Mirrors the TypeScript normaliseRole() in web/lib/courtlistener.ts.
-    """
-    lower = (party_type or "").lower()
-    if any(term in lower for term in ("plaintiff", "petitioner", "claimant")):
-        return "Plaintiff"
-    if any(term in lower for term in ("defendant", "respondent")):
-        return "Defendant"
-    if "third party" in lower:
-        return "Third Party"
-    if "amicus" in lower:
-        return "Amicus"
-    return party_type or None
-
-
-def _normalise_name(name: str) -> str:
-    """Lowercase and collapse whitespace for attorney name matching."""
-    return re.sub(r"\s+", " ", name.strip().lower())
-
-
-def _cl_headers() -> dict:
-    h = {"Accept": "application/json"}
-    if CL_API_TOKEN:
-        h["Authorization"] = f"Token {CL_API_TOKEN}"
-    return h
-
-
-def _cl_get(url: str, params: dict | None = None) -> dict | list:
-    """GET from CourtListener API with retry logic."""
-    global _global_429_count
-    for attempt in range(MAX_RETRIES):
-        try:
-            resp = httpx.get(url, headers=_cl_headers(), params=params or {}, timeout=30)
-            if resp.status_code == 429:
-                _global_429_count += 1
-                if _global_429_count >= GLOBAL_429_THRESHOLD:
-                    logger.warning("Global rate limit threshold reached, skipping remaining API calls")
-                    return {}
-                wait = 2 ** attempt * 5
-                logger.warning("Rate limited, backing off %ds", wait)
-                time.sleep(wait)
-                continue
-            resp.raise_for_status()
-            _global_429_count = 0
-            return resp.json()
-        except httpx.HTTPError as e:
-            if attempt < MAX_RETRIES - 1:
-                logger.warning("CL API attempt %d failed: %s", attempt + 1, e)
-                time.sleep(2 ** attempt)
-            else:
-                logger.error("CL API failed for %s: %s", url, e)
-                return {}
-    return {}
-
-
-def search_mdl_attorneys(mdl_number: int) -> list[dict]:
-    """Search CourtListener RECAP for an MDL and extract unique attorney rows."""
-    seen: set[tuple] = set()  # (attorney_name, cl_attorney_id) dedup key
-    rows: list[dict] = []
-    now = datetime.now(timezone.utc).isoformat()
-
-    url = f"{CL_BASE}/search/"
-    params = {
-        "q": f'"MDL {mdl_number}"',
-        "type": "r",
-        "page_size": 100,
-    }
-
-    page = 0
-    while url and page < MAX_SEARCH_PAGES:
-        page += 1
-        logger.info("  MDL %d: fetching search page %d", mdl_number, page)
-
-        if page == 1:
-            data = _cl_get(url, params)
-        else:
-            # next URL has all params embedded
-            data = _cl_get(url)
-
-        if not isinstance(data, dict):
-            break
-
-        results = data.get("results", [])
-        if not results:
-            break
-
-        for hit in results:
-            attorneys = hit.get("attorney", []) or []
-            attorney_ids = hit.get("attorney_id", []) or []
-            firm_ids = hit.get("firm_id", []) or []
-            parties = hit.get("party", []) or []
-            party_ids = hit.get("party_id", []) or []
-            docket_id = hit.get("docket_id")
-
-            for i, atty_name in enumerate(attorneys):
-                atty_name = (atty_name or "").strip()
-                if not atty_name:
-                    continue
-
-                cl_attorney_id = attorney_ids[i] if i < len(attorney_ids) else None
-                # Search API attorney[]/firm[] arrays are not reliably aligned.
-                # Keep firm_id as a fallback only; authoritative firm mapping is
-                # set in Phase 2 from the Parties API nested structure.
-                cl_firm_id = firm_ids[i] if i < len(firm_ids) else None
-
-                # Dedup by attorney name + attorney id
-                dedup_key = (atty_name.lower(), cl_attorney_id)
-                if dedup_key in seen:
-                    continue
-                seen.add(dedup_key)
-
-                # Try to get party info (first party as context)
-                party_name = parties[0] if parties else None
-                party_type = None  # Search API doesn't provide party type
-
-                rows.append({
-                    "mdl_number": mdl_number,
-                    "cl_docket_id": docket_id,
-                    "attorney_name": atty_name,
-                    "cl_attorney_id": cl_attorney_id,
-                    "firm_name": None,
-                    "cl_org_id": cl_firm_id,
-                    "party_name": party_name,
-                    "party_type": party_type,
-                    "role": None,
-                    "fetched_at": now,
-                })
-
-        url = data.get("next")
-        if url:
-            time.sleep(REQUEST_DELAY)
-
-    return rows
-
-
-# CourtListener attorney role integer mapping
-_CL_ROLE_MAP = {
+ROLE_MAP = {
     1: "Lead attorney",
     2: "Attorney to be noticed",
     3: "Attorney in charge",
+    4: "Pro hac vice",
+    10: "Self-represented",
 }
 
+# Known MDL -> CourtListener master docket id mapping.
+KNOWN_CL_DOCKETS = {
+    3140: 69674950,
+    3060: 71987157,
+    2738: 295567,
+    3047: 65407433,
+}
 
-def fetch_parties_api(docket_id: int) -> list[dict]:
-    """Fetch party/attorney data via the CourtListener REST API v4 parties endpoint.
+_last_api_call_at = 0.0
+_global_429_count = 0
 
-    Returns a list of dicts with keys matching the downstream enrichment format:
-    party_name, party_type, attorney_name, firm_name, role.
-    """
-    rows: list[dict] = []
+
+def _cl_headers() -> dict[str, str]:
+    headers = {"Accept": "application/json"}
+    if CL_API_TOKEN:
+        headers["Authorization"] = f"Token {CL_API_TOKEN}"
+    return headers
+
+
+def _rate_limited_sleep() -> None:
+    global _last_api_call_at
+    now = time.monotonic()
+    elapsed = now - _last_api_call_at
+    if elapsed < REQUEST_DELAY_SECONDS:
+        time.sleep(REQUEST_DELAY_SECONDS - elapsed)
+
+
+def _cl_get(url: str, params: dict | None = None) -> dict:
+    """CourtListener GET with required throttling and 429 handling."""
+    global _last_api_call_at
+    global _global_429_count
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        _rate_limited_sleep()
+        resp = None
+        try:
+            resp = httpx.get(url, headers=_cl_headers(), params=params, timeout=45)
+            _last_api_call_at = time.monotonic()
+
+            if resp.status_code == 429:
+                _global_429_count += 1
+                if attempt >= MAX_RETRIES:
+                    logger.warning("429 persisted after %d retries for %s", MAX_RETRIES, url)
+                    return {}
+                logger.warning(
+                    "429 from CourtListener (%d global 429s). Waiting %ss before retry %d/%d",
+                    _global_429_count,
+                    RATE_LIMIT_WAIT_SECONDS,
+                    attempt + 1,
+                    MAX_RETRIES,
+                )
+                time.sleep(RATE_LIMIT_WAIT_SECONDS)
+                continue
+
+            resp.raise_for_status()
+            return resp.json() if resp.content else {}
+        except httpx.HTTPError as exc:
+            if attempt >= MAX_RETRIES:
+                status = resp.status_code if resp is not None else "n/a"
+                logger.error("CourtListener request failed (%s): %s", status, exc)
+                return {}
+            logger.warning("Request failed (attempt %d/%d): %s", attempt, MAX_RETRIES, exc)
+            time.sleep(2)
+
+    return {}
+
+
+def _try_sql_rpc(sql: str) -> bool:
+    """Best-effort SQL execution for schema safety; no-op if unavailable."""
+    from lib import pipeline as pipeline_lib
+
+    rpc_names = ("execute_sql", "exec_sql", "run_sql")
+    payload_options = (
+        {"sql": sql},
+        {"query": sql},
+        {"q": sql},
+    )
+
+    for rpc_name in rpc_names:
+        url = f"{pipeline_lib.SUPABASE_URL}/rest/v1/rpc/{rpc_name}"
+        for payload in payload_options:
+            try:
+                resp = httpx.post(url, headers=pipeline_lib._headers(), json=payload, timeout=30)
+                if 200 <= resp.status_code < 300:
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def ensure_mdls_cl_docket_column() -> None:
+    """Ensure mdls.cl_docket_id exists; then backfill known master dockets."""
+    try:
+        _get("mdls", {"select": "id,cl_docket_id", "limit": 1})
+        column_exists = True
+    except Exception:
+        column_exists = False
+
+    if not column_exists:
+        logger.warning("mdls.cl_docket_id missing; attempting inline SQL migration")
+        altered = _try_sql_rpc("ALTER TABLE public.mdls ADD COLUMN IF NOT EXISTS cl_docket_id bigint;")
+        if not altered:
+            logger.warning("Could not run inline SQL migration for mdls.cl_docket_id")
+
+    if DRY_RUN:
+        logger.info("[DRY RUN] Skipping mdls cl_docket_id backfill writes")
+        return
+
+    from lib import pipeline as pipeline_lib
+
+    for mdl_number, docket_id in KNOWN_CL_DOCKETS.items():
+        url = f"{pipeline_lib.SUPABASE_URL}/rest/v1/mdls?mdl_number=eq.{mdl_number}"
+        body = {"cl_docket_id": docket_id}
+        resp = httpx.patch(url, headers=pipeline_lib._headers(), json=body, timeout=30)
+        if resp.status_code >= 400:
+            logger.warning(
+                "Unable to backfill cl_docket_id for MDL %s: %s",
+                mdl_number,
+                resp.text[:200],
+            )
+
+
+def fetch_parties_for_docket(cl_docket_id: int) -> list[dict]:
+    """Fetch all parties rows for a docket via cursor pagination."""
+    parties: list[dict] = []
     url = f"{CL_BASE}/parties/"
-    params = {"docket": docket_id}
-    page = 0
+    params = {"docket": cl_docket_id}
 
     while url:
-        page += 1
-        data = _cl_get(url, params) if page == 1 else _cl_get(url)
+        data = _cl_get(url, params=params)
+        params = None  # embedded in next URL after first page
 
         if not isinstance(data, dict):
             break
 
         for party in data.get("results", []):
-            party_name = (party.get("name") or "").strip() or None
-            party_type_obj = party.get("party_type") or {}
-            party_type = (party_type_obj.get("name") or "").strip() or None
-
-            for atty_entry in party.get("attorneys", []):
-                # Resolve attorney name from nested attorney object or URL
-                attorney_obj = atty_entry.get("attorney")
-                if isinstance(attorney_obj, dict):
-                    attorney_name = (attorney_obj.get("name") or "").strip() or None
-                elif isinstance(attorney_obj, str) and attorney_obj:
-                    # attorney field is a URL -- fetch the attorney detail
-                    time.sleep(REQUEST_DELAY)
-                    atty_detail = _cl_get(attorney_obj)
-                    attorney_name = (atty_detail.get("name") or "").strip() if isinstance(atty_detail, dict) else None
-                else:
-                    attorney_name = None
-
-                if not attorney_name:
-                    continue
-
-                # Extract firm name from organizations
-                orgs = atty_entry.get("organizations") or []
-                firm_name = None
-                cl_org_id = None
-                if orgs:
-                    first_org = orgs[0]
-                    if isinstance(first_org, dict):
-                        firm_name = (first_org.get("name") or "").strip() or None
-                        cl_org_id = first_org.get("id")
-                    elif isinstance(first_org, str):
-                        firm_name = first_org.strip() or None
-                        m = re.search(r"/organizations/(\d+)/?$", first_org)
-                        if m:
-                            cl_org_id = int(m.group(1))
-
-                # Map role integers to human-readable labels
-                roles_list = atty_entry.get("roles") or []
-                role_labels = []
-                for r in roles_list:
-                    if isinstance(r, dict):
-                        role_int = r.get("role")
-                        label = _CL_ROLE_MAP.get(role_int, f"Role {role_int}")
-                        role_labels.append(label)
-                role = ", ".join(role_labels) if role_labels else None
-
-                rows.append({
-                    "party_name": party_name,
-                    "party_type": party_type,
-                    "attorney_name": attorney_name,
-                    "firm_name": firm_name,
-                    "cl_org_id": cl_org_id,
-                    "role": role,
-                })
+            parties.append(party)
 
         url = data.get("next")
-        if url:
-            params = None  # next URL has all params embedded
-            time.sleep(REQUEST_DELAY)
 
-    logger.info("  Parties API returned %d parties, %d attorney entries",
-                len(set(r["party_name"] for r in rows if r["party_name"])), len(rows))
+    return parties
+
+
+def fetch_attorney_details(attorney_ids: set[int]) -> dict[int, dict]:
+    """Fetch each attorney once. If global 429 count exceeds threshold, stop early."""
+    details: dict[int, dict] = {}
+
+    for attorney_id in sorted(attorney_ids):
+        if _global_429_count > GLOBAL_429_THRESHOLD:
+            logger.warning(
+                "Global 429 count (%d) exceeded threshold (%d); skipping remaining attorney detail fetches",
+                _global_429_count,
+                GLOBAL_429_THRESHOLD,
+            )
+            break
+
+        data = _cl_get(f"{CL_BASE}/attorneys/{attorney_id}/")
+        if isinstance(data, dict) and data:
+            details[attorney_id] = data
+
+    return details
+
+
+def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney_details: dict[int, dict]) -> list[dict]:
+    rows: list[dict] = []
+    fetched_at = datetime.now(timezone.utc).isoformat()
+
+    for party in parties:
+        party_name = (party.get("name") or "").strip() or None
+
+        party_types = party.get("party_types") or []
+        first_party_type = None
+        if party_types and isinstance(party_types[0], dict):
+            first_party_type = (party_types[0].get("name") or "").strip() or None
+
+        for party_attorney in party.get("attorneys", []) or []:
+            cl_attorney_id = party_attorney.get("attorney_id")
+            if not cl_attorney_id:
+                continue
+
+            detail = attorney_details.get(cl_attorney_id, {})
+            attorney_name = (detail.get("name") or "").strip() or None
+
+            orgs = detail.get("organizations") or []
+            firm_name = None
+            if orgs and isinstance(orgs[0], dict):
+                firm_name = (orgs[0].get("name") or "").strip() or None
+
+            role_int = party_attorney.get("role")
+            role_label = ROLE_MAP.get(role_int, f"Role {role_int}" if role_int is not None else None)
+
+            rows.append(
+                {
+                    "mdl_number": mdl_number,
+                    "cl_docket_id": cl_docket_id,
+                    "party_name": party_name,
+                    "party_type": first_party_type,
+                    "attorney_name": attorney_name,
+                    "firm_name": firm_name,
+                    "cl_attorney_id": cl_attorney_id,
+                    "role": role_label,
+                    "fetched_at": fetched_at,
+                }
+            )
+
     return rows
 
 
 def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
-    """Fetch attorney/firm data from CourtListener for active MDLs."""
-    # Load active MDLs
-    params = {"select": "mdl_number,title,status", "status": "neq.Closed"}
-    if target_mdl:
-        params["mdl_number"] = f"eq.{target_mdl}"
-    mdls = _get("mdls", params)
-    logger.info("Processing %d MDLs", len(mdls))
-
     if not CL_API_TOKEN:
-        logger.warning("COURTLISTENER_API_TOKEN not set -- skipping real fetch, inserting 0 rows")
-        step.set_counts(rows_in=len(mdls), rows_out=0)
-        step.set_metadata({"note": "No API token -- set COURTLISTENER_API_TOKEN to fetch real data"})
+        logger.warning("COURTLISTENER_API_TOKEN not set -- skipping CourtListener fetch")
+        step.set_counts(rows_in=0, rows_out=0)
+        step.set_metadata({"note": "Missing COURTLISTENER_API_TOKEN"})
         return []
 
-    all_rows: list[dict] = []
-    failed_mdls: list[int] = []
+    ensure_mdls_cl_docket_column()
 
+    params = {"select": "mdl_number,title,status,cl_docket_id", "status": "neq.Closed"}
+    if target_mdl is not None:
+        params["mdl_number"] = f"eq.{target_mdl}"
+
+    mdls = _get("mdls", params)
+
+    # Force known IDs for configured MDLs (whether or not DB backfill succeeded).
     for mdl in mdls:
+        known = KNOWN_CL_DOCKETS.get(mdl["mdl_number"])
+        if known:
+            mdl["cl_docket_id"] = known
+
+    mdls_with_dockets = [m for m in mdls if m.get("cl_docket_id")]
+    logger.info("Processing %d MDLs with known cl_docket_id", len(mdls_with_dockets))
+
+    all_rows: list[dict] = []
+    total_parties = 0
+    total_attorney_refs = 0
+
+    for mdl in mdls_with_dockets:
         mdl_number = mdl["mdl_number"]
-        try:
-            rows = search_mdl_attorneys(mdl_number)
-            logger.info("  MDL %d: %d unique attorney rows", mdl_number, len(rows))
-            all_rows.extend(rows)
-            time.sleep(REQUEST_DELAY)
-        except Exception as e:
-            logger.error("MDL %d failed: %s", mdl_number, e)
-            failed_mdls.append(mdl_number)
+        cl_docket_id = int(mdl["cl_docket_id"])
 
-    # Phase 2: fetch parties via REST API to enrich party_type and role
-    # Build a lookup: normalised attorney name -> list of indices in all_rows
-    atty_index: dict[str, list[int]] = {}
-    for idx, row in enumerate(all_rows):
-        key = _normalise_name(row.get("attorney_name") or "")
-        if key:
-            atty_index.setdefault(key, []).append(idx)
+        parties = fetch_parties_for_docket(cl_docket_id)
+        total_parties += len(parties)
 
-    # Get ALL unique docket IDs per MDL, capped at 5 per MDL
-    MAX_DOCKETS_PER_MDL = 3
-    mdl_dockets: dict[int, list[int]] = {}  # mdl_number -> [cl_docket_ids]
-    for row in all_rows:
-        mdl_num = row["mdl_number"]
-        did = row.get("cl_docket_id")
-        if did:
-            mdl_dockets.setdefault(mdl_num, [])
-            if did not in mdl_dockets[mdl_num]:
-                mdl_dockets[mdl_num].append(did)
+        unique_attorney_ids: set[int] = set()
+        for party in parties:
+            for party_attorney in party.get("attorneys", []) or []:
+                aid = party_attorney.get("attorney_id")
+                if aid:
+                    unique_attorney_ids.add(int(aid))
 
-    # Cap each MDL to MAX_DOCKETS_PER_MDL docket IDs
-    for mdl_num in mdl_dockets:
-        mdl_dockets[mdl_num] = mdl_dockets[mdl_num][:MAX_DOCKETS_PER_MDL]
+        total_attorney_refs += len(unique_attorney_ids)
+        attorney_details = fetch_attorney_details(unique_attorney_ids)
 
-    scraped_enrichment: int = 0
-    if _global_429_count >= GLOBAL_429_THRESHOLD:
-        logger.warning("Skipping Phase 2 enrichment due to rate limiting")
+        rows = build_rows(mdl_number, cl_docket_id, parties, attorney_details)
+        all_rows.extend(rows)
+        logger.info(
+            "MDL %s docket %s: parties=%d unique_attorneys=%d rows=%d",
+            mdl_number,
+            cl_docket_id,
+            len(parties),
+            len(unique_attorney_ids),
+            len(rows),
+        )
 
-    stop_phase_2 = False
-    for mdl_num, docket_ids in mdl_dockets.items():
-        if _global_429_count >= GLOBAL_429_THRESHOLD:
-            stop_phase_2 = True
-            break
-        for docket_id in docket_ids:
-            logger.info("MDL %d: Phase 2 -- fetching parties via API for docket %d", mdl_num, docket_id)
-            api_rows = fetch_parties_api(docket_id)
-            if _global_429_count >= GLOBAL_429_THRESHOLD:
-                stop_phase_2 = True
-                break
-            matches_found = 0
-            for hr in api_rows:
-                key = _normalise_name(hr.get("attorney_name") or "")
-                if key in atty_index:
-                    for idx in atty_index[key]:
-                        if all_rows[idx]["mdl_number"] == mdl_num:
-                            # Use normalised role from party_type heading
-                            party_type_raw = hr.get("party_type")
-                            all_rows[idx]["party_type"] = party_type_raw
-                            all_rows[idx]["role"] = hr.get("role") or normalise_role(party_type_raw or "")
-                            if not all_rows[idx].get("party_name"):
-                                all_rows[idx]["party_name"] = hr.get("party_name")
-                            if hr.get("firm_name"):
-                                all_rows[idx]["firm_name"] = hr.get("firm_name")
-                            if hr.get("cl_org_id") is not None:
-                                all_rows[idx]["cl_org_id"] = hr.get("cl_org_id")
-                            scraped_enrichment += 1
-                            matches_found += 1
-            logger.info("MDL %d: docket %d — %d attorney matches found", mdl_num, docket_id, matches_found)
-            time.sleep(REQUEST_DELAY)
-        if stop_phase_2:
-            break
+    inserted = _bulk_insert(
+        "mdl_attorneys",
+        all_rows,
+        on_conflict="mdl_number,cl_attorney_id",
+        resolution="merge-duplicates",
+    )
 
-    # Post-Phase-2: for rows still missing role, fall back to normalise_role(party_type)
-    for row in all_rows:
-        if row.get("role") is None and row.get("party_type"):
-            row["role"] = normalise_role(row["party_type"])
+    step.set_counts(rows_in=len(mdls_with_dockets), rows_out=inserted)
+    step.set_metadata(
+        {
+            "total_mdls": len(mdls),
+            "processed_mdls": len(mdls_with_dockets),
+            "total_parties": total_parties,
+            "total_unique_attorney_refs": total_attorney_refs,
+            "total_rows": len(all_rows),
+            "global_429_count": _global_429_count,
+        }
+    )
 
-    logger.info("Phase 2 enriched %d attorney rows with party_type/role", scraped_enrichment)
-    step.set_metadata({
-        "total_mdls": len(mdls),
-        "failed_mdls": failed_mdls,
-        "total_attorney_rows": len(all_rows),
-        "enriched_rows": scraped_enrichment,
-    })
-
-    count = _bulk_insert("mdl_attorneys", all_rows, on_conflict="mdl_number,cl_attorney_id", resolution="merge-duplicates")
-    step.set_counts(rows_in=len(mdls), rows_out=count)
     return all_rows
 
 
@@ -399,7 +344,7 @@ def step_publish(step, raw_count: int):
         step.set_counts(rows_in=raw_count, rows_out=raw_count)
         step.set_metadata({"dry_run": True})
         return
-    total = _get("mdl_attorneys", {"select": "id", "limit": 1})
+    _ = _get("mdl_attorneys", {"select": "id", "limit": 1})
     step.set_counts(rows_in=raw_count, rows_out=raw_count)
     step.set_metadata({"publish_timestamp": datetime.now(timezone.utc).isoformat()})
 
@@ -413,6 +358,7 @@ def main():
     if args.dry_run:
         os.environ["DRY_RUN"] = "true"
         import lib.pipeline
+
         lib.pipeline.DRY_RUN = True
 
     trigger = os.environ.get("PIPELINE_TRIGGER", "manual")
