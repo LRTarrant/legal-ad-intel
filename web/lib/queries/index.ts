@@ -44,6 +44,7 @@ export * from "./ad-saturation";
 export * from "./serp-visibility";
 export * from "./channel-fit";
 export * from "./advertiser-profiles";
+export * from "./creative-gallery";
 
 export {
   getMdlFirmSummary,
