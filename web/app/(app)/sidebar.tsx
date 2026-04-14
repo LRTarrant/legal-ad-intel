@@ -19,6 +19,7 @@ import {
   Truck,
   Users,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -63,6 +64,7 @@ const bottomNavItems = [
   { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
   { label: "Search Visibility", href: "/search-visibility", Icon: Search },
   { label: "Google Trends", href: "/google-trends", Icon: TrendingUp },
+  { label: "Channel Strategy", href: "/advertising/test-channel-fit", Icon: BarChart3 },
 ];
 
 type NavItem = {
