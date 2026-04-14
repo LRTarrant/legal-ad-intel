@@ -28,7 +28,7 @@ export default async function AttorneySection({
         );
       }
       return (
-        <section className="mt-10">
+        <section className="mt-10 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
           <h2 className="mb-4 text-xl font-bold text-white">
             {role} Attorneys
           </h2>

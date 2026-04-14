@@ -25,7 +25,7 @@ export default function AttorneyTable({
 
   if (collapsed) {
     return (
-      <section className="mt-10">
+      <section className="mt-10 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
         <button
           onClick={() => setCollapsed(false)}
           className="mb-4 flex items-center gap-2 text-xl font-bold text-white transition-colors hover:text-slate-300"
@@ -52,7 +52,7 @@ export default function AttorneyTable({
   const visibleRows = expanded || !needsTruncation ? attorneys : attorneys.slice(0, VISIBLE_LIMIT);
 
   return (
-    <section className="mt-10">
+    <section className="mt-10 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
       <button
         onClick={() => setCollapsed(true)}
         className="mb-4 flex items-center gap-2 text-xl font-bold text-white transition-colors hover:text-slate-300"
