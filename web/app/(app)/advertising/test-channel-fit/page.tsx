@@ -1,6 +1,10 @@
-import { getChannelFitScores, type ChannelFitScore } from "@/lib/queries";
+import {
+  getChannelFitScores,
+  getCompetitionScores,
+  type ChannelFitScore,
+} from "@/lib/queries";
 import Link from "next/link";
-import { Radio, Zap, BarChart3, TrendingUp } from "lucide-react";
+import { Radio, Zap, BarChart3, TrendingUp, Shield } from "lucide-react";
 import { AdvertisingInsight } from "../../components/advertising-insight";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +64,40 @@ function scoreTierColor(normalized: number): string {
   if (normalized >= 0.8) return "text-intelligence-teal";
   if (normalized >= 0.6) return "text-steel-blue";
   return "text-slate-gray";
+}
+
+/* ── Competition helpers ─────────────────────────────────── */
+
+function competitionBucket(score: number): "Low" | "Medium" | "High" {
+  if (score <= 0.33) return "Low";
+  if (score <= 0.66) return "Medium";
+  return "High";
+}
+
+function competitionBadgeStyle(bucket: "Low" | "Medium" | "High"): string {
+  switch (bucket) {
+    case "Low":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    case "Medium":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    case "High":
+      return "bg-red-50 text-red-700 ring-red-200";
+  }
+}
+
+function fitLabel(normalized: number): string {
+  if (normalized >= 0.8) return "High fit";
+  if (normalized >= 0.6) return "Strong fit";
+  if (normalized >= 0.4) return "Moderate fit";
+  return "Low fit";
+}
+
+function combinedLabel(
+  normalized: number,
+  competitionScore: number | undefined
+): string | null {
+  if (competitionScore == null) return null;
+  return `${fitLabel(normalized)} / ${competitionBucket(competitionScore)} competition`;
 }
 
 /** Build a natural-language strategy blurb from scored channels. */
@@ -134,14 +172,30 @@ function PillSelector<T extends string>({
   );
 }
 
+function CompetitionBadge({ channel, competitionMap }: { channel: string; competitionMap: Map<string, number> }) {
+  const score = competitionMap.get(channel);
+  if (score == null) return null;
+  const bucket = competitionBucket(score);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${competitionBadgeStyle(bucket)}`}
+    >
+      <Shield className="h-2.5 w-2.5" />
+      {bucket} competition
+    </span>
+  );
+}
+
 function StrategySummaryCard({
   scores,
   tortLabel,
   marketLabel,
+  competitionMap,
 }: {
   scores: ChannelFitScore[];
   tortLabel: string;
   marketLabel: string;
+  competitionMap: Map<string, number>;
 }) {
   const strategy = buildStrategySummary(scores, tortLabel, marketLabel);
   const top3 = scores.slice(0, 3);
@@ -168,6 +222,7 @@ function StrategySummaryCard({
             i === 0
               ? "bg-intelligence-teal text-white"
               : "bg-steel-blue/10 text-steel-blue";
+          const combined = combinedLabel(s.normalized_score, competitionMap.get(s.channel));
           return (
             <div
               key={s.channel}
@@ -184,6 +239,14 @@ function StrategySummaryCard({
               <p className="text-2xl font-bold text-intelligence-teal tabular-nums">
                 {pct}%
               </p>
+              {combined && (
+                <p className="mt-1.5 text-[11px] font-medium text-slate-gray">
+                  {combined}
+                </p>
+              )}
+              <div className="mt-1">
+                <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
+              </div>
             </div>
           );
         })}
@@ -215,7 +278,7 @@ function FormattedBlurb({ text }: { text: string }) {
   );
 }
 
-function TopChannelsChart({ scores }: { scores: ChannelFitScore[] }) {
+function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[]; competitionMap: Map<string, number> }) {
   const top5 = scores.slice(0, 5);
   const maxRaw = top5[0]?.raw_score ?? 1;
 
@@ -232,10 +295,11 @@ function TopChannelsChart({ scores }: { scores: ChannelFitScore[] }) {
         {top5.map((s) => {
           const pct = Math.round(s.normalized_score * 100);
           const rawPct = Math.round((s.raw_score / maxRaw) * 100);
+          const combined = combinedLabel(s.normalized_score, competitionMap.get(s.channel));
           return (
             <div key={s.channel} className="group">
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-charcoal">
                     {channelLabel(s.channel)}
                   </span>
@@ -244,6 +308,7 @@ function TopChannelsChart({ scores }: { scores: ChannelFitScore[] }) {
                   >
                     {scoreTierLabel(s.normalized_score)}
                   </span>
+                  <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
                 </div>
                 <span className="text-sm font-bold tabular-nums text-midnight-navy">
                   {pct}%
@@ -261,6 +326,11 @@ function TopChannelsChart({ scores }: { scores: ChannelFitScore[] }) {
                   </span>
                 </div>
               </div>
+              {combined && (
+                <p className="mt-0.5 text-[11px] text-slate-gray">
+                  {combined}
+                </p>
+              )}
             </div>
           );
         })}
@@ -344,10 +414,14 @@ export default async function TestChannelFitPage({
   const profileName = "default";
 
   let scores: ChannelFitScore[] = [];
+  let competitionMap = new Map<string, number>();
   let errorMsg: string | null = null;
 
   try {
-    scores = await getChannelFitScores(tortId, profileName, marketId);
+    [scores, competitionMap] = await Promise.all([
+      getChannelFitScores(tortId, profileName, marketId),
+      getCompetitionScores(marketId, tortId),
+    ]);
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : "Unknown error";
   }
@@ -442,10 +516,11 @@ export default async function TestChannelFitPage({
             scores={scores}
             tortLabel={tortLabel}
             marketLabel={marketLabel}
+            competitionMap={competitionMap}
           />
 
           {/* 2. Top 5 Visual Bar Chart */}
-          <TopChannelsChart scores={scores} />
+          <TopChannelsChart scores={scores} competitionMap={competitionMap} />
 
           {/* 3. Full Rankings Table */}
           <FullScoreTable scores={scores} />
@@ -509,12 +584,30 @@ export default async function TestChannelFitPage({
 
               <div>
                 <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Competition / Saturation Scores
+                </h3>
+                <p>
+                  Each channel displays a competition intensity score (Low / Medium / High)
+                  alongside its audience-fit rating. These scores are currently
+                  synthetic placeholders seeded per market. Future versions will
+                  derive them from actual channel-level advertising activity data
+                  (Facebook Ad Library, Google Ads Transparency, TikTok Creative
+                  Center, etc.) to reflect real competitive saturation.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
                   Current Limitations
                 </h3>
                 <ul className="list-disc list-inside space-y-1 text-slate-gray">
                   <li>
                     Scores measure audience–channel alignment only, not cost
-                    efficiency, competitive saturation, or expected ROI.
+                    efficiency or expected ROI.
+                  </li>
+                  <li>
+                    Competition scores are synthetic placeholders and do not yet
+                    reflect real ad-spend data.
                   </li>
                   <li>
                     Age-band weights do not yet incorporate gender, income, or
