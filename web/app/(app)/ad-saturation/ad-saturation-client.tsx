@@ -120,7 +120,7 @@ export function AdSaturationClient({
 
   const [competitiveAdvertisers, setCompetitiveAdvertisers] = useState(initialCompetitiveSummary);
   const [competitiveLoading, setCompetitiveLoading] = useState(false);
-  const [advertiserPlatforms, setAdvertiserPlatforms] = useState<AdvertiserPlatforms[]>([]);
+  const [advertiserPlatformRows, setAdvertiserPlatformRows] = useState<AdvertiserPlatforms[]>([]);
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const [drilldownLoadingKey, setDrilldownLoadingKey] = useState<string | null>(null);
   const [drilldownByRowKey, setDrilldownByRowKey] = useState<Record<string, TortMarketAdvertiser[]>>({});
@@ -181,7 +181,7 @@ export function AdSaturationClient({
         activePlatform === "all" ? undefined : activePlatform
       );
       if (!cancelled) {
-        setAdvertiserPlatforms(rows);
+        setAdvertiserPlatformRows(rows);
       }
     }
 
