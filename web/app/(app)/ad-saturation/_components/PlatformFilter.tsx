@@ -6,7 +6,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 const PLATFORMS = [
   { key: "all", label: "All" },
   { key: "meta_ad_library", label: "Meta Ads" },
-  { key: "google_ads", label: "Google Ads" },
+  { key: "google_ads", label: "Google Ads (Search + YouTube)" },
   { key: "google_ads_transparency", label: "Google Transparency" },
   { key: "tiktok_ads", label: "TikTok Ads" },
   { key: "mediaradar", label: "MediaRadar" },
@@ -43,10 +43,8 @@ export function PlatformFilter({ active }: { active: string }) {
           onClick={() => handleSelect(p.key)}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             active === p.key
-              ? "bg-purple-600 text-white ring-1 ring-purple-300/60 shadow-[0_0_16px_rgba(168,85,247,0.45)]"
-              : p.key === "all" && active !== "all"
-                ? "bg-zinc-900 text-zinc-500"
-                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+              ? "bg-purple-500 text-white shadow-sm shadow-purple-500/30"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
           }`}
         >
           {p.label}

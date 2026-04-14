@@ -4,6 +4,7 @@ import {
   getTopAdvertisersBySegment,
   getTorts,
   getAdvertiserCompetitiveSummary,
+  getAdvertiserPlatforms,
   type AdSaturationRow,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
@@ -12,6 +13,7 @@ import {
 import { AdSaturationClient } from "./ad-saturation-client";
 import { TimeWindowSelector } from "./_components/TimeWindowSelector";
 import { PlatformFilter } from "./_components/PlatformFilter";
+import { StateFilter } from "./_components/StateFilter";
 import { computeDateRange } from "./_components/time-window-utils";
 import { Suspense } from "react";
 import { Radio } from "lucide-react";
@@ -27,19 +29,25 @@ const ALL_FILTER_KEY = "__all__";
 export default async function AdSaturationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ window?: string; from?: string; to?: string; platform?: string }>;
+  searchParams: Promise<{ window?: string; from?: string; to?: string; platform?: string; states?: string }>;
 }) {
   const sp = await searchParams;
   const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
   const activePlatform = sp.platform || "all";
   const sourceFilter = activePlatform === "all" ? undefined : activePlatform;
 
-  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary] = await Promise.all([
+  // Parse states param: comma-separated abbreviations
+  const selectedStates = sp.states
+    ? sp.states.split(",").filter(Boolean)
+    : [];
+
+  const [windowedData, torts, allSegments, allTopAdvertisers, allCompetitiveSummary, advertiserPlatforms] = await Promise.all([
     getAdSaturationWindowed(windowStart, windowEnd, undefined, undefined, sourceFilter),
     getTorts(),
     getSegmentSummary(undefined, sourceFilter),
     getTopAdvertisersBySegment(undefined, 25, sourceFilter),
     getAdvertiserCompetitiveSummary(undefined, undefined, sourceFilter),
+    getAdvertiserPlatforms(),
   ]);
 
   // Map windowed rows to AdSaturationRow shape for the client component
@@ -98,9 +106,12 @@ export default async function AdSaturationPage({
           <Radio className="h-6 w-6 text-purple-400" />
           Ad Saturation
         </h1>
-        <div className="mt-2">
+        <div className="mt-2 flex flex-wrap items-start gap-4">
           <Suspense fallback={null}>
             <PlatformFilter active={activePlatform} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <StateFilter />
           </Suspense>
         </div>
       </div>
@@ -115,6 +126,8 @@ export default async function AdSaturationPage({
         segmentSummaryByTort={segmentSummaryByTort}
         topAdvertisersByTort={topAdvertisersByTort}
         initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
+        advertiserPlatforms={advertiserPlatforms}
+        selectedStates={selectedStates}
         activePlatform={activePlatform}
       />
     </div>
