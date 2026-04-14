@@ -125,6 +125,9 @@ export function AdSaturationClient({
   const [drilldownLoadingKey, setDrilldownLoadingKey] = useState<string | null>(null);
   const [drilldownByRowKey, setDrilldownByRowKey] = useState<Record<string, TortMarketAdvertiser[]>>({});
 
+  // Derive a single-state value for API calls that accept one state
+  const selectedState = selectedStates.length > 0 ? selectedStates[0] : null;
+
   const stateSet = useMemo(
     () => (selectedStates.length > 0 ? new Set(selectedStates) : null),
     [selectedStates]
