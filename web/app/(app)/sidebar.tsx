@@ -22,6 +22,7 @@ import {
   Users,
   TrendingUp,
   BarChart3,
+  MapPin,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -66,6 +67,7 @@ const advertisingPaths = [
   "/advertising/saturation",
   "/advertising/search-visibility",
   "/advertising/trends",
+  "/advertising/markets",
 ];
 
 const advertisingItems = [
@@ -75,6 +77,7 @@ const advertisingItems = [
   { label: "Ad Saturation", href: "/advertising/saturation", Icon: Radio },
   { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Search },
   { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
+  { label: "Market Heatmap", href: "/advertising/markets", Icon: MapPin },
 ];
 
 const bottomNavItems = [
