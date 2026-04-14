@@ -2,7 +2,7 @@
 """
 CourtListener attorney pipeline.
 
-Rewritten to use CourtListener Parties API + Attorney detail API only.
+Fetches party + attorney relationships using docket-scoped CourtListener endpoints.
 
 Usage:
     python -m pipelines.courtlistener_attorneys
@@ -35,7 +35,6 @@ CL_BASE = "https://www.courtlistener.com/api/rest/v4"
 REQUEST_DELAY_SECONDS = 3.0
 RATE_LIMIT_WAIT_SECONDS = 60
 MAX_RETRIES = 3
-GLOBAL_429_THRESHOLD = 10
 
 ROLE_MAP = {
     1: "Lead attorney",
@@ -189,24 +188,81 @@ def fetch_parties_for_docket(cl_docket_id: int) -> list[dict]:
     return parties
 
 
-def fetch_attorney_details(attorney_ids: set[int]) -> dict[int, dict]:
-    """Fetch each attorney once. If global 429 count exceeds threshold, stop early."""
-    details: dict[int, dict] = {}
+def fetch_attorneys_for_docket(cl_docket_id: int) -> list[dict]:
+    """Fetch all attorneys rows for a docket via cursor pagination."""
+    attorneys: list[dict] = []
+    url = f"{CL_BASE}/attorneys/"
+    params = {"docket": cl_docket_id}
 
-    for attorney_id in sorted(attorney_ids):
-        if _global_429_count > GLOBAL_429_THRESHOLD:
-            logger.warning(
-                "Global 429 count (%d) exceeded threshold (%d); skipping remaining attorney detail fetches",
-                _global_429_count,
-                GLOBAL_429_THRESHOLD,
-            )
+    while url:
+        data = _cl_get(url, params=params)
+        params = None  # embedded in next URL after first page
+
+        if not isinstance(data, dict):
             break
 
-        data = _cl_get(f"{CL_BASE}/attorneys/{attorney_id}/")
-        if isinstance(data, dict) and data:
-            details[attorney_id] = data
+        for attorney in data.get("results", []):
+            attorneys.append(attorney)
 
-    return details
+        url = data.get("next")
+
+    return attorneys
+
+
+def _extract_id_from_url(value: str | None) -> int | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.rstrip("/")
+    if not stripped:
+        return None
+    last_segment = stripped.rsplit("/", 1)[-1]
+    if not last_segment.isdigit():
+        return None
+    return int(last_segment)
+
+
+def _party_identifiers(party: dict) -> set[str]:
+    identifiers: set[str] = set()
+    party_id = party.get("id")
+    if party_id is not None:
+        identifiers.add(str(party_id))
+
+    for key in ("resource_uri", "url", "absolute_url"):
+        value = party.get(key)
+        if isinstance(value, str) and value.strip():
+            identifiers.add(value.rstrip("/"))
+            parsed_id = _extract_id_from_url(value)
+            if parsed_id is not None:
+                identifiers.add(str(parsed_id))
+
+    return identifiers
+
+
+def _build_attorney_lookup_by_party(attorneys: list[dict]) -> dict[str, list[dict]]:
+    by_party: dict[str, list[dict]] = {}
+    for attorney in attorneys:
+        represented = attorney.get("parties_represented")
+        if not isinstance(represented, list):
+            continue
+
+        for rep in represented:
+            if not isinstance(rep, dict):
+                continue
+
+            party_ref = rep.get("party")
+            keys: set[str] = set()
+            if isinstance(party_ref, str) and party_ref.strip():
+                keys.add(party_ref.rstrip("/"))
+                party_id = _extract_id_from_url(party_ref)
+                if party_id is not None:
+                    keys.add(str(party_id))
+            elif isinstance(party_ref, int):
+                keys.add(str(party_ref))
+
+            for key in keys:
+                by_party.setdefault(key, []).append({"attorney": attorney, "representation": rep})
+
+    return by_party
 
 
 def _first_non_empty_str(*values) -> str | None:
@@ -243,6 +299,11 @@ def _extract_firm_name(party_attorney: dict, attorney_payload: dict | None, deta
     )
 
     for container in candidate_containers:
+        contact = container.get("contact") if isinstance(container, dict) else None
+        firm_from_contact = _extract_from_contact_block(contact, "firm")
+        if firm_from_contact:
+            return firm_from_contact
+
         for key in firm_key_candidates:
             value = container.get(key) if isinstance(container, dict) else None
             firm = _first_non_empty_str(value)
@@ -268,11 +329,6 @@ def _extract_firm_name(party_attorney: dict, attorney_payload: dict | None, deta
                     firm = _first_non_empty_str(org)
                 if firm:
                     return firm
-
-        contact = container.get("contact") if isinstance(container, dict) else None
-        firm_from_contact = _extract_from_contact_block(contact, "firm")
-        if firm_from_contact:
-            return firm_from_contact
 
     return None
 
@@ -305,9 +361,10 @@ def _dedupe_rows(rows: list[dict]) -> list[dict]:
     return list(best_by_key.values())
 
 
-def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney_details: dict[int, dict]) -> list[dict]:
+def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorneys: list[dict]) -> list[dict]:
     rows: list[dict] = []
     fetched_at = datetime.now(timezone.utc).isoformat()
+    attorneys_by_party = _build_attorney_lookup_by_party(attorneys)
 
     for party in parties:
         party_name = (party.get("name") or "").strip() or None
@@ -317,6 +374,45 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
         if party_types and isinstance(party_types[0], dict):
             first_party_type = (party_types[0].get("name") or "").strip() or None
 
+        party_refs = _party_identifiers(party)
+        matches: list[dict] = []
+        for party_ref in party_refs:
+            matches.extend(attorneys_by_party.get(party_ref, []))
+
+        seen_attorney_ids: set[int] = set()
+        for match in matches:
+            attorney = match.get("attorney") if isinstance(match, dict) else None
+            representation = match.get("representation") if isinstance(match, dict) else None
+            if not isinstance(attorney, dict):
+                continue
+
+            cl_attorney_id = attorney.get("id")
+            if not cl_attorney_id:
+                continue
+            cl_attorney_id = int(cl_attorney_id)
+            if cl_attorney_id in seen_attorney_ids:
+                continue
+            seen_attorney_ids.add(cl_attorney_id)
+
+            attorney_name = _first_non_empty_str(attorney.get("name"))
+            firm_name = _extract_firm_name({}, attorney, attorney)
+            role_int = representation.get("role") if isinstance(representation, dict) else None
+            role_label = ROLE_MAP.get(role_int, f"Role {role_int}" if role_int is not None else None)
+
+            rows.append(
+                {
+                    "mdl_number": mdl_number,
+                    "cl_docket_id": cl_docket_id,
+                    "party_name": party_name,
+                    "party_type": first_party_type,
+                    "attorney_name": attorney_name,
+                    "firm_name": firm_name,
+                    "cl_attorney_id": cl_attorney_id,
+                    "role": role_label,
+                    "fetched_at": fetched_at,
+                }
+            )
+
         for party_attorney in party.get("attorneys", []) or []:
             if not isinstance(party_attorney, dict):
                 continue
@@ -324,14 +420,16 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
             cl_attorney_id = party_attorney.get("attorney_id") or attorney_payload.get("id")
             if not cl_attorney_id:
                 continue
+            cl_attorney_id = int(cl_attorney_id)
+            if cl_attorney_id in seen_attorney_ids:
+                continue
+            seen_attorney_ids.add(cl_attorney_id)
 
-            detail = attorney_details.get(cl_attorney_id, {})
             attorney_name = _first_non_empty_str(
                 attorney_payload.get("name"),
                 party_attorney.get("name"),
-                detail.get("name"),
             )
-            firm_name = _extract_firm_name(party_attorney, attorney_payload, detail)
+            firm_name = _extract_firm_name(party_attorney, attorney_payload, attorney_payload)
 
             role_int = party_attorney.get("role")
             role_label = ROLE_MAP.get(role_int, f"Role {role_int}" if role_int is not None else None)
@@ -388,7 +486,7 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
 
     all_rows: list[dict] = []
     total_parties = 0
-    total_attorney_refs = 0
+    total_attorneys = 0
 
     for mdl in mdls_with_dockets:
         mdl_number = mdl["mdl_number"]
@@ -397,25 +495,17 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         parties = fetch_parties_for_docket(cl_docket_id)
         total_parties += len(parties)
 
-        unique_attorney_ids: set[int] = set()
-        for party in parties:
-            for party_attorney in party.get("attorneys", []) or []:
-                attorney_payload = party_attorney.get("attorney") if isinstance(party_attorney.get("attorney"), dict) else {}
-                aid = party_attorney.get("attorney_id") or attorney_payload.get("id")
-                if aid:
-                    unique_attorney_ids.add(int(aid))
+        attorneys = fetch_attorneys_for_docket(cl_docket_id)
+        total_attorneys += len(attorneys)
 
-        total_attorney_refs += len(unique_attorney_ids)
-        attorney_details = fetch_attorney_details(unique_attorney_ids)
-
-        rows = build_rows(mdl_number, cl_docket_id, parties, attorney_details)
+        rows = build_rows(mdl_number, cl_docket_id, parties, attorneys)
         all_rows.extend(rows)
         logger.info(
-            "MDL %s docket %s: parties=%d unique_attorneys=%d rows=%d",
+            "MDL %s docket %s: parties=%d attorneys=%d rows=%d",
             mdl_number,
             cl_docket_id,
             len(parties),
-            len(unique_attorney_ids),
+            len(attorneys),
             len(rows),
         )
 
@@ -432,7 +522,7 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
             "total_mdls": len(mdls),
             "processed_mdls": len(mdls_with_dockets),
             "total_parties": total_parties,
-            "total_unique_attorney_refs": total_attorney_refs,
+            "total_attorneys": total_attorneys,
             "total_rows": len(all_rows),
             "global_429_count": _global_429_count,
         }
