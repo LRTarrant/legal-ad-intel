@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -280,9 +281,51 @@ def _extract_from_contact_block(contact: str | None, field: str) -> str | None:
     lines = [line.strip() for line in contact.splitlines() if line and line.strip()]
     if not lines:
         return None
-    # CourtListener contact blocks commonly place firm/org as the first line.
     if field == "firm":
-        return next((ln for ln in lines if not ln.lstrip().startswith(("Phone", "Fax", "Tel", "Email", "(")) and not ln.lstrip()[:1].isdigit()), lines[0])
+        phone_only_pattern = re.compile(r"^[\d\-\(\)\s]+$")
+        street_pattern = re.compile(
+            r"^\d+[A-Za-z0-9#\-\s.,]*\b(?:St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Dr|Drive|Ln|Lane|Way|Ct|Court|Pl|Place|Pkwy|Parkway|Hwy|Highway|Cir|Circle|Ter|Terrace)\b\.?",
+            re.IGNORECASE,
+        )
+        city_state_zip_pattern = re.compile(
+            r"^[A-Za-z .'-]+,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?$",
+            re.IGNORECASE,
+        )
+        suite_floor_pattern = re.compile(
+            r"^(?:Suite|Ste\.?|Floor|Fl\.?|Unit|Rm\.?|Room|Bldg|Building|#)\b",
+            re.IGNORECASE,
+        )
+        legal_entity_pattern = re.compile(
+            r"\b(?:LLC|LLP|P\.?C\.?|P\.?A\.?|PLLC|LTD|Inc\.?|& Associates|Law Firm|Law Group|Law Offices)\b",
+            re.IGNORECASE,
+        )
+
+        def _is_phone_or_fax_line(line: str) -> bool:
+            normalized = line.strip()
+            if normalized.startswith("("):
+                return True
+            if normalized.lower().startswith(("fax:", "phone:", "tel:", "telephone:")):
+                return True
+            return bool(phone_only_pattern.fullmatch(normalized))
+
+        def _is_address_or_location_line(line: str) -> bool:
+            normalized = line.strip()
+            return bool(
+                street_pattern.match(normalized)
+                or city_state_zip_pattern.match(normalized)
+                or suite_floor_pattern.match(normalized)
+            )
+
+        candidates = [
+            line
+            for line in lines
+            if not _is_phone_or_fax_line(line) and not _is_address_or_location_line(line)
+        ]
+        if not candidates:
+            return None
+
+        preferred = next((line for line in candidates if legal_entity_pattern.search(line)), None)
+        return preferred or candidates[0]
     return None
 
 
