@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { MarketAdEvent, MarketFilters } from "@/lib/queries";
+import { MethodologySources } from "../../components/methodology-sources";
 
 type MarketRow = {
   market_name: string;
@@ -323,6 +324,42 @@ export function MarketsClient({
           </table>
         </div>
       </section>
+
+      <MethodologySources
+        sections={[
+          {
+            title: "Data Sources",
+            content:
+              "Market-level aggregation computed client-side from individual ad_events records (180 observations across 19 markets), joined with firms, mass_torts, and markets tables. Aggregation recalculates dynamically when filters are applied.",
+          },
+          {
+            title: "Key Metrics",
+            content:
+              "Core metrics displayed for each market:",
+            bullets: [
+              "<strong>Observations</strong>: Count of individual ad observation events recorded in each market.",
+              "<strong>Est. Spend</strong>: Sum of modeled spend estimates for all observations in the market. Higher spend indicates more detected advertising activity, not necessarily market dominance.",
+              "<strong>Advertisers</strong>: Count of distinct firms observed advertising in the market.",
+              "<strong>Torts</strong>: Count of distinct tort/practice areas with observed advertising in the market.",
+              "<strong>Channels</strong>: List of distinct advertising channels detected (TV, CTV, digital, radio, search, social).",
+              "<strong>Heatmap Intensity</strong>: Visual bar width is proportional to the market\u2019s spend relative to the highest-spend market. This shows relative activity levels, not absolute market share.",
+            ],
+          },
+          {
+            title: "Market Coverage",
+            content:
+              "19 DMA-level markets are currently tracked. Markets represent major metropolitan areas where legal advertising activity has been observed. Not all U.S. DMAs are monitored \u2014 coverage is concentrated in high-activity legal advertising markets.",
+          },
+        ]}
+        limitations={[
+          "Market-level spend is the sum of modeled observation-level estimates \u2014 not verified media-buy totals.",
+          "Heatmap intensity reflects observed activity volume, not true market share or competitive position.",
+          "Some markets have sparse observations (as few as 2), which limits statistical reliability of aggregates.",
+          "Channel coverage varies significantly by market \u2014 some markets only show 2 channels while others show all 6.",
+          "Geographic targeting at the state or DMA level is inferred from the markets table, not from ad-level geo-targeting data.",
+        ]}
+        dataNotice="Market activity is aggregated from ad observation events across TV, CTV, digital, radio, search, and social channels. Spend figures are algorithmic estimates. Coverage varies by market and channel \u2014 higher-activity markets have more observations and more reliable aggregates. Treat heatmap intensity as a relative activity indicator, not absolute market intelligence."
+      />
     </>
   );
 }

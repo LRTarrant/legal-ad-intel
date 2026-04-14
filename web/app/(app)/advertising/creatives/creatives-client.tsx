@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { CreativeObservation, CreativeFilters } from "@/lib/queries";
+import { MethodologySources } from "../../components/methodology-sources";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -237,6 +238,48 @@ export function CreativesClient({
           </table>
         </div>
       </section>
+
+      <MethodologySources
+        sections={[
+          {
+            title: "Data Sources",
+            content:
+              "Individual ad observation events from the ad_events table (180 records), joined with firms, mass_torts, and markets lookup tables. Sources include iSpot (TV/CTV monitoring), MediaRadar (CTV/digital), Google (search/digital), and Meta (social).",
+          },
+          {
+            title: "Key Metrics",
+            content:
+              "Core metrics displayed for each creative observation:",
+            bullets: [
+              '<strong>Campaign Name</strong>: The primary creative identifier \u2014 typically formatted as "[Tort] - [Channel] - [Market]". Actual creative text, headlines, and assets are not yet captured.',
+              "<strong>Est. Spend</strong>: Modeled spend estimate per observation event. Derived from platform-reported or algorithmically estimated values \u2014 not actual invoiced amounts.",
+              "<strong>Impressions</strong>: Estimated impression volume per observation. Source methodology varies by platform (iSpot uses panel extrapolation, Meta uses reported delivery).",
+              "<strong>Est. Reach</strong>: Estimated unique audience reached. Methodology varies by source platform.",
+              "<strong>Airings</strong>: Count of tracked airings (TV only \u2014 null for non-broadcast channels).",
+            ],
+          },
+          {
+            title: "Source Platforms",
+            content:
+              "Observations are sourced from multiple advertising intelligence platforms:",
+            bullets: [
+              "<strong>iSpot</strong>: TV and CTV ad monitoring via automatic content recognition (ACR) and panel data. Covers national and local broadcast.",
+              "<strong>MediaRadar</strong>: Digital and CTV advertising intelligence from publisher-side detection.",
+              "<strong>Google</strong>: Search advertising observations from Google Ads Transparency Center.",
+              "<strong>Meta</strong>: Social advertising observations from Meta Ad Library.",
+            ],
+          },
+        ]}
+        limitations={[
+          "Creative text and visual assets are not captured \u2014 campaign_name is the closest available identifier.",
+          "Spend estimates are modeled, not actual. Methodology differs by source platform.",
+          "Observation coverage is partial \u2014 not all airings, impressions, or placements are detected.",
+          "Airings count is only available for TV observations (63 of 180 records).",
+          "creative_id and creative_name fields exist but are not yet populated.",
+          "Date range of current data: approximately October 2025 \u2013 March 2026.",
+        ]}
+        dataNotice="Creative observations are sourced from iSpot, MediaRadar, Google Ads Transparency, and Meta Ad Library. Spend and impression figures are platform-estimated or algorithmically modeled. Creative assets and full ad text are not yet captured. Treat as competitive intelligence signals, not comprehensive market coverage."
+      />
     </>
   );
 }

@@ -6,6 +6,7 @@ import {
 import Link from "next/link";
 import { Radio, Zap, BarChart3, TrendingUp, Shield } from "lucide-react";
 import { AdvertisingInsight } from "../../components/advertising-insight";
+import { MethodologySources } from "../../components/methodology-sources";
 
 export const dynamic = "force-dynamic";
 
@@ -597,134 +598,56 @@ export default async function TestChannelFitPage({
           <FullScoreTable scores={scores} competitionMap={competitionMap} />
 
           {/* Methodology & Sources */}
-          <section className="rounded-lg bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-midnight-navy mb-3">
-              Methodology & Sources
-            </h2>
-
-            <div className="space-y-3 text-sm text-charcoal leading-relaxed">
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Audience Profiles
-                </h3>
-                <p>
-                  Each tort type has an audience profile that distributes
-                  claimant likelihood across six age bands (18–24 through 65+).
-                  Weights are currently internal assumptions based on case-mix
-                  patterns — e.g., Auto Injury skews working-age, Roundup skews
-                  55+ due to long-latency cancer.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Media Consumption Inputs
-                </h3>
-                <p>
-                  Per-market, per-age-band indices (0–1) represent relative
-                  media usage across 10 channels. The US Benchmark market
-                  uses indices loosely modeled on Pew Research and Nielsen
-                  audience data. Values are directionally accurate but have
-                  not been calibrated to a specific survey vintage.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Synthetic Test Markets
-                </h3>
-                <p>
-                  The Older / TV-Heavy, Digital-First, and Balanced Suburban
-                  DMA markets are synthetic profiles designed to illustrate how
-                  local media patterns shift channel recommendations. They are
-                  not mapped to specific Nielsen DMAs.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Scoring Formula
-                </h3>
-                <p>
-                  For each channel: raw score = Σ(age_band_weight ×
-                  channel_index) across all six age bands. Scores are then
-                  normalized so the highest-scoring channel = 100%. This makes
-                  rankings comparable across tort/market combinations.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Competition / Saturation Scores
-                </h3>
-                <p>
-                  Each channel displays a competition intensity score (Low / Medium / High)
-                  alongside its audience-fit rating. These scores are currently
-                  synthetic placeholders seeded per market. Future versions will
-                  derive them from actual channel-level advertising activity data
-                  (Facebook Ad Library, Google Ads Transparency, TikTok Creative
-                  Center, etc.) to reflect real competitive saturation.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Recommendation Labels
-                </h3>
-                <p>
-                  Each channel receives an action-oriented label derived from its
-                  audience-fit tier and competition bucket. These are planning
-                  heuristics based on the current prototype inputs — not definitive
-                  media-buy guidance. The mapping is:
-                </p>
-                <ul className="mt-1.5 list-disc list-inside space-y-0.5 text-slate-gray">
-                  <li>High/Strong fit + Low competition → <strong className="text-charcoal">Priority Test</strong></li>
-                  <li>High fit + Medium competition → <strong className="text-charcoal">Core Channel</strong></li>
-                  <li>High fit + High competition → <strong className="text-charcoal">Competitive Channel</strong></li>
-                  <li>Strong fit + Medium competition / Moderate fit + Low competition → <strong className="text-charcoal">Selective Test</strong></li>
-                  <li>Strong fit + High competition → <strong className="text-charcoal">Monitor</strong></li>
-                  <li>Moderate/Low fit + Medium/High competition → <strong className="text-charcoal">Low Priority</strong></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
-                  Current Limitations
-                </h3>
-                <ul className="list-disc list-inside space-y-1 text-slate-gray">
-                  <li>
-                    Scores measure audience–channel alignment only, not cost
-                    efficiency or expected ROI.
-                  </li>
-                  <li>
-                    Competition scores are synthetic placeholders and do not yet
-                    reflect real ad-spend data.
-                  </li>
-                  <li>
-                    Age-band weights do not yet incorporate gender, income, or
-                    geographic density.
-                  </li>
-                  <li>
-                    Channel indices are static and do not reflect seasonal or
-                    campaign-level variation.
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Prototype data notice */}
-            <div className="mt-4 rounded-md border border-warning/30 bg-warning/5 px-4 py-3 text-xs leading-relaxed">
-              <strong className="text-warning">Prototype Data Notice:</strong>
-              <span className="text-charcoal">
-                {" "}All audience profiles, media indices, and test markets on this
-                page use benchmark and synthetic inputs created for development
-                purposes. Future versions will integrate named external datasets
-                (e.g., Pew Research Center, Nielsen, MRI-Simmons, U.S. Census)
-                and licensed sources where available. Treat current outputs as
-                directional — not production-grade.
-              </span>
-            </div>
-          </section>
+          <MethodologySources
+            isPrototypeData
+            sections={[
+              {
+                title: "Audience Profiles",
+                content:
+                  "Each tort type has an audience profile that distributes claimant likelihood across six age bands (18\u201324 through 65+). Weights are currently internal assumptions based on case-mix patterns \u2014 e.g., Auto Injury skews working-age, Roundup skews 55+ due to long-latency cancer.",
+              },
+              {
+                title: "Media Consumption Inputs",
+                content:
+                  "Per-market, per-age-band indices (0\u20131) represent relative media usage across 10 channels. The US Benchmark market uses indices loosely modeled on Pew Research and Nielsen audience data. Values are directionally accurate but have not been calibrated to a specific survey vintage.",
+              },
+              {
+                title: "Synthetic Test Markets",
+                content:
+                  "The Older / TV-Heavy, Digital-First, and Balanced Suburban DMA markets are synthetic profiles designed to illustrate how local media patterns shift channel recommendations. They are not mapped to specific Nielsen DMAs.",
+              },
+              {
+                title: "Scoring Formula",
+                content:
+                  "For each channel: raw score = \u03a3(age_band_weight \u00d7 channel_index) across all six age bands. Scores are then normalized so the highest-scoring channel = 100%. This makes rankings comparable across tort/market combinations.",
+              },
+              {
+                title: "Competition / Saturation Scores",
+                content:
+                  "Each channel displays a competition intensity score (Low / Medium / High) alongside its audience-fit rating. These scores are currently synthetic placeholders seeded per market. Future versions will derive them from actual channel-level advertising activity data (Facebook Ad Library, Google Ads Transparency, TikTok Creative Center, etc.) to reflect real competitive saturation.",
+              },
+              {
+                title: "Recommendation Labels",
+                content:
+                  "Each channel receives an action-oriented label derived from its audience-fit tier and competition bucket. These are planning heuristics based on the current prototype inputs \u2014 not definitive media-buy guidance. The mapping is:",
+                bullets: [
+                  'High/Strong fit + Low competition \u2192 <strong class="text-charcoal">Priority Test</strong>',
+                  'High fit + Medium competition \u2192 <strong class="text-charcoal">Core Channel</strong>',
+                  'High fit + High competition \u2192 <strong class="text-charcoal">Competitive Channel</strong>',
+                  'Strong fit + Medium competition / Moderate fit + Low competition \u2192 <strong class="text-charcoal">Selective Test</strong>',
+                  'Strong fit + High competition \u2192 <strong class="text-charcoal">Monitor</strong>',
+                  'Moderate/Low fit + Medium/High competition \u2192 <strong class="text-charcoal">Low Priority</strong>',
+                ],
+              },
+            ]}
+            limitations={[
+              "Scores measure audience\u2013channel alignment only, not cost efficiency or expected ROI.",
+              "Competition scores are synthetic placeholders and do not yet reflect real ad-spend data.",
+              "Age-band weights do not yet incorporate gender, income, or geographic density.",
+              "Channel indices are static and do not reflect seasonal or campaign-level variation.",
+            ]}
+            dataNotice="All audience profiles, media indices, and test markets on this page use benchmark and synthetic inputs created for development purposes. Future versions will integrate named external datasets (e.g., Pew Research Center, Nielsen, MRI-Simmons, U.S. Census) and licensed sources where available. Treat current outputs as directional \u2014 not production-grade."
+          />
         </div>
       )}
     </>

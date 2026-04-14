@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { AdvertiserProfile, AdvertiserFilters } from "@/lib/queries";
+import { MethodologySources } from "../../components/methodology-sources";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -203,6 +204,40 @@ export function AdvertisersClient({
           </table>
         </div>
       </section>
+
+      <MethodologySources
+        sections={[
+          {
+            title: "Data Sources",
+            content:
+              "Aggregated from advertiser_entities (30 canonical advertisers) joined with ad_observations_normalized (126 observation records). Advertiser entities are manually curated and classified by entity type (law firm vs aggregator) and segment (on-docket, off-docket, aggregator).",
+          },
+          {
+            title: "Key Metrics",
+            content:
+              "Core metrics displayed for each advertiser profile:",
+            bullets: [
+              "<strong>Channels</strong>: Count of distinct ad formats (e.g. TV, CTV, digital, radio, search, social) observed for each advertiser.",
+              "<strong>Torts</strong>: Count of distinct tort/practice areas where the advertiser has been observed advertising.",
+              "<strong>Markets</strong>: Count of distinct geographic markets with observed activity.",
+              "<strong>Observations</strong>: Total observation records across all formats, torts, and markets.",
+              "<strong>Est. Spend</strong>: Sum of modeled spend estimates across all observations. These are algorithmic estimates, not actual invoice amounts.",
+            ],
+          },
+          {
+            title: "Entity Classification",
+            content:
+              "Advertisers are classified as law firms or aggregators. Segment labels (on-docket, off-docket, aggregator) reflect whether the firm typically appears as counsel of record on MDL dockets. These classifications are editorial and may not reflect current filing status.",
+          },
+        ]}
+        limitations={[
+          "Spend estimates are modeled from observation frequency and market benchmarks \u2014 not verified billing data.",
+          "Observation coverage is partial; not all channels or markets are monitored equally.",
+          "Entity type and segment classifications are manually assigned and may lag behind firm changes.",
+          "earliest_seen and latest_seen dates are not yet populated in the current dataset.",
+        ]}
+        dataNotice="Advertiser data is aggregated from normalized observation records. Spend figures are algorithmic estimates based on observation frequency and market-rate benchmarks. Entity classifications are editorial. Treat as directional intelligence, not audited financials."
+      />
     </>
   );
 }
