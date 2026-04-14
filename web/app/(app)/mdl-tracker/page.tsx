@@ -6,6 +6,7 @@ import {
   getJpmlTypeSummaries,
   getJpmlSnapshots,
   getLatestReportDate,
+  getJpmlReportDates,
   enrichMdlSummaryWithJpmlType,
   getLatestDevelopments,
 } from "@/lib/queries";
@@ -16,6 +17,7 @@ import { JpmlTypePanel } from "./jpml-type-panel";
 import { MdlContent } from "./mdl-content";
 import { MdlFilterBar } from "./mdl-filter-bar";
 import { MdlTrackerNav } from "./mdl-tracker-nav";
+import { JpmlDateSelect } from "./jpml-date-select";
 
 export const metadata = {
   title: "MDL Tracker | Legal Marketing Intelligence",
@@ -25,6 +27,7 @@ type SearchParams = Promise<{
   date?: string | string[];
   mdl?: string | string[];
   search?: string | string[];
+  jpml_date?: string | string[];
 }>;
 
 function getSingleValue(value: string | string[] | undefined): string | null {
@@ -42,6 +45,7 @@ export default async function MdlTrackerPage({
 }) {
   const params = await searchParams;
   const selectedDate = getSingleValue(params.date);
+  const jpmlDate = getSingleValue(params.jpml_date);
   const search = getSingleValue(params.search) ?? "";
   const mdl = getSingleValue(params.mdl) ?? "";
 
@@ -49,6 +53,7 @@ export default async function MdlTrackerPage({
     reportDates,
     summaryRows,
     totals,
+    jpmlReportDates,
     jpmlSummaries,
     jpmlReportDate,
     jpmlSnapshots,
@@ -57,9 +62,10 @@ export default async function MdlTrackerPage({
     getMdlReportDates(),
     getMdlSummary(selectedDate),
     getMdlTotals(selectedDate),
-    getJpmlTypeSummaries().catch(() => []),
-    getLatestReportDate().catch(() => null),
-    getJpmlSnapshots().catch(() => []),
+    getJpmlReportDates().catch(() => [] as string[]),
+    getJpmlTypeSummaries(jpmlDate).catch(() => []),
+    jpmlDate ? Promise.resolve(jpmlDate) : getLatestReportDate().catch(() => null),
+    getJpmlSnapshots(jpmlDate ?? undefined).catch(() => []),
     getLatestDevelopments(5).catch(() => [] as MdlDevelopment[]),
   ]);
 
@@ -123,7 +129,16 @@ export default async function MdlTrackerPage({
         </div>
       )}
 
-      <JpmlTypePanel summaries={jpmlSummaries} reportDate={jpmlReportDate} />
+      <JpmlTypePanel
+        summaries={jpmlSummaries}
+        reportDate={jpmlReportDate}
+        controls={
+          <JpmlDateSelect
+            reportDates={jpmlReportDates}
+            selectedDate={jpmlDate}
+          />
+        }
+      />
 
       <JpmlDetailSection
         snapshots={jpmlSnapshots}

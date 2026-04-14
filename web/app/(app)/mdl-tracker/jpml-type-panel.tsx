@@ -1,4 +1,6 @@
 import type { JpmlTypeSummary } from "@/lib/queries";
+import { ExternalLink } from "lucide-react";
+import type { ReactNode } from "react";
 
 function formatReportDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -13,9 +15,11 @@ function formatReportDate(dateStr: string): string {
 export function JpmlTypePanel({
   summaries,
   reportDate,
+  controls,
 }: {
   summaries: JpmlTypeSummary[];
   reportDate: string | null;
+  controls?: ReactNode;
 }) {
   if (summaries.length === 0) {
     return (
@@ -45,9 +49,21 @@ export function JpmlTypePanel({
               Report: {formatReportDate(reportDate)}
             </p>
           )}
+          <a
+            href="https://jpml.uscourts.gov"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-intelligence-teal hover:underline"
+          >
+            Source: jpml.uscourts.gov
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+          </a>
         </div>
-        <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
-          {totalActive} Active MDLs
+        <div className="flex items-center gap-3">
+          {controls}
+          <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
+            {totalActive} Active MDLs
+          </div>
         </div>
       </div>
 
