@@ -100,6 +100,84 @@ function combinedLabel(
   return `${fitLabel(normalized)} / ${competitionBucket(competitionScore)} competition`;
 }
 
+/* ── Recommendation engine ───────────────────────────────── */
+
+type Recommendation =
+  | "Priority Test"
+  | "Core Channel"
+  | "Competitive Channel"
+  | "Selective Test"
+  | "Monitor"
+  | "Low Priority";
+
+/**
+ * Maps audience-fit tier × competition bucket to an actionable label.
+ * Fit tiers: High (≥0.8), Strong (≥0.6), Moderate (≥0.4), Low (<0.4)
+ * Competition: Low (≤0.33), Medium (0.34–0.66), High (≥0.67)
+ */
+function getRecommendation(
+  normalized: number,
+  competitionScore: number | undefined
+): Recommendation | null {
+  if (competitionScore == null) return null;
+  const comp = competitionBucket(competitionScore);
+
+  // High fit (≥0.8)
+  if (normalized >= 0.8) {
+    if (comp === "Low") return "Priority Test";
+    if (comp === "Medium") return "Core Channel";
+    return "Competitive Channel";
+  }
+  // Strong fit (≥0.6)
+  if (normalized >= 0.6) {
+    if (comp === "Low") return "Priority Test";
+    if (comp === "Medium") return "Selective Test";
+    return "Monitor";
+  }
+  // Moderate fit (≥0.4)
+  if (normalized >= 0.4) {
+    if (comp === "Low") return "Selective Test";
+    return "Low Priority";
+  }
+  // Low fit (<0.4)
+  return "Low Priority";
+}
+
+function recommendationStyle(rec: Recommendation): string {
+  switch (rec) {
+    case "Priority Test":
+      return "bg-intelligence-teal/10 text-intelligence-teal ring-intelligence-teal/30";
+    case "Core Channel":
+      return "bg-steel-blue/10 text-steel-blue ring-steel-blue/30";
+    case "Competitive Channel":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    case "Selective Test":
+      return "bg-sky-50 text-sky-700 ring-sky-200";
+    case "Monitor":
+      return "bg-slate-50 text-slate-600 ring-slate-200";
+    case "Low Priority":
+      return "bg-slate-50 text-slate-400 ring-slate-200";
+  }
+}
+
+function RecommendationBadge({
+  normalized,
+  competitionScore,
+}: {
+  normalized: number;
+  competitionScore: number | undefined;
+}) {
+  const rec = getRecommendation(normalized, competitionScore);
+  if (!rec) return null;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${recommendationStyle(rec)}`}
+    >
+      {rec}
+    </span>
+  );
+}
+
 /** Build a natural-language strategy blurb from scored channels. */
 function buildStrategySummary(
   scores: ChannelFitScore[],
@@ -222,7 +300,7 @@ function StrategySummaryCard({
             i === 0
               ? "bg-intelligence-teal text-white"
               : "bg-steel-blue/10 text-steel-blue";
-          const combined = combinedLabel(s.normalized_score, competitionMap.get(s.channel));
+          const compScore = competitionMap.get(s.channel);
           return (
             <div
               key={s.channel}
@@ -239,12 +317,8 @@ function StrategySummaryCard({
               <p className="text-2xl font-bold text-intelligence-teal tabular-nums">
                 {pct}%
               </p>
-              {combined && (
-                <p className="mt-1.5 text-[11px] font-medium text-slate-gray">
-                  {combined}
-                </p>
-              )}
-              <div className="mt-1">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <RecommendationBadge normalized={s.normalized_score} competitionScore={compScore} />
                 <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
               </div>
             </div>
@@ -295,7 +369,7 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
         {top5.map((s) => {
           const pct = Math.round(s.normalized_score * 100);
           const rawPct = Math.round((s.raw_score / maxRaw) * 100);
-          const combined = combinedLabel(s.normalized_score, competitionMap.get(s.channel));
+          const compScore = competitionMap.get(s.channel);
           return (
             <div key={s.channel} className="group">
               <div className="flex items-center justify-between mb-1">
@@ -303,11 +377,7 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
                   <span className="text-sm font-medium text-charcoal">
                     {channelLabel(s.channel)}
                   </span>
-                  <span
-                    className={`text-[11px] font-semibold uppercase tracking-wide ${scoreTierColor(s.normalized_score)}`}
-                  >
-                    {scoreTierLabel(s.normalized_score)}
-                  </span>
+                  <RecommendationBadge normalized={s.normalized_score} competitionScore={compScore} />
                   <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
                 </div>
                 <span className="text-sm font-bold tabular-nums text-midnight-navy">
@@ -326,11 +396,6 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
                   </span>
                 </div>
               </div>
-              {combined && (
-                <p className="mt-0.5 text-[11px] text-slate-gray">
-                  {combined}
-                </p>
-              )}
             </div>
           );
         })}
@@ -339,7 +404,7 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
   );
 }
 
-function FullScoreTable({ scores }: { scores: ChannelFitScore[] }) {
+function FullScoreTable({ scores, competitionMap }: { scores: ChannelFitScore[]; competitionMap: Map<string, number> }) {
   return (
     <section className="rounded-lg bg-white p-6 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
@@ -355,12 +420,14 @@ function FullScoreTable({ scores }: { scores: ChannelFitScore[] }) {
             <th className="pb-2 pr-4">Rank</th>
             <th className="pb-2 pr-4">Channel</th>
             <th className="pb-2 px-4">Score</th>
+            <th className="pb-2 px-3 text-center">Rec.</th>
             <th className="pb-2 pl-4 text-right">Raw</th>
           </tr>
         </thead>
         <tbody>
           {scores.map((s, i) => {
             const pct = Math.round(s.normalized_score * 100);
+            const compScore = competitionMap.get(s.channel);
             return (
               <tr
                 key={s.channel}
@@ -384,6 +451,9 @@ function FullScoreTable({ scores }: { scores: ChannelFitScore[] }) {
                       {pct}%
                     </span>
                   </div>
+                </td>
+                <td className="py-2.5 px-3 text-center">
+                  <RecommendationBadge normalized={s.normalized_score} competitionScore={compScore} />
                 </td>
                 <td className="py-2.5 pl-4 text-right text-xs tabular-nums text-slate-gray whitespace-nowrap">
                   {s.raw_score.toFixed(4)}
@@ -467,8 +537,9 @@ export default async function TestChannelFitPage({
             </li>
           </ul>
           <p className="mt-2 text-slate-gray">
-            Note: Scores reflect audience fit only. They do not account for
-            media cost, competitive saturation, or expected ROI. Use them as a
+            Note: Scores combine audience fit with competition intensity to
+            generate action-oriented recommendations (e.g., Priority Test,
+            Core Channel). These are planning heuristics — use them as a
             starting point alongside your own pricing and market knowledge.
           </p>
         </AdvertisingInsight>
@@ -523,7 +594,7 @@ export default async function TestChannelFitPage({
           <TopChannelsChart scores={scores} competitionMap={competitionMap} />
 
           {/* 3. Full Rankings Table */}
-          <FullScoreTable scores={scores} />
+          <FullScoreTable scores={scores} competitionMap={competitionMap} />
 
           {/* Methodology & Sources */}
           <section className="rounded-lg bg-white p-6 shadow-sm">
@@ -594,6 +665,26 @@ export default async function TestChannelFitPage({
                   (Facebook Ad Library, Google Ads Transparency, TikTok Creative
                   Center, etc.) to reflect real competitive saturation.
                 </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Recommendation Labels
+                </h3>
+                <p>
+                  Each channel receives an action-oriented label derived from its
+                  audience-fit tier and competition bucket. These are planning
+                  heuristics based on the current prototype inputs — not definitive
+                  media-buy guidance. The mapping is:
+                </p>
+                <ul className="mt-1.5 list-disc list-inside space-y-0.5 text-slate-gray">
+                  <li>High/Strong fit + Low competition → <strong className="text-charcoal">Priority Test</strong></li>
+                  <li>High fit + Medium competition → <strong className="text-charcoal">Core Channel</strong></li>
+                  <li>High fit + High competition → <strong className="text-charcoal">Competitive Channel</strong></li>
+                  <li>Strong fit + Medium competition / Moderate fit + Low competition → <strong className="text-charcoal">Selective Test</strong></li>
+                  <li>Strong fit + High competition → <strong className="text-charcoal">Monitor</strong></li>
+                  <li>Moderate/Low fit + Medium/High competition → <strong className="text-charcoal">Low Priority</strong></li>
+                </ul>
               </div>
 
               <div>
