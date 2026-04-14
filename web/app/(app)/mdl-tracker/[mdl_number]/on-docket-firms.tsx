@@ -18,7 +18,7 @@ export default async function OnDocketFirms({ mdlNumber }: Props) {
   ]);
 
   return (
-    <section className="mt-10">
+    <section className="mt-10 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
       <h2 className="mb-4 text-2xl font-bold text-white">
         On-Docket Firms
       </h2>
