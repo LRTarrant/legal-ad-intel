@@ -78,7 +78,7 @@ export async function getMdlAttorneysByRole(
     .from("mdl_attorneys")
     .select("id, attorney_name, firm_name, email, phone, role")
     .eq("mdl_number", mdlNumber)
-    .ilike("role", role)
+    .ilike("party_type", role)
     .order("firm_name", { ascending: true, nullsFirst: false })
     .order("attorney_name", { ascending: true });
 
