@@ -209,6 +209,102 @@ def fetch_attorney_details(attorney_ids: set[int]) -> dict[int, dict]:
     return details
 
 
+def _first_non_empty_str(*values) -> str | None:
+    for value in values:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped:
+                return stripped
+    return None
+
+
+def _extract_from_contact_block(contact: str | None, field: str) -> str | None:
+    if not isinstance(contact, str) or not contact.strip():
+        return None
+    lines = [line.strip() for line in contact.splitlines() if line and line.strip()]
+    if not lines:
+        return None
+    # CourtListener contact blocks commonly place firm/org as the first line.
+    if field == "firm":
+        return lines[0]
+    return None
+
+
+def _extract_firm_name(party_attorney: dict, attorney_payload: dict | None, detail: dict | None) -> str | None:
+    """Extract firm/org from party-attorney record first, then nested attorney payload, then detail."""
+    candidate_containers = [party_attorney, attorney_payload or {}, detail or {}]
+    firm_key_candidates = (
+        "firm",
+        "firm_name",
+        "organization",
+        "organization_name",
+        "law_firm",
+        "company",
+    )
+
+    for container in candidate_containers:
+        for key in firm_key_candidates:
+            value = container.get(key) if isinstance(container, dict) else None
+            firm = _first_non_empty_str(value)
+            if firm:
+                return firm
+
+        roles = container.get("roles") if isinstance(container, dict) else None
+        if isinstance(roles, list):
+            for role in roles:
+                if not isinstance(role, dict):
+                    continue
+                for key in firm_key_candidates:
+                    firm = _first_non_empty_str(role.get(key))
+                    if firm:
+                        return firm
+
+        organizations = container.get("organizations") if isinstance(container, dict) else None
+        if isinstance(organizations, list):
+            for org in organizations:
+                if isinstance(org, dict):
+                    firm = _first_non_empty_str(org.get("name"))
+                else:
+                    firm = _first_non_empty_str(org)
+                if firm:
+                    return firm
+
+        contact = container.get("contact") if isinstance(container, dict) else None
+        firm_from_contact = _extract_from_contact_block(contact, "firm")
+        if firm_from_contact:
+            return firm_from_contact
+
+    return None
+
+
+def _row_non_null_score(row: dict) -> int:
+    fields = ("party_name", "party_type", "attorney_name", "firm_name", "role")
+    score = 0
+    for field in fields:
+        value = row.get(field)
+        if value is not None and (not isinstance(value, str) or value.strip()):
+            score += 1
+    return score
+
+
+def _dedupe_rows(rows: list[dict]) -> list[dict]:
+    """Keep one row per (mdl_number, cl_attorney_id), preferring richer rows."""
+    best_by_key: dict[tuple[int, int], dict] = {}
+
+    for row in rows:
+        cl_attorney_id = row.get("cl_attorney_id")
+        mdl_number = row.get("mdl_number")
+        if not cl_attorney_id or not mdl_number:
+            continue
+
+        key = (int(mdl_number), int(cl_attorney_id))
+        current_best = best_by_key.get(key)
+        if current_best is None or _row_non_null_score(row) > _row_non_null_score(current_best):
+            best_by_key[key] = row
+
+    return list(best_by_key.values())
+
+
 def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney_details: dict[int, dict]) -> list[dict]:
     rows: list[dict] = []
     fetched_at = datetime.now(timezone.utc).isoformat()
@@ -222,17 +318,20 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
             first_party_type = (party_types[0].get("name") or "").strip() or None
 
         for party_attorney in party.get("attorneys", []) or []:
-            cl_attorney_id = party_attorney.get("attorney_id")
+            if not isinstance(party_attorney, dict):
+                continue
+            attorney_payload = party_attorney.get("attorney") if isinstance(party_attorney.get("attorney"), dict) else {}
+            cl_attorney_id = party_attorney.get("attorney_id") or attorney_payload.get("id")
             if not cl_attorney_id:
                 continue
 
             detail = attorney_details.get(cl_attorney_id, {})
-            attorney_name = (detail.get("name") or "").strip() or None
-
-            orgs = detail.get("organizations") or []
-            firm_name = None
-            if orgs and isinstance(orgs[0], dict):
-                firm_name = (orgs[0].get("name") or "").strip() or None
+            attorney_name = _first_non_empty_str(
+                attorney_payload.get("name"),
+                party_attorney.get("name"),
+                detail.get("name"),
+            )
+            firm_name = _extract_firm_name(party_attorney, attorney_payload, detail)
 
             role_int = party_attorney.get("role")
             role_label = ROLE_MAP.get(role_int, f"Role {role_int}" if role_int is not None else None)
@@ -251,7 +350,7 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
                 }
             )
 
-    return rows
+    return _dedupe_rows(rows)
 
 
 def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
@@ -263,11 +362,20 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
 
     ensure_mdls_cl_docket_column()
 
-    params = {"select": "mdl_number,title,status,cl_docket_id", "status": "neq.Closed"}
+    params_with_docket = {"select": "mdl_number,title,status,cl_docket_id", "status": "neq.Closed"}
     if target_mdl is not None:
-        params["mdl_number"] = f"eq.{target_mdl}"
+        params_with_docket["mdl_number"] = f"eq.{target_mdl}"
 
-    mdls = _get("mdls", params)
+    try:
+        mdls = _get("mdls", params_with_docket)
+    except Exception:
+        logger.warning("Unable to select mdls.cl_docket_id; retrying without the column")
+        params_without_docket = {"select": "mdl_number,title,status", "status": "neq.Closed"}
+        if target_mdl is not None:
+            params_without_docket["mdl_number"] = f"eq.{target_mdl}"
+        mdls = _get("mdls", params_without_docket)
+        for mdl in mdls:
+            mdl["cl_docket_id"] = None
 
     # Force known IDs for configured MDLs (whether or not DB backfill succeeded).
     for mdl in mdls:
@@ -292,7 +400,8 @@ def step_fetch_raw(step, target_mdl: int | None = None) -> list[dict]:
         unique_attorney_ids: set[int] = set()
         for party in parties:
             for party_attorney in party.get("attorneys", []) or []:
-                aid = party_attorney.get("attorney_id")
+                attorney_payload = party_attorney.get("attorney") if isinstance(party_attorney.get("attorney"), dict) else {}
+                aid = party_attorney.get("attorney_id") or attorney_payload.get("id")
                 if aid:
                     unique_attorney_ids.add(int(aid))
 
