@@ -450,13 +450,97 @@ export default async function TestChannelFitPage({
           {/* 3. Full Rankings Table */}
           <FullScoreTable scores={scores} />
 
-          {/* Methodology footer */}
-          <div className="rounded-md bg-cloud/60 px-4 py-3 text-xs text-slate-gray leading-relaxed">
-            <strong className="text-charcoal">Methodology:</strong> Each
-            channel score = Σ(age_band_weight × channel_index) across 6 age
-            bands, then normalized so the top channel = 100%. Scores reflect
-            audience-channel alignment — not reach, CPM, or ROI.
-          </div>
+          {/* Methodology & Sources */}
+          <section className="rounded-lg bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-midnight-navy mb-3">
+              Methodology & Sources
+            </h2>
+
+            <div className="space-y-3 text-sm text-charcoal leading-relaxed">
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Audience Profiles
+                </h3>
+                <p>
+                  Each tort type has an audience profile that distributes
+                  claimant likelihood across six age bands (18–24 through 65+).
+                  Weights are currently internal assumptions based on case-mix
+                  patterns — e.g., Auto Injury skews working-age, Roundup skews
+                  55+ due to long-latency cancer.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Media Consumption Inputs
+                </h3>
+                <p>
+                  Per-market, per-age-band indices (0–1) represent relative
+                  media usage across 10 channels. The US Benchmark market
+                  uses indices loosely modeled on Pew Research and Nielsen
+                  audience data. Values are directionally accurate but have
+                  not been calibrated to a specific survey vintage.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Synthetic Test Markets
+                </h3>
+                <p>
+                  The Older / TV-Heavy, Digital-First, and Balanced Suburban
+                  DMA markets are synthetic profiles designed to illustrate how
+                  local media patterns shift channel recommendations. They are
+                  not mapped to specific Nielsen DMAs.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Scoring Formula
+                </h3>
+                <p>
+                  For each channel: raw score = Σ(age_band_weight ×
+                  channel_index) across all six age bands. Scores are then
+                  normalized so the highest-scoring channel = 100%. This makes
+                  rankings comparable across tort/market combinations.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-midnight-navy text-xs uppercase tracking-wider mb-1">
+                  Current Limitations
+                </h3>
+                <ul className="list-disc list-inside space-y-1 text-slate-gray">
+                  <li>
+                    Scores measure audience–channel alignment only, not cost
+                    efficiency, competitive saturation, or expected ROI.
+                  </li>
+                  <li>
+                    Age-band weights do not yet incorporate gender, income, or
+                    geographic density.
+                  </li>
+                  <li>
+                    Channel indices are static and do not reflect seasonal or
+                    campaign-level variation.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Prototype data notice */}
+            <div className="mt-4 rounded-md border border-warning/30 bg-warning/5 px-4 py-3 text-xs leading-relaxed">
+              <strong className="text-warning">Prototype Data Notice:</strong>
+              <span className="text-charcoal">
+                {" "}All audience profiles, media indices, and test markets on this
+                page use benchmark and synthetic inputs created for development
+                purposes. Future versions will integrate named external datasets
+                (e.g., Pew Research Center, Nielsen, MRI-Simmons, U.S. Census)
+                and licensed sources where available. Treat current outputs as
+                directional — not production-grade.
+              </span>
+            </div>
+          </section>
         </div>
       )}
     </>
