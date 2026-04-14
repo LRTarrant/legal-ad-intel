@@ -128,6 +128,7 @@ export default async function AdSaturationPage({
         initialCompetitiveSummary={competitiveSummaryByFilter[ALL_FILTER_KEY]}
         advertiserPlatforms={advertiserPlatforms}
         selectedStates={selectedStates}
+        activePlatform={activePlatform}
       />
     </div>
   );

@@ -3,10 +3,13 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { StateDropdown } from "./_components/StateDropdown";
 import {
+  getAdvertiserPlatforms,
   getAdvertiserCompetitiveSummary,
   getTortMarketAdvertisers,
   type AdSaturationRow,
+  type AdvertiserPlatforms,
   type AdvertiserCompetitiveSummary,
   type SegmentSummary,
   type TopAdvertiserBySegment,
@@ -67,6 +70,32 @@ function segmentBg(seg: string): string {
   return "bg-zinc-800 border-zinc-700";
 }
 
+const PLATFORM_META: Record<string, { label: string; className: string }> = {
+  google_ads: { label: "Google Ads", className: "bg-blue-500/20 border-blue-500/40 text-blue-200" },
+  google_ads_transparency: {
+    label: "Google Transparency",
+    className: "bg-sky-500/20 border-sky-500/40 text-sky-200",
+  },
+  tiktok_ads: { label: "TikTok Ads", className: "bg-zinc-700 border-zinc-500 text-zinc-100" },
+  meta_ad_library: { label: "Meta Ads", className: "bg-indigo-500/20 border-indigo-500/40 text-indigo-200" },
+  mediaradar: { label: "MediaRadar", className: "bg-emerald-500/20 border-emerald-500/40 text-emerald-200" },
+  ispot: { label: "iSpot", className: "bg-orange-500/20 border-orange-500/40 text-orange-200" },
+  vivvix: { label: "Vivvix", className: "bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-200" },
+  manual: { label: "Manual", className: "bg-zinc-500/20 border-zinc-500/40 text-zinc-200" },
+};
+
+function normalizePlatform(platform: string): string {
+  return platform?.toLowerCase().trim();
+}
+
+function platformLabel(platform: string): string {
+  return PLATFORM_META[platform]?.label ?? platform.replaceAll("_", " ");
+}
+
+function platformBadgeClass(platform: string): string {
+  return PLATFORM_META[platform]?.className ?? "bg-zinc-600/20 border-zinc-600/40 text-zinc-200";
+}
+
 export function AdSaturationClient({
   allData,
   torts,
@@ -75,6 +104,7 @@ export function AdSaturationClient({
   initialCompetitiveSummary,
   advertiserPlatforms,
   selectedStates,
+  activePlatform,
 }: {
   allData: AdSaturationRow[];
   torts: Tort[];
@@ -83,12 +113,14 @@ export function AdSaturationClient({
   initialCompetitiveSummary: AdvertiserCompetitiveSummary[];
   advertiserPlatforms: Record<string, string[]>;
   selectedStates: string[];
+  activePlatform: string;
 }) {
   const [selectedTort, setSelectedTort] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [competitiveAdvertisers, setCompetitiveAdvertisers] = useState(initialCompetitiveSummary);
   const [competitiveLoading, setCompetitiveLoading] = useState(false);
+  const [advertiserPlatforms, setAdvertiserPlatforms] = useState<AdvertiserPlatforms[]>([]);
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const [drilldownLoadingKey, setDrilldownLoadingKey] = useState<string | null>(null);
   const [drilldownByRowKey, setDrilldownByRowKey] = useState<Record<string, TortMarketAdvertiser[]>>({});
@@ -124,7 +156,8 @@ export function AdSaturationClient({
       setCompetitiveLoading(true);
       const rows = await getAdvertiserCompetitiveSummary(
         selectedTort ?? undefined,
-        undefined
+        selectedState ?? undefined,
+        activePlatform === "all" ? undefined : activePlatform
       );
       if (!cancelled) {
         setCompetitiveAdvertisers(rows);
@@ -136,7 +169,48 @@ export function AdSaturationClient({
     return () => {
       cancelled = true;
     };
-  }, [selectedTort]);
+  }, [selectedState, selectedTort, activePlatform]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      const rows = await getAdvertiserPlatforms(
+        selectedTort ?? undefined,
+        selectedState ?? undefined,
+        activePlatform === "all" ? undefined : activePlatform
+      );
+      if (!cancelled) {
+        setAdvertiserPlatforms(rows);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedState, selectedTort, activePlatform]);
+
+  function renderPlatformBadges(advertiserId?: string | null, advertiserName?: string | null) {
+    const byId = advertiserId ? platformsByAdvertiser.byId.get(advertiserId) : undefined;
+    const byName = advertiserName
+      ? platformsByAdvertiser.byName.get(advertiserName.trim().toLowerCase())
+      : undefined;
+    const platforms = byId ?? byName ?? [];
+    if (!platforms.length) return <span className="text-xs text-zinc-500">\u2014</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {platforms.map((platform) => (
+          <span
+            key={`${advertiserName}-${platform}`}
+            className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${platformBadgeClass(platform)}`}
+          >
+            {platformLabel(platform)}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
 
 

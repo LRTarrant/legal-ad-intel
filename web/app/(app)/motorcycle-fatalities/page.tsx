@@ -92,7 +92,7 @@ export default async function MotorcycleFatalitiesPage({
             Motorcycle Fatalities
           </h1>
           <p className="text-sm text-slate-gray">
-            FARS data &middot; 2019&ndash;2023 &middot; Source: NHTSA
+            FARS data &middot; 2019&ndash;2024 &middot; Source: NHTSA
           </p>
         </div>
       </div>

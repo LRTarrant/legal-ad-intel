@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   CloudLightning,
+  HardHat,
   HeartPulse,
   Radio,
   Search,
@@ -17,6 +18,7 @@ import {
   Target,
   Truck,
   Users,
+  TrendingUp,
 } from "lucide-react";
 
 const personalInjuryPaths = [
@@ -24,6 +26,7 @@ const personalInjuryPaths = [
   "/motorcycle-fatalities",
   "/large-truck-fatalities",
   "/boating-accidents",
+  "/construction",
 ];
 
 const personalInjuryItems = [
@@ -31,6 +34,7 @@ const personalInjuryItems = [
   { label: "Motorcycle Fatalities", href: "/motorcycle-fatalities", Icon: Bike },
   { label: "Large Truck Fatalities", href: "/large-truck-fatalities", Icon: Truck },
   { label: "Boating Accidents", href: "/boating-accidents", Icon: Ship },
+  { label: "Construction", href: "/construction", Icon: HardHat },
 ];
 
 const propertyDamagePaths = ["/storm-events"];
@@ -58,6 +62,7 @@ const bottomNavItems = [
     { label: "Market Demographics", href: "/market-demographics", Icon: Users },
   { label: "Ad Saturation", href: "/ad-saturation", Icon: Radio },
   { label: "Search Visibility", href: "/search-visibility", Icon: Search },
+  { label: "Google Trends", href: "/google-trends", Icon: TrendingUp },
 ];
 
 type NavItem = {

@@ -124,6 +124,278 @@ export type Database = {
           },
         ]
       }
+      ad_observations_normalized: {
+        Row: {
+          ad_format: string
+          advertiser_id: string
+          created_at: string
+          earliest_seen: string | null
+          estimated_spend: number | null
+          geo_target_id: string
+          id: string
+          impressions: number | null
+          latest_seen: string | null
+          observation_count: number
+          source_mix: string[] | null
+          tort_id: string
+          unique_creatives: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          ad_format: string
+          advertiser_id: string
+          created_at?: string
+          earliest_seen?: string | null
+          estimated_spend?: number | null
+          geo_target_id: string
+          id?: string
+          impressions?: number | null
+          latest_seen?: string | null
+          observation_count?: number
+          source_mix?: string[] | null
+          tort_id: string
+          unique_creatives?: number
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          ad_format?: string
+          advertiser_id?: string
+          created_at?: string
+          earliest_seen?: string | null
+          estimated_spend?: number | null
+          geo_target_id?: string
+          id?: string
+          impressions?: number | null
+          latest_seen?: string | null
+          observation_count?: number
+          source_mix?: string[] | null
+          tort_id?: string
+          unique_creatives?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_observations_normalized_advertiser_id_fkey"
+            columns: ["advertiser_id"]
+            isOneToOne: false
+            referencedRelation: "advertiser_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_observations_normalized_geo_target_id_fkey"
+            columns: ["geo_target_id"]
+            isOneToOne: false
+            referencedRelation: "geo_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_observations_normalized_tort_id_fkey"
+            columns: ["tort_id"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_observations_raw: {
+        Row: {
+          ad_format: string | null
+          advertiser_id: string | null
+          advertiser_raw: string
+          creative_text: string | null
+          creative_url: string | null
+          estimated_spend_high: number | null
+          estimated_spend_low: number | null
+          first_seen: string
+          geo_raw: string | null
+          geo_target_id: string | null
+          id: string
+          impression_count: number | null
+          ingested_at: string
+          last_seen: string
+          raw_json: Json | null
+          source: string
+          source_id: string | null
+          tort_id: string | null
+          tort_raw: string | null
+        }
+        Insert: {
+          ad_format?: string | null
+          advertiser_id?: string | null
+          advertiser_raw: string
+          creative_text?: string | null
+          creative_url?: string | null
+          estimated_spend_high?: number | null
+          estimated_spend_low?: number | null
+          first_seen: string
+          geo_raw?: string | null
+          geo_target_id?: string | null
+          id?: string
+          impression_count?: number | null
+          ingested_at?: string
+          last_seen: string
+          raw_json?: Json | null
+          source?: string
+          source_id?: string | null
+          tort_id?: string | null
+          tort_raw?: string | null
+        }
+        Update: {
+          ad_format?: string | null
+          advertiser_id?: string | null
+          advertiser_raw?: string
+          creative_text?: string | null
+          creative_url?: string | null
+          estimated_spend_high?: number | null
+          estimated_spend_low?: number | null
+          first_seen?: string
+          geo_raw?: string | null
+          geo_target_id?: string | null
+          id?: string
+          impression_count?: number | null
+          ingested_at?: string
+          last_seen?: string
+          raw_json?: Json | null
+          source?: string
+          source_id?: string | null
+          tort_id?: string | null
+          tort_raw?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_observations_raw_advertiser_id_fkey"
+            columns: ["advertiser_id"]
+            isOneToOne: false
+            referencedRelation: "advertiser_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_observations_raw_geo_target_id_fkey"
+            columns: ["geo_target_id"]
+            isOneToOne: false
+            referencedRelation: "geo_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_observations_raw_tort_id_fkey"
+            columns: ["tort_id"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_saturation_scores: {
+        Row: {
+          computed_at: string
+          estimated_impressions: number | null
+          estimated_spend: number | null
+          format_breakdown: Json | null
+          geo_target_id: string
+          id: string
+          period_end: string
+          period_start: string
+          saturation_score: number | null
+          spend_rank: number | null
+          top_advertisers: Json | null
+          tort_id: string
+          total_advertisers: number
+          total_creatives: number
+          total_observations: number
+        }
+        Insert: {
+          computed_at?: string
+          estimated_impressions?: number | null
+          estimated_spend?: number | null
+          format_breakdown?: Json | null
+          geo_target_id: string
+          id?: string
+          period_end: string
+          period_start: string
+          saturation_score?: number | null
+          spend_rank?: number | null
+          top_advertisers?: Json | null
+          tort_id: string
+          total_advertisers?: number
+          total_creatives?: number
+          total_observations?: number
+        }
+        Update: {
+          computed_at?: string
+          estimated_impressions?: number | null
+          estimated_spend?: number | null
+          format_breakdown?: Json | null
+          geo_target_id?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          saturation_score?: number | null
+          spend_rank?: number | null
+          top_advertisers?: Json | null
+          tort_id?: string
+          total_advertisers?: number
+          total_creatives?: number
+          total_observations?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_saturation_scores_geo_target_id_fkey"
+            columns: ["geo_target_id"]
+            isOneToOne: false
+            referencedRelation: "geo_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_saturation_scores_tort_id_fkey"
+            columns: ["tort_id"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advertiser_entities: {
+        Row: {
+          aliases: string[] | null
+          canonical_name: string
+          created_at: string
+          entity_type: string
+          id: string
+          notes: string | null
+          segment: Database["public"]["Enums"]["advertiser_segment"]
+          tort_slugs: string[] | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          canonical_name: string
+          created_at?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+          segment?: Database["public"]["Enums"]["advertiser_segment"]
+          tort_slugs?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          canonical_name?: string
+          created_at?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+          segment?: Database["public"]["Enums"]["advertiser_segment"]
+          tort_slugs?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       boating_accidents: {
         Row: {
           accident_date: string | null
@@ -244,6 +516,234 @@ export type Database = {
           trend_upper_ci?: number | null
           updated_at?: string
           upper_ci?: number | null
+        }
+        Relationships: []
+      }
+      census_demographics: {
+        Row: {
+          acs_vintage: number
+          county_name: string
+          created_at: string | null
+          fips_full: string
+          id: number
+          median_age: number | null
+          median_gross_rent: number | null
+          median_home_value: number | null
+          median_household_income: number | null
+          pct_asian: number | null
+          pct_bachelors_or_higher: number | null
+          pct_black: number | null
+          pct_disability: number | null
+          pct_employed: number | null
+          pct_english_only: number | null
+          pct_foreign_born: number | null
+          pct_high_school_or_higher: number | null
+          pct_hispanic: number | null
+          pct_native: number | null
+          pct_owner_occupied: number | null
+          pct_poverty: number | null
+          pct_renter_occupied: number | null
+          pct_two_or_more: number | null
+          pct_uninsured: number | null
+          pct_veterans: number | null
+          pct_white: number | null
+          pct_with_computer: number | null
+          pct_with_health_insurance: number | null
+          pct_with_internet: number | null
+          per_capita_income: number | null
+          pop_18_to_24: number | null
+          pop_25_to_34: number | null
+          pop_35_to_44: number | null
+          pop_45_to_54: number | null
+          pop_5_to_17: number | null
+          pop_55_to_64: number | null
+          pop_65_to_74: number | null
+          pop_75_plus: number | null
+          pop_female: number | null
+          pop_male: number | null
+          pop_under_5: number | null
+          state_abbr: string
+          total_housing_units: number | null
+          total_population: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          acs_vintage?: number
+          county_name: string
+          created_at?: string | null
+          fips_full: string
+          id?: number
+          median_age?: number | null
+          median_gross_rent?: number | null
+          median_home_value?: number | null
+          median_household_income?: number | null
+          pct_asian?: number | null
+          pct_bachelors_or_higher?: number | null
+          pct_black?: number | null
+          pct_disability?: number | null
+          pct_employed?: number | null
+          pct_english_only?: number | null
+          pct_foreign_born?: number | null
+          pct_high_school_or_higher?: number | null
+          pct_hispanic?: number | null
+          pct_native?: number | null
+          pct_owner_occupied?: number | null
+          pct_poverty?: number | null
+          pct_renter_occupied?: number | null
+          pct_two_or_more?: number | null
+          pct_uninsured?: number | null
+          pct_veterans?: number | null
+          pct_white?: number | null
+          pct_with_computer?: number | null
+          pct_with_health_insurance?: number | null
+          pct_with_internet?: number | null
+          per_capita_income?: number | null
+          pop_18_to_24?: number | null
+          pop_25_to_34?: number | null
+          pop_35_to_44?: number | null
+          pop_45_to_54?: number | null
+          pop_5_to_17?: number | null
+          pop_55_to_64?: number | null
+          pop_65_to_74?: number | null
+          pop_75_plus?: number | null
+          pop_female?: number | null
+          pop_male?: number | null
+          pop_under_5?: number | null
+          state_abbr: string
+          total_housing_units?: number | null
+          total_population?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          acs_vintage?: number
+          county_name?: string
+          created_at?: string | null
+          fips_full?: string
+          id?: number
+          median_age?: number | null
+          median_gross_rent?: number | null
+          median_home_value?: number | null
+          median_household_income?: number | null
+          pct_asian?: number | null
+          pct_bachelors_or_higher?: number | null
+          pct_black?: number | null
+          pct_disability?: number | null
+          pct_employed?: number | null
+          pct_english_only?: number | null
+          pct_foreign_born?: number | null
+          pct_high_school_or_higher?: number | null
+          pct_hispanic?: number | null
+          pct_native?: number | null
+          pct_owner_occupied?: number | null
+          pct_poverty?: number | null
+          pct_renter_occupied?: number | null
+          pct_two_or_more?: number | null
+          pct_uninsured?: number | null
+          pct_veterans?: number | null
+          pct_white?: number | null
+          pct_with_computer?: number | null
+          pct_with_health_insurance?: number | null
+          pct_with_internet?: number | null
+          per_capita_income?: number | null
+          pop_18_to_24?: number | null
+          pop_25_to_34?: number | null
+          pop_35_to_44?: number | null
+          pop_45_to_54?: number | null
+          pop_5_to_17?: number | null
+          pop_55_to_64?: number | null
+          pop_65_to_74?: number | null
+          pop_75_plus?: number | null
+          pop_female?: number | null
+          pop_male?: number | null
+          pop_under_5?: number | null
+          state_abbr?: string
+          total_housing_units?: number | null
+          total_population?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cl_docket_map: {
+        Row: {
+          case_name: string | null
+          cl_court: string | null
+          cl_docket_id: number
+          created_at: string | null
+          docket_number: string | null
+          id: number
+          mdl_number: number
+        }
+        Insert: {
+          case_name?: string | null
+          cl_court?: string | null
+          cl_docket_id: number
+          created_at?: string | null
+          docket_number?: string | null
+          id?: never
+          mdl_number: number
+        }
+        Update: {
+          case_name?: string | null
+          cl_court?: string | null
+          cl_docket_id?: number
+          created_at?: string | null
+          docket_number?: string | null
+          id?: never
+          mdl_number?: number
+        }
+        Relationships: []
+      }
+      county_msa_crosswalk: {
+        Row: {
+          cbsa_code: string | null
+          cbsa_title: string | null
+          cbsa_type: string | null
+          central_outlying: string | null
+          county_name: string
+          created_at: string | null
+          csa_code: string | null
+          csa_title: string | null
+          fips_county: string
+          fips_full: string
+          fips_state: string
+          id: number
+          metro_division_code: string | null
+          metro_division_title: string | null
+          state_abbr: string
+        }
+        Insert: {
+          cbsa_code?: string | null
+          cbsa_title?: string | null
+          cbsa_type?: string | null
+          central_outlying?: string | null
+          county_name: string
+          created_at?: string | null
+          csa_code?: string | null
+          csa_title?: string | null
+          fips_county: string
+          fips_full: string
+          fips_state: string
+          id?: number
+          metro_division_code?: string | null
+          metro_division_title?: string | null
+          state_abbr: string
+        }
+        Update: {
+          cbsa_code?: string | null
+          cbsa_title?: string | null
+          cbsa_type?: string | null
+          central_outlying?: string | null
+          county_name?: string
+          created_at?: string | null
+          csa_code?: string | null
+          csa_title?: string | null
+          fips_county?: string
+          fips_full?: string
+          fips_state?: string
+          id?: number
+          metro_division_code?: string | null
+          metro_division_title?: string | null
+          state_abbr?: string
         }
         Relationships: []
       }
@@ -551,6 +1051,126 @@ export type Database = {
         }
         Relationships: []
       }
+      geo_targets: {
+        Row: {
+          created_at: string
+          geo_code: string
+          geo_name: string
+          geo_type: string
+          id: string
+          population: number | null
+          state_abbr: string | null
+        }
+        Insert: {
+          created_at?: string
+          geo_code: string
+          geo_name: string
+          geo_type: string
+          id?: string
+          population?: number | null
+          state_abbr?: string | null
+        }
+        Update: {
+          created_at?: string
+          geo_code?: string
+          geo_name?: string
+          geo_type?: string
+          id?: string
+          population?: number | null
+          state_abbr?: string | null
+        }
+        Relationships: []
+      }
+      google_trends_observations: {
+        Row: {
+          created_at: string
+          data_type: string
+          id: string
+          interest_value: number | null
+          keyword: string
+          observed_at: string
+          period_label: string | null
+          raw_json: string | null
+          region_code: string
+          region_name: string
+          tort_id: string | null
+          tort_slug: string
+        }
+        Insert: {
+          created_at?: string
+          data_type: string
+          id?: string
+          interest_value?: number | null
+          keyword: string
+          observed_at?: string
+          period_label?: string | null
+          raw_json?: string | null
+          region_code?: string
+          region_name?: string
+          tort_id?: string | null
+          tort_slug: string
+        }
+        Update: {
+          created_at?: string
+          data_type?: string
+          id?: string
+          interest_value?: number | null
+          keyword?: string
+          observed_at?: string
+          period_label?: string | null
+          raw_json?: string | null
+          region_code?: string
+          region_name?: string
+          tort_id?: string | null
+          tort_slug?: string
+        }
+        Relationships: []
+      }
+      google_trends_related_queries: {
+        Row: {
+          created_at: string
+          display_value: string | null
+          extracted_value: number | null
+          id: string
+          keyword: string
+          link: string | null
+          observed_at: string
+          position: number | null
+          query_text: string
+          query_type: string
+          tort_id: string | null
+          tort_slug: string
+        }
+        Insert: {
+          created_at?: string
+          display_value?: string | null
+          extracted_value?: number | null
+          id?: string
+          keyword: string
+          link?: string | null
+          observed_at: string
+          position?: number | null
+          query_text: string
+          query_type: string
+          tort_id?: string | null
+          tort_slug: string
+        }
+        Update: {
+          created_at?: string
+          display_value?: string | null
+          extracted_value?: number | null
+          id?: string
+          keyword?: string
+          link?: string | null
+          observed_at?: string
+          position?: number | null
+          query_text?: string
+          query_type?: string
+          tort_id?: string | null
+          tort_slug?: string
+        }
+        Relationships: []
+      }
       jpml_snapshots: {
         Row: {
           case_name: string
@@ -737,6 +1357,60 @@ export type Database = {
           start_date?: string | null
           status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      mdl_attorneys: {
+        Row: {
+          attorney_name: string
+          cl_attorney_id: number | null
+          cl_docket_id: number | null
+          cl_org_id: number | null
+          created_at: string | null
+          email: string | null
+          fetched_at: string | null
+          firm_name: string | null
+          id: number
+          mdl_number: number
+          party_name: string | null
+          party_type: string | null
+          phone: string | null
+          role: string | null
+          source_url: string | null
+        }
+        Insert: {
+          attorney_name: string
+          cl_attorney_id?: number | null
+          cl_docket_id?: number | null
+          cl_org_id?: number | null
+          created_at?: string | null
+          email?: string | null
+          fetched_at?: string | null
+          firm_name?: string | null
+          id?: never
+          mdl_number: number
+          party_name?: string | null
+          party_type?: string | null
+          phone?: string | null
+          role?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          attorney_name?: string
+          cl_attorney_id?: number | null
+          cl_docket_id?: number | null
+          cl_org_id?: number | null
+          created_at?: string | null
+          email?: string | null
+          fetched_at?: string | null
+          firm_name?: string | null
+          id?: never
+          mdl_number?: number
+          party_name?: string | null
+          party_type?: string | null
+          phone?: string | null
+          role?: string | null
+          source_url?: string | null
         }
         Relationships: []
       }
@@ -933,6 +1607,440 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_configs: {
+        Row: {
+          alert_channel: string
+          alert_on_failure: boolean
+          created_at: string
+          description: string | null
+          enabled: boolean
+          expected_cron: string | null
+          id: string
+          max_runtime_minutes: number
+          owner: string | null
+          pipeline_name: string
+          retry_limit: number
+          source_domain: string
+          step_definitions: Json
+          updated_at: string
+        }
+        Insert: {
+          alert_channel?: string
+          alert_on_failure?: boolean
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          expected_cron?: string | null
+          id?: string
+          max_runtime_minutes?: number
+          owner?: string | null
+          pipeline_name: string
+          retry_limit?: number
+          source_domain: string
+          step_definitions?: Json
+          updated_at?: string
+        }
+        Update: {
+          alert_channel?: string
+          alert_on_failure?: boolean
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          expected_cron?: string | null
+          id?: string
+          max_runtime_minutes?: number
+          owner?: string | null
+          pipeline_name?: string
+          retry_limit?: number
+          source_domain?: string
+          step_definitions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pipeline_run_steps: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          metadata: Json
+          rows_in: number
+          rows_out: number
+          rows_rejected: number
+          run_id: string
+          started_at: string | null
+          status: string
+          step_name: string
+          step_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          rows_in?: number
+          rows_out?: number
+          rows_rejected?: number
+          run_id: string
+          started_at?: string | null
+          status?: string
+          step_name: string
+          step_order: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          rows_in?: number
+          rows_out?: number
+          rows_rejected?: number
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          step_name?: string
+          step_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_run_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_runs: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          duration_ms: number | null
+          error_summary: string | null
+          finished_at: string | null
+          id: string
+          metadata: Json
+          pipeline_name: string
+          retry_of: string | null
+          rows_ingested: number
+          rows_normalized: number
+          rows_rejected: number
+          rows_scored: number
+          source_domain: string
+          started_at: string | null
+          status: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_number?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_summary?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          pipeline_name: string
+          retry_of?: string | null
+          rows_ingested?: number
+          rows_normalized?: number
+          rows_rejected?: number
+          rows_scored?: number
+          source_domain: string
+          started_at?: string | null
+          status?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_summary?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          pipeline_name?: string
+          retry_of?: string | null
+          rows_ingested?: number
+          rows_normalized?: number
+          rows_rejected?: number
+          rows_scored?: number
+          source_domain?: string
+          started_at?: string | null
+          status?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_runs_pipeline_name_fkey"
+            columns: ["pipeline_name"]
+            isOneToOne: false
+            referencedRelation: "pipeline_configs"
+            referencedColumns: ["pipeline_name"]
+          },
+          {
+            foreignKeyName: "pipeline_runs_retry_of_fkey"
+            columns: ["retry_of"]
+            isOneToOne: false
+            referencedRelation: "pipeline_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      serp_results_normalized: {
+        Row: {
+          advertiser_entity_id: string | null
+          created_at: string
+          domain: string
+          fetched_at: string
+          id: string
+          link: string | null
+          page: number | null
+          position: number | null
+          query: string
+          raw_id: string | null
+          result_type: string
+          snippet: string | null
+          title: string | null
+          tort_slug: string | null
+        }
+        Insert: {
+          advertiser_entity_id?: string | null
+          created_at?: string
+          domain: string
+          fetched_at: string
+          id?: string
+          link?: string | null
+          page?: number | null
+          position?: number | null
+          query: string
+          raw_id?: string | null
+          result_type: string
+          snippet?: string | null
+          title?: string | null
+          tort_slug?: string | null
+        }
+        Update: {
+          advertiser_entity_id?: string | null
+          created_at?: string
+          domain?: string
+          fetched_at?: string
+          id?: string
+          link?: string | null
+          page?: number | null
+          position?: number | null
+          query?: string
+          raw_id?: string | null
+          result_type?: string
+          snippet?: string | null
+          title?: string | null
+          tort_slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_results_normalized_advertiser_entity_id_fkey"
+            columns: ["advertiser_entity_id"]
+            isOneToOne: false
+            referencedRelation: "advertiser_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serp_results_normalized_raw_id_fkey"
+            columns: ["raw_id"]
+            isOneToOne: false
+            referencedRelation: "serp_results_raw"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serp_results_normalized_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "ad_saturation_summary"
+            referencedColumns: ["tort_slug"]
+          },
+          {
+            foreignKeyName: "serp_results_normalized_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      serp_results_raw: {
+        Row: {
+          created_at: string
+          displayed_link: string | null
+          domain: string | null
+          fetched_at: string
+          id: string
+          link: string | null
+          page: number | null
+          position: number | null
+          query: string
+          raw_payload: Json | null
+          result_type: string
+          rich_attributes: Json | null
+          sitelinks: Json | null
+          snippet: string | null
+          source: string
+          title: string | null
+          tort_slug: string | null
+        }
+        Insert: {
+          created_at?: string
+          displayed_link?: string | null
+          domain?: string | null
+          fetched_at?: string
+          id?: string
+          link?: string | null
+          page?: number | null
+          position?: number | null
+          query: string
+          raw_payload?: Json | null
+          result_type: string
+          rich_attributes?: Json | null
+          sitelinks?: Json | null
+          snippet?: string | null
+          source?: string
+          title?: string | null
+          tort_slug?: string | null
+        }
+        Update: {
+          created_at?: string
+          displayed_link?: string | null
+          domain?: string | null
+          fetched_at?: string
+          id?: string
+          link?: string | null
+          page?: number | null
+          position?: number | null
+          query?: string
+          raw_payload?: Json | null
+          result_type?: string
+          rich_attributes?: Json | null
+          sitelinks?: Json | null
+          snippet?: string | null
+          source?: string
+          title?: string | null
+          tort_slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_results_raw_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "ad_saturation_summary"
+            referencedColumns: ["tort_slug"]
+          },
+          {
+            foreignKeyName: "serp_results_raw_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      serp_visibility_scores: {
+        Row: {
+          advertiser_entity_id: string | null
+          avg_position: number | null
+          created_at: string
+          domain: string
+          featured_snippet_count: number | null
+          id: string
+          local_pack_count: number | null
+          organic_appearances: number | null
+          paid_appearances: number | null
+          period_end: string
+          period_start: string
+          queries_tracked: number | null
+          top_10_count: number | null
+          top_3_count: number | null
+          tort_slug: string | null
+          total_appearances: number | null
+          updated_at: string
+          visibility_score: number | null
+        }
+        Insert: {
+          advertiser_entity_id?: string | null
+          avg_position?: number | null
+          created_at?: string
+          domain: string
+          featured_snippet_count?: number | null
+          id?: string
+          local_pack_count?: number | null
+          organic_appearances?: number | null
+          paid_appearances?: number | null
+          period_end: string
+          period_start: string
+          queries_tracked?: number | null
+          top_10_count?: number | null
+          top_3_count?: number | null
+          tort_slug?: string | null
+          total_appearances?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Update: {
+          advertiser_entity_id?: string | null
+          avg_position?: number | null
+          created_at?: string
+          domain?: string
+          featured_snippet_count?: number | null
+          id?: string
+          local_pack_count?: number | null
+          organic_appearances?: number | null
+          paid_appearances?: number | null
+          period_end?: string
+          period_start?: string
+          queries_tracked?: number | null
+          top_10_count?: number | null
+          top_3_count?: number | null
+          tort_slug?: string | null
+          total_appearances?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_visibility_scores_advertiser_entity_id_fkey"
+            columns: ["advertiser_entity_id"]
+            isOneToOne: false
+            referencedRelation: "advertiser_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serp_visibility_scores_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "ad_saturation_summary"
+            referencedColumns: ["tort_slug"]
+          },
+          {
+            foreignKeyName: "serp_visibility_scores_tort_slug_fkey"
+            columns: ["tort_slug"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       storm_events: {
         Row: {
           begin_date_time: string | null
@@ -1097,16 +2205,229 @@ export type Database = {
           },
         ]
       }
+      torts: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          label: string
+          slug: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          slug: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          slug?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      ad_saturation_summary: {
+        Row: {
+          computed_at: string | null
+          estimated_impressions: number | null
+          estimated_spend: number | null
+          format_breakdown: Json | null
+          geo_code: string | null
+          geo_name: string | null
+          geo_population: number | null
+          geo_target_id: string | null
+          geo_type: string | null
+          id: string | null
+          period_end: string | null
+          period_start: string | null
+          saturation_score: number | null
+          spend_rank: number | null
+          state_abbr: string | null
+          top_advertisers: Json | null
+          tort_category: string | null
+          tort_id: string | null
+          tort_label: string | null
+          tort_slug: string | null
+          total_advertisers: number | null
+          total_creatives: number | null
+          total_observations: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_saturation_scores_geo_target_id_fkey"
+            columns: ["geo_target_id"]
+            isOneToOne: false
+            referencedRelation: "geo_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_saturation_scores_tort_id_fkey"
+            columns: ["tort_id"]
+            isOneToOne: false
+            referencedRelation: "torts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      msa_demographics: {
+        Row: {
+          cbsa_code: string | null
+          cbsa_title: string | null
+          cbsa_type: string | null
+          county_count: number | null
+          median_age: number | null
+          median_gross_rent: number | null
+          median_home_value: number | null
+          median_household_income: number | null
+          pct_asian: number | null
+          pct_bachelors_or_higher: number | null
+          pct_black: number | null
+          pct_employed: number | null
+          pct_high_school_or_higher: number | null
+          pct_hispanic: number | null
+          pct_owner_occupied: number | null
+          pct_poverty: number | null
+          pct_uninsured: number | null
+          pct_white: number | null
+          pct_with_internet: number | null
+          per_capita_income: number | null
+          total_housing_units: number | null
+          total_population: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_ad_saturation_windowed:
+        | {
+            Args: {
+              p_state?: string
+              p_tort_slug?: string
+              p_window_end: string
+              p_window_start: string
+            }
+            Returns: {
+              estimated_spend: number
+              geo_code: string
+              geo_name: string
+              geo_population: number
+              geo_target_id: string
+              geo_type: string
+              saturation_score: number
+              state_abbr: string
+              tort_category: string
+              tort_id: string
+              tort_label: string
+              tort_slug: string
+              total_advertisers: number
+              total_creatives: number
+              total_observations: number
+            }[]
+          }
+        | {
+            Args: {
+              p_source?: string
+              p_state?: string
+              p_tort_slug?: string
+              p_window_end: string
+              p_window_start: string
+            }
+            Returns: {
+              estimated_spend: number
+              geo_code: string
+              geo_name: string
+              geo_population: number
+              geo_target_id: string
+              geo_type: string
+              saturation_score: number
+              state_abbr: string
+              tort_category: string
+              tort_id: string
+              tort_label: string
+              tort_slug: string
+              total_advertisers: number
+              total_creatives: number
+              total_observations: number
+            }[]
+          }
+      get_advertiser_competitive_summary:
+        | {
+            Args: { p_state_abbr?: string; p_tort_slug?: string }
+            Returns: {
+              advertiser_name: string
+              entity_type: string
+              market_count: number
+              segment: string
+              tort_count: number
+              total_creatives: number
+              total_observations: number
+              total_spend: number
+            }[]
+          }
+        | {
+            Args: {
+              p_source?: string
+              p_state_abbr?: string
+              p_tort_slug?: string
+            }
+            Returns: {
+              advertiser_name: string
+              entity_type: string
+              market_count: number
+              segment: string
+              tort_count: number
+              total_creatives: number
+              total_observations: number
+              total_spend: number
+            }[]
+          }
+      get_advertiser_platforms: {
+        Args: { p_source?: string; p_state_abbr?: string; p_tort_slug?: string }
+        Returns: {
+          advertiser_id: string
+          advertiser_name: string
+          platforms: string[]
+        }[]
+      }
+      get_advertiser_segments: {
+        Args: { p_tort_slug?: string }
+        Returns: {
+          advertiser_name: string
+          entity_type: string
+          geo_name: string
+          market_count: number
+          segment: string
+          tort_slug: string
+          total_creatives: number
+          total_spend: number
+        }[]
+      }
       get_boating_counties_by_state: {
         Args: { state_abbr: string }
         Returns: {
           county_fips: number
           county_name: string
+        }[]
+      }
+      get_boating_counties_by_state_name: {
+        Args: { state_abbr: string }
+        Returns: {
+          county_name: string
+          total_accidents: number
+        }[]
+      }
+      get_boating_county_trend: {
+        Args: { filter_county_name: string; filter_state: string }
+        Returns: {
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          year: number
         }[]
       }
       get_boating_distinct_states: {
@@ -1115,8 +2436,44 @@ export type Database = {
           state: string
         }[]
       }
+      get_boating_hotspot_counties: {
+        Args: { filter_state?: string; top_n?: number }
+        Returns: {
+          avg_lat: number
+          avg_lng: number
+          county_name: string
+          state: string
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
+      get_boating_severity_stats: {
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
+        Returns: {
+          avg_deaths_per_accident: number
+          avg_injuries_per_accident: number
+          fatality_rate: number
+          pct_fatal: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
+      get_boating_severity_stats_by_waterbody: {
+        Args: { filter_waterbody_id: number }
+        Returns: {
+          avg_deaths_per_accident: number
+          avg_injuries_per_accident: number
+          fatality_rate: number
+          pct_fatal: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
       get_boating_totals: {
-        Args: { filter_county?: number; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
         Returns: {
           total_accidents: number
           total_deaths: number
@@ -1124,7 +2481,38 @@ export type Database = {
         }[]
       }
       get_boating_trend_by_year: {
-        Args: { filter_county?: number; filter_state?: string }
+        Args: { filter_county_name?: string; filter_state?: string; filter_waterbody_id?: number }
+        Returns: {
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          year: number
+        }[]
+      }
+      get_boating_hotspot_waterbodies: {
+        Args: { filter_state?: string; top_n?: number }
+        Returns: {
+          avg_lat: number
+          avg_lng: number
+          total_accidents: number
+          total_deaths: number
+          total_injuries: number
+          waterbody_id: number
+          waterbody_name: string
+          waterbody_type: string
+        }[]
+      }
+      get_boating_waterbodies_by_state: {
+        Args: { state_abbr: string }
+        Returns: {
+          total_accidents: number
+          waterbody_id: number
+          waterbody_name: string
+          waterbody_type: string
+        }[]
+      }
+      get_boating_waterbody_trend: {
+        Args: { filter_waterbody_id: number }
         Returns: {
           total_accidents: number
           total_deaths: number
@@ -1258,6 +2646,26 @@ export type Database = {
           state: string
         }[]
       }
+      get_mdl_attorney_scorecard: {
+        Args: { p_mdl_number: number }
+        Returns: {
+          plaintiff_firms: number
+          total_attorneys: number
+          total_firms: number
+          total_parties: number
+        }[]
+      }
+      get_mdl_firm_summary: {
+        Args: { p_mdl_number: number }
+        Returns: {
+          attorney_count: number
+          attorneys: string[]
+          firm_name: string
+          party_count: number
+          roles: string[]
+          sample_parties: string[]
+        }[]
+      }
       get_pi_viability_scores: {
         Args: { filter_state?: string }
         Returns: {
@@ -1285,6 +2693,46 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_segment_summary:
+        | {
+            Args: { p_tort_slug?: string }
+            Returns: {
+              advertiser_count: number
+              avg_spend_per_advertiser: number
+              segment: string
+              total_creatives: number
+              total_spend: number
+            }[]
+          }
+        | {
+            Args: { p_source?: string; p_tort_slug?: string }
+            Returns: {
+              advertiser_count: number
+              avg_spend_per_advertiser: number
+              segment: string
+              total_creatives: number
+              total_spend: number
+            }[]
+          }
+      get_serp_visibility_windowed: {
+        Args: { p_end_date: string; p_start_date: string; p_tort_slug?: string }
+        Returns: {
+          advertiser_entity_id: string
+          advertiser_name: string
+          avg_position: number
+          domain: string
+          featured_snippet_count: number
+          local_pack_count: number
+          organic_appearances: number
+          paid_appearances: number
+          queries_tracked: number
+          top_10_count: number
+          top_3_count: number
+          tort_slug: string
+          total_appearances: number
+          visibility_score: number
+        }[]
+      }
       get_state_opportunity_scores: {
         Args: never
         Returns: {
@@ -1299,9 +2747,9 @@ export type Database = {
       }
       get_storm_counties_by_state: {
         Args: {
-          filter_event_type?: string | null
+          filter_event_type?: string
           filter_state: string
-          filter_year?: number | null
+          filter_year?: number
         }
         Returns: {
           county_fips: number
@@ -1324,9 +2772,9 @@ export type Database = {
       }
       get_storm_event_totals: {
         Args: {
-          filter_event_type?: string | null
-          filter_state?: string | null
-          filter_year?: number | null
+          filter_event_type?: string
+          filter_state?: string
+          filter_year?: number
         }
         Returns: {
           total_deaths: number
@@ -1336,7 +2784,7 @@ export type Database = {
         }[]
       }
       get_storm_event_trend_by_year: {
-        Args: { filter_event_type?: string | null; filter_state?: string | null }
+        Args: { filter_event_type?: string; filter_state?: string }
         Returns: {
           total_events: number
           total_property_damage: number
@@ -1345,9 +2793,9 @@ export type Database = {
       }
       get_storm_events_by_state: {
         Args: {
-          filter_event_type?: string | null
-          filter_state?: string | null
-          filter_year?: number | null
+          filter_event_type?: string
+          filter_state?: string
+          filter_year?: number
         }
         Returns: {
           state: string
@@ -1359,7 +2807,7 @@ export type Database = {
         }[]
       }
       get_storm_events_by_type: {
-        Args: { filter_state?: string | null; filter_year?: number | null }
+        Args: { filter_state?: string; filter_year?: number }
         Returns: {
           event_type: string
           total_events: number
@@ -1368,18 +2816,54 @@ export type Database = {
       }
       get_storm_heatmap_points: {
         Args: {
-          filter_event_type?: string | null
-          filter_state?: string | null
-          filter_year?: number | null
+          filter_event_type?: string
+          filter_state?: string
+          filter_year?: number
         }
         Returns: {
           latitude: number
           longitude: number
         }[]
       }
+      get_top_advertisers_by_segment:
+        | {
+            Args: { p_limit?: number; p_tort_slug?: string }
+            Returns: {
+              advertiser_name: string
+              entity_type: string
+              market_count: number
+              segment: string
+              total_creatives: number
+              total_spend: number
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; p_source?: string; p_tort_slug?: string }
+            Returns: {
+              advertiser_name: string
+              entity_type: string
+              market_count: number
+              segment: string
+              total_creatives: number
+              total_spend: number
+            }[]
+          }
+      get_tort_market_advertisers: {
+        Args: { p_geo_target_id: string; p_tort_id: string }
+        Returns: {
+          advertiser_id: string
+          advertiser_name: string
+          entity_type: string
+          segment: string
+          spend_share_pct: number
+          total_creatives: number
+          total_observations: number
+          total_spend: number
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      advertiser_segment: "on_docket" | "off_docket" | "aggregator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1506,6 +2990,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      advertiser_segment: ["on_docket", "off_docket", "aggregator"],
+    },
   },
 } as const

@@ -271,6 +271,105 @@ export async function getUrbanRuralStats(
   }
 }
 
+export interface FarsCountyHotspot {
+  county_fips: number;
+  county_name: string;
+  state: string;
+  total_crashes: number;
+  total_fatalities: number;
+  drunk_driving_crashes: number;
+  pct_drunk: number;
+  avg_fatalities_per_crash: number;
+}
+
+export interface MvPoiTarget {
+  poi_id: number;
+  poi_name: string;
+  category: string;
+  lat: number;
+  lng: number;
+  state: string;
+  county_name: string | null;
+  website: string | null;
+  nearby_crashes: number;
+  nearby_fatalities: number;
+  nearby_drunk: number;
+  ad_value_score: number;
+}
+
+export interface MvPoiCategory {
+  category: string;
+  count: number;
+}
+
+/** Top counties by crash volume within a state (via RPC) */
+export async function getCountyHotspots(
+  state: string,
+  limit = 20
+): Promise<FarsCountyHotspot[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_fars_county_hotspots", {
+      p_state: state,
+      p_limit: limit,
+    } as never)
+    .throwOnError();
+  return ((data ?? []) as FarsCountyHotspot[]).map((row) => ({
+    county_fips: Number(row.county_fips),
+    county_name: row.county_name ?? "",
+    state: row.state ?? "",
+    total_crashes: Number(row.total_crashes),
+    total_fatalities: Number(row.total_fatalities),
+    drunk_driving_crashes: Number(row.drunk_driving_crashes),
+    pct_drunk: Number(row.pct_drunk),
+    avg_fatalities_per_crash: Number(row.avg_fatalities_per_crash),
+  }));
+}
+
+/** Motor-vehicle POI advertising targets (via RPC) */
+export async function getMvPoiTargets(
+  state?: string,
+  category?: string
+): Promise<MvPoiTarget[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_mv_poi_targets", {
+      p_state: state ?? null,
+      p_category: category ?? null,
+    } as never)
+    .throwOnError();
+  return ((data ?? []) as MvPoiTarget[]).map((row) => ({
+    poi_id: Number(row.poi_id),
+    poi_name: row.poi_name ?? "",
+    category: row.category ?? "",
+    lat: Number(row.lat),
+    lng: Number(row.lng),
+    state: row.state ?? "",
+    county_name: row.county_name ?? null,
+    website: row.website ?? null,
+    nearby_crashes: Number(row.nearby_crashes),
+    nearby_fatalities: Number(row.nearby_fatalities),
+    nearby_drunk: Number(row.nearby_drunk),
+    ad_value_score: Number(row.ad_value_score),
+  }));
+}
+
+/** Motor-vehicle POI categories with counts (via RPC) */
+export async function getMvPoiCategories(
+  state?: string
+): Promise<MvPoiCategory[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_mv_poi_categories", {
+      p_state: state ?? null,
+    } as never)
+    .throwOnError();
+  return ((data ?? []) as MvPoiCategory[]).map((row) => ({
+    category: row.category ?? "",
+    count: Number(row.count),
+  }));
+}
+
 export async function getCrashHeatmapPoints(
   filters?: FatalitiesFilters
 ): Promise<HeatmapPoint[]> {

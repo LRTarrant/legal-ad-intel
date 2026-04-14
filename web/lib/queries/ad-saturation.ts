@@ -101,6 +101,7 @@ export type SegmentSummary = {
 };
 
 export type TopAdvertiserBySegment = {
+  advertiser_id?: string | null;
   advertiser_name: string;
   segment: string;
   entity_type: string;
@@ -110,6 +111,7 @@ export type TopAdvertiserBySegment = {
 };
 
 export type AdvertiserCompetitiveSummary = {
+  advertiser_id?: string | null;
   advertiser_name: string;
   segment: string;
   entity_type: string;
@@ -118,6 +120,12 @@ export type AdvertiserCompetitiveSummary = {
   total_observations: number;
   tort_count: number;
   market_count: number;
+};
+
+export type AdvertiserPlatforms = {
+  advertiser_id: string | null;
+  advertiser_name: string | null;
+  platforms: string[];
 };
 
 export type AdSaturationWindowedRow = {
@@ -202,6 +210,25 @@ export async function getAdvertiserCompetitiveSummary(
     return [];
   }
   return (data ?? []) as AdvertiserCompetitiveSummary[];
+}
+
+export async function getAdvertiserPlatforms(
+  tortSlug?: string,
+  stateAbbr?: string,
+  source?: string
+): Promise<AdvertiserPlatforms[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_advertiser_platforms", {
+    p_tort_slug: tortSlug ?? null,
+    p_state_abbr: stateAbbr ?? null,
+    p_source: source ?? null,
+  });
+  if (error) {
+    console.error("Failed to fetch advertiser platforms:", error.message);
+    return [];
+  }
+  return (data ?? []) as AdvertiserPlatforms[];
 }
 
 export async function getTortMarketAdvertisers(

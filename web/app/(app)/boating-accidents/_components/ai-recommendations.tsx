@@ -1,0 +1,197 @@
+import {
+  MapPin,
+  Sun,
+  AlertTriangle,
+  Target,
+  TrendingUp,
+  Anchor,
+  Waves,
+  Store,
+} from "lucide-react";
+import type { BoatingHotspotCounty, BoatingHotspotWaterbody, BoatingSeverityStats, BoatingPoiTarget } from "@/lib/queries";
+
+type Recommendation = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+};
+
+type AIRecommendationsProps = {
+  hotspots: BoatingHotspotCounty[];
+  waterbodyHotspots: BoatingHotspotWaterbody[];
+  severity: BoatingSeverityStats;
+  selectedState: string | null;
+  selectedWaterbody: string | null;
+  nationalTotal: number;
+  stateTotal: number;
+  poiTargets?: BoatingPoiTarget[];
+};
+
+function generateRecommendations({
+  hotspots,
+  waterbodyHotspots,
+  severity,
+  selectedState,
+  selectedWaterbody,
+  nationalTotal,
+  stateTotal,
+  poiTargets: poiTargetsProp,
+}: AIRecommendationsProps): Recommendation[] {
+  const cards: Recommendation[] = [];
+
+  // 1. Hotspot targeting — top county
+  if (hotspots.length > 0) {
+    const top = hotspots[0];
+    cards.push({
+      icon: <MapPin className="h-5 w-5 text-intelligence-teal" />,
+      title: `Target ${top.county_name}, ${top.state}`,
+      description: `${top.county_name} recorded ${top.total_accidents.toLocaleString()} boating accidents with ${top.total_deaths.toLocaleString()} fatalities — target marinas, boat ramps, and marine dealers in this area for maximum reach.`,
+    });
+  }
+
+  // 2. Waterbody targeting — top waterbody (when state selected)
+  if (selectedState && waterbodyHotspots.length > 0 && !selectedWaterbody) {
+    const top = waterbodyHotspots[0];
+    cards.push({
+      icon: <Anchor className="h-5 w-5 text-intelligence-teal" />,
+      title: `Target ${top.waterbody_name}`,
+      description: `${top.waterbody_name} leads ${selectedState} with ${top.total_accidents.toLocaleString()} boating accidents — target marinas, boat ramps, and marine dealers along this ${top.waterbody_type} for maximum claimant reach.`,
+    });
+  }
+
+  // 3. Multi-waterbody concentration (top 3 > 40% of state)
+  if (selectedState && waterbodyHotspots.length >= 3 && stateTotal > 0 && !selectedWaterbody) {
+    const top3 = waterbodyHotspots.slice(0, 3);
+    const top3Total = top3.reduce((sum, w) => sum + w.total_accidents, 0);
+    const pct = (top3Total / stateTotal) * 100;
+    if (pct > 40) {
+      const names = top3.map((w) => w.waterbody_name).join(", ");
+      cards.push({
+        icon: <Waves className="h-5 w-5 text-intelligence-teal" />,
+        title: `Top 3 waterbodies = ${pct.toFixed(0)}% of ${selectedState}`,
+        description: `${names} account for ${pct.toFixed(0)}% of ${selectedState} boating accidents. Concentrate geo-targeted campaigns around these three waterbodies.`,
+      });
+    }
+  }
+
+  // 4. Waterbody-specific severity (when waterbody selected and fatality rate is notable)
+  if (selectedWaterbody && severity.fatality_rate > 3) {
+    cards.push({
+      icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+      title: `${selectedWaterbody} — high fatality rate`,
+      description: `${selectedWaterbody} has a ${severity.fatality_rate.toFixed(1)}% fatality rate — significantly above average. Emphasize wrongful death and survivor benefit messaging for this market.`,
+    });
+  }
+
+  // 5. POI targeting — top advertising target
+  const poiTargets = poiTargetsProp ?? [];
+  if (poiTargets.length > 0) {
+    const top = poiTargets[0];
+    const categoryLabel: Record<string, string> = {
+      marina: "marina",
+      boat_ramp: "boat ramp",
+      marine_dealer: "marine dealer",
+      fuel_dock: "fuel dock",
+    };
+    cards.push({
+      icon: <Store className="h-5 w-5 text-intelligence-teal" />,
+      title: `Target ${top.poi_name}`,
+      description: `${top.poi_name} (${categoryLabel[top.category] ?? top.category}) in ${top.state} has an ad value score of ${top.ad_value_score.toLocaleString()} with ${top.nearby_incidents.toLocaleString()} boating incidents nearby — a high-value location for geo-targeted legal advertising.`,
+    });
+  }
+
+  // 6. Seasonal timing (generic — monthly data unavailable)
+  cards.push({
+    icon: <Sun className="h-5 w-5 text-intelligence-teal" />,
+    title: "Plan campaigns for peak boating season",
+    description:
+      "Boating injuries peak from May through September. Schedule ad flights to coincide with summer boating activity when injury rates are highest and claimant volume is greatest.",
+  });
+
+  // 7. Severity-based messaging (skip if waterbody-specific card already shown)
+  if (!selectedWaterbody) {
+    if (severity.fatality_rate > 3) {
+      cards.push({
+        icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+        title: "High fatality rate — focus on wrongful death cases",
+        description: `The ${severity.fatality_rate.toFixed(1)}% fatality rate indicates a significant proportion of accidents involve deaths. Consider messaging around wrongful death claims, survivor benefits, and family compensation.`,
+      });
+    } else if (severity.pct_fatal > 5) {
+      cards.push({
+        icon: <AlertTriangle className="h-5 w-5 text-intelligence-teal" />,
+        title: "Meaningful fatal accident share",
+        description: `${severity.pct_fatal.toFixed(1)}% of boating accidents result in at least one death. Include wrongful death practice areas alongside personal injury in campaign targeting.`,
+      });
+    }
+  }
+
+  // 8. Geographic concentration
+  if (hotspots.length >= 5) {
+    const top5Total = hotspots
+      .slice(0, 5)
+      .reduce((sum, h) => sum + h.total_accidents, 0);
+    const compareTotal = selectedState ? stateTotal : nationalTotal;
+    if (compareTotal > 0) {
+      const pctConcentrated = (top5Total / compareTotal) * 100;
+      if (pctConcentrated > 30) {
+        cards.push({
+          icon: <Target className="h-5 w-5 text-intelligence-teal" />,
+          title: `Top 5 counties = ${pctConcentrated.toFixed(0)}% of accidents`,
+          description: `The top 5 counties account for ${pctConcentrated.toFixed(0)}% of ${selectedState ? `${selectedState}'s` : "all"} boating accidents. Concentrate geo-targeted advertising in these counties for efficient budget allocation.`,
+        });
+      }
+    }
+  }
+
+  // 9. Scale opportunity — state vs national
+  if (selectedState && nationalTotal > 0 && stateTotal > 0) {
+    const pctOfNational = (stateTotal / nationalTotal) * 100;
+    cards.push({
+      icon: <TrendingUp className="h-5 w-5 text-intelligence-teal" />,
+      title: `${selectedState} = ${pctOfNational.toFixed(1)}% of national market`,
+      description: `${selectedState} accounts for ${stateTotal.toLocaleString()} of ${nationalTotal.toLocaleString()} boating accidents nationwide (${pctOfNational.toFixed(1)}%). ${pctOfNational > 10 ? "This is a major market — justify premium ad spend." : "Consider multi-state campaigns for scale."}`,
+    });
+  }
+
+  return cards;
+}
+
+export function AIRecommendations(props: AIRecommendationsProps) {
+  const recommendations = generateRecommendations(props);
+
+  if (recommendations.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="font-heading text-xl font-semibold text-midnight-navy">
+          Advertising Intelligence
+        </h2>
+        <p className="mt-1 text-sm text-slate-gray">
+          Data-driven recommendations based on boating accident patterns
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {recommendations.map((rec) => (
+          <div
+            key={rec.title}
+            className="rounded-xl border-l-4 border-intelligence-teal bg-white p-5 shadow-sm"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 shrink-0">{rec.icon}</div>
+              <div>
+                <h3 className="font-heading text-sm font-semibold text-midnight-navy">
+                  {rec.title}
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-gray">
+                  {rec.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
