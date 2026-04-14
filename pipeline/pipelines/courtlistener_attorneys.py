@@ -282,7 +282,7 @@ def _extract_from_contact_block(contact: str | None, field: str) -> str | None:
         return None
     # CourtListener contact blocks commonly place firm/org as the first line.
     if field == "firm":
-        return lines[0]
+        return next((ln for ln in lines if not ln.lstrip().startswith(("Phone", "Fax", "Tel", "Email", "(")) and not ln.lstrip()[:1].isdigit()), lines[0])
     return None
 
 
@@ -299,7 +299,7 @@ def _extract_firm_name(party_attorney: dict, attorney_payload: dict | None, deta
     )
 
     for container in candidate_containers:
-        contact = container.get("contact") if isinstance(container, dict) else None
+        contact = (container.get("contact") or container.get("contact_raw")) if isinstance(container, dict) else None
         firm_from_contact = _extract_from_contact_block(contact, "firm")
         if firm_from_contact:
             return firm_from_contact
