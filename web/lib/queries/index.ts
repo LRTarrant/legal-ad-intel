@@ -43,6 +43,7 @@ export * from "./construction";
 export * from "./ad-saturation";
 export * from "./serp-visibility";
 export * from "./channel-fit";
+export * from "./advertiser-profiles";
 
 export {
   getMdlFirmSummary,

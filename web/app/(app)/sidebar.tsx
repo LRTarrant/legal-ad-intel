@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bike,
+  Building2,
   Car,
   ChevronDown,
   ChevronRight,
@@ -59,6 +60,7 @@ const topNavItems = [
 
 const advertisingPaths = [
   "/advertising/channel-planner",
+  "/advertising/advertisers",
   "/advertising/saturation",
   "/advertising/search-visibility",
   "/advertising/trends",
@@ -66,6 +68,7 @@ const advertisingPaths = [
 
 const advertisingItems = [
   { label: "Channel Planner", href: "/advertising/channel-planner", Icon: BarChart3 },
+  { label: "Advertiser Profiles", href: "/advertising/advertisers", Icon: Building2 },
   { label: "Ad Saturation", href: "/advertising/saturation", Icon: Radio },
   { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Search },
   { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
