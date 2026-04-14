@@ -387,7 +387,7 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
                 continue
 
             cl_attorney_id = attorney.get("id")
-            if not cl_attorney_id:
+            if cl_attorney_id is None:
                 continue
             cl_attorney_id = int(cl_attorney_id)
             if cl_attorney_id in seen_attorney_ids:
@@ -395,6 +395,8 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
             seen_attorney_ids.add(cl_attorney_id)
 
             attorney_name = _first_non_empty_str(attorney.get("name"))
+            if attorney_name is None:
+                continue
             firm_name = _extract_firm_name({}, attorney, attorney)
             role_int = representation.get("role") if isinstance(representation, dict) else None
             role_label = ROLE_MAP.get(role_int, f"Role {role_int}" if role_int is not None else None)
@@ -418,7 +420,7 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
                 continue
             attorney_payload = party_attorney.get("attorney") if isinstance(party_attorney.get("attorney"), dict) else {}
             cl_attorney_id = party_attorney.get("attorney_id") or attorney_payload.get("id")
-            if not cl_attorney_id:
+            if cl_attorney_id is None:
                 continue
             cl_attorney_id = int(cl_attorney_id)
             if cl_attorney_id in seen_attorney_ids:
@@ -429,6 +431,8 @@ def build_rows(mdl_number: int, cl_docket_id: int, parties: list[dict], attorney
                 attorney_payload.get("name"),
                 party_attorney.get("name"),
             )
+            if attorney_name is None:
+                continue
             firm_name = _extract_firm_name(party_attorney, attorney_payload, attorney_payload)
 
             role_int = party_attorney.get("role")
