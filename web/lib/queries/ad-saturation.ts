@@ -248,27 +248,6 @@ export async function getTortMarketAdvertisers(
   return (data ?? []) as TortMarketAdvertiser[];
 }
 
-export async function getAdvertiserPlatforms(
-  tortSlug?: string,
-  stateAbbr?: string
-): Promise<Record<string, string[]>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = getSupabase() as any;
-  const { data, error } = await sb.rpc("get_advertiser_platforms", {
-    p_tort_slug: tortSlug ?? null,
-    p_state_abbr: stateAbbr ?? null,
-  });
-  if (error) {
-    console.error("Failed to fetch advertiser platforms:", error.message);
-    return {};
-  }
-  const map: Record<string, string[]> = {};
-  for (const row of data ?? []) {
-    map[row.advertiser_name] = row.platforms ?? [];
-  }
-  return map;
-}
-
 export async function getDistinctAdSources(): Promise<string[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
