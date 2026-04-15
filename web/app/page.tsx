@@ -54,10 +54,10 @@ export default async function HomePage() {
       {/* ── Hero ────────────────────────────────────────── */}
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-16 text-center">
         <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-          [Hero headline — copy coming separately]
+          See where plaintiff firms are advertising — and where the best opportunities still are.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
-          [Subhead — copy coming separately]
+          Legal Marketing Intelligence tracks TV, CTV, radio, search, social, and display activity across U.S. markets, then layers in tort lifecycle, litigation momentum, and real-world demand signals so you can find less crowded opportunities and make smarter case-acquisition decisions.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <a
