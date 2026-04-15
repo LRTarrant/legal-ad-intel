@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { CreativeObservation, CreativeFilters } from "@/lib/queries";
 import { MethodologySources } from "../../components/methodology-sources";
+import { TortQuickStart } from "../../components/tort-quick-start";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -57,8 +58,25 @@ export function CreativesClient({
 
   const hasActiveFilter = firmFilter || channelFilter || tortFilter || marketFilter;
 
+  const QUICK_START_PRESETS = [
+    { label: "Social Media Addiction", value: "Social Media Youth Harm" },
+    { label: "Hair Relaxer", value: "Hair Relaxer" },
+  ];
+
   return (
     <>
+      {/* Quick Start */}
+      <TortQuickStart
+        presets={QUICK_START_PRESETS}
+        activeTort={tortFilter}
+        onSelect={(value) => {
+          setTortFilter(value);
+          setFirmFilter("");
+          setChannelFilter("");
+          setMarketFilter("");
+        }}
+      />
+
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg bg-white p-5 shadow-sm">

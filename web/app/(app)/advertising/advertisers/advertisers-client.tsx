@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { AdvertiserProfile, AdvertiserFilters } from "@/lib/queries";
 import { MethodologySources } from "../../components/methodology-sources";
+import { TortQuickStart } from "../../components/tort-quick-start";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -78,8 +79,23 @@ export function AdvertisersClient({
   const totalObservations = filteredProfiles.reduce((s, p) => s + p.total_observations, 0);
   const totalSpend = filteredProfiles.reduce((s, p) => s + p.total_spend, 0);
 
+  const QUICK_START_PRESETS = [
+    { label: "Social Media Addiction", value: "social_media_addiction" },
+    { label: "Hair Relaxer", value: "hair_relaxer" },
+  ];
+
   return (
     <>
+      {/* Quick Start */}
+      <TortQuickStart
+        presets={QUICK_START_PRESETS}
+        activeTort={tortFilter}
+        onSelect={(value) => {
+          setTortFilter(value);
+          setChannelFilter("");
+        }}
+      />
+
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-lg bg-white p-5 shadow-sm">

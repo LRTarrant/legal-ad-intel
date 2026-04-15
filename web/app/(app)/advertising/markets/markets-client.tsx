@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { MarketAdEvent, MarketFilters } from "@/lib/queries";
 import { MethodologySources } from "../../components/methodology-sources";
+import { TortQuickStart } from "../../components/tort-quick-start";
 
 type MarketRow = {
   market_name: string;
@@ -139,8 +140,24 @@ export function MarketsClient({
 
   const hasFilters = tortFilter || channelFilter || advertiserFilter;
 
+  const QUICK_START_PRESETS = [
+    { label: "Social Media Addiction", value: "Social Media Youth Harm" },
+    { label: "Hair Relaxer", value: "Hair Relaxer" },
+  ];
+
   return (
     <>
+      {/* Quick Start */}
+      <TortQuickStart
+        presets={QUICK_START_PRESETS}
+        activeTort={tortFilter}
+        onSelect={(value) => {
+          setTortFilter(value);
+          setChannelFilter("");
+          setAdvertiserFilter("");
+        }}
+      />
+
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg bg-white p-5 shadow-sm">

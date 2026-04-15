@@ -8,6 +8,7 @@ import type {
   ChannelMixRow,
 } from "@/lib/queries";
 import { MethodologySources } from "../../components/methodology-sources";
+import { TortQuickStart } from "../../components/tort-quick-start";
 import { getChannelMix } from "@/lib/queries/saturation-scores";
 
 /* ------------------------------------------------------------------ */
@@ -141,8 +142,25 @@ export function SaturationClient({
     [selectedRowId]
   );
 
+  const QUICK_START_PRESETS = [
+    { label: "Social Media Addiction", value: "9f733040-6666-428d-a763-f78beb419228" },
+    { label: "Hair Relaxer", value: "c5d329b5-1e31-4927-bcf2-58836bea25e7" },
+  ];
+
   return (
     <>
+      {/* Quick Start */}
+      <TortQuickStart
+        presets={QUICK_START_PRESETS}
+        activeTort={tortFilter}
+        onSelect={(value) => {
+          setTortFilter(value);
+          setMarketFilter("");
+          setSelectedRowId(null);
+          setChannelMix([]);
+        }}
+      />
+
       {/* Headline Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg bg-white p-5 shadow-sm">

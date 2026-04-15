@@ -20,6 +20,13 @@ const TORTS = [
   { id: "AUTO_INJURY", label: "Auto Injury" },
   { id: "TRUCK_ACCIDENT", label: "Truck Accident" },
   { id: "ROUNDUP", label: "Roundup" },
+  { id: "ca94471b-4d49-4bd7-b03e-a0dd595b7c6a", label: "Social Media Addiction" },
+  { id: "3da55112-adda-4ae9-b440-cd132780e980", label: "Hair Relaxer" },
+] as const;
+
+const QUICK_START_TORTS = [
+  { id: "ca94471b-4d49-4bd7-b03e-a0dd595b7c6a", label: "Social Media Addiction" },
+  { id: "3da55112-adda-4ae9-b440-cd132780e980", label: "Hair Relaxer" },
 ] as const;
 
 const MARKETS = [
@@ -481,6 +488,70 @@ function FullScoreTable({ scores, competitionMap }: { scores: ChannelFitScore[];
   );
 }
 
+function CompetitionOnlyTable({ competitionMap }: { competitionMap: Map<string, number> }) {
+  const entries = [...competitionMap.entries()]
+    .sort((a, b) => b[1] - a[1]);
+
+  return (
+    <section className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <Shield className="h-5 w-5 text-intelligence-teal" />
+        <h2 className="text-lg font-semibold text-midnight-navy">
+          Competition by Channel
+        </h2>
+      </div>
+
+      <table className="w-full">
+        <thead>
+          <tr className="border-b-2 border-cloud text-left text-xs font-semibold uppercase tracking-wider text-slate-gray">
+            <th className="pb-2 pr-4">Rank</th>
+            <th className="pb-2 pr-4">Channel</th>
+            <th className="pb-2 px-4">Competition</th>
+            <th className="pb-2 pl-4 text-right">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map(([channel, score], i) => {
+            const bucket = competitionBucket(score);
+            const pct = Math.round(score * 100);
+            return (
+              <tr key={channel} className="border-b border-cloud last:border-0">
+                <td className="py-2.5 pr-4 text-xs font-semibold text-slate-gray tabular-nums w-8">
+                  {i + 1}
+                </td>
+                <td className="py-2.5 pr-4 text-sm font-medium text-charcoal whitespace-nowrap">
+                  {channelLabel(channel)}
+                </td>
+                <td className="py-2.5 px-4 w-full">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 flex-1 rounded-full bg-cloud overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          bucket === "High" ? "bg-red-400" : bucket === "Medium" ? "bg-amber-400" : "bg-emerald-400"
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${competitionBadgeStyle(bucket)}`}
+                    >
+                      <Shield className="h-2.5 w-2.5" />
+                      {bucket}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-2.5 pl-4 text-right text-xs tabular-nums text-slate-gray whitespace-nowrap">
+                  {score.toFixed(2)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────────── */
 
 export default async function TestChannelFitPage({
@@ -560,6 +631,43 @@ export default async function TestChannelFitPage({
         </AdvertisingInsight>
       </div>
 
+      {/* Quick Start */}
+      <div className="mt-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+          Quick Start
+        </p>
+        <nav className="flex gap-2 flex-wrap">
+          {QUICK_START_TORTS.map((tort) => {
+            const isActive = tortId === tort.id;
+            const params = new URLSearchParams({
+              tort_id: tort.id,
+              market_id: marketId,
+            });
+            return (
+              <Link
+                key={tort.id}
+                href={`/advertising/channel-planner?${params.toString()}`}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-intelligence-teal text-white shadow-sm"
+                    : "bg-white text-charcoal hover:bg-cloud border border-cloud"
+                }`}
+              >
+                {tort.label}
+              </Link>
+            );
+          })}
+          {QUICK_START_TORTS.some((t) => t.id === tortId) && (
+            <Link
+              href={`/advertising/channel-planner?tort_id=${TORTS[0].id}&market_id=${marketId}`}
+              className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors bg-white text-charcoal hover:bg-cloud border border-cloud"
+            >
+              View All
+            </Link>
+          )}
+        </nav>
+      </div>
+
       {/* Selectors */}
       <div className="mt-5 space-y-3">
         <div>
@@ -591,10 +699,36 @@ export default async function TestChannelFitPage({
         <div className="mt-6 rounded-lg border border-alert/30 bg-alert/5 p-4 text-sm text-alert">
           <strong>Error:</strong> {errorMsg}
         </div>
-      ) : scores.length === 0 ? (
+      ) : scores.length === 0 && competitionMap.size === 0 ? (
         <p className="mt-6 text-sm text-slate-gray">
           No scores returned. Check seed data for {tortId} / {marketId}.
         </p>
+      ) : scores.length === 0 ? (
+        <div className="mt-6 space-y-6">
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800">
+            Audience-fit scoring is not yet available for this tort. Competition overlay data is shown below.
+          </div>
+
+          {/* Competition-only table */}
+          <CompetitionOnlyTable competitionMap={competitionMap} />
+
+          {/* Methodology & Sources */}
+          <MethodologySources
+            isPrototypeData
+            sections={[
+              {
+                title: "Competition / Saturation Scores",
+                content:
+                  "Competition scores are derived from real advertising activity in ad_events. For each market \u00d7 channel combination, the score reflects: (a) distinct advertiser count (60% weight) and (b) total estimated spend (40% weight), normalized against the global maximum and clamped to 0.05\u20130.95. Channel mapping: social \u2192 Facebook / Instagram / TikTok; TV \u2192 TV Linear; CTV \u2192 CTV Streaming; digital \u2192 YouTube; search and radio map directly. Podcast and print have no observed ad data yet. Scores refresh weekly via automated pipeline.",
+              },
+            ]}
+            limitations={[
+              "Competition scores depend on ad pipeline coverage \u2014 channels or markets with low observation counts may understate true competition.",
+              "Audience-fit scoring is not yet available for this tort type.",
+            ]}
+            dataNotice="Competition scores are derived from real advertising activity data collected via Meta Ad Library, Google Ads Transparency, TikTok Creative Center, and SERP monitoring pipelines."
+          />
+        </div>
       ) : (
         <div className="mt-6 space-y-6">
           {/* 1. Strategy Summary */}
