@@ -869,32 +869,44 @@ def classify_via_exclusion(
     # master docket), query a small set of their member dockets via the
     # authenticated parties endpoint to read contact_raw, which has the
     # attorney's actual firm.
+    #
+    # NOTE: CourtListener assigns DIFFERENT attorney_ids for the same person
+    # across dockets, so we match by normalized name, not by attorney_id.
     if CL_API_TOKEN and master_attorney_ids:
-        # For each leadership attorney, find a member docket they appear on
-        atty_to_member_dockets: dict[int, list[int]] = defaultdict(list)
+        # Build name -> registry keys for leadership attorneys
+        master_atty_names: dict[str, int] = {}  # normalized name -> registry aid
+        for aid in master_attorney_ids:
+            if aid in registry:
+                name = (registry[aid].get("attorney_name") or "").strip().lower()
+                if name:
+                    master_atty_names[name] = aid
+
+        # For each leadership attorney name, find member dockets they appear on
+        # (by matching attorney names in the search API data)
+        name_to_member_dockets: dict[str, list[int]] = defaultdict(list)
         for docket in member_dockets:
             docket_id = docket.get("docket_id")
             if docket_id == master_docket_id:
                 continue
-            for aid in docket.get("attorney_ids", []):
-                aid = int(aid)
-                if aid in master_attorney_ids:
-                    atty_to_member_dockets[aid].append(docket_id)
+            for aname in docket.get("attorney_names", []):
+                nkey = (aname or "").strip().lower()
+                if nkey in master_atty_names:
+                    name_to_member_dockets[nkey].append(docket_id)
 
         # Collect unique dockets to query (one per leadership attorney)
         dockets_to_query: set[int] = set()
-        atty_target_dockets: dict[int, int] = {}  # atty_id -> docket we'll query
-        for aid, dids in atty_to_member_dockets.items():
+        name_target_dockets: dict[str, int] = {}  # name -> docket we'll query
+        for nkey, dids in name_to_member_dockets.items():
             if dids:
                 target = dids[0]
                 dockets_to_query.add(target)
-                atty_target_dockets[aid] = target
+                name_target_dockets[nkey] = target
 
         if dockets_to_query:
             logger.info(
                 "Querying %d member dockets via parties endpoint to resolve "
-                "leadership attorney firms",
-                len(dockets_to_query),
+                "%d leadership attorney firms",
+                len(dockets_to_query), len(name_target_dockets),
             )
 
             # Fetch parties for each target docket and extract firm from contact_raw
@@ -903,7 +915,8 @@ def classify_via_exclusion(
                 docket_parties_cache[did] = _fetch_parties_for_docket(did)
 
             overrides = 0
-            for aid, target_did in atty_target_dockets.items():
+            for nkey, target_did in name_target_dockets.items():
+                reg_aid = master_atty_names[nkey]
                 parties = docket_parties_cache.get(target_did, [])
                 for party in parties:
                     for atty_entry in party.get("attorneys", []) or []:
@@ -912,21 +925,22 @@ def classify_via_exclusion(
                         atty_obj = atty_entry.get("attorney", {})
                         if not isinstance(atty_obj, dict):
                             continue
-                        if atty_obj.get("id") and int(atty_obj["id"]) == aid:
+                        party_atty_name = (atty_obj.get("name") or "").strip().lower()
+                        if party_atty_name == nkey:
                             real_firm = _extract_firm_from_attorney(atty_obj)
-                            if real_firm and aid in registry:
-                                old_firm = registry[aid].get("firm_name")
+                            if real_firm and reg_aid in registry:
+                                old_firm = registry[reg_aid].get("firm_name")
                                 normed_real = _normalize_firm(real_firm)
                                 if normed_real and normed_real != old_firm:
-                                    logger.debug(
+                                    logger.info(
                                         "Override firm for %s: %s -> %s",
-                                        registry[aid].get("attorney_name"),
+                                        registry[reg_aid].get("attorney_name"),
                                         old_firm, normed_real,
                                     )
-                                    registry[aid]["firm_name"] = normed_real
+                                    registry[reg_aid]["firm_name"] = normed_real
                                     overrides += 1
                                 elif normed_real and not old_firm:
-                                    registry[aid]["firm_name"] = normed_real
+                                    registry[reg_aid]["firm_name"] = normed_real
                                     overrides += 1
 
             logger.info(
