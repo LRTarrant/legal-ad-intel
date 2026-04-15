@@ -89,6 +89,17 @@ export default async function MdlTrackerPage({
         <p className="mt-1 text-slate-gray">
           Monthly MDL docket counts with trend and momentum tracking
         </p>
+        <p className="mt-1 text-sm text-slate-gray/50">
+          Source:{" "}
+          <a
+            href="https://www.jpml.uscourts.gov/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-intelligence-teal"
+          >
+            United States Judicial Panel on Multidistrict Litigation
+          </a>
+        </p>
       </div>
 
       <div id="filters" className="scroll-mt-16">
