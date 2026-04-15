@@ -114,7 +114,7 @@ export default async function StormEventsPage({
             Storm Events
           </h1>
           <p className="text-sm text-slate-gray">
-            NOAA Storm Events data &middot; 2019&ndash;2024 &middot; Source:
+            NOAA Storm Events data &middot; 2019&ndash;2025 &middot; Source:
             NOAA NCEI
           </p>
         </div>
@@ -166,7 +166,7 @@ export default async function StormEventsPage({
 
       <FatalitiesHeatmapPanel
         points={heatmapPoints}
-        title="Storm event locations · 2019–2024"
+        title="Storm event locations · 2019–2025"
       />
 
       {filters.state && counties.length > 0 && (

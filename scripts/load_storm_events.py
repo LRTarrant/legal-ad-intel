@@ -2,7 +2,7 @@
 """
 Load NOAA Storm Events detail data into Supabase.
 
-Downloads StormEvents CSV.gz files from NOAA for years 2019-2024,
+Downloads StormEvents CSV.gz files from NOAA for years 2019-2025,
 parses key fields, and upserts into the storm_events table.
 
 Usage:
@@ -37,7 +37,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUP
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 NOAA_BASE_URL = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/"
-YEARS = list(range(2019, 2025))  # 2019-2024
+YEARS = list(range(2019, 2026))  # 2019-2025
 
 
 def get_file_url(year: int) -> str:
