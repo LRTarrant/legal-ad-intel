@@ -9,6 +9,7 @@ import {
   Building2,
   Car,
   CloudLightning,
+  Eye,
   Gavel,
   HardHat,
   HeartPulse,
@@ -17,6 +18,7 @@ import {
   Radio,
   Scale,
   Sliders,
+  TrendingUp,
   Truck,
   Bike,
   Users,
@@ -36,9 +38,15 @@ type NavItem = {
   Icon: React.ComponentType<{ className?: string }>;
 };
 
-type NavGroup = {
+type NavSection = {
   heading: string;
   items: NavItem[];
+};
+
+type NavGroup = {
+  heading: string;
+  items?: NavItem[];
+  sections?: NavSection[];
 };
 
 const dataModules: NavGroup[] = [
@@ -71,6 +79,18 @@ const dataModules: NavGroup[] = [
     heading: "Audiences & Media Research",
     items: [
       { label: "Market Demographics", href: "/market-demographics", Icon: Users },
+    ],
+  },
+  {
+    heading: "Advertising Research",
+    sections: [
+      {
+        heading: "Search",
+        items: [
+          { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
+          { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Eye },
+        ],
+      },
     ],
   },
 ];
@@ -200,9 +220,21 @@ export function Sidebar() {
                 <p className="px-3 pb-1 text-[11px] font-medium text-white/50">
                   {group.heading}
                 </p>
-                <div className="flex flex-col gap-0.5 pl-2">
-                  {group.items.map((item) => renderNavLink(item))}
-                </div>
+                {group.items && (
+                  <div className="flex flex-col gap-0.5 pl-2">
+                    {group.items.map((item) => renderNavLink(item))}
+                  </div>
+                )}
+                {group.sections?.map((section) => (
+                  <div key={section.heading} className="mt-1">
+                    <p className="px-3 pl-5 pb-1 text-[10px] font-medium text-white/35">
+                      {section.heading}
+                    </p>
+                    <div className="flex flex-col gap-0.5 pl-2">
+                      {section.items.map((item) => renderNavLink(item))}
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
