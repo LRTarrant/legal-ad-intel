@@ -4,18 +4,20 @@ import {
   getStormEventsByType,
   getStormEventTrendByYear,
   getStormDistinctStates,
-  getStormDistinctYears,
   getStormDistinctEventTypes,
   getStormCountiesByState,
   getStormHeatmapPoints,
+  getRecentStormEvents,
   type StormFilters,
   type StormEventByState,
   type StormEventByType,
   type StormEventTrendByYear,
   type StormCounty,
   type HeatmapPoint,
+  type RecentStormEvent,
 } from "@/lib/queries";
-import { StormFilterBar } from "./storm-filter-bar";
+import { StormFilterBar, TIME_PERIOD_OPTIONS } from "./storm-filter-bar";
+import { RecentEventsPanel } from "./recent-events-panel";
 import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { CloudLightning } from "lucide-react";
@@ -28,7 +30,7 @@ export const metadata = {
 
 type SearchParams = Promise<{
   state?: string | string[];
-  year?: string | string[];
+  period?: string | string[];
   event_type?: string | string[];
 }>;
 
@@ -37,19 +39,35 @@ function getSingleValue(value: string | string[] | undefined): string | null {
   return value ?? null;
 }
 
+const PERIOD_TO_DAYS: Record<string, number> = {
+  "30d": 30,
+  "90d": 90,
+  "6m": 180,
+  "12m": 365,
+};
+
+function parsePeriod(raw: string | null): { year: number | null; days: number | null } {
+  if (!raw) return { year: null, days: null };
+  const trimmed = raw.trim();
+  if (PERIOD_TO_DAYS[trimmed] != null) {
+    return { year: null, days: PERIOD_TO_DAYS[trimmed] };
+  }
+  const asYear = Number.parseInt(trimmed, 10);
+  if (Number.isFinite(asYear) && asYear >= 2000 && asYear <= 2100) {
+    return { year: asYear, days: null };
+  }
+  return { year: null, days: null };
+}
+
 function parseFilters(
   rawState: string | null,
-  rawYear: string | null,
+  rawPeriod: string | null,
   rawEventType: string | null
 ): StormFilters {
   const state = rawState?.trim() || null;
-  const year = rawYear ? Number.parseInt(rawYear, 10) : null;
   const eventType = rawEventType?.trim() || null;
-  return {
-    state,
-    year: year != null && Number.isFinite(year) ? year : null,
-    eventType,
-  };
+  const { year, days } = parsePeriod(rawPeriod);
+  return { state, year, eventType, days };
 }
 
 function formatDamage(value: number): string {
@@ -59,12 +77,34 @@ function formatDamage(value: number): string {
   return `$${value.toLocaleString()}`;
 }
 
+function getPeriodLabel(filters: StormFilters): string {
+  if (filters.year) return String(filters.year);
+  if (filters.days) {
+    const match = TIME_PERIOD_OPTIONS.find(
+      (opt) => PERIOD_TO_DAYS[opt.value] === filters.days
+    );
+    return match?.label ?? `Last ${filters.days} days`;
+  }
+  return "All time";
+}
+
 function getFilterSummary(filters: StormFilters): string {
   const parts: string[] = [];
+  parts.push(getPeriodLabel(filters));
   if (filters.state) parts.push(filters.state);
-  if (filters.year) parts.push(String(filters.year));
   if (filters.eventType) parts.push(filters.eventType);
-  return parts.length > 0 ? parts.join(" · ") : "Nationwide · All years";
+  return parts.length > 0 ? parts.join(" · ") : "Nationwide · All time";
+}
+
+function getRecentSubtitle(filters: StormFilters): string {
+  const parts: string[] = [getPeriodLabel(filters)];
+  if (filters.state) {
+    parts.push(filters.state);
+  } else {
+    parts.push("Nationwide");
+  }
+  if (filters.eventType) parts.push(filters.eventType);
+  return parts.join(" · ");
 }
 
 export default async function StormEventsPage({
@@ -75,20 +115,20 @@ export default async function StormEventsPage({
   const params = await searchParams;
   const filters = parseFilters(
     getSingleValue(params.state),
-    getSingleValue(params.year),
+    getSingleValue(params.period),
     getSingleValue(params.event_type)
   );
 
-  const [totals, byState, byType, trend, states, years, eventTypes, rawHeatmapPoints] =
+  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints, recentEvents] =
     await Promise.all([
       getStormEventTotals(filters),
       getStormEventsByState(filters),
       getStormEventsByType(filters),
       getStormEventTrendByYear(filters),
       getStormDistinctStates(),
-      getStormDistinctYears(),
       getStormDistinctEventTypes(),
       getStormHeatmapPoints(filters),
+      getRecentStormEvents(filters),
     ]);
 
   const heatmapPoints: HeatmapPoint[] = rawHeatmapPoints.map((p) => ({
@@ -103,6 +143,7 @@ export default async function StormEventsPage({
   }
 
   const filterSummary = getFilterSummary(filters);
+  const recentSubtitle = getRecentSubtitle(filters);
 
   return (
     <div className="space-y-8">
@@ -122,7 +163,7 @@ export default async function StormEventsPage({
         </div>
       </div>
 
-      <StormFilterBar states={states} years={years} eventTypes={eventTypes} />
+      <StormFilterBar states={states} eventTypes={eventTypes} />
 
       <AdvertisingInsight>
         <p>
@@ -159,6 +200,8 @@ export default async function StormEventsPage({
           sub={filterSummary}
         />
       </div>
+
+      <RecentEventsPanel events={recentEvents} subtitle={recentSubtitle} />
 
       <StateTable rows={byState} />
 
