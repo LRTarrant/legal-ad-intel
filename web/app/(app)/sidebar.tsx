@@ -5,11 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Anchor,
   Building2,
+  Car,
+  Gavel,
+  HardHat,
+  HeartPulse,
   LayoutDashboard,
   MapPin,
   Radio,
   Sliders,
+  Truck,
+  Bike,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +32,36 @@ type NavItem = {
   href: string;
   Icon: React.ComponentType<{ className?: string }>;
 };
+
+type NavGroup = {
+  heading: string;
+  items: NavItem[];
+};
+
+const dataModules: NavGroup[] = [
+  {
+    heading: "Accident Intelligence",
+    items: [
+      { label: "Motor Vehicle", href: "/fatalities", Icon: Car },
+      { label: "Large Truck", href: "/large-truck-fatalities", Icon: Truck },
+      { label: "Motorcycle", href: "/motorcycle-fatalities", Icon: Bike },
+      { label: "Boating", href: "/boating-accidents", Icon: Anchor },
+      { label: "Construction / Job Site", href: "/construction", Icon: HardHat },
+    ],
+  },
+  {
+    heading: "Exposure & Health Signals",
+    items: [
+      { label: "Cancer Incidents", href: "/cancer-incidence", Icon: HeartPulse },
+    ],
+  },
+  {
+    heading: "Litigation Intelligence",
+    items: [
+      { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
+    ],
+  },
+];
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -141,6 +178,22 @@ export function Sidebar() {
 
         <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto no-scrollbar">
           {navItems.map((item) => renderNavLink(item))}
+
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              Data Modules
+            </p>
+            {dataModules.map((group) => (
+              <div key={group.heading} className="mb-3">
+                <p className="px-3 pb-1 text-[11px] font-medium text-white/50">
+                  {group.heading}
+                </p>
+                <div className="flex flex-col gap-0.5 pl-2">
+                  {group.items.map((item) => renderNavLink(item))}
+                </div>
+              </div>
+            ))}
+          </div>
         </nav>
 
         <div className="px-5 py-4">
