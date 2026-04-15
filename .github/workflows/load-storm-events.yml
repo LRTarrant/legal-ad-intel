@@ -1,10 +1,12 @@
 name: Load NOAA Storm Events
 
 on:
+  schedule:
+    - cron: '0 6 5 * *'
   workflow_dispatch:
     inputs:
       year:
-        description: 'Specific year to load (leave empty for all 2019-2024)'
+        description: 'Specific year to load (leave empty for all 2019-2025)'
         required: false
         type: string
       dry_run:
