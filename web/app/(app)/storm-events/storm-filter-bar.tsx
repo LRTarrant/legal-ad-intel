@@ -5,10 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type StormFilterBarProps = {
   states: string[];
+  years: number[];
   eventTypes: string[];
 };
 
-export function StormFilterBar({ states, eventTypes }: StormFilterBarProps) {
+export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -93,7 +94,7 @@ export function StormFilterBar({ states, eventTypes }: StormFilterBarProps) {
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
             <option value="">All years</option>
-            {[2019, 2020, 2021, 2022, 2023, 2024].map((y) => (
+            {years.map((y) => (
               <option key={y} value={y}>
                 {y}
               </option>

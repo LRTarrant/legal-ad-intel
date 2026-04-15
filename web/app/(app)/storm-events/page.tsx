@@ -4,6 +4,7 @@ import {
   getStormEventsByType,
   getStormEventTrendByYear,
   getStormDistinctStates,
+  getStormDistinctYears,
   getStormDistinctEventTypes,
   getStormCountiesByState,
   getStormHeatmapPoints,
@@ -78,13 +79,14 @@ export default async function StormEventsPage({
     getSingleValue(params.event_type)
   );
 
-  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints] =
+  const [totals, byState, byType, trend, states, years, eventTypes, rawHeatmapPoints] =
     await Promise.all([
       getStormEventTotals(filters),
       getStormEventsByState(filters),
       getStormEventsByType(filters),
       getStormEventTrendByYear(filters),
       getStormDistinctStates(),
+      getStormDistinctYears(),
       getStormDistinctEventTypes(),
       getStormHeatmapPoints(filters),
     ]);
@@ -120,7 +122,7 @@ export default async function StormEventsPage({
         </div>
       </div>
 
-      <StormFilterBar states={states} eventTypes={eventTypes} />
+      <StormFilterBar states={states} years={years} eventTypes={eventTypes} />
 
       <AdvertisingInsight>
         <p>
