@@ -915,9 +915,11 @@ def classify_via_exclusion(
                 docket_parties_cache[did] = _fetch_parties_for_docket(did)
 
             overrides = 0
+            matched = 0
             for nkey, target_did in name_target_dockets.items():
                 reg_aid = master_atty_names[nkey]
                 parties = docket_parties_cache.get(target_did, [])
+                found = False
                 for party in parties:
                     for atty_entry in party.get("attorneys", []) or []:
                         if not isinstance(atty_entry, dict):
@@ -927,6 +929,8 @@ def classify_via_exclusion(
                             continue
                         party_atty_name = (atty_obj.get("name") or "").strip().lower()
                         if party_atty_name == nkey:
+                            found = True
+                            matched += 1
                             real_firm = _extract_firm_from_attorney(atty_obj)
                             if real_firm and reg_aid in registry:
                                 old_firm = registry[reg_aid].get("firm_name")
@@ -942,10 +946,24 @@ def classify_via_exclusion(
                                 elif normed_real and not old_firm:
                                     registry[reg_aid]["firm_name"] = normed_real
                                     overrides += 1
+                                else:
+                                    logger.info(
+                                        "No change for %s: member-docket firm=%s, existing=%s",
+                                        registry[reg_aid].get("attorney_name"),
+                                        normed_real, old_firm,
+                                    )
+                            break
+                    if found:
+                        break
+                if not found:
+                    logger.info(
+                        "Attorney %s not found in parties for docket %d",
+                        nkey, target_did,
+                    )
 
             logger.info(
-                "Parties-endpoint override: %d leadership attorney firms corrected",
-                overrides,
+                "Parties-endpoint override: %d matched, %d firms corrected out of %d leadership attorneys",
+                matched, overrides, len(name_target_dockets),
             )
         else:
             logger.info(
