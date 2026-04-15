@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition } from "react";
+import { startTransition, useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { MdlReportDateOption } from "@/lib/queries";
 
@@ -18,6 +18,12 @@ export function MdlFilterBar({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [localSearch, setLocalSearch] = useState(search);
+  const [localMdl, setLocalMdl] = useState(mdl);
+
+  useEffect(() => { setLocalSearch(search); }, [search]);
+  useEffect(() => { setLocalMdl(mdl); }, [mdl]);
 
   function updateParams(next: { date?: string; search?: string; mdl?: string }) {
     const params = new URLSearchParams(searchParams.toString());
@@ -46,6 +52,16 @@ export function MdlFilterBar({
     });
   }
 
+  function clearAll() {
+    setLocalSearch("");
+    setLocalMdl("");
+    updateParams({ date: "", search: "", mdl: "" });
+  }
+
+  function commitSearch() {
+    updateParams({ date: selectedDate ?? "", search: localSearch, mdl: localMdl });
+  }
+
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-midnight-navy/5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -63,7 +79,7 @@ export function MdlFilterBar({
 
         <button
           type="button"
-          onClick={() => updateParams({ date: "", search: "", mdl: "" })}
+          onClick={clearAll}
           className="rounded-full border border-midnight-navy/10 px-4 py-2 text-sm font-medium text-slate-gray transition hover:border-intelligence-teal hover:text-intelligence-teal"
         >
           Clear filters
@@ -78,7 +94,7 @@ export function MdlFilterBar({
           <select
             value={selectedDate ?? ""}
             onChange={(event) =>
-              updateParams({ date: event.target.value, search, mdl })
+              updateParams({ date: event.target.value, search: localSearch, mdl: localMdl })
             }
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
@@ -97,23 +113,12 @@ export function MdlFilterBar({
           </span>
           <input
             type="text"
-            defaultValue={search}
-            placeholder="e.g. talcum"
-            onBlur={(event) =>
-              updateParams({
-                date: selectedDate ?? "",
-                search: event.target.value,
-                mdl,
-              })
-            }
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="e.g. depo provera, talcum"
+            onBlur={commitSearch}
             onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                updateParams({
-                  date: selectedDate ?? "",
-                  search: event.currentTarget.value,
-                  mdl,
-                });
-              }
+              if (event.key === "Enter") commitSearch();
             }}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           />
@@ -126,23 +131,12 @@ export function MdlFilterBar({
           <input
             type="text"
             inputMode="numeric"
-            defaultValue={mdl}
+            value={localMdl}
+            onChange={(e) => setLocalMdl(e.target.value)}
             placeholder="e.g. 2738"
-            onBlur={(event) =>
-              updateParams({
-                date: selectedDate ?? "",
-                search,
-                mdl: event.target.value,
-              })
-            }
+            onBlur={commitSearch}
             onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                updateParams({
-                  date: selectedDate ?? "",
-                  search,
-                  mdl: event.currentTarget.value,
-                });
-              }
+              if (event.key === "Enter") commitSearch();
             }}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           />

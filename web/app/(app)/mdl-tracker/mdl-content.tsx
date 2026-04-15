@@ -18,13 +18,20 @@ export function MdlContent({
   mdl: string;
 }) {
   const filteredRows = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const searchTerms = search
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
     const parsedMdl = mdl.trim() ? Number.parseInt(mdl.trim(), 10) : null;
 
     return rows.filter((row) => {
+      const titleNormalized = row.title
+        .toLowerCase()
+        .replace(/[-/()]/g, " ");
       const matchesSearch =
-        !normalizedSearch ||
-        row.title.toLowerCase().includes(normalizedSearch);
+        searchTerms.length === 0 ||
+        searchTerms.every((term) => titleNormalized.includes(term));
       const matchesMdl =
         parsedMdl == null || Number.isNaN(parsedMdl)
           ? true
