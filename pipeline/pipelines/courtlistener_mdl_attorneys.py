@@ -773,11 +773,19 @@ def classify_via_exclusion(
         )
 
     # Step 3: Build attorney registry with firm_id-based firm assignment
-    # attorney_id -> {name, firm_id_counts, docket_ids, ...}
+    # attorney_id -> {name, firm_id_counts, member_firm_id_counts, docket_ids, ...}
+    #
+    # We track firm_id counts separately for master vs. member dockets.
+    # On the master docket the search API lists ALL leadership firms as flat
+    # arrays, so every attorney on that docket gets associated with every
+    # firm — including the liaison firm (e.g. Williams & Connolly).  Member
+    # dockets are individual cases where the firm list is typically just the
+    # plaintiff's own firm, so those counts are far more reliable.
     registry: dict[int, dict] = {}
 
     for docket in member_dockets:
         docket_id = docket.get("docket_id")
+        is_master = (docket_id == master_docket_id)
         atty_names = docket.get("attorney_names", [])
         atty_ids = docket.get("attorney_ids", [])
         firm_ids = docket.get("firm_ids", [])
@@ -794,6 +802,7 @@ def classify_via_exclusion(
                     "attorney_name": name,
                     "firm_name": None,
                     "firm_id_counts": Counter(),
+                    "member_firm_id_counts": Counter(),
                     "all_firm_ids": set(),
                     "docket_ids": set(),
                     "is_plaintiff": True,
@@ -813,17 +822,30 @@ def classify_via_exclusion(
                 if aid in registry:
                     registry[aid]["firm_id_counts"][fid] += 1
                     registry[aid]["all_firm_ids"].add(fid)
+                    if not is_master:
+                        registry[aid]["member_firm_id_counts"][fid] += 1
 
-    # Step 4: Resolve best firm for each attorney (most frequent firm_id)
+    # Step 4: Resolve best firm for each attorney.
+    # Prefer the most-frequent firm_id from MEMBER dockets.  Fall back to
+    # the overall count (which includes the master) only when the attorney
+    # has no member-docket firm associations at all.
+    member_preferred = 0
+    master_fallback = 0
     for aid, entry in registry.items():
-        fid_counts = entry["firm_id_counts"]
-        if fid_counts:
-            best_fid = fid_counts.most_common(1)[0][0]
-            # Look up canonical name from the firm registry
+        member_counts = entry["member_firm_id_counts"]
+        all_counts = entry["firm_id_counts"]
+
+        if member_counts:
+            best_fid = member_counts.most_common(1)[0][0]
+            member_preferred += 1
+        elif all_counts:
+            best_fid = all_counts.most_common(1)[0][0]
+            master_fallback += 1
+        else:
+            best_fid = None
+
+        if best_fid is not None:
             canonical = firm_id_to_name.get(best_fid)
-            if not canonical:
-                # Fallback: normalize the raw name if we have it
-                canonical = None
             entry["firm_name"] = canonical
 
         # If still no firm, try fuzzy-matching any firm_id we have
@@ -833,6 +855,11 @@ def classify_via_exclusion(
                 if name:
                     entry["firm_name"] = name
                     break
+
+    logger.info(
+        "Firm resolution: %d from member dockets, %d from master-only",
+        member_preferred, master_fallback,
+    )
 
     # Step 5: Mark leadership
     if master_has_leadership_parties:
@@ -852,6 +879,7 @@ def classify_via_exclusion(
     # Clean up internal tracking fields before returning
     for entry in registry.values():
         del entry["firm_id_counts"]
+        del entry["member_firm_id_counts"]
         del entry["all_firm_ids"]
 
     return list(registry.values())
