@@ -35,6 +35,7 @@ from lib.pipeline import (  # noqa: E402
     PipelineRun,
     DRY_RUN,
     _bulk_insert,
+    _delete,
     _get,
 )
 
@@ -1045,11 +1046,19 @@ def step_discover_and_classify(step, mdl_number: int, master_docket_id: int) -> 
     return rows
 
 
-def step_upsert(step, rows: list[dict]):
-    """Write rows to mdl_attorneys via upsert."""
+def step_upsert(step, mdl_number: int, rows: list[dict]):
+    """Delete stale rows for this MDL, then insert the clean deduplicated set."""
     if not rows:
         step.set_counts(rows_in=0, rows_out=0)
         return
+
+    # Delete existing rows for this MDL first — necessary because
+    # CourtListener assigns different cl_attorney_id values to the same
+    # person across dockets, so name-based dedup in Python produces fewer
+    # rows than the old set, but the stale rows with orphan cl_attorney_ids
+    # would survive a simple upsert.
+    logger.info("Deleting existing rows for MDL %d before insert", mdl_number)
+    _delete("mdl_attorneys", {"mdl_number": f"eq.{mdl_number}"})
 
     inserted = _bulk_insert(
         "mdl_attorneys",
@@ -1098,7 +1107,7 @@ def main():
                 rows = step_discover_and_classify(step, mdl_number, master_docket_id)
 
             with run.step(f"upsert_{mdl_number}") as step:
-                step_upsert(step, rows)
+                step_upsert(step, mdl_number, rows)
 
 
 if __name__ == "__main__":
