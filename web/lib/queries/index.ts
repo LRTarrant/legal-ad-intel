@@ -46,6 +46,7 @@ export * from "./channel-fit";
 export * from "./advertiser-profiles";
 export * from "./creative-gallery";
 export * from "./market-heatmap";
+export * from "./saturation-scores";
 
 export {
   getMdlFirmSummary,
