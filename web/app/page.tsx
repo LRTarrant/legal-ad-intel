@@ -45,7 +45,7 @@ export default async function HomePage() {
               href="/login"
               className="rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-light-teal"
             >
-              Sign In
+              Log In
             </Link>
           )}
         </div>
@@ -268,7 +268,7 @@ export default async function HomePage() {
                 href="/login"
                 className="text-sm font-medium text-intelligence-teal transition hover:text-light-teal"
               >
-                Sign In
+                Log In
               </Link>
             )}
           </div>
