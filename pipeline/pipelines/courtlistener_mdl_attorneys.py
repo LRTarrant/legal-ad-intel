@@ -182,9 +182,7 @@ def _normalize_name(name: str | None) -> str | None:
 #   "Scharf Banks Marmor LLC Chicago Il"
 # Pattern: optional " - ", then City(+State) at the end.
 _LOCATION_SUFFIX_RE = re.compile(
-    r"\s*[-–—]\s*[A-Z][A-Za-z .,']+$"  # " - City Name"
-    r"|"  # OR
-    r"\s+[A-Z][a-z]+(?:,?\s+[A-Z]{2})?(?:,\s+[A-Z][A-Za-z ]+)?\s*$",  # "City, ST"
+    r",?\s+[A-Z][a-z]+,\s+[A-Z]{2}\s*$",  # "City, ST" (with comma before state)
 )
 
 # Firm-name tokens that should stay uppercase.
@@ -205,12 +203,42 @@ def _normalize_firm(firm: str | None) -> str | None:
     if not firm:
         return None
 
-    # Strip trailing location ("- Washington Dc", "Cleveland Oh", etc.)
-    # But be careful not to strip legitimate firm name parts.
-    # Only strip if what remains still has 2+ words.
+    # Strip location after " - " (everything after dash separator is always a
+    # location in CourtListener data, e.g. "Weitz & Luxenberg PC - New York, NY")
+    dash_idx = firm.find(" - ")
+    if dash_idx > 0:
+        before = firm[:dash_idx].strip()
+        if before and len(before.split()) >= 2:
+            firm = before
+
+    # Strip trailing "City, ST" patterns (with comma before state)
     stripped = _LOCATION_SUFFIX_RE.sub("", firm).strip().rstrip(",").strip()
     if stripped and len(stripped.split()) >= 2:
         firm = stripped
+
+    # Strip trailing "City St" (no comma) — only when the last token looks
+    # like a title-cased state (e.g. "Ca", "Oh", "Il") and is NOT a legal
+    # suffix like PA/PC/LLC. This catches "Dechert LLP Los Angeles Ca".
+    words = firm.split()
+    if len(words) >= 3:
+        last = words[-1]
+        # Title-case 2-letter token that isn't a legal suffix
+        if (len(last) == 2
+                and last[0].isupper() and last[1].islower()
+                and last.upper() not in _KEEP_UPPER_TOKENS):
+            # Walk backward to find where the city name starts — city words
+            # are title-cased non-legal-suffix words (e.g. "Los Angeles")
+            trim_from = len(words) - 1  # start at the state token
+            for k in range(len(words) - 2, 0, -1):
+                w = words[k]
+                if (len(w) >= 2 and w[0].isupper() and w[1:].islower()
+                        and w.upper() not in _KEEP_UPPER_TOKENS):
+                    trim_from = k
+                else:
+                    break
+            candidate = " ".join(words[:trim_from])
+            if candidate and len(candidate.split()) >= 2:
+                firm = candidate
 
     # If ALL CAPS, title-case while preserving legal abbreviations
     if firm.upper() == firm and len(firm) > 3:
@@ -230,6 +258,131 @@ def _normalize_firm(firm: str | None) -> str | None:
     firm = re.sub(r"\s+", " ", firm).strip()
 
     return firm or None
+
+
+def _firm_fingerprint(name: str) -> str:
+    """
+    Create a canonical fingerprint for fuzzy firm matching.
+
+    Strips '&', 'and', punctuation, lowercases, sorts words.
+    e.g. "Weitz & Luxenberg PC" -> "luxenberg pc weitz"
+         "Weitz Luxenberg P.C." -> "luxenberg pc weitz"
+         "Weitz and Luxenburg PC" -> "luxenburg pc weitz"
+    """
+    s = name.lower()
+    # Remove '&' and 'and' as connectors
+    s = re.sub(r'\band\b', '', s)
+    s = s.replace('&', '')
+    # Remove all punctuation except alphanumeric and spaces
+    s = re.sub(r'[^\w\s]', '', s)
+    # Split, sort, rejoin
+    words = sorted(s.split())
+    return " ".join(words)
+
+
+def _edit_distance(a: str, b: str) -> int:
+    """Compute Levenshtein edit distance between two strings."""
+    if len(a) < len(b):
+        return _edit_distance(b, a)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a):
+        curr = [i + 1]
+        for j, cb in enumerate(b):
+            cost = 0 if ca == cb else 1
+            curr.append(min(curr[j] + 1, prev[j + 1] + 1, prev[j] + cost))
+        prev = curr
+    return prev[-1]
+
+
+# ---------------------------------------------------------------------------
+# Firm registry: firm_id -> canonical name, with fuzzy merge
+# ---------------------------------------------------------------------------
+
+_LEADERSHIP_KEYWORDS = (
+    "lead counsel", "co-lead counsel", "liaison counsel",
+    "steering committee", "executive committee",
+    "plaintiffs' counsel", "plaintiff's counsel",
+)
+
+
+def _build_firm_registry(
+    member_dockets: list[dict],
+) -> tuple[dict[int, str], dict[str, str]]:
+    """
+    Build two mappings for firm deduplication:
+
+    1. firm_id -> canonical_name: maps each CL firm_id to its best display name
+    2. fingerprint -> canonical_name: maps fuzzy fingerprints so that different
+       firm_ids with near-identical names merge to one canonical name
+
+    Returns (firm_id_to_name, fingerprint_to_canonical).
+    """
+    # Collect: firm_id -> list of (normalized_name, count)
+    fid_name_counts: dict[int, Counter] = defaultdict(Counter)
+
+    for docket in member_dockets:
+        firm_names = docket.get("firm_names", [])
+        firm_ids = docket.get("firm_ids", [])
+        for i, fid in enumerate(firm_ids):
+            fid = int(fid)
+            raw = firm_names[i] if i < len(firm_names) else None
+            normed = _normalize_firm(raw)
+            if normed:
+                fid_name_counts[fid][normed] += 1
+
+    # Pick best name per firm_id: most common normalized variant
+    firm_id_to_name: dict[int, str] = {}
+    for fid, counter in fid_name_counts.items():
+        best_name = counter.most_common(1)[0][0]
+        firm_id_to_name[fid] = best_name
+
+    # Fuzzy merge: group firm_ids whose best names have the same fingerprint
+    fp_groups: dict[str, list[int]] = defaultdict(list)
+    for fid, name in firm_id_to_name.items():
+        fp = _firm_fingerprint(name)
+        fp_groups[fp].append(fid)
+
+    # Second pass: merge fingerprints that are within edit distance 2 of each
+    # other (catches spelling variants like "Luxenberg" vs "Luxenburg")
+    fps = sorted(fp_groups.keys())
+    merged: dict[str, str] = {}  # fp -> canonical fp
+    for i, fp_a in enumerate(fps):
+        if fp_a in merged:
+            continue
+        for fp_b in fps[i + 1:]:
+            if fp_b in merged:
+                continue
+            if abs(len(fp_a) - len(fp_b)) > 2:
+                continue
+            if _edit_distance(fp_a, fp_b) <= 2:
+                # Merge fp_b into fp_a
+                merged[fp_b] = fp_a
+                fp_groups[fp_a].extend(fp_groups[fp_b])
+
+    for fp in merged:
+        del fp_groups[fp]
+
+    # For each fingerprint group, pick the canonical name (most common, shortest)
+    fingerprint_to_canonical: dict[str, str] = {}
+    for fp, fids in fp_groups.items():
+        # Collect all name variants across all firm_ids in this group
+        all_names: Counter = Counter()
+        for fid in fids:
+            all_names.update(fid_name_counts[fid])
+        # Pick: most common, then shortest as tiebreaker
+        canonical = max(all_names, key=lambda n: (all_names[n], -len(n)))
+        fingerprint_to_canonical[fp] = canonical
+        # Also map any merged fingerprints to the same canonical
+        for other_fp, target_fp in merged.items():
+            if target_fp == fp:
+                fingerprint_to_canonical[other_fp] = canonical
+        # Update all firm_ids in this group to the canonical
+        for fid in fids:
+            firm_id_to_name[fid] = canonical
+
+    return firm_id_to_name, fingerprint_to_canonical
 
 
 # ---------------------------------------------------------------------------
@@ -382,6 +535,17 @@ def classify_all_via_parties(
     For smaller MDLs, classify EVERY attorney by directly querying the
     parties endpoint for each docket. Returns fully classified rows.
     """
+    # Check search API party names for leadership signal on master docket
+    search_api_has_leadership = False
+    for docket in member_dockets:
+        if docket.get("docket_id") != master_docket_id:
+            continue
+        for pname in docket.get("party_names", []):
+            if any(kw in (pname or "").lower() for kw in _LEADERSHIP_KEYWORDS):
+                search_api_has_leadership = True
+                break
+        break
+
     # Attorney ID -> accumulated data
     attorney_data: dict[int, dict] = {}
 
@@ -431,11 +595,7 @@ def classify_all_via_parties(
             # MDL leadership groups on the master docket
             is_leadership_party = is_master and any(
                 kw in party_name.lower()
-                for kw in (
-                    "lead counsel", "steering committee",
-                    "executive committee", "liaison counsel",
-                    "plaintiffs' counsel", "plaintiff's counsel",
-                )
+                for kw in _LEADERSHIP_KEYWORDS
             )
 
             for atty_entry in party.get("attorneys", []) or []:
@@ -486,6 +646,22 @@ def classify_all_via_parties(
                 if firm_name and not existing.get("firm_name"):
                     existing["firm_name"] = firm_name
 
+    # Fallback: if the search API detected leadership party names on the
+    # master docket but the parties endpoint didn't mark anyone as leadership,
+    # mark all plaintiff attorneys on the master docket as potential leadership
+    any_leadership = any(e.get("is_leadership") for e in attorney_data.values())
+    if search_api_has_leadership and not any_leadership:
+        logger.info(
+            "Search API detected leadership parties on master docket %d "
+            "but parties endpoint did not — marking master docket plaintiff "
+            "attorneys as leadership",
+            master_docket_id,
+        )
+        for entry in attorney_data.values():
+            if master_docket_id in entry.get("docket_ids", set()) and \
+               entry.get("is_plaintiff"):
+                entry["is_leadership"] = True
+
     return list(attorney_data.values())
 
 
@@ -528,16 +704,44 @@ def classify_via_exclusion(
     """
     For large MDLs: use the search-discovered flat attorney lists and
     classify by excluding known defendants.
+
+    Uses firm_id-based deduplication, fuzzy firm name merging, leadership
+    detection from master docket party names, and attorney deduplication.
     """
-    # Build a global attorney registry from all search results
-    # attorney_id -> {name, firm_names, docket_ids}
+    # Step 1: Build firm registry (firm_id -> canonical name + fuzzy merge)
+    firm_id_to_name, fp_to_canonical = _build_firm_registry(member_dockets)
+
+    # Step 2: Detect leadership from master docket party names
+    master_attorney_ids: set[int] = set()
+    master_has_leadership_parties = False
+
+    for docket in member_dockets:
+        if docket.get("docket_id") != master_docket_id:
+            continue
+        # Check party names for leadership keywords
+        for pname in docket.get("party_names", []):
+            if any(kw in (pname or "").lower() for kw in _LEADERSHIP_KEYWORDS):
+                master_has_leadership_parties = True
+                break
+        # All attorneys on the master docket are potential leadership
+        for aid in docket.get("attorney_ids", []):
+            master_attorney_ids.add(int(aid))
+        break  # only one master docket entry needed
+
+    if master_has_leadership_parties:
+        logger.info(
+            "Leadership parties detected on master docket %d — %d attorneys marked",
+            master_docket_id, len(master_attorney_ids),
+        )
+
+    # Step 3: Build attorney registry with firm_id-based firm assignment
+    # attorney_id -> {name, firm_id_counts, docket_ids, ...}
     registry: dict[int, dict] = {}
 
     for docket in member_dockets:
         docket_id = docket.get("docket_id")
         atty_names = docket.get("attorney_names", [])
         atty_ids = docket.get("attorney_ids", [])
-        firm_names = docket.get("firm_names", [])
         firm_ids = docket.get("firm_ids", [])
 
         for i, aid in enumerate(atty_ids):
@@ -551,9 +755,10 @@ def classify_via_exclusion(
                     "cl_attorney_id": aid,
                     "attorney_name": name,
                     "firm_name": None,
-                    "firm_ids": set(),
+                    "firm_id_counts": Counter(),
+                    "all_firm_ids": set(),
                     "docket_ids": set(),
-                    "is_plaintiff": True,  # assume plaintiff; flip if in defendant set
+                    "is_plaintiff": True,
                     "is_defendant": False,
                     "is_leadership": False,
                 }
@@ -562,32 +767,54 @@ def classify_via_exclusion(
             if docket_id:
                 entry["docket_ids"].add(docket_id)
 
-        # Map firm_ids to entries where possible
-        # firm list doesn't 1:1 align with attorney list, but we can
-        # use any firm associated with the docket
+        # Associate firm_ids with attorneys on this docket
         for fid in firm_ids:
             fid = int(fid)
             for aid in atty_ids:
                 aid = int(aid)
                 if aid in registry:
-                    registry[aid]["firm_ids"].add(fid)
+                    registry[aid]["firm_id_counts"][fid] += 1
+                    registry[aid]["all_firm_ids"].add(fid)
 
-        # Try to map firm names — take the first firm for now
-        if firm_names:
-            for aid in atty_ids:
-                aid = int(aid)
-                if aid in registry and not registry[aid]["firm_name"]:
-                    registry[aid]["firm_name"] = firm_names[0]
+    # Step 4: Resolve best firm for each attorney (most frequent firm_id)
+    for aid, entry in registry.items():
+        fid_counts = entry["firm_id_counts"]
+        if fid_counts:
+            best_fid = fid_counts.most_common(1)[0][0]
+            # Look up canonical name from the firm registry
+            canonical = firm_id_to_name.get(best_fid)
+            if not canonical:
+                # Fallback: normalize the raw name if we have it
+                canonical = None
+            entry["firm_name"] = canonical
 
-    # Classify: if attorney_id or any of their firm_ids are in the
-    # defendant sets, mark as defendant
+        # If still no firm, try fuzzy-matching any firm_id we have
+        if not entry["firm_name"]:
+            for fid in entry["all_firm_ids"]:
+                name = firm_id_to_name.get(fid)
+                if name:
+                    entry["firm_name"] = name
+                    break
+
+    # Step 5: Mark leadership
+    if master_has_leadership_parties:
+        for aid in master_attorney_ids:
+            if aid in registry:
+                registry[aid]["is_leadership"] = True
+
+    # Step 6: Classify defendants
     for aid, entry in registry.items():
         if aid in defendant_atty_ids:
             entry["is_plaintiff"] = False
             entry["is_defendant"] = True
-        elif entry["firm_ids"] & defendant_firm_ids:
+        elif entry["all_firm_ids"] & defendant_firm_ids:
             entry["is_plaintiff"] = False
             entry["is_defendant"] = True
+
+    # Clean up internal tracking fields before returning
+    for entry in registry.values():
+        del entry["firm_id_counts"]
+        del entry["all_firm_ids"]
 
     return list(registry.values())
 
@@ -646,6 +873,46 @@ def build_upsert_rows(
             "fetched_at": fetched_at,
         })
 
+    # Fuzzy-merge firm names across all rows (catches duplicates from the
+    # classify_all_via_parties path where firm names come from contact blocks
+    # rather than firm_ids)
+    fp_name_counts: dict[str, Counter] = defaultdict(Counter)
+    for row in rows:
+        fn = row.get("firm_name")
+        if fn:
+            fp_name_counts[_firm_fingerprint(fn)][fn] += 1
+
+    # Merge near-duplicate fingerprints (edit distance <= 2)
+    fps = sorted(fp_name_counts.keys())
+    fp_merged: dict[str, str] = {}
+    for i, fp_a in enumerate(fps):
+        if fp_a in fp_merged:
+            continue
+        for fp_b in fps[i + 1:]:
+            if fp_b in fp_merged:
+                continue
+            if abs(len(fp_a) - len(fp_b)) > 2:
+                continue
+            if _edit_distance(fp_a, fp_b) <= 2:
+                fp_merged[fp_b] = fp_a
+                fp_name_counts[fp_a].update(fp_name_counts[fp_b])
+
+    fp_canonical: dict[str, str] = {}
+    for fp, counter in fp_name_counts.items():
+        if fp in fp_merged:
+            continue
+        canonical = max(counter, key=lambda n: (counter[n], -len(n)))
+        fp_canonical[fp] = canonical
+        # Map merged fingerprints too
+        for other_fp, target_fp in fp_merged.items():
+            if target_fp == fp:
+                fp_canonical[other_fp] = canonical
+
+    for row in rows:
+        fn = row.get("firm_name")
+        if fn:
+            row["firm_name"] = fp_canonical.get(_firm_fingerprint(fn), fn)
+
     # Deduplicate by cl_attorney_id (keep richest row)
     best: dict[int, dict] = {}
     for row in rows:
@@ -663,6 +930,9 @@ def build_upsert_rows(
                     existing.get("member_docket_count", 0),
                 )
                 best[aid] = row
+            # Preserve leadership flag if either copy has it
+            if row.get("is_leadership"):
+                best[aid]["is_leadership"] = True
 
     result = list(best.values())
     logger.info(
