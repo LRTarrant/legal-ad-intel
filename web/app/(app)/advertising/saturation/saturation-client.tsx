@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { Fragment, useState, useMemo, useCallback } from "react";
 import type {
   SaturationScore,
   SaturationFilters,
@@ -119,12 +119,6 @@ export function SaturationClient({
   // Date range from first row (all rows share the same period)
   const periodStart = scores.length > 0 ? scores[0].period_start : "";
   const periodEnd = scores.length > 0 ? scores[0].period_end : "";
-
-  // Selected row detail
-  const selectedRow = useMemo(
-    () => filteredScores.find((s) => s.id === selectedRowId) ?? null,
-    [filteredScores, selectedRowId]
-  );
 
   const handleRowClick = useCallback(
     async (row: SaturationScore) => {
@@ -262,39 +256,129 @@ export function SaturationClient({
               {filteredScores.map((row, i) => {
                 const isSelected = selectedRowId === row.id;
                 return (
-                  <tr
-                    key={row.id}
-                    onClick={() => handleRowClick(row)}
-                    className={`border-b border-cloud last:border-0 cursor-pointer transition-colors ${
-                      isSelected
-                        ? "bg-intelligence-teal/5"
-                        : "hover:bg-cloud/30"
-                    }`}
-                  >
-                    <td className="px-5 py-3 text-sm text-slate-gray tabular-nums">
-                      {i + 1}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-charcoal">
-                        {row.tort_label}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-charcoal">
-                      {row.geo_name}
-                    </td>
-                    <td className="px-4 py-3">
-                      {severityBadge(row.saturation_score)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-semibold text-charcoal tabular-nums">
-                      {row.total_advertisers}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-semibold text-midnight-navy tabular-nums">
-                      {formatCurrency(row.estimated_spend)}
-                    </td>
-                    <td className="px-5 py-3 text-right text-sm text-charcoal tabular-nums">
-                      {formatNumber(row.estimated_impressions)}
-                    </td>
-                  </tr>
+                  <Fragment key={row.id}>
+                    <tr
+                      onClick={() => handleRowClick(row)}
+                      className={`border-b border-cloud last:border-0 cursor-pointer transition-colors ${
+                        isSelected
+                          ? "bg-intelligence-teal/5"
+                          : "hover:bg-cloud/30"
+                      }`}
+                    >
+                      <td className="px-5 py-3 text-sm text-slate-gray tabular-nums">
+                        {i + 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-charcoal">
+                          {row.tort_label}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-charcoal">
+                        {row.geo_name}
+                      </td>
+                      <td className="px-4 py-3">
+                        {severityBadge(row.saturation_score)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-charcoal tabular-nums">
+                        {row.total_advertisers}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-midnight-navy tabular-nums">
+                        {formatCurrency(row.estimated_spend)}
+                      </td>
+                      <td className="px-5 py-3 text-right text-sm text-charcoal tabular-nums">
+                        {formatNumber(row.estimated_impressions)}
+                      </td>
+                    </tr>
+                    {isSelected && (
+                      <tr>
+                        <td colSpan={7} className="bg-intelligence-teal/[0.03] px-5 py-5 border-b border-cloud">
+                          <div className="space-y-5">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-base font-bold text-midnight-navy">
+                                {row.tort_label} &times; {row.geo_name}
+                              </h3>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedRowId(null); setChannelMix([]); }}
+                                className="text-xs text-slate-gray hover:text-charcoal transition-colors"
+                              >
+                                Close
+                              </button>
+                            </div>
+
+                            {/* Summary stats */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">Saturation Score</p>
+                                <p className="mt-1 text-lg font-bold text-midnight-navy">{row.saturation_score.toFixed(1)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">Advertisers</p>
+                                <p className="mt-1 text-lg font-bold text-midnight-navy">{row.total_advertisers}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">Est. Spend</p>
+                                <p className="mt-1 text-lg font-bold text-intelligence-teal">{formatCurrency(row.estimated_spend)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">Creatives</p>
+                                <p className="mt-1 text-lg font-bold text-midnight-navy">{formatNumber(row.total_creatives)}</p>
+                              </div>
+                            </div>
+
+                            {/* Top Advertisers */}
+                            {row.top_advertisers.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">Top Advertisers</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {row.top_advertisers.map((uuid) => {
+                                    const name = advertiserMap.get(uuid) ?? uuid.slice(0, 8);
+                                    return (
+                                      <span key={uuid} className="inline-flex items-center rounded-full bg-intelligence-teal/10 px-3 py-1 text-xs font-medium text-intelligence-teal ring-1 ring-intelligence-teal/30">
+                                        {name}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Channel Mix */}
+                            <div>
+                              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">Channel Mix</h4>
+                              {channelMixLoading ? (
+                                <p className="text-sm text-slate-gray">Loading channel mix...</p>
+                              ) : channelMix.length === 0 ? (
+                                <p className="text-sm text-slate-gray">No channel mix data available for this combination.</p>
+                              ) : (
+                                <div className="overflow-x-auto rounded-lg border border-cloud">
+                                  <table className="w-full">
+                                    <thead>
+                                      <tr className="border-b border-cloud text-left text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                                        <th className="px-4 py-2">Channel</th>
+                                        <th className="px-4 py-2 text-right">Est. Spend</th>
+                                        <th className="px-4 py-2 text-right">Observations</th>
+                                        <th className="px-4 py-2 text-right">Creatives</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {channelMix.map((ch) => (
+                                        <tr key={ch.ad_format} className="border-b border-cloud last:border-0">
+                                          <td className="px-4 py-2 text-sm font-medium text-charcoal capitalize">{ch.ad_format}</td>
+                                          <td className="px-4 py-2 text-right text-sm tabular-nums text-midnight-navy font-semibold">{formatCurrency(ch.total_spend)}</td>
+                                          <td className="px-4 py-2 text-right text-sm tabular-nums text-charcoal">{formatNumber(ch.total_observations)}</td>
+                                          <td className="px-4 py-2 text-right text-sm tabular-nums text-charcoal">{formatNumber(ch.total_creatives)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
               {filteredScores.length === 0 && (
@@ -311,132 +395,6 @@ export function SaturationClient({
           </table>
         </div>
       </section>
-
-      {/* Detail Panel */}
-      {selectedRow && (
-        <section className="rounded-lg bg-white shadow-sm p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-midnight-navy">
-              {selectedRow.tort_label} &times; {selectedRow.geo_name}
-            </h3>
-            <button
-              onClick={() => {
-                setSelectedRowId(null);
-                setChannelMix([]);
-              }}
-              className="text-sm text-slate-gray hover:text-charcoal transition-colors"
-            >
-              Close
-            </button>
-          </div>
-
-          {/* Summary stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                Saturation Score
-              </p>
-              <p className="mt-1 text-xl font-bold text-midnight-navy">
-                {selectedRow.saturation_score.toFixed(1)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                Advertisers
-              </p>
-              <p className="mt-1 text-xl font-bold text-midnight-navy">
-                {selectedRow.total_advertisers}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                Est. Spend
-              </p>
-              <p className="mt-1 text-xl font-bold text-intelligence-teal">
-                {formatCurrency(selectedRow.estimated_spend)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                Creatives
-              </p>
-              <p className="mt-1 text-xl font-bold text-midnight-navy">
-                {formatNumber(selectedRow.total_creatives)}
-              </p>
-            </div>
-          </div>
-
-          {/* Top Advertisers */}
-          {selectedRow.top_advertisers.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
-                Top Advertisers
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedRow.top_advertisers.map((uuid) => {
-                  const name = advertiserMap.get(uuid) ?? uuid.slice(0, 8);
-                  return (
-                    <span
-                      key={uuid}
-                      className="inline-flex items-center rounded-full bg-intelligence-teal/10 px-3 py-1 text-xs font-medium text-intelligence-teal ring-1 ring-intelligence-teal/30"
-                    >
-                      {name}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Channel Mix */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
-              Channel Mix
-            </h4>
-            {channelMixLoading ? (
-              <p className="text-sm text-slate-gray">Loading channel mix...</p>
-            ) : channelMix.length === 0 ? (
-              <p className="text-sm text-slate-gray">
-                No channel mix data available for this combination.
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-cloud">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-cloud text-left text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                      <th className="px-4 py-2">Channel</th>
-                      <th className="px-4 py-2 text-right">Est. Spend</th>
-                      <th className="px-4 py-2 text-right">Observations</th>
-                      <th className="px-4 py-2 text-right">Creatives</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {channelMix.map((ch) => (
-                      <tr
-                        key={ch.ad_format}
-                        className="border-b border-cloud last:border-0"
-                      >
-                        <td className="px-4 py-2 text-sm font-medium text-charcoal capitalize">
-                          {ch.ad_format}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm tabular-nums text-midnight-navy font-semibold">
-                          {formatCurrency(ch.total_spend)}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm tabular-nums text-charcoal">
-                          {formatNumber(ch.total_observations)}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm tabular-nums text-charcoal">
-                          {formatNumber(ch.total_creatives)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* Methodology & Sources */}
       <MethodologySources
