@@ -40,7 +40,16 @@ export default async function PiViabilityPage({
             Plaintiff Favorability By State
           </h1>
           <p className="mt-1 text-slate-gray">
-            Composite PI attractiveness scores based on negligence rules, damage caps, and verdict history
+            Composite PI attractiveness scores · Sources: State statutes,{" "}
+            <a
+              href="https://tlrfoundation.org/wp-content/uploads/2025/01/Damage-Caps-Across-the-US_TLR-Foundation-2024.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-intelligence-teal underline hover:no-underline"
+            >
+              TLR Foundation
+            </a>
+            , Jury Verdict Research
           </p>
         </div>
       </div>
@@ -49,10 +58,20 @@ export default async function PiViabilityPage({
 
       <AdvertisingInsight>
         <p>
-          <strong>Focus your budget on plaintiff-friendly jurisdictions.</strong> States with pure
-          comparative negligence, no damage caps, and historically high jury verdicts offer the best
-          return on legal advertising spend. Use these scores to prioritize markets where successful
-          case outcomes justify higher client acquisition costs.
+          <strong>Focus your budget on plaintiff-friendly jurisdictions.</strong> Scores are compiled
+          from state negligence statutes, statutory damage cap data via{" "}
+          <a
+            href="https://tlrfoundation.org/wp-content/uploads/2025/01/Damage-Caps-Across-the-US_TLR-Foundation-2024.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-intelligence-teal underline hover:no-underline"
+          >
+            TLR Foundation reports
+          </a>
+          , and historical jury verdict data from Jury Verdict Research. States with pure comparative
+          negligence, no damage caps, and historically high verdicts offer the best return on legal
+          advertising spend. Use these scores to prioritize markets where successful case outcomes
+          justify higher client acquisition costs.
         </p>
       </AdvertisingInsight>
 
@@ -71,6 +90,19 @@ export default async function PiViabilityPage({
         <p className="mt-3 text-xs text-slate-gray">
           Each factor is scored 0–100 and weighted. Composite is normalized to a 0–100 scale.
           Higher scores indicate more favorable conditions for personal injury plaintiffs.
+        </p>
+        <p className="mt-2 text-xs text-slate-gray/70">
+          Negligence Rule &amp; SOL — state statutes · Non-Econ Cap, Punitive Cap &amp; Med-Mal
+          Cap —{" "}
+          <a
+            href="https://tlrfoundation.org/wp-content/uploads/2025/01/Damage-Caps-Across-the-US_TLR-Foundation-2024.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-intelligence-teal/70 underline hover:no-underline"
+          >
+            TLR Foundation (2024)
+          </a>{" "}
+          · Avg Verdict — Jury Verdict Research &amp; public court records
         </p>
       </div>
 
