@@ -5,148 +5,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bike,
   Building2,
-  Car,
-  ChevronDown,
-  ChevronRight,
-  CloudLightning,
-  Film,
-  HardHat,
-  HeartPulse,
-  Radio,
-  Search,
-  Ship,
-  Target,
-  Truck,
-  Users,
-  TrendingUp,
-  BarChart3,
+  LayoutDashboard,
   MapPin,
+  Radio,
+  Sliders,
 } from "lucide-react";
 
-const personalInjuryPaths = [
-  "/fatalities",
-  "/motorcycle-fatalities",
-  "/large-truck-fatalities",
-  "/boating-accidents",
-  "/construction",
-];
-
-const personalInjuryItems = [
-  { label: "Motor Vehicle Fatalities", href: "/fatalities", Icon: Car },
-  { label: "Motorcycle Fatalities", href: "/motorcycle-fatalities", Icon: Bike },
-  { label: "Large Truck Fatalities", href: "/large-truck-fatalities", Icon: Truck },
-  { label: "Boating Accidents", href: "/boating-accidents", Icon: Ship },
-  { label: "Construction", href: "/construction", Icon: HardHat },
-];
-
-const propertyDamagePaths = ["/storm-events"];
-
-const propertyDamageItems = [
-  { label: "Storm Events", href: "/storm-events", Icon: CloudLightning },
-];
-
-const massTortPaths = ["/cancer-incidence", "/mdl-tracker"];
-
-const massTortItems = [
-  { label: "Cancer Incidence", href: "/cancer-incidence", Icon: HeartPulse },
-  { label: "MDL Tracker", href: "/mdl-tracker" },
-];
-
-const topNavItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Markets", href: "/markets" },
-  { label: "Opportunity", href: "/opportunity", Icon: Target },
-];
-
-const advertisingPaths = [
-  "/advertising/channel-planner",
-  "/advertising/advertisers",
-  "/advertising/creatives",
-  "/advertising/saturation",
-  "/advertising/search-visibility",
-  "/advertising/trends",
-  "/advertising/markets",
-];
-
-const advertisingItems = [
-  { label: "Channel Planner", href: "/advertising/channel-planner", Icon: BarChart3 },
-  { label: "Advertiser Profiles", href: "/advertising/advertisers", Icon: Building2 },
-  { label: "Creative Gallery", href: "/advertising/creatives", Icon: Film },
-  { label: "Ad Saturation", href: "/advertising/saturation", Icon: Radio },
-  { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Search },
-  { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
-  { label: "Market Heatmap", href: "/advertising/markets", Icon: MapPin },
-];
-
-const bottomNavItems = [
-  { label: "Judicial Profiles", href: "/judicial-profiles" },
-  { label: "PI Viability", href: "/pi-viability" },
-  { label: "Market Demographics", href: "/market-demographics", Icon: Users },
+const navItems = [
+  { label: "Overview", href: "/overview", Icon: LayoutDashboard },
+  { label: "Markets", href: "/markets", Icon: MapPin },
+  { label: "Torts", href: "/torts", Icon: Radio },
+  { label: "Competitors", href: "/competitors", Icon: Building2 },
+  { label: "Planner", href: "/planner", Icon: Sliders },
 ];
 
 type NavItem = {
   label: string;
   href: string;
-  Icon?: React.ComponentType<{ className?: string }>;
+  Icon: React.ComponentType<{ className?: string }>;
 };
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-
-  const isChildActive = personalInjuryPaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
-  const isPdChildActive = propertyDamagePaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
-  const isMassTortChildActive = massTortPaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
-
-  const [groupManuallyToggled, setGroupManuallyToggled] = useState(false);
-  const [groupUserOpen, setGroupUserOpen] = useState(true);
-  const [pdGroupManuallyToggled, setPdGroupManuallyToggled] = useState(false);
-  const [pdGroupUserOpen, setPdGroupUserOpen] = useState(true);
-  const [massTortManuallyToggled, setMassTortManuallyToggled] = useState(false);
-  const [massTortUserOpen, setMassTortUserOpen] = useState(true);
-  const [adManuallyToggled, setAdManuallyToggled] = useState(false);
-  const [adUserOpen, setAdUserOpen] = useState(true);
-
-  const groupOpen = isChildActive || (groupManuallyToggled ? groupUserOpen : true);
-  const pdGroupOpen =
-    isPdChildActive || (pdGroupManuallyToggled ? pdGroupUserOpen : true);
-  const massTortOpen =
-    isMassTortChildActive ||
-    (massTortManuallyToggled ? massTortUserOpen : true);
-
-  const isAdChildActive = advertisingPaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
-  const adGroupOpen =
-    isAdChildActive || (adManuallyToggled ? adUserOpen : true);
-
-  function toggleGroup() {
-    setGroupManuallyToggled(true);
-    setGroupUserOpen(!groupOpen);
-  }
-
-  function togglePdGroup() {
-    setPdGroupManuallyToggled(true);
-    setPdGroupUserOpen(!pdGroupOpen);
-  }
-
-  function toggleMassTortGroup() {
-    setMassTortManuallyToggled(true);
-    setMassTortUserOpen(!massTortOpen);
-  }
-
-  function toggleAdGroup() {
-    setAdManuallyToggled(true);
-    setAdUserOpen(!adGroupOpen);
-  }
 
   const closeSidebar = () => setIsOpen(false);
 
@@ -177,34 +59,14 @@ export function Sidebar() {
         key={item.href}
         href={item.href}
         onClick={closeSidebar}
-        className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-          isActive
-            ? "bg-white/10 text-white"
-            : "hover:bg-white/5"
-        }`}
-      >
-        {item.Icon ? <item.Icon className="w-4 h-4 shrink-0" /> : null}
-        {item.label}
-      </Link>
-    );
-  }
-
-  function renderGroupLink(item: NavItem) {
-    const isActive =
-      pathname === item.href || pathname.startsWith(item.href + "/");
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        onClick={closeSidebar}
-        className={`flex items-center gap-2 pl-8 py-2 text-sm rounded-md transition-colors ${
+        className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
           isActive
             ? "bg-white/10 text-white"
             : "text-white/70 hover:bg-white/5 hover:text-white"
         }`}
       >
-        {item.Icon ? <item.Icon className="w-4 h-4 shrink-0" /> : null}
-        <span>{item.label}</span>
+        <item.Icon className="w-4 h-4 shrink-0" />
+        {item.label}
       </Link>
     );
   }
@@ -278,93 +140,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto no-scrollbar">
-          {topNavItems.map((item) => renderNavLink(item))}
-
-          <div>
-            <button
-              type="button"
-              onClick={toggleGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-            >
-              <span>Personal Injury</span>
-              {groupOpen ? (
-                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
-              ) : (
-                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
-              )}
-            </button>
-
-            {groupOpen && (
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {personalInjuryItems.map((item) => renderGroupLink(item))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={togglePdGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-            >
-              <span>Property Damage</span>
-              {pdGroupOpen ? (
-                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
-              ) : (
-                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
-              )}
-            </button>
-
-            {pdGroupOpen && (
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {propertyDamageItems.map((item) => renderGroupLink(item))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={toggleMassTortGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-            >
-              <span>Mass Tort Intelligence</span>
-              {massTortOpen ? (
-                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
-              ) : (
-                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
-              )}
-            </button>
-
-            {massTortOpen && (
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {massTortItems.map((item) => renderGroupLink(item))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={toggleAdGroup}
-              className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-            >
-              <span>Advertising Intelligence</span>
-              {adGroupOpen ? (
-                <ChevronDown className="w-4 h-4 shrink-0 text-white/50" />
-              ) : (
-                <ChevronRight className="w-4 h-4 shrink-0 text-white/50" />
-              )}
-            </button>
-
-            {adGroupOpen && (
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {advertisingItems.map((item) => renderGroupLink(item))}
-              </div>
-            )}
-          </div>
-
-          {bottomNavItems.map((item) => renderNavLink(item))}
+          {navItems.map((item) => renderNavLink(item))}
         </nav>
 
         <div className="px-5 py-4">

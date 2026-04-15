@@ -40,8 +40,8 @@ export default async function MarketDetailPage({
   return (
     <>
       <div className="flex items-center gap-2 text-sm text-slate-gray">
-        <Link href="/dashboard" className="hover:text-intelligence-teal transition-colors">
-          Dashboard
+        <Link href="/markets" className="hover:text-intelligence-teal transition-colors">
+          Markets
         </Link>
         <span>/</span>
         <span className="text-charcoal">{market.market_name}</span>
