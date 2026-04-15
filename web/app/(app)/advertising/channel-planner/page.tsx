@@ -29,6 +29,19 @@ const MARKETS = [
   { id: "BALANCED_SUBURBAN_DMA", label: "Balanced Suburban DMA" },
 ] as const;
 
+/**
+ * Maps synthetic market IDs used by the fit-score engine to the closest
+ * real DMA market UUID in channel_competition_scores. This lets the
+ * competition overlay show data-driven scores while fit scoring still
+ * uses the synthetic media-consumption profiles.
+ */
+const COMPETITION_MARKET_MAP: Record<string, string> = {
+  US_TEST:                "2aa914df-a6b6-4b80-92ca-c97342b40390", // Los Angeles
+  OLDER_TV_DMA:           "122f3a67-b28e-4a29-92e8-be286d2075a7", // Tampa-St. Petersburg
+  DIGITAL_YOUNG_DMA:      "dda96263-b203-428a-b8e3-72c887424fe8", // New York
+  BALANCED_SUBURBAN_DMA:  "c65ca15f-ee5f-4760-a7f7-b2eef5caffef", // Houston
+};
+
 /* ── Helpers ────────────────────────────────────────────── */
 
 function channelLabel(channel: string): string {
@@ -489,9 +502,10 @@ export default async function TestChannelFitPage({
   let errorMsg: string | null = null;
 
   try {
+    const competitionMarketId = COMPETITION_MARKET_MAP[marketId] ?? marketId;
     [scores, competitionMap] = await Promise.all([
       getChannelFitScores(tortId, profileName, marketId),
-      getCompetitionScores(marketId, tortId),
+      getCompetitionScores(competitionMarketId),
     ]);
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -624,7 +638,7 @@ export default async function TestChannelFitPage({
               {
                 title: "Competition / Saturation Scores",
                 content:
-                  "Each channel displays a competition intensity score (Low / Medium / High) alongside its audience-fit rating. These scores are currently synthetic placeholders seeded per market. Future versions will derive them from actual channel-level advertising activity data (Facebook Ad Library, Google Ads Transparency, TikTok Creative Center, etc.) to reflect real competitive saturation.",
+                  "Competition scores are derived from real advertising activity in ad_events. For each market \u00d7 channel combination, the score reflects: (a) distinct advertiser count (60% weight) and (b) total estimated spend (40% weight), normalized against the global maximum and clamped to 0.05\u20130.95. Channel mapping: social \u2192 Facebook / Instagram / TikTok; TV \u2192 TV Linear; CTV \u2192 CTV Streaming; digital \u2192 YouTube; search and radio map directly. Podcast and print have no observed ad data yet. Scores refresh weekly via automated pipeline.",
               },
               {
                 title: "Recommendation Labels",
@@ -642,11 +656,11 @@ export default async function TestChannelFitPage({
             ]}
             limitations={[
               "Scores measure audience\u2013channel alignment only, not cost efficiency or expected ROI.",
-              "Competition scores are synthetic placeholders and do not yet reflect real ad-spend data.",
+              "Competition scores depend on ad pipeline coverage \u2014 channels or markets with low observation counts may understate true competition.",
               "Age-band weights do not yet incorporate gender, income, or geographic density.",
               "Channel indices are static and do not reflect seasonal or campaign-level variation.",
             ]}
-            dataNotice="All audience profiles, media indices, and test markets on this page use benchmark and synthetic inputs created for development purposes. Future versions will integrate named external datasets (e.g., Pew Research Center, Nielsen, MRI-Simmons, U.S. Census) and licensed sources where available. Treat current outputs as directional \u2014 not production-grade."
+            dataNotice="Audience-fit profiles and media consumption indices use benchmark and synthetic inputs. Competition scores are derived from real advertising activity data collected via Meta Ad Library, Google Ads Transparency, TikTok Creative Center, and SERP monitoring pipelines. Treat audience-fit outputs as directional; competition scores reflect actual observed market activity."
           />
         </div>
       )}
