@@ -201,6 +201,22 @@ export async function getStormDistinctEventTypes(): Promise<string[]> {
   }
 }
 
+export async function getStormDistinctYears(): Promise<number[]> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("storm_events")
+      .select("year")
+      .order("year");
+    if (error) throw error;
+    const unique = [...new Set((data ?? []).map((row: { year: number }) => row.year))];
+    return unique;
+  } catch (err) {
+    console.error('[storm-events] getStormDistinctYears failed:', err);
+    return [];
+  }
+}
+
 export async function getStormHeatmapPoints(
   filters?: StormFilters
 ): Promise<{ latitude: number; longitude: number }[]> {
