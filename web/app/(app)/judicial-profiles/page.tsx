@@ -3,6 +3,8 @@ import {
   getJudicialProfiles,
   getJudicialStates,
 } from "@/lib/queries";
+import { Scale } from "lucide-react";
+import { AdvertisingInsight } from "../components/advertising-insight";
 import { JudicialFilterBar } from "./judicial-filter-bar";
 import { JudicialMapPanel } from "./judicial-map-panel";
 import { JudicialTable } from "./judicial-table";
@@ -46,14 +48,41 @@ export default async function JudicialProfilesPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-          Judicial Profiles
-        </h1>
-        <p className="mt-1 text-slate-gray">
-          County-level judicial leanings for prospecting and market context
-        </p>
+      <div className="flex items-center gap-3">
+        <Scale className="w-7 h-7 shrink-0" style={{ color: "#1A8C96" }} />
+        <div>
+          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
+            Judicial Profiles
+          </h1>
+          <p className="mt-1 text-slate-gray">
+            County-level judicial leanings · 2024 Edition · Source:{" "}
+            <a
+              href="https://www.uslaw.org/state-judicial-profiles-by-county/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-intelligence-teal underline hover:no-underline"
+            >
+              USLAW NETWORK
+            </a>
+          </p>
+        </div>
       </div>
+
+      <AdvertisingInsight>
+        <p>
+          <strong>Understand the judicial climate of every U.S. county before you file.</strong>{" "}
+          Each county across all 50 states is classified as Conservative, Moderate, or Liberal based
+          on its judicial climate — including notable verdicts and key court decisions that have
+          shifted the legal landscape. Profiles are compiled by USLAW NETWORK member firm attorneys
+          with on-the-ground experience in each jurisdiction, updated biennially.
+        </p>
+        <p className="mt-2">
+          For plaintiff firms, this data is a strategic asset for venue selection: liberal-classified
+          counties historically correlate with higher verdict amounts and plaintiff-favorable juries.
+          Because the classifications reflect how practicing defense attorneys view each jurisdiction,
+          they offer a unique window into how the other side evaluates your filing choices.
+        </p>
+      </AdvertisingInsight>
 
       <JudicialFilterBar
         states={states}
