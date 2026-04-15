@@ -857,9 +857,87 @@ def classify_via_exclusion(
                     break
 
     logger.info(
-        "Firm resolution: %d from member dockets, %d from master-only",
+        "Firm resolution (search API): %d from member dockets, %d from master-only",
         member_preferred, master_fallback,
     )
+
+    # Step 4b: Targeted parties-endpoint override for leadership attorneys.
+    #
+    # The search API's flat firm lists can't reliably disambiguate firms on
+    # member dockets that have both the plaintiff's own firm AND a leadership
+    # firm like Williams & Connolly.  For leadership attorneys (those on the
+    # master docket), query a small set of their member dockets via the
+    # authenticated parties endpoint to read contact_raw, which has the
+    # attorney's actual firm.
+    if CL_API_TOKEN and master_attorney_ids:
+        # For each leadership attorney, find a member docket they appear on
+        atty_to_member_dockets: dict[int, list[int]] = defaultdict(list)
+        for docket in member_dockets:
+            docket_id = docket.get("docket_id")
+            if docket_id == master_docket_id:
+                continue
+            for aid in docket.get("attorney_ids", []):
+                aid = int(aid)
+                if aid in master_attorney_ids:
+                    atty_to_member_dockets[aid].append(docket_id)
+
+        # Collect unique dockets to query (one per leadership attorney)
+        dockets_to_query: set[int] = set()
+        atty_target_dockets: dict[int, int] = {}  # atty_id -> docket we'll query
+        for aid, dids in atty_to_member_dockets.items():
+            if dids:
+                target = dids[0]
+                dockets_to_query.add(target)
+                atty_target_dockets[aid] = target
+
+        if dockets_to_query:
+            logger.info(
+                "Querying %d member dockets via parties endpoint to resolve "
+                "leadership attorney firms",
+                len(dockets_to_query),
+            )
+
+            # Fetch parties for each target docket and extract firm from contact_raw
+            docket_parties_cache: dict[int, list[dict]] = {}
+            for did in dockets_to_query:
+                docket_parties_cache[did] = _fetch_parties_for_docket(did)
+
+            overrides = 0
+            for aid, target_did in atty_target_dockets.items():
+                parties = docket_parties_cache.get(target_did, [])
+                for party in parties:
+                    for atty_entry in party.get("attorneys", []) or []:
+                        if not isinstance(atty_entry, dict):
+                            continue
+                        atty_obj = atty_entry.get("attorney", {})
+                        if not isinstance(atty_obj, dict):
+                            continue
+                        if atty_obj.get("id") and int(atty_obj["id"]) == aid:
+                            real_firm = _extract_firm_from_attorney(atty_obj)
+                            if real_firm and aid in registry:
+                                old_firm = registry[aid].get("firm_name")
+                                normed_real = _normalize_firm(real_firm)
+                                if normed_real and normed_real != old_firm:
+                                    logger.debug(
+                                        "Override firm for %s: %s -> %s",
+                                        registry[aid].get("attorney_name"),
+                                        old_firm, normed_real,
+                                    )
+                                    registry[aid]["firm_name"] = normed_real
+                                    overrides += 1
+                                elif normed_real and not old_firm:
+                                    registry[aid]["firm_name"] = normed_real
+                                    overrides += 1
+
+            logger.info(
+                "Parties-endpoint override: %d leadership attorney firms corrected",
+                overrides,
+            )
+        else:
+            logger.info(
+                "No leadership attorneys found on member dockets — "
+                "skipping parties-endpoint override"
+            )
 
     # Step 5: Mark leadership
     if master_has_leadership_parties:
