@@ -550,10 +550,18 @@ def classify_all_via_parties(
     # Attorney ID -> accumulated data
     attorney_data: dict[int, dict] = {}
 
-    all_docket_ids = [master_docket_id] + [
+    # Process member dockets FIRST, then master docket.
+    # On the master docket, leadership attorneys are grouped under umbrella
+    # parties (e.g. "LEAD COUNSEL FOR PLAINTIFFS") and their contact_raw
+    # shows the liaison firm (e.g. Williams & Connolly) rather than their
+    # actual firm.  Member dockets carry the attorney's real firm in
+    # contact_raw.  By processing members first, we establish the correct
+    # firm; the master docket can only fill in a firm when none was found.
+    member_ids = [
         d["docket_id"] for d in member_dockets
         if d.get("docket_id") and d["docket_id"] != master_docket_id
     ]
+    all_docket_ids = member_ids + [master_docket_id]
 
     # Deduplicate
     seen = set()
@@ -624,6 +632,7 @@ def classify_all_via_parties(
                         "cl_attorney_id": cl_attorney_id,
                         "attorney_name": attorney_name,
                         "firm_name": firm_name,
+                        "firm_from_master": is_master if firm_name else False,
                         "party_types": set(),
                         "party_names": set(),
                         "is_plaintiff": False,
@@ -643,9 +652,24 @@ def classify_all_via_parties(
                 if is_leadership_party:
                     existing["is_leadership"] = True
                 existing["docket_ids"].add(docket_id)
-                # Prefer non-empty firm
-                if firm_name and not existing.get("firm_name"):
-                    existing["firm_name"] = firm_name
+
+                # Firm attribution priority:
+                #   1. Member-docket firm (most reliable — contact_raw
+                #      shows the attorney's actual firm)
+                #   2. Master-docket firm (often the liaison firm for
+                #      leadership, not the attorney's own firm)
+                if firm_name:
+                    has_firm = existing.get("firm_name")
+                    from_master = existing.get("firm_from_master", False)
+                    if not has_firm:
+                        # No firm yet — accept whatever we have
+                        existing["firm_name"] = firm_name
+                        existing["firm_from_master"] = is_master
+                    elif from_master and not is_master:
+                        # Existing firm came from master docket;
+                        # this member-docket firm is more reliable
+                        existing["firm_name"] = firm_name
+                        existing["firm_from_master"] = False
 
     # Fallback: if the search API detected leadership party names on the
     # master docket but the parties endpoint didn't mark anyone as leadership,
@@ -662,6 +686,19 @@ def classify_all_via_parties(
             if master_docket_id in entry.get("docket_ids", set()) and \
                entry.get("is_plaintiff"):
                 entry["is_leadership"] = True
+
+    # Log firm attribution stats for debugging
+    master_firm_count = sum(
+        1 for e in attorney_data.values() if e.get("firm_from_master")
+    )
+    member_firm_count = sum(
+        1 for e in attorney_data.values()
+        if e.get("firm_name") and not e.get("firm_from_master")
+    )
+    logger.info(
+        "Firm attribution: %d from member dockets, %d from master docket only",
+        member_firm_count, master_firm_count,
+    )
 
     return list(attorney_data.values())
 
