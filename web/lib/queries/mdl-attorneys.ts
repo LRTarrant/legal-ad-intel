@@ -113,3 +113,41 @@ export async function getMdlAttorneysAll(
 
   return (data ?? []) as MdlAttorneyRow[];
 }
+
+export interface PlaintiffAttorneyRow {
+  id: number;
+  attorney_name: string;
+  firm_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  party_name: string | null;
+}
+
+/**
+ * Fetch all plaintiff attorneys for a given MDL with fields needed for the
+ * firm-first expandable UI.
+ */
+export async function getMdlPlaintiffAttorneys(
+  mdlNumber: number
+): Promise<PlaintiffAttorneyRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabase() as any;
+  const { data, error } = await supabase
+    .from("mdl_attorneys")
+    .select("id, attorney_name, firm_name, email, phone, role, party_name")
+    .eq("mdl_number", mdlNumber)
+    .ilike("party_type", "plaintiff")
+    .order("firm_name", { ascending: true, nullsFirst: false })
+    .order("attorney_name", { ascending: true });
+
+  if (error) {
+    console.error(
+      `Failed to fetch plaintiff attorneys for MDL ${mdlNumber}:`,
+      error.message
+    );
+    return [];
+  }
+
+  return (data ?? []) as PlaintiffAttorneyRow[];
+}

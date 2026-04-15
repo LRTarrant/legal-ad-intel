@@ -3,10 +3,10 @@ import Link from "next/link";
 import { getMdlByNumber, getMdlTrend } from "@/lib/queries/mdl";
 import { getJpmlSnapshots } from "@/lib/queries/jpml";
 import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
+import { getMdlPlaintiffAttorneys } from "@/lib/queries/mdl-attorneys";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
-import OnDocketFirms from "./on-docket-firms";
-import AttorneySection from "./attorney-section";
+import PlaintiffFirms from "./plaintiff-firms";
 
 export const dynamic = "force-dynamic";
 
@@ -171,12 +171,14 @@ export default async function MdlDetailPage({
   const mdlNumber = parseInt(mdl_number, 10);
   if (isNaN(mdlNumber)) notFound();
 
-  const [mdlRow, trendData, jpmlSnapshots, developments] = await Promise.all([
-    getMdlByNumber(mdlNumber),
-    getMdlTrend(mdlNumber),
-    getJpmlSnapshots(),
-    getMdlDevelopments(mdlNumber),
-  ]);
+  const [mdlRow, trendData, jpmlSnapshots, developments, plaintiffAttorneys] =
+    await Promise.all([
+      getMdlByNumber(mdlNumber),
+      getMdlTrend(mdlNumber),
+      getJpmlSnapshots(),
+      getMdlDevelopments(mdlNumber),
+      getMdlPlaintiffAttorneys(mdlNumber),
+    ]);
 
   if (!mdlRow) notFound();
 
@@ -411,14 +413,8 @@ export default async function MdlDetailPage({
       </div>
 
 
-      {/* On-Docket Firms */}
-      <OnDocketFirms mdlNumber={mdlNumber} />
-
-      {/* Plaintiff Attorneys */}
-      <AttorneySection mdlNumber={mdlNumber} role="Plaintiff" />
-
-      {/* Defendant Attorneys */}
-      <AttorneySection mdlNumber={mdlNumber} role="Defendant" defaultCollapsed />
+      {/* Plaintiff Attorneys — firm-first expandable UI */}
+      <PlaintiffFirms attorneys={plaintiffAttorneys} />
 
       {/* Recent Developments */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
