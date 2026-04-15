@@ -7,6 +7,7 @@ export interface ChannelFitScore {
   channel: string;
   raw_score: number;
   normalized_score: number;
+  role: 'lead_gen' | 'brand' | 'hybrid';
 }
 
 export interface CompetitionScore {
@@ -46,6 +47,7 @@ export async function getChannelFitScores(
     channel: row.channel as string,
     raw_score: Number(row.raw_score),
     normalized_score: Number(row.normalized_score),
+    role: (row.role as string) || 'hybrid',
   }));
 }
 
@@ -99,6 +101,8 @@ export interface MarketRecommendation {
   top_channel_2: string;
   top_channel_2_fit: number;
   top_channel_2_comp: number;
+  top_channel_1_role: 'lead_gen' | 'brand' | 'hybrid';
+  top_channel_2_role: 'lead_gen' | 'brand' | 'hybrid';
   rationale: string;
 }
 
@@ -125,6 +129,8 @@ export async function getMarketRecommendations(
     top_channel_2: row.top_channel_2 as string,
     top_channel_2_fit: Number(row.top_channel_2_fit),
     top_channel_2_comp: Number(row.top_channel_2_comp),
+    top_channel_1_role: (row.top_channel_1_role as string) || 'hybrid',
+    top_channel_2_role: (row.top_channel_2_role as string) || 'hybrid',
     rationale: row.rationale as string,
   }));
 }

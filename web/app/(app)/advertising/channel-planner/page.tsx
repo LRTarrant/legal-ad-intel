@@ -234,6 +234,39 @@ function buildStrategySummary(
   };
 }
 
+/* ── Role badge ────────────────────────────────────────── */
+
+type ChannelRole = 'lead_gen' | 'brand' | 'hybrid';
+
+function roleBadgeStyle(role: ChannelRole): string {
+  switch (role) {
+    case 'lead_gen':
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+    case 'brand':
+      return 'bg-indigo-50 text-indigo-700 ring-indigo-200';
+    case 'hybrid':
+      return 'bg-sky-50 text-sky-700 ring-sky-200';
+  }
+}
+
+function roleLabel(role: ChannelRole): string {
+  switch (role) {
+    case 'lead_gen': return 'Lead-gen';
+    case 'brand': return 'Brand';
+    case 'hybrid': return 'Hybrid';
+  }
+}
+
+function RoleBadge({ role }: { role: ChannelRole }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${roleBadgeStyle(role)}`}
+    >
+      {roleLabel(role)}
+    </span>
+  );
+}
+
 /* ── Components ─────────────────────────────────────────── */
 
 function PillSelector<T extends string>({
@@ -337,6 +370,7 @@ function StrategySummaryCard({
               <p className="text-lg font-bold text-midnight-navy">
                 {channelLabel(s.channel)}
               </p>
+              <RoleBadge role={s.role} />
               <p className="text-2xl font-bold text-intelligence-teal tabular-nums">
                 {pct}%
               </p>
@@ -400,6 +434,7 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
                   <span className="text-sm font-medium text-charcoal">
                     {channelLabel(s.channel)}
                   </span>
+                  <RoleBadge role={s.role} />
                   <RecommendationBadge normalized={s.normalized_score} competitionScore={compScore} />
                   <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
                 </div>
@@ -459,8 +494,11 @@ function FullScoreTable({ scores, competitionMap }: { scores: ChannelFitScore[];
                 <td className="py-2.5 pr-4 text-xs font-semibold text-slate-gray tabular-nums w-8">
                   {i + 1}
                 </td>
-                <td className="py-2.5 pr-4 text-sm font-medium text-charcoal whitespace-nowrap">
-                  {channelLabel(s.channel)}
+                <td className="py-2.5 pr-4 text-sm font-medium text-charcoal">
+                  <div className="flex items-center gap-1.5">
+                    <span className="whitespace-nowrap">{channelLabel(s.channel)}</span>
+                    <RoleBadge role={s.role} />
+                  </div>
                 </td>
                 <td className="py-2.5 px-4 w-full">
                   <div className="flex items-center gap-3">
@@ -619,6 +657,7 @@ function RecommendedMarkets({
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-xs font-medium text-charcoal">
                   {channelLabel(rec.top_channel_1)} · {ch1Fit}%
+                  <RoleBadge role={rec.top_channel_1_role} />
                   <span
                     className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${competitionBadgeStyle(ch1Bucket)}`}
                   >
@@ -627,6 +666,7 @@ function RecommendedMarkets({
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-xs font-medium text-charcoal">
                   {channelLabel(rec.top_channel_2)} · {ch2Fit}%
+                  <RoleBadge role={rec.top_channel_2_role} />
                   <span
                     className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${competitionBadgeStyle(ch2Bucket)}`}
                   >
@@ -857,6 +897,11 @@ export default async function TestChannelFitPage({
                 title: "Audience Profiles",
                 content:
                   "Each tort type has an audience profile that distributes claimant likelihood across six age bands (18\u201324 through 65+). Weights are modeled assumptions based on case-mix patterns and demographic heuristics \u2014 e.g., Auto Injury skews working-age, Roundup skews 55+ due to long-latency cancer, Social Media Addiction targets parents of affected minors (heavy 35\u201354 skew), and Hair Relaxer targets women 35\u201360 with long-term product use history. These are directional estimates, not calibrated to specific epidemiological or survey data.",
+              },
+              {
+                title: "Channel Roles",
+                content:
+                  "Each channel is classified as Lead-gen, Brand, or Hybrid based on how plaintiff firms typically use it. Lead-gen channels (Search, Facebook, Instagram, YouTube, TikTok, Radio, Podcast) directly generate case inquiries. Brand channels (TV Linear, Print) build long-term awareness and reputation. Hybrid channels (CTV/Streaming) serve both purposes. Mass tort campaigns usually optimize for lead-gen channels that can deliver lower cost per signed case; single-incident PI often blends brand channels with lead-gen to support long-term reputation and referrals.",
               },
               {
                 title: "Media Consumption Inputs",
