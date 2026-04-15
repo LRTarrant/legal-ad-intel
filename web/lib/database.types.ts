@@ -2764,6 +2764,12 @@ export type Database = {
           event_type: string
         }[]
       }
+      get_storm_distinct_years: {
+        Args: never
+        Returns: {
+          year: number
+        }[]
+      }
       get_storm_distinct_states: {
         Args: never
         Returns: {

@@ -10,6 +10,7 @@ type StormCountyRow = RpcFunctions["get_storm_counties_by_state"]["Returns"][num
 type StormStateRow = RpcFunctions["get_storm_distinct_states"]["Returns"][number];
 type StormEventTypeRow = RpcFunctions["get_storm_distinct_event_types"]["Returns"][number];
 type StormHeatmapRow = RpcFunctions["get_storm_heatmap_points"]["Returns"][number];
+type StormYearRow = RpcFunctions["get_storm_distinct_years"]["Returns"][number];
 
 export interface StormFilters {
   state?: string | null;
@@ -204,13 +205,9 @@ export async function getStormDistinctEventTypes(): Promise<string[]> {
 export async function getStormDistinctYears(): Promise<number[]> {
   try {
     const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from("storm_events")
-      .select("year")
-      .order("year");
+    const { data, error } = await supabase.rpc("get_storm_distinct_years");
     if (error) throw error;
-    const unique = [...new Set((data ?? []).map((row: { year: number }) => row.year))];
-    return unique;
+    return ((data ?? []) as StormYearRow[]).map((row) => row.year);
   } catch (err) {
     console.error('[storm-events] getStormDistinctYears failed:', err);
     return [];
