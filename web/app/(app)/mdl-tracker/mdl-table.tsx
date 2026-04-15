@@ -2,6 +2,15 @@
 
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import type { MdlSummaryRow, MdlTrendPoint } from "@/lib/queries";
 import { getTypeColor, getTypeShortLabel } from "./jpml-colors";
 
@@ -40,11 +49,7 @@ function compareValues(
   return direction === "asc" ? base : -base;
 }
 
-function TrendBars({ trend }: { trend: MdlTrendPoint[] }) {
-  const maxPending = trend.length
-    ? Math.max(...trend.map((point) => point.pending_actions))
-    : 0;
-
+function TrendLine({ trend }: { trend: MdlTrendPoint[] }) {
   if (trend.length === 0) {
     return (
       <p className="text-sm text-slate-gray">
@@ -53,34 +58,63 @@ function TrendBars({ trend }: { trend: MdlTrendPoint[] }) {
     );
   }
 
+  const data = trend.map((point) => ({
+    month: point.stats_month,
+    pending: point.pending_actions,
+    change: point.pending_actions_change,
+  }));
+
   return (
-    <div className="space-y-3">
-      {trend.map((point) => {
-        const width = maxPending > 0 ? (point.pending_actions / maxPending) * 100 : 0;
-        return (
-          <div key={point.stats_month} className="flex items-center gap-4">
-            <span className="w-28 font-mono text-xs text-slate-gray">
-              {point.stats_month}
-            </span>
-            <div className="flex-1">
-              <div className="h-7 rounded bg-cloud">
-                <div
-                  className="flex h-7 items-center rounded bg-intelligence-teal px-3 text-xs font-semibold text-white"
-                  style={{ width: `${Math.max(width, 8)}%` }}
-                >
-                  {point.pending_actions.toLocaleString()}
-                </div>
+    <ResponsiveContainer width="100%" height={140}>
+      <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1A8C96" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="#1A8C96" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+        <XAxis
+          dataKey="month"
+          tick={{ fontSize: 10, fill: "#6B7280" }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 10, fill: "#6B7280" }}
+          tickLine={false}
+          axisLine={false}
+          width={60}
+          tickFormatter={(v: number) => v.toLocaleString()}
+        />
+        <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.[0]) return null;
+            const d = payload[0].payload as { month: string; pending: number; change: number | null };
+            return (
+              <div className="rounded-lg bg-midnight-navy px-3 py-2 text-xs text-white shadow-lg">
+                <p className="font-semibold">{d.month}</p>
+                <p>Pending: {d.pending.toLocaleString()}</p>
+                {d.change != null && (
+                  <p className={d.change > 0 ? "text-green-400" : d.change < 0 ? "text-red-400" : ""}>
+                    Change: {d.change > 0 ? "+" : ""}{d.change.toLocaleString()}
+                  </p>
+                )}
               </div>
-            </div>
-            <span className="w-24 text-right font-mono text-xs text-slate-gray">
-              {point.pending_actions_change == null
-                ? "n/a"
-                : `${point.pending_actions_change > 0 ? "+" : ""}${point.pending_actions_change.toLocaleString()}`}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+            );
+          }}
+        />
+        <Area
+          type="monotone"
+          dataKey="pending"
+          stroke="#1A8C96"
+          strokeWidth={2}
+          fill="url(#trendFill)"
+          dot={{ r: 3, fill: "#1A8C96", strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: "#1A8C96", stroke: "#fff", strokeWidth: 2 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -282,7 +316,7 @@ export function MdlTable({
                             </p>
                           </div>
                         </div>
-                        <TrendBars trend={trendByMdl[row.mdl_number] ?? []} />
+                        <TrendLine trend={trendByMdl[row.mdl_number] ?? []} />
                       </td>
                     </tr>
                   ) : null}
