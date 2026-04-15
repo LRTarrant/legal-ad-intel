@@ -20,6 +20,11 @@ interface ChartEntry {
   mdl_number: number;
   value: number;
   displayValue: string;
+  title: string;
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
 const BAR_COLOR = "#1A8C96";
@@ -34,10 +39,11 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
       .sort((a, b) => b.mom_change - a.mom_change)
       .slice(0, 10)
       .map((r) => ({
-        label: `MDL ${r.mdl_number}`,
+        label: truncate(r.title, 35),
         mdl_number: r.mdl_number,
         value: r.mom_change,
         displayValue: `+${r.mom_change.toLocaleString()}`,
+        title: r.title,
       }));
   }, [rows]);
 
@@ -53,10 +59,11 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
       .sort((a, b) => b.pct - a.pct)
       .slice(0, 10)
       .map((r) => ({
-        label: `MDL ${r.mdl_number}`,
+        label: truncate(r.title, 35),
         mdl_number: r.mdl_number,
         value: Math.round(r.pct * 10) / 10,
         displayValue: `+${(Math.round(r.pct * 10) / 10).toFixed(1)}%`,
+        title: r.title,
       }));
   }, [rows]);
 
@@ -71,8 +78,8 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
   }
 
   const maxLabelWidth = Math.max(
-    ...chartData.map((d) => d.label.length * 8),
-    80
+    ...chartData.map((d) => d.label.length * 7),
+    120
   );
 
   return (
@@ -123,7 +130,7 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
           <YAxis
             type="category"
             dataKey="label"
-            tick={{ fontSize: 12, fill: "#0B1D3A", fontWeight: 500 }}
+            tick={{ fontSize: 11, fill: "#0B1D3A", fontWeight: 500 }}
             width={maxLabelWidth}
           />
           <Tooltip
@@ -132,8 +139,9 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
               if (!active || !payload?.[0]) return null;
               const entry = payload[0].payload as ChartEntry;
               return (
-                <div className="rounded-lg bg-midnight-navy px-3 py-2 text-xs text-white shadow-lg">
-                  <p className="font-semibold">{entry.label}</p>
+                <div className="rounded-lg bg-midnight-navy px-3 py-2 text-xs text-white shadow-lg max-w-xs">
+                  <p className="font-semibold">{entry.title}</p>
+                  <p className="text-gray-300">MDL {entry.mdl_number}</p>
                   <p>
                     {view === "absolute" ? "MoM Change" : "MoM % Change"}:{" "}
                     {entry.displayValue}
