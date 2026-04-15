@@ -194,6 +194,12 @@ export default async function TortDrillDownPage({
           Tort-specific advertising intelligence for <strong className="text-zinc-200">{tort.label}</strong>.
           {tort.category && <span className="ml-1 text-zinc-500">Category: {tort.category}</span>}
         </p>
+        <Link
+          href={`/advertising/torts/${tortSlug}`}
+          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 transition"
+        >
+          View Full Advertising Page →
+        </Link>
         {/* Tort Switcher */}
         <div className="mt-4 flex flex-wrap gap-1">
           {allTorts.map((t) => (

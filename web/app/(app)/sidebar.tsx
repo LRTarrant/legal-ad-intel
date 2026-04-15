@@ -9,6 +9,7 @@ import {
   Building2,
   Car,
   CloudLightning,
+  DollarSign,
   Eye,
   Gavel,
   HardHat,
@@ -89,6 +90,12 @@ const dataModules: NavGroup[] = [
         items: [
           { label: "Google Trends", href: "/advertising/trends", Icon: TrendingUp },
           { label: "Search Visibility", href: "/advertising/search-visibility", Icon: Eye },
+        ],
+      },
+      {
+        heading: "Economics",
+        items: [
+          { label: "Cost Benchmarks", href: "/advertising/cost-benchmarks", Icon: DollarSign },
         ],
       },
     ],
