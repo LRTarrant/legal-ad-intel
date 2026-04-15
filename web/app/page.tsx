@@ -75,7 +75,7 @@ export default async function HomePage() {
             href="/sample/market"
             className="inline-flex items-center gap-1 text-base font-medium text-intelligence-teal transition hover:text-light-teal"
           >
-            View a Sample Market
+            View Sample Market
             <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
