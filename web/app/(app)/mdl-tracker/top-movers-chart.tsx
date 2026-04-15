@@ -77,10 +77,7 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
     );
   }
 
-  const maxLabelWidth = Math.max(
-    ...chartData.map((d) => d.label.length * 7),
-    120
-  );
+  const yAxisWidth = 200;
 
   return (
     <div>
@@ -113,7 +110,7 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 4, right: 60, bottom: 4, left: maxLabelWidth }}
+          margin={{ top: 4, right: 60, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -131,7 +128,7 @@ export function TopMoversChart({ rows }: { rows: MdlSummaryRow[] }) {
             type="category"
             dataKey="label"
             tick={{ fontSize: 11, fill: "#0B1D3A", fontWeight: 500 }}
-            width={maxLabelWidth}
+            width={yAxisWidth}
           />
           <Tooltip
             cursor={{ fill: "rgba(26,140,150,0.06)" }}
