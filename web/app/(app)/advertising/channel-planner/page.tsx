@@ -267,6 +267,93 @@ function RoleBadge({ role }: { role: ChannelRole }) {
   );
 }
 
+/* ── Economics badges ──────────────────────────────────── */
+
+type CostPressure = 'low' | 'medium' | 'high';
+type PerfOrientation = 'direct_response' | 'mixed' | 'brand_heavy';
+type TortPriority = 'core' | 'secondary' | 'situational';
+
+function costPressureStyle(cp: CostPressure): string {
+  switch (cp) {
+    case 'low':    return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+    case 'medium': return 'bg-amber-50 text-amber-700 ring-amber-200';
+    case 'high':   return 'bg-rose-50 text-rose-700 ring-rose-200';
+  }
+}
+
+function costPressureLabel(cp: CostPressure): string {
+  switch (cp) {
+    case 'low':    return '$ Low';
+    case 'medium': return '$$ Med';
+    case 'high':   return '$$$ High';
+  }
+}
+
+function CostPressureBadge({ value }: { value: CostPressure }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${costPressureStyle(value)}`}
+      title={`Cost pressure: ${value}`}
+    >
+      {costPressureLabel(value)}
+    </span>
+  );
+}
+
+function perfOrientationLabel(po: PerfOrientation): string {
+  switch (po) {
+    case 'direct_response': return 'DR';
+    case 'mixed':           return 'Mix';
+    case 'brand_heavy':     return 'Brand';
+  }
+}
+
+function perfOrientationStyle(po: PerfOrientation): string {
+  switch (po) {
+    case 'direct_response': return 'bg-blue-50 text-blue-700 ring-blue-200';
+    case 'mixed':           return 'bg-slate-50 text-slate-600 ring-slate-200';
+    case 'brand_heavy':     return 'bg-violet-50 text-violet-700 ring-violet-200';
+  }
+}
+
+function PerfOrientationBadge({ value }: { value: PerfOrientation }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${perfOrientationStyle(value)}`}
+      title={`Performance: ${value === 'direct_response' ? 'Direct Response' : value === 'brand_heavy' ? 'Brand Heavy' : 'Mixed'}`}
+    >
+      {perfOrientationLabel(value)}
+    </span>
+  );
+}
+
+function tortPriorityLabel(tp: TortPriority): string {
+  switch (tp) {
+    case 'core':        return 'Core';
+    case 'secondary':   return 'Secondary';
+    case 'situational': return 'Situational';
+  }
+}
+
+function tortPriorityStyle(tp: TortPriority): string {
+  switch (tp) {
+    case 'core':        return 'bg-teal-50 text-teal-700 ring-teal-200';
+    case 'secondary':   return 'bg-slate-50 text-slate-600 ring-slate-200';
+    case 'situational': return 'bg-orange-50 text-orange-600 ring-orange-200';
+  }
+}
+
+function TortPriorityBadge({ value }: { value: TortPriority }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tortPriorityStyle(value)}`}
+      title={`Mass tort priority: ${value}`}
+    >
+      {tortPriorityLabel(value)}
+    </span>
+  );
+}
+
 /* ── Components ─────────────────────────────────────────── */
 
 function PillSelector<T extends string>({
@@ -371,6 +458,11 @@ function StrategySummaryCard({
                 {channelLabel(s.channel)}
               </p>
               <RoleBadge role={s.role} />
+              <div className="mt-1 flex flex-wrap gap-1">
+                <CostPressureBadge value={s.cost_pressure} />
+                <PerfOrientationBadge value={s.performance_orientation} />
+                <TortPriorityBadge value={s.mass_tort_priority} />
+              </div>
               <p className="text-2xl font-bold text-intelligence-teal tabular-nums">
                 {pct}%
               </p>
@@ -435,6 +527,9 @@ function TopChannelsChart({ scores, competitionMap }: { scores: ChannelFitScore[
                     {channelLabel(s.channel)}
                   </span>
                   <RoleBadge role={s.role} />
+                  <CostPressureBadge value={s.cost_pressure} />
+                  <PerfOrientationBadge value={s.performance_orientation} />
+                  <TortPriorityBadge value={s.mass_tort_priority} />
                   <RecommendationBadge normalized={s.normalized_score} competitionScore={compScore} />
                   <CompetitionBadge channel={s.channel} competitionMap={competitionMap} />
                 </div>
@@ -477,6 +572,9 @@ function FullScoreTable({ scores, competitionMap }: { scores: ChannelFitScore[];
           <tr className="border-b-2 border-cloud text-left text-xs font-semibold uppercase tracking-wider text-slate-gray">
             <th className="pb-2 pr-4">Rank</th>
             <th className="pb-2 pr-4">Channel</th>
+            <th className="py-2 px-3 text-left text-xs font-medium text-slate-gray">Cost</th>
+            <th className="py-2 px-3 text-left text-xs font-medium text-slate-gray">Perf</th>
+            <th className="py-2 px-3 text-left text-xs font-medium text-slate-gray">Priority</th>
             <th className="pb-2 px-4">Score</th>
             <th className="pb-2 px-3 text-center">Rec.</th>
             <th className="pb-2 pl-4 text-right">Raw</th>
@@ -500,6 +598,9 @@ function FullScoreTable({ scores, competitionMap }: { scores: ChannelFitScore[];
                     <RoleBadge role={s.role} />
                   </div>
                 </td>
+                <td className="py-2.5 px-3"><CostPressureBadge value={s.cost_pressure} /></td>
+                <td className="py-2.5 px-3"><PerfOrientationBadge value={s.performance_orientation} /></td>
+                <td className="py-2.5 px-3"><TortPriorityBadge value={s.mass_tort_priority} /></td>
                 <td className="py-2.5 px-4 w-full">
                   <div className="flex items-center gap-3">
                     <div className="h-2 flex-1 rounded-full bg-cloud overflow-hidden">
@@ -663,6 +764,9 @@ function RecommendedMarkets({
                   >
                     {ch1Bucket}
                   </span>
+                  <span className="text-[10px] text-slate-gray ml-1">
+                    {costPressureLabel(rec.top_channel_1_cost_pressure)} cost · {tortPriorityLabel(rec.top_channel_1_tort_priority)}
+                  </span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-xs font-medium text-charcoal">
                   {channelLabel(rec.top_channel_2)} · {ch2Fit}%
@@ -671,6 +775,9 @@ function RecommendedMarkets({
                     className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${competitionBadgeStyle(ch2Bucket)}`}
                   >
                     {ch2Bucket}
+                  </span>
+                  <span className="text-[10px] text-slate-gray ml-1">
+                    {costPressureLabel(rec.top_channel_2_cost_pressure)} cost · {tortPriorityLabel(rec.top_channel_2_tort_priority)}
                   </span>
                 </span>
               </div>
@@ -904,6 +1011,11 @@ export default async function TestChannelFitPage({
                   "Each channel is classified as Lead-gen, Brand, or Hybrid based on how plaintiff firms typically use it. Lead-gen channels (Search, Facebook, Instagram, YouTube, TikTok, Radio, Podcast) directly generate case inquiries. Brand channels (TV Linear, Print) build long-term awareness and reputation. Hybrid channels (CTV/Streaming) serve both purposes. Mass tort campaigns usually optimize for lead-gen channels that can deliver lower cost per signed case; single-incident PI often blends brand channels with lead-gen to support long-term reputation and referrals.",
               },
               {
+                title: "Channel Economics",
+                content:
+                  "Each channel carries three heuristic economic attributes. Cost Pressure (Low/Medium/High) reflects typical cost-per-lead intensity in legal advertising — Search and TV Linear are high due to legal keyword CPCs ($50–200+) and production costs; social channels and radio are lower. Performance Orientation (DR/Mix/Brand) indicates whether the channel primarily drives direct-response lead generation, brand awareness, or a mix. Mass Tort Priority (Core/Secondary/Situational) reflects how heavily plaintiff firms typically invest in the channel for mass tort campaigns — Search, Facebook, and YouTube are core because they deliver the highest volume of qualified case inquiries at scale.",
+              },
+              {
                 title: "Media Consumption Inputs",
                 content:
                   "Per-market, per-age-band indices (0\u20131) represent relative media usage across 10 channels. The US Benchmark market uses indices loosely modeled on Pew Research and Nielsen audience data. Values are directionally accurate but have not been calibrated to a specific survey vintage.",
@@ -948,6 +1060,7 @@ export default async function TestChannelFitPage({
               "Age-band weights do not yet incorporate gender, income, or geographic density. Social Media Addiction and Hair Relaxer profiles are modeled from demographic heuristics rather than case-level data.",
               "Channel indices are static and do not reflect seasonal or campaign-level variation.",
               "Market recommendations are based on 4 synthetic market profiles and do not cover all DMAs. Opportunity scores should be treated as relative rankings, not absolute measures.",
+              "Channel economics attributes are heuristic classifications, not actual CPA or signed-case outcome data. They reflect general market patterns, not firm-specific performance.",
             ]}
             dataNotice="Audience-fit profiles and media consumption indices use benchmark and synthetic inputs. Competition scores are derived from real advertising activity data collected via Meta Ad Library, Google Ads Transparency, TikTok Creative Center, and SERP monitoring pipelines. Treat audience-fit outputs as directional; competition scores reflect actual observed market activity."
           />

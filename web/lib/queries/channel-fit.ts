@@ -8,6 +8,9 @@ export interface ChannelFitScore {
   raw_score: number;
   normalized_score: number;
   role: 'lead_gen' | 'brand' | 'hybrid';
+  cost_pressure: 'low' | 'medium' | 'high';
+  performance_orientation: 'direct_response' | 'mixed' | 'brand_heavy';
+  mass_tort_priority: 'core' | 'secondary' | 'situational';
 }
 
 export interface CompetitionScore {
@@ -48,6 +51,9 @@ export async function getChannelFitScores(
     raw_score: Number(row.raw_score),
     normalized_score: Number(row.normalized_score),
     role: (row.role as string) || 'hybrid',
+    cost_pressure: (row.cost_pressure as string) || 'medium',
+    performance_orientation: (row.performance_orientation as string) || 'mixed',
+    mass_tort_priority: (row.mass_tort_priority as string) || 'secondary',
   }));
 }
 
@@ -103,6 +109,12 @@ export interface MarketRecommendation {
   top_channel_2_comp: number;
   top_channel_1_role: 'lead_gen' | 'brand' | 'hybrid';
   top_channel_2_role: 'lead_gen' | 'brand' | 'hybrid';
+  top_channel_1_cost_pressure: 'low' | 'medium' | 'high';
+  top_channel_1_perf: 'direct_response' | 'mixed' | 'brand_heavy';
+  top_channel_1_tort_priority: 'core' | 'secondary' | 'situational';
+  top_channel_2_cost_pressure: 'low' | 'medium' | 'high';
+  top_channel_2_perf: 'direct_response' | 'mixed' | 'brand_heavy';
+  top_channel_2_tort_priority: 'core' | 'secondary' | 'situational';
   rationale: string;
 }
 
@@ -131,6 +143,12 @@ export async function getMarketRecommendations(
     top_channel_2_comp: Number(row.top_channel_2_comp),
     top_channel_1_role: (row.top_channel_1_role as string) || 'hybrid',
     top_channel_2_role: (row.top_channel_2_role as string) || 'hybrid',
+    top_channel_1_cost_pressure: (row.top_channel_1_cost_pressure as string) || 'medium',
+    top_channel_1_perf: (row.top_channel_1_perf as string) || 'mixed',
+    top_channel_1_tort_priority: (row.top_channel_1_tort_priority as string) || 'secondary',
+    top_channel_2_cost_pressure: (row.top_channel_2_cost_pressure as string) || 'medium',
+    top_channel_2_perf: (row.top_channel_2_perf as string) || 'mixed',
+    top_channel_2_tort_priority: (row.top_channel_2_tort_priority as string) || 'secondary',
     rationale: row.rationale as string,
   }));
 }
