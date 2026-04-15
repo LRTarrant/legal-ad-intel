@@ -11,8 +11,15 @@ type SortKey =
   | "district"
   | "judge_name"
   | "pending_actions"
-  | "mom_change";
+  | "mom_change"
+  | "mom_change_pct";
 type SortDirection = "asc" | "desc";
+
+function getMomChangePct(row: MdlSummaryRow): number {
+  const previous = row.pending_actions - row.mom_change;
+  if (previous <= 0) return 0;
+  return (row.mom_change / previous) * 100;
+}
 
 function compareValues(
   a: MdlSummaryRow,
@@ -20,6 +27,10 @@ function compareValues(
   key: SortKey,
   direction: SortDirection
 ) {
+  if (key === "mom_change_pct") {
+    const base = getMomChangePct(a) - getMomChangePct(b);
+    return direction === "asc" ? base : -base;
+  }
   const left = a[key] ?? "";
   const right = b[key] ?? "";
   const base =
@@ -103,7 +114,7 @@ export function MdlTable({
     }
 
     setSortKey(nextKey);
-    setSortDirection(nextKey === "pending_actions" || nextKey === "mom_change" ? "desc" : "asc");
+    setSortDirection(nextKey === "pending_actions" || nextKey === "mom_change" || nextKey === "mom_change_pct" ? "desc" : "asc");
   }
 
   function label(text: string, key: SortKey) {
@@ -163,6 +174,11 @@ export function MdlTable({
               <th className="py-2 pr-4 text-right">
                 <button type="button" onClick={() => toggleSort("mom_change")}>
                   {label("MoM Change", "mom_change")}
+                </button>
+              </th>
+              <th className="py-2 pr-4 text-right">
+                <button type="button" onClick={() => toggleSort("mom_change_pct")}>
+                  {label("MoM Change %", "mom_change_pct")}
                 </button>
               </th>
               <th className="py-2 text-right">Trend</th>
@@ -229,13 +245,21 @@ export function MdlTable({
                       {row.mom_change > 0 ? "+" : ""}
                       {row.mom_change.toLocaleString()}
                     </td>
+                    <td className={`py-3 pr-4 text-right font-mono ${changeClass}`}>
+                      {(() => {
+                        const pct = getMomChangePct(row);
+                        if (pct === 0 && row.mom_change === 0) return "0.0%";
+                        const sign = pct > 0 ? "+" : "";
+                        return `${sign}${pct.toFixed(1)}%`;
+                      })()}
+                    </td>
                     <td className={`py-3 text-right font-heading text-lg ${changeClass}`}>
                       {trendArrow(row.trend)}
                     </td>
                   </tr>
                   {isExpanded ? (
                     <tr className="border-b border-cloud bg-cloud/35">
-                      <td colSpan={8} className="px-4 py-5">
+                      <td colSpan={9} className="px-4 py-5">
                         <div className="mb-3 flex items-end justify-between gap-4">
                           <div>
                             <h3 className="font-heading text-lg font-semibold text-midnight-navy">

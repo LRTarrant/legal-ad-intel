@@ -16,10 +16,12 @@ export function JpmlTypePanel({
   summaries,
   reportDate,
   controls,
+  donutChart,
 }: {
   summaries: JpmlTypeSummary[];
   reportDate: string | null;
   controls?: ReactNode;
+  donutChart?: ReactNode;
 }) {
   if (summaries.length === 0) {
     return (
@@ -67,35 +69,42 @@ export function JpmlTypePanel({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {summaries.map((row) => {
-          const barWidth = maxCount > 0 ? (row.mdl_count / maxCount) * 100 : 0;
+      <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+        {donutChart && (
+          <div className="flex-shrink-0 lg:w-[340px]">
+            {donutChart}
+          </div>
+        )}
+        <div className="min-w-0 flex-1 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {summaries.map((row) => {
+            const barWidth = maxCount > 0 ? (row.mdl_count / maxCount) * 100 : 0;
 
-          return (
-            <div
-              key={row.mdl_type}
-              className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-midnight-navy/5"
-            >
-              <p className="font-heading text-sm font-semibold text-midnight-navy">
-                {row.mdl_type}
-              </p>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="font-mono text-2xl font-bold text-intelligence-teal">
-                  {row.mdl_count}
-                </span>
-                <span className="text-sm text-slate-gray">
-                  {row.pct_of_total ?? 0}%
-                </span>
+            return (
+              <div
+                key={row.mdl_type}
+                className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-midnight-navy/5"
+              >
+                <p className="font-heading text-sm font-semibold text-midnight-navy">
+                  {row.mdl_type}
+                </p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="font-mono text-2xl font-bold text-intelligence-teal">
+                    {row.mdl_count}
+                  </span>
+                  <span className="text-sm text-slate-gray">
+                    {row.pct_of_total ?? 0}%
+                  </span>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-cloud">
+                  <div
+                    className="h-2 rounded-full bg-intelligence-teal"
+                    style={{ width: `${Math.max(barWidth, 3)}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-3 h-2 rounded-full bg-cloud">
-                <div
-                  className="h-2 rounded-full bg-intelligence-teal"
-                  style={{ width: `${Math.max(barWidth, 3)}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

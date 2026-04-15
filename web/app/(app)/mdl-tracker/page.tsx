@@ -4,7 +4,6 @@ import {
   getMdlTotals,
   getMdlTrend,
   getJpmlTypeSummaries,
-  getJpmlSnapshots,
   getLatestReportDate,
   getJpmlReportDates,
   enrichMdlSummaryWithJpmlType,
@@ -12,12 +11,12 @@ import {
 } from "@/lib/queries";
 import type { MdlDevelopment } from "@/lib/queries";
 import Link from "next/link";
-import { JpmlDetailSection } from "./jpml-detail-section";
 import { JpmlTypePanel } from "./jpml-type-panel";
 import { MdlContent } from "./mdl-content";
 import { MdlFilterBar } from "./mdl-filter-bar";
 import { MdlTrackerNav } from "./mdl-tracker-nav";
 import { JpmlDateSelect } from "./jpml-date-select";
+import { JpmlDonutWrapper } from "./jpml-donut-wrapper";
 
 export const metadata = {
   title: "MDL Tracker | Legal Marketing Intelligence",
@@ -56,7 +55,6 @@ export default async function MdlTrackerPage({
     jpmlReportDates,
     jpmlSummaries,
     jpmlReportDate,
-    jpmlSnapshots,
     latestDevelopments,
   ] = await Promise.all([
     getMdlReportDates(),
@@ -65,7 +63,6 @@ export default async function MdlTrackerPage({
     getJpmlReportDates().catch(() => [] as string[]),
     getJpmlTypeSummaries(jpmlDate).catch(() => []),
     jpmlDate ? Promise.resolve(jpmlDate) : getLatestReportDate().catch(() => null),
-    getJpmlSnapshots(jpmlDate ?? undefined).catch(() => []),
     getLatestDevelopments(5).catch(() => [] as MdlDevelopment[]),
   ]);
 
@@ -149,11 +146,7 @@ export default async function MdlTrackerPage({
             selectedDate={jpmlDate}
           />
         }
-      />
-
-      <JpmlDetailSection
-        snapshots={jpmlSnapshots}
-        summaries={jpmlSummaries}
+        donutChart={<JpmlDonutWrapper summaries={jpmlSummaries} />}
       />
 
       <MdlContent
