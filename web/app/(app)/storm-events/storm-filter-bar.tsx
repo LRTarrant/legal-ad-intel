@@ -3,13 +3,23 @@
 import { startTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+export const TIME_PERIOD_OPTIONS = [
+  { value: "", label: "All time" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
+  { value: "6m", label: "Last 6 months" },
+  { value: "12m", label: "Last 12 months" },
+  { value: "2025", label: "2025" },
+  { value: "2024", label: "2024" },
+  { value: "2023", label: "2023" },
+] as const;
+
 type StormFilterBarProps = {
   states: string[];
-  years: number[];
   eventTypes: string[];
 };
 
-export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProps) {
+export function StormFilterBar({ states, eventTypes }: StormFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,9 +35,9 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
       }
     }
 
-    // Clear year and event_type when state changes
+    // Clear period and event_type when state is cleared
     if ("state" in updates && !updates.state) {
-      params.delete("year");
+      params.delete("period");
       params.delete("event_type");
     }
 
@@ -38,7 +48,7 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
   }
 
   const selectedState = searchParams.get("state") ?? "";
-  const selectedYear = searchParams.get("year") ?? "";
+  const selectedPeriod = searchParams.get("period") ?? "";
   const selectedEventType = searchParams.get("event_type") ?? "";
 
   return (
@@ -52,13 +62,13 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
             Narrow the storm signal
           </h2>
           <p className="mt-1 text-sm text-slate-gray">
-            Slice by state, year, and event type to focus the summaries and trend data.
+            Slice by state, time period, and event type to focus the summaries and trend data.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => updateParams({ state: "", year: "", event_type: "" })}
+          onClick={() => updateParams({ state: "", period: "", event_type: "" })}
           className="rounded-full border border-midnight-navy/10 px-4 py-2 text-sm font-medium text-slate-gray transition hover:border-intelligence-teal hover:text-intelligence-teal"
         >
           Clear filters
@@ -72,7 +82,7 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
           </span>
           <select
             value={selectedState}
-            onChange={(e) => updateParams({ state: e.target.value, year: selectedYear, event_type: selectedEventType })}
+            onChange={(e) => updateParams({ state: e.target.value, period: selectedPeriod, event_type: selectedEventType })}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
             <option value="">All states</option>
@@ -86,17 +96,16 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
 
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-gray">
-            Year
+            Time Period
           </span>
           <select
-            value={selectedYear}
-            onChange={(e) => updateParams({ state: selectedState, year: e.target.value, event_type: selectedEventType })}
+            value={selectedPeriod}
+            onChange={(e) => updateParams({ state: selectedState, period: e.target.value, event_type: selectedEventType })}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
-            <option value="">All years</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
+            {TIME_PERIOD_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
@@ -108,7 +117,7 @@ export function StormFilterBar({ states, years, eventTypes }: StormFilterBarProp
           </span>
           <select
             value={selectedEventType}
-            onChange={(e) => updateParams({ state: selectedState, year: selectedYear, event_type: e.target.value })}
+            onChange={(e) => updateParams({ state: selectedState, period: selectedPeriod, event_type: e.target.value })}
             className="w-full rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-3 text-sm font-medium text-midnight-navy outline-none transition focus:border-intelligence-teal"
           >
             <option value="">All event types</option>

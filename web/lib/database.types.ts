@@ -2747,6 +2747,7 @@ export type Database = {
       }
       get_storm_counties_by_state: {
         Args: {
+          filter_days?: number
           filter_event_type?: string
           filter_state: string
           filter_year?: number
@@ -2776,8 +2777,29 @@ export type Database = {
           state: string
         }[]
       }
+      get_recent_storm_events: {
+        Args: {
+          filter_days?: number
+          filter_event_type?: string
+          filter_state?: string
+          result_limit?: number
+        }
+        Returns: {
+          begin_date_time: string
+          begin_lat: number
+          begin_lon: number
+          county_name: string
+          damage_property: number
+          event_type: string
+          state: string
+          tor_f_scale: string
+          total_deaths: number
+          total_injuries: number
+        }[]
+      }
       get_storm_event_totals: {
         Args: {
+          filter_days?: number
           filter_event_type?: string
           filter_state?: string
           filter_year?: number
@@ -2799,6 +2821,7 @@ export type Database = {
       }
       get_storm_events_by_state: {
         Args: {
+          filter_days?: number
           filter_event_type?: string
           filter_state?: string
           filter_year?: number
@@ -2813,7 +2836,7 @@ export type Database = {
         }[]
       }
       get_storm_events_by_type: {
-        Args: { filter_state?: string; filter_year?: number }
+        Args: { filter_days?: number; filter_state?: string; filter_year?: number }
         Returns: {
           event_type: string
           total_events: number
@@ -2822,6 +2845,7 @@ export type Database = {
       }
       get_storm_heatmap_points: {
         Args: {
+          filter_days?: number
           filter_event_type?: string
           filter_state?: string
           filter_year?: number
