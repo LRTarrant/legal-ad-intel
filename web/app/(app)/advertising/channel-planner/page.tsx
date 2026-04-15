@@ -1,10 +1,12 @@
 import {
   getChannelFitScores,
   getCompetitionScores,
+  getMarketRecommendations,
   type ChannelFitScore,
+  type MarketRecommendation,
 } from "@/lib/queries";
 import Link from "next/link";
-import { Radio, Zap, BarChart3, TrendingUp, Shield } from "lucide-react";
+import { Radio, Zap, BarChart3, TrendingUp, Shield, MapPin } from "lucide-react";
 import { AdvertisingInsight } from "../../components/advertising-insight";
 import { MethodologySources } from "../../components/methodology-sources";
 
@@ -552,6 +554,97 @@ function CompetitionOnlyTable({ competitionMap }: { competitionMap: Map<string, 
   );
 }
 
+function RecommendedMarkets({
+  recommendations,
+  tortId,
+  currentMarketId,
+}: {
+  recommendations: MarketRecommendation[];
+  tortId: string;
+  currentMarketId: string;
+}) {
+  return (
+    <section className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-5">
+        <MapPin className="h-5 w-5 text-intelligence-teal" />
+        <h2 className="text-lg font-semibold text-midnight-navy">
+          Recommended Markets &amp; Channels
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {recommendations.map((rec) => {
+          const isActive = rec.market_id === currentMarketId;
+          const oppPct = Math.round(rec.opportunity_score * 100);
+          const badgeColor =
+            rec.opportunity_score >= 0.85
+              ? "bg-intelligence-teal text-white"
+              : rec.opportunity_score >= 0.75
+                ? "bg-steel-blue text-white"
+                : "bg-slate-gray/20 text-slate-gray";
+
+          const ch1Fit = Math.round(rec.top_channel_1_fit * 100);
+          const ch2Fit = Math.round(rec.top_channel_2_fit * 100);
+          const ch1Bucket = competitionBucket(rec.top_channel_1_comp);
+          const ch2Bucket = competitionBucket(rec.top_channel_2_comp);
+
+          const params = new URLSearchParams({
+            tort_id: tortId,
+            market_id: rec.market_id,
+          });
+
+          return (
+            <Link
+              key={rec.market_id}
+              href={`/advertising/channel-planner?${params.toString()}`}
+              className={`block rounded-lg border p-4 transition-shadow hover:shadow-md ${
+                isActive
+                  ? "ring-2 ring-intelligence-teal border-intelligence-teal/30"
+                  : "border-cloud hover:border-steel-blue/30"
+              }`}
+            >
+              {/* Top row: market name + opportunity badge */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-midnight-navy">
+                  {rec.market_label}
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${badgeColor}`}
+                >
+                  {oppPct}%
+                </span>
+              </div>
+
+              {/* Channel pills */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-xs font-medium text-charcoal">
+                  {channelLabel(rec.top_channel_1)} · {ch1Fit}%
+                  <span
+                    className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${competitionBadgeStyle(ch1Bucket)}`}
+                  >
+                    {ch1Bucket}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-xs font-medium text-charcoal">
+                  {channelLabel(rec.top_channel_2)} · {ch2Fit}%
+                  <span
+                    className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${competitionBadgeStyle(ch2Bucket)}`}
+                  >
+                    {ch2Bucket}
+                  </span>
+                </span>
+              </div>
+
+              {/* Rationale */}
+              <p className="text-xs text-slate-gray italic">{rec.rationale}</p>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────────── */
 
 export default async function TestChannelFitPage({
@@ -570,13 +663,15 @@ export default async function TestChannelFitPage({
 
   let scores: ChannelFitScore[] = [];
   let competitionMap = new Map<string, number>();
+  let recommendations: MarketRecommendation[] = [];
   let errorMsg: string | null = null;
 
   try {
     const competitionMarketId = COMPETITION_MARKET_MAP[marketId] ?? marketId;
-    [scores, competitionMap] = await Promise.all([
+    [scores, competitionMap, recommendations] = await Promise.all([
       getChannelFitScores(tortId, profileName, marketId),
       getCompetitionScores(competitionMarketId),
+      getMarketRecommendations(tortId),
     ]);
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -739,7 +834,16 @@ export default async function TestChannelFitPage({
             competitionMap={competitionMap}
           />
 
-          {/* 2. Top 5 Visual Bar Chart */}
+          {/* 2. Recommended Markets & Channels */}
+          {recommendations.length > 0 && (
+            <RecommendedMarkets
+              recommendations={recommendations}
+              tortId={tortId}
+              currentMarketId={marketId}
+            />
+          )}
+
+          {/* 3. Top 5 Visual Bar Chart */}
           <TopChannelsChart scores={scores} competitionMap={competitionMap} />
 
           {/* 3. Full Rankings Table */}
@@ -775,6 +879,11 @@ export default async function TestChannelFitPage({
                   "Competition scores are derived from real advertising activity in ad_events. For each market \u00d7 channel combination, the score reflects: (a) distinct advertiser count (60% weight) and (b) total estimated spend (40% weight), normalized against the global maximum and clamped to 0.05\u20130.95. Channel mapping: social \u2192 Facebook / Instagram / TikTok; TV \u2192 TV Linear; CTV \u2192 CTV Streaming; digital \u2192 YouTube; search and radio map directly. Podcast and print have no observed ad data yet. Scores refresh weekly via automated pipeline.",
               },
               {
+                title: "Market Recommendations",
+                content:
+                  "Market opportunity scores combine audience-fit strength (average of top-2 channel fit scores) with a competition discount (market-wide average competition intensity, weighted at 50% maximum penalty). Formula: opportunity = avg_top2_fit \u00d7 (1 \u2212 avg_competition \u00d7 0.5). This favors markets where the audience aligns well and competition is manageable. Channel recommendations within each market use the same fit \u00d7 (1 \u2212 comp \u00d7 0.5) formula at the individual channel level. Rationale tags are generated from competition thresholds.",
+              },
+              {
                 title: "Recommendation Labels",
                 content:
                   "Each channel receives an action-oriented label derived from its audience-fit tier and competition bucket. These are planning heuristics based on the current prototype inputs \u2014 not definitive media-buy guidance. The mapping is:",
@@ -793,6 +902,7 @@ export default async function TestChannelFitPage({
               "Competition scores depend on ad pipeline coverage \u2014 channels or markets with low observation counts may understate true competition.",
               "Age-band weights do not yet incorporate gender, income, or geographic density. Social Media Addiction and Hair Relaxer profiles are modeled from demographic heuristics rather than case-level data.",
               "Channel indices are static and do not reflect seasonal or campaign-level variation.",
+              "Market recommendations are based on 4 synthetic market profiles and do not cover all DMAs. Opportunity scores should be treated as relative rankings, not absolute measures.",
             ]}
             dataNotice="Audience-fit profiles and media consumption indices use benchmark and synthetic inputs. Competition scores are derived from real advertising activity data collected via Meta Ad Library, Google Ads Transparency, TikTok Creative Center, and SERP monitoring pipelines. Treat audience-fit outputs as directional; competition scores reflect actual observed market activity."
           />

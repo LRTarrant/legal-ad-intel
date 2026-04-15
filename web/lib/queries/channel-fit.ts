@@ -86,3 +86,45 @@ export async function getCompetitionScores(
 
   return map;
 }
+
+export interface MarketRecommendation {
+  market_id: string;
+  market_label: string;
+  opportunity_score: number;
+  avg_fit: number;
+  avg_competition: number;
+  top_channel_1: string;
+  top_channel_1_fit: number;
+  top_channel_1_comp: number;
+  top_channel_2: string;
+  top_channel_2_fit: number;
+  top_channel_2_comp: number;
+  rationale: string;
+}
+
+export async function getMarketRecommendations(
+  tortId: string,
+  profileName = "default"
+): Promise<MarketRecommendation[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase: any = getSupabase();
+  const { data, error } = await supabase.rpc("get_market_recommendations", {
+    p_tort_id: tortId,
+    p_profile_name: profileName,
+  });
+  if (error) throw new Error(`market recommendations failed: ${error.message}`);
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    market_id: row.market_id as string,
+    market_label: row.market_label as string,
+    opportunity_score: Number(row.opportunity_score),
+    avg_fit: Number(row.avg_fit),
+    avg_competition: Number(row.avg_competition),
+    top_channel_1: row.top_channel_1 as string,
+    top_channel_1_fit: Number(row.top_channel_1_fit),
+    top_channel_1_comp: Number(row.top_channel_1_comp),
+    top_channel_2: row.top_channel_2 as string,
+    top_channel_2_fit: Number(row.top_channel_2_fit),
+    top_channel_2_comp: Number(row.top_channel_2_comp),
+    rationale: row.rationale as string,
+  }));
+}
