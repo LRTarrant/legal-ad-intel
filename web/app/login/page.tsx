@@ -11,7 +11,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Legal Marketing Intelligence</h1>
-          <p className="mt-2 text-sm text-zinc-400">Sign in to access your dashboards</p>
+          <p className="mt-2 text-sm text-zinc-400">Sign in to access competitive intelligence</p>
         </div>
 
         <form className="space-y-4">

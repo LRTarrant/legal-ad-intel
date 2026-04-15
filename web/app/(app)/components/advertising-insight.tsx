@@ -37,7 +37,7 @@ export function AdvertisingInsight({ children }: AdvertisingInsightProps) {
             className="text-sm font-semibold tracking-widest uppercase"
             style={{ color: '#1A8C96' }}
           >
-            Marketing Insight
+            Intelligence
           </span>
         </div>
         {/* Chevron */}

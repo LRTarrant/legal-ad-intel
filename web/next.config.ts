@@ -6,6 +6,18 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // IA cleanup: old dashboard → overview
+      {
+        source: "/dashboard",
+        destination: "/overview",
+        permanent: false,
+      },
+      // IA cleanup: firms → competitors
+      {
+        source: "/firms",
+        destination: "/competitors",
+        permanent: true,
+      },
       // Old Channel Planner path
       {
         source: "/advertising/test-channel-fit",

@@ -38,6 +38,28 @@ function channelLabel(ch: string): string {
   return ch.charAt(0).toUpperCase() + ch.slice(1);
 }
 
+function competitionBadge(advertisers: number) {
+  if (advertisers >= 8) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 ring-1 ring-red-200">
+        High
+      </span>
+    );
+  }
+  if (advertisers >= 4) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 ring-1 ring-amber-200">
+        Medium
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200">
+      Low
+    </span>
+  );
+}
+
 const channelColors: Record<string, string> = {
   tv: "bg-blue-100 text-blue-700 ring-1 ring-blue-200",
   ctv: "bg-purple-100 text-purple-700 ring-1 ring-purple-200",
@@ -260,6 +282,7 @@ export function MarketsClient({
                 <th className="px-4 py-3">Region</th>
                 <th className="px-4 py-3 text-right">Obs.</th>
                 <th className="px-4 py-3 text-right min-w-[180px]">Est. Spend</th>
+                <th className="px-4 py-3 text-center">Competition</th>
                 <th className="px-4 py-3 text-center">Advertisers</th>
                 <th className="px-4 py-3 text-center">Torts</th>
                 <th className="px-5 py-3">Channels</th>
@@ -304,6 +327,9 @@ export function MarketsClient({
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      {competitionBadge(m.distinct_advertisers)}
+                    </td>
                     <td className="px-4 py-3 text-center text-sm font-semibold text-charcoal tabular-nums">
                       {m.distinct_advertisers}
                     </td>
@@ -330,7 +356,7 @@ export function MarketsClient({
               {markets.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-5 py-12 text-center text-sm text-slate-gray"
                   >
                     No markets match the selected filters.
