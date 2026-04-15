@@ -934,7 +934,46 @@ def build_upsert_rows(
             if row.get("is_leadership"):
                 best[aid]["is_leadership"] = True
 
-    result = list(best.values())
+    # Second pass: deduplicate by normalized attorney name.
+    # CourtListener assigns different cl_attorney_id values to the same
+    # person across different dockets.  Merge them by name.
+    name_best: dict[str, dict] = {}
+    for row in best.values():
+        name = (row.get("attorney_name") or "").strip()
+        if not name:
+            continue
+        name_key = name.lower()
+        existing = name_best.get(name_key)
+        if existing is None:
+            name_best[name_key] = row
+        else:
+            # Keep the row with more info: prefer firm, then higher docket count
+            new_score = (1 if row.get("firm_name") else 0, row.get("member_docket_count", 0))
+            old_score = (1 if existing.get("firm_name") else 0, existing.get("member_docket_count", 0))
+            if new_score > old_score:
+                # Merge docket counts
+                row["member_docket_count"] = max(
+                    row.get("member_docket_count", 0),
+                    existing.get("member_docket_count", 0),
+                )
+                name_best[name_key] = row
+            else:
+                existing["member_docket_count"] = max(
+                    existing.get("member_docket_count", 0),
+                    row.get("member_docket_count", 0),
+                )
+            # Preserve leadership + firm from either copy
+            if row.get("is_leadership"):
+                name_best[name_key]["is_leadership"] = True
+            if row.get("firm_name") and not name_best[name_key].get("firm_name"):
+                name_best[name_key]["firm_name"] = row["firm_name"]
+
+    result = list(name_best.values())
+    if len(result) < len(best):
+        logger.info(
+            "Name-based dedup merged %d cl_attorney_ids into %d unique attorneys",
+            len(best), len(result),
+        )
     logger.info(
         "Built %d %srows for MDL %d",
         len(result),
