@@ -8,15 +8,18 @@ import {
   Anchor,
   Building2,
   Car,
+  CloudLightning,
   Gavel,
   HardHat,
   HeartPulse,
   LayoutDashboard,
   MapPin,
   Radio,
+  Scale,
   Sliders,
   Truck,
   Bike,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -40,13 +43,14 @@ type NavGroup = {
 
 const dataModules: NavGroup[] = [
   {
-    heading: "Accident Intelligence",
+    heading: "Accident & Property Damage Intelligence",
     items: [
       { label: "Motor Vehicle", href: "/fatalities", Icon: Car },
       { label: "Large Truck", href: "/large-truck-fatalities", Icon: Truck },
       { label: "Motorcycle", href: "/motorcycle-fatalities", Icon: Bike },
       { label: "Boating", href: "/boating-accidents", Icon: Anchor },
       { label: "Construction / Job Site", href: "/construction", Icon: HardHat },
+      { label: "Storm Events", href: "/storm-events", Icon: CloudLightning },
     ],
   },
   {
@@ -59,6 +63,14 @@ const dataModules: NavGroup[] = [
     heading: "Litigation Intelligence",
     items: [
       { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
+      { label: "Judicial Profiles", href: "/judicial-profiles", Icon: Scale },
+      { label: "PI Viability", href: "/pi-viability", Icon: Gavel },
+    ],
+  },
+  {
+    heading: "Audiences & Media Research",
+    items: [
+      { label: "Market Demographics", href: "/market-demographics", Icon: Users },
     ],
   },
 ];
