@@ -132,9 +132,6 @@ export function MdlTable({
           <h2 className="font-heading text-xl font-semibold text-midnight-navy">
             MDL Docket Table
           </h2>
-          <p className="mt-1 text-sm text-slate-gray">
-            Click any row to expand a pending-actions history chart.
-          </p>
         </div>
         <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
           {rows.length.toLocaleString()} MDLs
@@ -145,6 +142,7 @@ export function MdlTable({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-cloud text-xs uppercase text-slate-gray">
+              <th className="w-8 py-2" />
               <th className="py-2 pr-4">
                 <button type="button" onClick={() => toggleSort("mdl_number")}>
                   {label("MDL #", "mdl_number")}
@@ -204,6 +202,20 @@ export function MdlTable({
                       )
                     }
                   >
+                    <td className="w-8 py-3 pl-1">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-90 text-intelligence-teal" : "text-midnight-navy/30"}`}
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </td>
                     <td className="py-3 pr-4 font-mono font-medium">
                       <Link
                         href={`/mdl-tracker/${row.mdl_number}`}
@@ -259,7 +271,7 @@ export function MdlTable({
                   </tr>
                   {isExpanded ? (
                     <tr className="border-b border-cloud bg-cloud/35">
-                      <td colSpan={9} className="px-4 py-5">
+                      <td colSpan={10} className="px-4 py-5">
                         <div className="mb-3 flex items-end justify-between gap-4">
                           <div>
                             <h3 className="font-heading text-lg font-semibold text-midnight-navy">
