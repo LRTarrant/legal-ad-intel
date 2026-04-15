@@ -752,7 +752,7 @@ export default async function TestChannelFitPage({
               {
                 title: "Audience Profiles",
                 content:
-                  "Each tort type has an audience profile that distributes claimant likelihood across six age bands (18\u201324 through 65+). Weights are currently internal assumptions based on case-mix patterns \u2014 e.g., Auto Injury skews working-age, Roundup skews 55+ due to long-latency cancer.",
+                  "Each tort type has an audience profile that distributes claimant likelihood across six age bands (18\u201324 through 65+). Weights are modeled assumptions based on case-mix patterns and demographic heuristics \u2014 e.g., Auto Injury skews working-age, Roundup skews 55+ due to long-latency cancer, Social Media Addiction targets parents of affected minors (heavy 35\u201354 skew), and Hair Relaxer targets women 35\u201360 with long-term product use history. These are directional estimates, not calibrated to specific epidemiological or survey data.",
               },
               {
                 title: "Media Consumption Inputs",
@@ -791,7 +791,7 @@ export default async function TestChannelFitPage({
             limitations={[
               "Scores measure audience\u2013channel alignment only, not cost efficiency or expected ROI.",
               "Competition scores depend on ad pipeline coverage \u2014 channels or markets with low observation counts may understate true competition.",
-              "Age-band weights do not yet incorporate gender, income, or geographic density.",
+              "Age-band weights do not yet incorporate gender, income, or geographic density. Social Media Addiction and Hair Relaxer profiles are modeled from demographic heuristics rather than case-level data.",
               "Channel indices are static and do not reflect seasonal or campaign-level variation.",
             ]}
             dataNotice="Audience-fit profiles and media consumption indices use benchmark and synthetic inputs. Competition scores are derived from real advertising activity data collected via Meta Ad Library, Google Ads Transparency, TikTok Creative Center, and SERP monitoring pipelines. Treat audience-fit outputs as directional; competition scores reflect actual observed market activity."
