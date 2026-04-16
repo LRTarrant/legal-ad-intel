@@ -120,18 +120,22 @@ export default async function StormEventsPage({
     getSingleValue(params.event_type)
   );
 
-  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints, recentEvents, freshness] =
-    await Promise.all([
-      getStormEventTotals(filters),
-      getStormEventsByState(filters),
-      getStormEventsByType(filters),
-      getStormEventTrendByYear(filters),
-      getStormDistinctStates(),
-      getStormDistinctEventTypes(),
-      getStormHeatmapPoints(filters),
-      getRecentStormEvents(filters),
-      getStormDataFreshness(),
-    ]);
+  // Batch 1: Critical above-the-fold data (score cards, filter options, freshness)
+  const [totals, states, eventTypes, freshness] = await Promise.all([
+    getStormEventTotals(filters),
+    getStormDistinctStates(),
+    getStormDistinctEventTypes(),
+    getStormDataFreshness(),
+  ]);
+
+  // Batch 2: Tables, charts, and map data
+  const [byState, byType, trend, rawHeatmapPoints, recentEvents] = await Promise.all([
+    getStormEventsByState(filters),
+    getStormEventsByType(filters),
+    getStormEventTrendByYear(filters),
+    getStormHeatmapPoints(filters),
+    getRecentStormEvents(filters),
+  ]);
 
   const heatmapPoints: HeatmapPoint[] = rawHeatmapPoints.map((p) => ({
     latitude: p.latitude,
