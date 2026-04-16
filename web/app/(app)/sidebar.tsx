@@ -26,6 +26,7 @@ import {
   Syringe,
   Leaf,
   Users,
+  Droplets,
 } from "lucide-react";
 
 const navItems = [
@@ -107,6 +108,7 @@ const dataModules: NavGroup[] = [
           { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
           { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
           { label: "Hair Relaxer", href: "/advertising/torts/hair-relaxer", Icon: Scissors },
+          { label: "Talcum Powder", href: "/advertising/torts/talcum-powder", Icon: Droplets },
         ],
       },
     ],
