@@ -27,6 +27,7 @@ import {
   Leaf,
   Users,
   Droplets,
+  Tractor,
 } from "lucide-react";
 
 const navItems = [
@@ -109,6 +110,7 @@ const dataModules: NavGroup[] = [
           { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
           { label: "Hair Relaxer", href: "/advertising/torts/hair-relaxer", Icon: Scissors },
           { label: "Talcum Powder", href: "/advertising/torts/talcum-powder", Icon: Droplets },
+          { label: "Paraquat", href: "/advertising/torts/paraquat", Icon: Tractor },
         ],
       },
     ],
