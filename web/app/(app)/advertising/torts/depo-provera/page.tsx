@@ -25,6 +25,7 @@ import {
   Globe,
   Eye,
 } from "lucide-react";
+import { AskAIPanel } from "../../../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,20 @@ export function generateMetadata() {
 }
 
 /* ── Static Data ───────────────────────────────────────────────────────── */
+
+const DEPO_TORT_CONTEXT = {
+  tortName: "Depo-Provera (Meningioma)",
+  injury: "Meningioma — brain tumor in the meninges (tissue lining the brain/spinal cord)",
+  mdlNumber: "MDL 3140, N.D. Florida, Judge M. Casey Rodgers",
+  pendingCases: "3,490+ (April 2026), 3,873% increase from March 2025 to March 2026",
+  settlementRange: "$100K–$1.5M depending on severity tier. Tier 1 (Severe): $500K–$1.5M+, Tier 2 (Moderate): $250K–$500K, Tier 3 (Lower): $100K–$250K, Tier 4 (Minimal): $25K–$100K",
+  estimatedCPA: "$2,500–$4,500. Comparable torts: Tylenol ~$2,550, PFAS ~$3,000, NEC ~$4,000, Hair Relaxer ~$4,500, Paraquat ~$9,950",
+  bellwetherDate: "December 2026 (first bellwether trial). Settlement negotiations could begin 2027, first payments late 2027–2028.",
+  caseSummary: "Depo-Provera (DMPA) is a Pfizer-manufactured injectable contraceptive. Thousands of women allege prolonged use caused meningioma brain tumors. MDL 3140 consolidated in N.D. Florida. Pfizer's central defense is federal preemption, but the FDA's December 2025 label change adding a meningioma warning undercuts this defense. Key studies: López-González (BMJ, 2024) 5.5x risk, Griffin (2024) 1.53x odds, Xiao (JAMA Neurology, 2025) 2.43x risk.",
+  qualification: "Product: Depo-Provera, Depo-SubQ Provera 104, or authorized generic. Minimum 2 injections or 12 months use. Diagnosed with meningioma after initiating use. Use window 1992–present. Not currently represented. Statute of limitations 2–3 years from diagnosis. Three screening tiers: Tier 1 Basic (2–3 questions, lowest CPL), Tier 2 Qualified (4–6 steps, mid CPL), Tier 3 Retainer-Ready (10–15 steps, highest CPA but lowest fallout).",
+  advertisingLandscape: "Stage: Early-to-mid (2–3). ~96 active Meta ads from ~34 advertisers. ~45 Google Ads from ~22 advertisers. ~18 TikTok ads from ~8 advertisers. Primary channels: Meta lead forms, Google Search/LSAs, legal lead gen networks. Top advertisers: TorHoerman Law (21 ads, ~$85K/mo), Morgan & Morgan (18 ads, ~$120K/mo), Lawsuit Legal News (17 ads, ~$55K/mo), Ben Crump Law (12 ads, ~$70K/mo). Platform risk: Meta removed law firm ads for social media addiction lawsuits in April 2026.",
+  targetingInsights: "41.2% of Black women have ever used Depo-Provera vs 20.3% White. Higher use among women without HS diploma (39.9%), rural women (29.4%). Top prescribing states (Medicaid, per 10K): RI (376), MS (309), MD (303), LA (291), SC (280), NM (268), OH (265), IA (253). High-value crossover states (high DMPA + high Black pop): MS, MD, LA, SC, OH, PA, TN, VA, NC, MI. Key DMAs: Baltimore, New Orleans, Columbia SC, Cleveland/Columbus, Jackson MS, Memphis, Philadelphia, Detroit. 424K+ Medicaid DMPA prescriptions in 2023.",
+};
 
 const SCIENTIFIC_STUDIES = [
   {
@@ -1745,6 +1760,8 @@ export default function DepoProveraPage() {
           Meta Ad Library, JPML, court filings.
         </p>
       </div>
+
+      <AskAIPanel tortContext={DEPO_TORT_CONTEXT} />
     </div>
   );
 }
