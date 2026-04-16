@@ -90,14 +90,14 @@ export default async function TortAdvertisingPage({
   windowStartDate.setDate(windowStartDate.getDate() - 90);
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
-  // Parallel data fetch
+  // Parallel data fetch — fetch ALL benchmarks so we can fuzzy-match
   const [segments, topAdvertisers, platforms, saturation, benchmarks] =
     await Promise.all([
       getSegmentSummary(tortSlug),
       getTopAdvertisersBySegment(tortSlug, 25),
       getAdvertiserPlatforms(tortSlug),
       getAdSaturationWindowed(windowStart, windowEnd, tortSlug),
-      getTortCostBenchmarks(tort.label),
+      getTortCostBenchmarks(),
     ]);
 
   // Build platform lookup by advertiser
@@ -124,12 +124,23 @@ export default async function TortAdvertisingPage({
     .sort((a, b) => (b.saturation_score ?? 0) - (a.saturation_score ?? 0))
     .slice(0, 10);
 
-  // Find best matching benchmark
+  // Find best matching benchmark — fuzzy match on tort label vs benchmark tort_name
+  // We try multiple strategies: exact match, substring in either direction,
+  // and first-word overlap to handle cases like "Roundup / Glyphosate" vs "Roundup"
   const tortLabelLower = tort.label.toLowerCase();
-  const benchmark = benchmarks.find((b) =>
-    b.tort_name.toLowerCase().includes(tortLabelLower) ||
-    tortLabelLower.includes(b.tort_name.toLowerCase().split(" ")[0])
-  ) ?? null;
+  const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
+  const benchmark = benchmarks
+    .sort((a, b) => b.observed_date.localeCompare(a.observed_date))
+    .find((b) => {
+      const bName = b.tort_name.toLowerCase();
+      // Exact match
+      if (bName === tortLabelLower) return true;
+      // Benchmark name contains the full label or vice versa
+      if (bName.includes(tortLabelLower) || tortLabelLower.includes(bName)) return true;
+      // Any significant word from the tort label appears in the benchmark name
+      // (skip short words like "of", "the", etc.)
+      return tortLabelWords.some((w) => w.length > 3 && bName.includes(w));
+    }) ?? null;
 
   return (
     <div className="space-y-8">
