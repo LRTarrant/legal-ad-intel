@@ -887,6 +887,23 @@ def classify_via_exclusion(
             "Master docket parties endpoint returned %d party groups",
             len(master_parties),
         )
+        # Log raw structure of first party to understand the response format
+        if master_parties:
+            p0 = master_parties[0]
+            p0_keys = list(p0.keys()) if isinstance(p0, dict) else str(type(p0))
+            p0_name = (p0.get("name") or "") if isinstance(p0, dict) else ""
+            p0_attorneys = p0.get("attorneys", "MISSING") if isinstance(p0, dict) else "N/A"
+            atty_count = len(p0_attorneys) if isinstance(p0_attorneys, list) else "not-list"
+            logger.info(
+                "First party keys=%s, name=%s, attorneys type=%s count=%s",
+                p0_keys, p0_name[:50], type(p0_attorneys).__name__, atty_count,
+            )
+            if isinstance(p0_attorneys, list) and p0_attorneys:
+                a0 = p0_attorneys[0]
+                logger.info("First attorney entry keys=%s", list(a0.keys()) if isinstance(a0, dict) else str(type(a0)))
+            elif isinstance(p0_attorneys, str) and p0_attorneys.startswith("http"):
+                logger.info("Attorneys field is a URL: %s", p0_attorneys[:120])
+
         # Log a sample of attorney names from the parties endpoint
         party_atty_names_sample = []
         for party in master_parties:
