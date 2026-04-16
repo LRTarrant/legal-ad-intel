@@ -70,6 +70,7 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "workers_comp":      ["workers compensation lawyer", "workers comp attorney"],
     "roblox_abuse":      ["roblox child abuse lawsuit", "roblox predator lawsuit"],
     "social_media_addiction": ["social media addiction lawsuit teens", "tiktok addiction lawsuit"],
+    "depo_provera":          ["depo provera lawsuit", "depo provera meningioma lawyer"],
 }
 
 
