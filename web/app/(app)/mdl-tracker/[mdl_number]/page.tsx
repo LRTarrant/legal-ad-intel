@@ -3,10 +3,8 @@ import Link from "next/link";
 import { getMdlByNumber, getMdlTrend, getTortSlugForMdl } from "@/lib/queries/mdl";
 import { getJpmlSnapshots } from "@/lib/queries/jpml";
 import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
-import { getMdlPlaintiffAttorneys } from "@/lib/queries/mdl-attorneys";
 import { getTypeColor, getTypeShortLabel } from "../jpml-colors";
 import type { MdlTrendPoint } from "@/lib/queries";
-import PlaintiffFirms from "./plaintiff-firms";
 
 export const dynamic = "force-dynamic";
 
@@ -171,19 +169,26 @@ export default async function MdlDetailPage({
   const mdlNumber = parseInt(mdl_number, 10);
   if (isNaN(mdlNumber)) notFound();
 
-  const [mdlRow, trendData, jpmlSnapshots, developments, plaintiffAttorneys] =
+  const [mdlRow, trendData, jpmlSnapshots, developments] =
     await Promise.all([
       getMdlByNumber(mdlNumber),
       getMdlTrend(mdlNumber),
       getJpmlSnapshots(),
       getMdlDevelopments(mdlNumber),
-      getMdlPlaintiffAttorneys(mdlNumber),
     ]);
 
   if (!mdlRow) notFound();
 
-  // Resolve the advertising page slug for this tort (if one exists)
-  const tortAdSlug = await getTortSlugForMdl(mdlRow.mass_tort_id);
+  // Resolve the advertising page slug for this tort (if one exists).
+  // Hardcoded overrides for MDLs whose tort page isn't yet in the torts table.
+  const MDL_TORT_SLUG_OVERRIDES: Record<number, string> = {
+    3140: "depo-provera",
+  };
+
+  const tortAdSlug =
+    (await getTortSlugForMdl(mdlRow.mass_tort_id)) ??
+    MDL_TORT_SLUG_OVERRIDES[mdlNumber] ??
+    null;
 
   const jpmlSnapshot =
     jpmlSnapshots.find((s) => s.mdl_number === mdlNumber) ?? null;
@@ -437,9 +442,6 @@ export default async function MdlDetailPage({
         </a>
       </div>
 
-
-      {/* Plaintiff Attorneys — firm-first expandable UI */}
-      <PlaintiffFirms attorneys={plaintiffAttorneys} />
 
       {/* Recent Developments */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
