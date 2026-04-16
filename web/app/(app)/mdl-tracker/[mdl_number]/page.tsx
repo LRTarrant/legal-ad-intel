@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getMdlByNumber, getMdlTrend, getTortSlugForMdl } from "@/lib/queries/mdl";
+import { getMdlByNumber, getMdlTrend } from "@/lib/queries/mdl";
 import { getJpmlSnapshots } from "@/lib/queries/jpml";
 import { getMdlDevelopments } from "@/lib/queries/mdl-developments";
 import { getMdlPlaintiffAttorneys } from "@/lib/queries/mdl-attorneys";
@@ -181,9 +181,6 @@ export default async function MdlDetailPage({
     ]);
 
   if (!mdlRow) notFound();
-
-  // Resolve the advertising page slug for this tort (if one exists)
-  const tortAdSlug = await getTortSlugForMdl(mdlRow.mass_tort_id);
 
   const jpmlSnapshot =
     jpmlSnapshots.find((s) => s.mdl_number === mdlNumber) ?? null;
@@ -402,25 +399,14 @@ export default async function MdlDetailPage({
         </div>
       </div>
 
-      {/* Cross-links */}
-      <div className="flex flex-wrap gap-3">
-        {tortAdSlug && (
-          <Link
-            href={`/advertising/torts/${tortAdSlug}`}
-            className="inline-flex items-center gap-2 rounded-lg border-2 border-intelligence-teal px-6 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-            </svg>
-            Advertising Intelligence →
-          </Link>
-        )}
+      {/* CourtListener link */}
+      <div>
         <a
           href={`https://www.courtlistener.com/?q=%22MDL+${mdlNumber}%22&type=r`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Search CourtListener RECAP for MDL ${mdlNumber}`}
-          className="inline-block rounded-lg border-2 border-cloud px-6 py-2.5 text-sm font-semibold text-slate-gray transition hover:border-intelligence-teal hover:text-intelligence-teal"
+          className="inline-block rounded-lg border-2 border-intelligence-teal px-6 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
         >
           View on CourtListener ↗
         </a>
