@@ -17,7 +17,8 @@ import {
   type HeatmapPoint,
   type RecentStormEvent,
 } from "@/lib/queries";
-import { StormFilterBar, TIME_PERIOD_OPTIONS } from "./storm-filter-bar";
+import { StormFilterBar } from "./storm-filter-bar";
+import { TIME_PERIOD_OPTIONS } from "./storm-constants";
 import { RecentEventsPanel } from "./recent-events-panel";
 import { FatalitiesHeatmapPanel } from "../fatalities/fatalities-heatmap-panel";
 import { AdvertisingInsight } from "../components/advertising-insight";
