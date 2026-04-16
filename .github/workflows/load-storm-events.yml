@@ -45,3 +45,16 @@ jobs:
             ARGS="$ARGS --dry-run"
           fi
           python scripts/load_storm_events.py $ARGS
+
+      - name: Refresh storm events materialized view
+        if: inputs.dry_run != 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          curl -sf -X POST \
+            "${SUPABASE_URL}/rest/v1/rpc/refresh_storm_events_summary" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
