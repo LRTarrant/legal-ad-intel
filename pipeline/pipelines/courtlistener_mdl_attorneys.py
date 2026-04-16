@@ -1108,9 +1108,18 @@ def build_upsert_rows(
         if existing is None:
             name_best[name_key] = row
         else:
-            # Keep the row with more info: prefer firm, then higher docket count
-            new_score = (1 if row.get("firm_name") else 0, row.get("member_docket_count", 0))
-            old_score = (1 if existing.get("firm_name") else 0, existing.get("member_docket_count", 0))
+            # Keep the row with more info: prefer leadership (has corrected
+            # firm from attorneys endpoint), then firm, then docket count.
+            new_score = (
+                1 if row.get("is_leadership") else 0,
+                1 if row.get("firm_name") else 0,
+                row.get("member_docket_count", 0),
+            )
+            old_score = (
+                1 if existing.get("is_leadership") else 0,
+                1 if existing.get("firm_name") else 0,
+                existing.get("member_docket_count", 0),
+            )
             if new_score > old_score:
                 # Merge docket counts
                 row["member_docket_count"] = max(
@@ -1123,9 +1132,13 @@ def build_upsert_rows(
                     existing.get("member_docket_count", 0),
                     row.get("member_docket_count", 0),
                 )
-            # Preserve leadership + firm from either copy
+            # Preserve leadership + firm from the leadership-flagged copy
             if row.get("is_leadership"):
                 name_best[name_key]["is_leadership"] = True
+                # Leadership row has the corrected firm from the attorneys
+                # endpoint — always prefer it over search-API-derived firm
+                if row.get("firm_name"):
+                    name_best[name_key]["firm_name"] = row["firm_name"]
             if row.get("firm_name") and not name_best[name_key].get("firm_name"):
                 name_best[name_key]["firm_name"] = row["firm_name"]
 
