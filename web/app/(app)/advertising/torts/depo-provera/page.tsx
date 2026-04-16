@@ -25,6 +25,8 @@ import {
   getAdvertiserPlatforms,
   getAdSaturationWindowed,
   getTortCostBenchmarks,
+  getSerpVisibilityWindowed,
+  getSerpTopResults,
 } from "@/lib/queries";
 import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
 
@@ -259,44 +261,6 @@ const CROSSOVER_STATES = [
   { state: "Michigan", rate: 132, blackPop: "14.1%", totalRx: "13,151", dmas: "Detroit, Grand Rapids" },
 ];
 
-const ORGANIC_SERP_RESULTS = [
-  {
-    position: 1,
-    title: "Depo-Provera Lawsuit | Brain Tumor Claims — TorHoerman Law",
-    url: "https://www.torhoermanlaw.com/depo-provera-lawsuit/",
-    description: "Were you diagnosed with a meningioma brain tumor after receiving Depo-Provera injections? You may qualify for compensation. Free case review.",
-    domain: "torhoermanlaw.com",
-  },
-  {
-    position: 2,
-    title: "Depo-Provera Meningioma Lawsuit — AboutLawsuits.com",
-    url: "https://www.aboutlawsuits.com/depo-provera-meningioma-lawsuit/",
-    description: "Depo-Provera lawsuits are being pursued by women diagnosed with meningioma brain tumors after use of the injectable birth control.",
-    domain: "aboutlawsuits.com",
-  },
-  {
-    position: 3,
-    title: "Depo-Provera Lawsuit Update 2026 — Drugwatch",
-    url: "https://www.drugwatch.com/depo-provera/lawsuit/",
-    description: "More than 3,400 Depo-Provera lawsuits have been filed alleging the birth control injection causes meningioma brain tumors.",
-    domain: "drugwatch.com",
-  },
-  {
-    position: 4,
-    title: "Depo-Provera Brain Tumor Lawsuit — Morgan & Morgan",
-    url: "https://www.forthepeople.com/mass-tort/depo-provera-lawsuit/",
-    description: "If you used Depo-Provera and developed a brain tumor, you may be entitled to compensation. Contact Morgan & Morgan for a free consultation.",
-    domain: "forthepeople.com",
-  },
-  {
-    position: 5,
-    title: "Depo-Provera Lawsuit — Ben Crump Law",
-    url: "https://bencrump.com/mass-torts/depo-provera-lawsuit/",
-    description: "Depo-Provera has been linked to meningioma brain tumors. Learn about the lawsuit and your legal options.",
-    domain: "bencrump.com",
-  },
-];
-
 const TRACKED_KEYWORDS = [
   { keyword: "depo provera lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$42.80" },
   { keyword: "depo provera meningioma", volume: "22,200", difficulty: "High" as const, cpc: "$38.50" },
@@ -372,13 +336,15 @@ export default async function DepoProveraPage() {
   windowStartDate.setDate(windowStartDate.getDate() - 90);
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
-  const [segments, topAdvertisers, platforms, saturation, benchmarks] =
+  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults] =
     await Promise.all([
       getSegmentSummary(TORT_SLUG),
       getTopAdvertisersBySegment(TORT_SLUG, 25),
       getAdvertiserPlatforms(TORT_SLUG),
       getAdSaturationWindowed(windowStart, windowEnd, TORT_SLUG),
       getTortCostBenchmarks(),
+      getSerpVisibilityWindowed(windowStart, windowEnd, TORT_SLUG),
+      getSerpTopResults(TORT_SLUG, 5),
     ]);
 
   // Build platform lookup by advertiser
@@ -1281,38 +1247,149 @@ export default async function DepoProveraPage() {
           </table>
         </div>
 
-        {/* SERP Preview Cards */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          SERP Preview
-        </h3>
-        <div className="space-y-0 divide-y divide-cloud">
-          {ORGANIC_SERP_RESULTS.map((r) => (
-            <div key={r.position} className="relative py-3 first:pt-0 last:pb-0">
-              <span className="absolute top-3 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-intelligence-teal/10 text-[10px] font-bold text-intelligence-teal">
-                {r.position}
-              </span>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-gray/20 text-[8px] font-bold text-slate-gray">
-                  {r.domain.charAt(0).toUpperCase()}
-                </span>
-                <span className="text-xs text-success">{r.domain}</span>
-              </div>
-              <a
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-intelligence-teal hover:underline"
-              >
-                {r.title}
-              </a>
-              <p className="mt-0.5 text-sm text-midnight-navy/60 pr-8">
-                {r.description}
-              </p>
-            </div>
-          ))}
+        {/* SERP Visibility Rankings (LIVE DATA) */}
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-midnight-navy">
+            SERP Visibility Rankings
+          </h3>
+          {serpVisibility.length > 0 && (
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          )}
         </div>
+        {serpVisibility.length > 0 ? (
+          <div className="overflow-x-auto mb-6">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-cloud">
+                  <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                    Domain
+                  </th>
+                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Visibility Score
+                  </th>
+                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Avg Position
+                  </th>
+                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Organic
+                  </th>
+                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Paid
+                  </th>
+                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Top 3
+                  </th>
+                  <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                    Top 10
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...serpVisibility]
+                  .sort((a, b) => b.visibility_score - a.visibility_score)
+                  .slice(0, 15)
+                  .map((row) => (
+                    <tr
+                      key={row.domain}
+                      className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                    >
+                      <td className="py-3 pr-4 font-medium text-midnight-navy">
+                        {row.domain}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-semibold text-midnight-navy">
+                        {row.visibility_score.toFixed(1)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
+                        {row.avg_position != null ? row.avg_position.toFixed(1) : "—"}
+                      </td>
+                      <td className="py-3 px-3 text-right text-midnight-navy/80">
+                        {row.organic_appearances}
+                      </td>
+                      <td className="py-3 px-3 text-right text-midnight-navy/80">
+                        {row.paid_appearances}
+                      </td>
+                      <td className="py-3 px-3 text-right text-midnight-navy/80">
+                        {row.top_3_count}
+                      </td>
+                      <td className="py-3 pl-3 text-right text-midnight-navy/80">
+                        {row.top_10_count}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center mb-6">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              SERP visibility data collection in progress
+            </p>
+            <p className="mt-1 text-xs text-slate-gray">
+              Visibility rankings will appear here once SERP data is collected.
+            </p>
+          </div>
+        )}
 
-        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live SERP tracking coming soon.</p>
+        {/* SERP Preview Cards (LIVE DATA) */}
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-midnight-navy">
+            SERP Preview
+          </h3>
+          {serpResults.length > 0 && (
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          )}
+        </div>
+        {serpResults.length > 0 ? (
+          <div className="space-y-0 divide-y divide-cloud">
+            {serpResults.map((r, i) => (
+              <div key={`${r.domain}-${i}`} className="relative py-3 first:pt-0 last:pb-0">
+                <span className="absolute top-3 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-intelligence-teal/10 text-[10px] font-bold text-intelligence-teal">
+                  {r.position}
+                </span>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-gray/20 text-[8px] font-bold text-slate-gray">
+                    {r.domain.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="text-xs text-success">{r.domain}</span>
+                </div>
+                {r.link ? (
+                  <a
+                    href={r.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-intelligence-teal hover:underline"
+                  >
+                    {r.title}
+                  </a>
+                ) : (
+                  <p className="text-sm font-medium text-intelligence-teal">
+                    {r.title}
+                  </p>
+                )}
+                {r.snippet && (
+                  <p className="mt-0.5 text-sm text-midnight-navy/60 pr-8">
+                    {r.snippet}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              SERP data collection in progress
+            </p>
+            <p className="mt-1 text-xs text-slate-gray">
+              Live organic search results will appear here once collected.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── 11. Top Advertisers (LIVE DATA) ────────────────────────────── */}
