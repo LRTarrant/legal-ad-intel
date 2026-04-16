@@ -23,6 +23,7 @@ import {
   Truck,
   Bike,
   Syringe,
+  Leaf,
   Users,
 } from "lucide-react";
 
@@ -103,6 +104,7 @@ const dataModules: NavGroup[] = [
         heading: "Tort Profiles",
         items: [
           { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
+          { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
         ],
       },
     ],
