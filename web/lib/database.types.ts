@@ -2783,6 +2783,7 @@ export type Database = {
           filter_event_type?: string
           filter_state?: string
           result_limit?: number
+          impactful_only?: boolean
         }
         Returns: {
           begin_date_time: string
@@ -2795,6 +2796,13 @@ export type Database = {
           tor_f_scale: string
           total_deaths: number
           total_injuries: number
+        }[]
+      }
+      get_storm_data_freshness: {
+        Args: Record<string, never>
+        Returns: {
+          latest_date: string
+          total_rows: number
         }[]
       }
       get_storm_event_totals: {

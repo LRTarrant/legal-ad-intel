@@ -48,7 +48,7 @@ export function StormFilterBar({ states, eventTypes }: StormFilterBarProps) {
   }
 
   const selectedState = searchParams.get("state") ?? "";
-  const selectedPeriod = searchParams.get("period") ?? "";
+  const selectedPeriod = searchParams.get("period") ?? "12m";
   const selectedEventType = searchParams.get("event_type") ?? "";
 
   return (
