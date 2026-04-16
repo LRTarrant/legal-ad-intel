@@ -25,7 +25,7 @@ import {
   Globe,
   Eye,
 } from "lucide-react";
-import { AskAIPanel } from "../../../../components/ask-ai-panel";
+import { AskAIPanel } from "../../../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
