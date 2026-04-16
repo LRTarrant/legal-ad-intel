@@ -861,115 +861,75 @@ def classify_via_exclusion(
         member_preferred, master_fallback,
     )
 
-    # Step 4b: Targeted parties-endpoint override for leadership attorneys.
+    # Step 4b: Query the MASTER docket's parties endpoint to get each
+    # leadership attorney's actual firm from their individual contact_raw.
     #
-    # The search API's flat firm lists can't reliably disambiguate firms on
-    # member dockets that have both the plaintiff's own firm AND a leadership
-    # firm like Williams & Connolly.  For leadership attorneys (those on the
-    # master docket), query a small set of their member dockets via the
-    # authenticated parties endpoint to read contact_raw, which has the
-    # attorney's actual firm.
-    #
-    # NOTE: CourtListener assigns DIFFERENT attorney_ids for the same person
-    # across dockets, so we match by normalized name, not by attorney_id.
+    # The search API's flat firm lists associate every firm on a docket with
+    # every attorney, making disambiguation impossible.  The parties endpoint
+    # returns per-attorney contact_raw which has the attorney's own firm.
     if CL_API_TOKEN and master_attorney_ids:
-        # Build name -> registry keys for leadership attorneys
-        master_atty_names: dict[str, int] = {}  # normalized name -> registry aid
-        for aid in master_attorney_ids:
-            if aid in registry:
-                name = (registry[aid].get("attorney_name") or "").strip().lower()
-                if name:
-                    master_atty_names[name] = aid
+        # Build name -> registry key lookup for ALL attorneys (not just
+        # those on the master in the search API — CL uses different IDs
+        # per docket, so we match by name).
+        name_to_reg_aid: dict[str, int] = {}
+        for aid, entry in registry.items():
+            name = (entry.get("attorney_name") or "").strip().lower()
+            if name:
+                name_to_reg_aid[name] = aid
 
-        # For each leadership attorney name, find member dockets they appear on
-        # (by matching attorney names in the search API data)
-        name_to_member_dockets: dict[str, list[int]] = defaultdict(list)
-        for docket in member_dockets:
-            docket_id = docket.get("docket_id")
-            if docket_id == master_docket_id:
-                continue
-            for aname in docket.get("attorney_names", []):
-                nkey = (aname or "").strip().lower()
-                if nkey in master_atty_names:
-                    name_to_member_dockets[nkey].append(docket_id)
+        logger.info(
+            "Querying master docket %d parties endpoint to resolve "
+            "leadership attorney firms",
+            master_docket_id,
+        )
+        master_parties = _fetch_parties_for_docket(master_docket_id)
 
-        # Collect unique dockets to query (one per leadership attorney)
-        dockets_to_query: set[int] = set()
-        name_target_dockets: dict[str, int] = {}  # name -> docket we'll query
-        for nkey, dids in name_to_member_dockets.items():
-            if dids:
-                target = dids[0]
-                dockets_to_query.add(target)
-                name_target_dockets[nkey] = target
+        overrides = 0
+        matched = 0
+        for party in master_parties:
+            for atty_entry in party.get("attorneys", []) or []:
+                if not isinstance(atty_entry, dict):
+                    continue
+                atty_obj = atty_entry.get("attorney", {})
+                if not isinstance(atty_obj, dict):
+                    continue
 
-        if dockets_to_query:
-            logger.info(
-                "Querying %d member dockets via parties endpoint to resolve "
-                "%d leadership attorney firms",
-                len(dockets_to_query), len(name_target_dockets),
-            )
+                atty_name = (atty_obj.get("name") or "").strip().lower()
+                if not atty_name:
+                    continue
 
-            # Fetch parties for each target docket and extract firm from contact_raw
-            docket_parties_cache: dict[int, list[dict]] = {}
-            for did in dockets_to_query:
-                docket_parties_cache[did] = _fetch_parties_for_docket(did)
+                # Only process attorneys that are in our registry
+                reg_aid = name_to_reg_aid.get(atty_name)
+                if reg_aid is None:
+                    continue
 
-            overrides = 0
-            matched = 0
-            for nkey, target_did in name_target_dockets.items():
-                reg_aid = master_atty_names[nkey]
-                parties = docket_parties_cache.get(target_did, [])
-                found = False
-                for party in parties:
-                    for atty_entry in party.get("attorneys", []) or []:
-                        if not isinstance(atty_entry, dict):
-                            continue
-                        atty_obj = atty_entry.get("attorney", {})
-                        if not isinstance(atty_obj, dict):
-                            continue
-                        party_atty_name = (atty_obj.get("name") or "").strip().lower()
-                        if party_atty_name == nkey:
-                            found = True
-                            matched += 1
-                            real_firm = _extract_firm_from_attorney(atty_obj)
-                            if real_firm and reg_aid in registry:
-                                old_firm = registry[reg_aid].get("firm_name")
-                                normed_real = _normalize_firm(real_firm)
-                                if normed_real and normed_real != old_firm:
-                                    logger.info(
-                                        "Override firm for %s: %s -> %s",
-                                        registry[reg_aid].get("attorney_name"),
-                                        old_firm, normed_real,
-                                    )
-                                    registry[reg_aid]["firm_name"] = normed_real
-                                    overrides += 1
-                                elif normed_real and not old_firm:
-                                    registry[reg_aid]["firm_name"] = normed_real
-                                    overrides += 1
-                                else:
-                                    logger.info(
-                                        "No change for %s: member-docket firm=%s, existing=%s",
-                                        registry[reg_aid].get("attorney_name"),
-                                        normed_real, old_firm,
-                                    )
-                            break
-                    if found:
-                        break
-                if not found:
-                    logger.info(
-                        "Attorney %s not found in parties for docket %d",
-                        nkey, target_did,
-                    )
+                matched += 1
+                real_firm = _extract_firm_from_attorney(atty_obj)
+                if real_firm:
+                    old_firm = registry[reg_aid].get("firm_name")
+                    normed_real = _normalize_firm(real_firm)
+                    if normed_real and normed_real != old_firm:
+                        logger.info(
+                            "Override firm for %s: %s -> %s",
+                            registry[reg_aid].get("attorney_name"),
+                            old_firm, normed_real,
+                        )
+                        registry[reg_aid]["firm_name"] = normed_real
+                        overrides += 1
+                    elif normed_real and not old_firm:
+                        registry[reg_aid]["firm_name"] = normed_real
+                        overrides += 1
+                    else:
+                        logger.info(
+                            "No change for %s: parties firm=%s, existing=%s",
+                            registry[reg_aid].get("attorney_name"),
+                            normed_real, old_firm,
+                        )
 
-            logger.info(
-                "Parties-endpoint override: %d matched, %d firms corrected out of %d leadership attorneys",
-                matched, overrides, len(name_target_dockets),
-            )
-        else:
-            logger.info(
-                "No leadership attorneys found on member dockets — "
-                "skipping parties-endpoint override"
-            )
+        logger.info(
+            "Parties-endpoint override: %d matched, %d firms corrected",
+            matched, overrides,
+        )
 
     # Step 5: Mark leadership
     if master_has_leadership_parties:
