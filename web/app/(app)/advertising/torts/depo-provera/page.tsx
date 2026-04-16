@@ -7,6 +7,8 @@ import {
   Calendar,
   AlertTriangle,
   TrendingUp,
+  TrendingDown,
+  Minus,
   FileText,
   Shield,
   MapPin,
@@ -15,6 +17,13 @@ import {
   CheckCircle,
   XCircle,
   ChevronRight,
+  Search,
+  Megaphone,
+  Image,
+  BarChart3,
+  ExternalLink,
+  Globe,
+  Eye,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -124,22 +133,22 @@ const DISQUALIFIERS = [
 ];
 
 const LITIGATION_TIMELINE = [
-  { date: "1992", event: "FDA approves Depo-Provera for U.S. contraceptive use" },
-  { date: "March 2024", event: "BMJ publishes French study — 5.5x meningioma risk" },
-  { date: "October 2024", event: "First Depo-Provera meningioma lawsuit filed" },
-  { date: "December 2024", event: "Motion filed with JPML to consolidate into MDL" },
-  { date: "February 2025", event: "MDL No. 3140 established in N.D. Florida; Judge Rodgers assigned" },
-  { date: "April 2025", event: "Proof of Use/Injury Questionnaire deadline set" },
-  { date: "June 2025", event: "Third-party review of MDL complaints begins" },
-  { date: "September 2025", event: "Pfizer files summary judgment motion (preemption); JAMA Neurology study published" },
-  { date: "October 2025", event: "1,346 cases in MDL; 439+ in state courts" },
-  { date: "December 2025", event: "FDA adds meningioma warning to Depo-Provera label" },
-  { date: "February 2026", event: "2,100+ cases; court orders supplemental briefing on preemption" },
-  { date: "March 2026", event: "3,099 cases — 47.7% jump in one month" },
-  { date: "April 2026", event: "MDL leadership reappointed; 3,490+ cases pending" },
-  { date: "Spring 2026", event: "Expert witness challenges (Daubert) expected", future: true },
-  { date: "December 2026", event: "First bellwether trial scheduled", future: true },
-  { date: "2027 (projected)", event: "Settlement negotiations could begin; first payments late 2027–2028", future: true },
+  { date: "1992", event: "FDA approves Depo-Provera for U.S. contraceptive use", short: "FDA Approves Depo-Provera" },
+  { date: "March 2024", event: "BMJ publishes French study — 5.5x meningioma risk", short: "BMJ Study: 5.5x Risk" },
+  { date: "October 2024", event: "First Depo-Provera meningioma lawsuit filed", short: "First Lawsuit Filed" },
+  { date: "December 2024", event: "Motion filed with JPML to consolidate into MDL", short: "MDL Consolidation Motion" },
+  { date: "February 2025", event: "MDL No. 3140 established in N.D. Florida; Judge Rodgers assigned", short: "MDL 3140 Established" },
+  { date: "April 2025", event: "Proof of Use/Injury Questionnaire deadline set", short: "Questionnaire Deadline" },
+  { date: "June 2025", event: "Third-party review of MDL complaints begins", short: "Complaint Review Begins" },
+  { date: "September 2025", event: "Pfizer files summary judgment motion (preemption); JAMA Neurology study published", short: "Pfizer SJ Motion Filed" },
+  { date: "October 2025", event: "1,346 cases in MDL; 439+ in state courts", short: "1,346 Cases in MDL" },
+  { date: "December 2025", event: "FDA adds meningioma warning to Depo-Provera label", short: "FDA Label Warning Added" },
+  { date: "February 2026", event: "2,100+ cases; court orders supplemental briefing on preemption", short: "2,100+ Cases Filed" },
+  { date: "March 2026", event: "3,099 cases — 47.7% jump in one month", short: "3,099 Cases — 47.7% Jump" },
+  { date: "April 2026", event: "MDL leadership reappointed; 3,490+ cases pending", short: "3,490+ Cases Pending" },
+  { date: "Spring 2026", event: "Expert witness challenges (Daubert) expected", short: "Daubert Challenges", future: true },
+  { date: "December 2026", event: "First bellwether trial scheduled", short: "Bellwether Trial", future: true },
+  { date: "2027 (projected)", event: "Settlement negotiations could begin; first payments late 2027–2028", short: "Settlement Negotiations", future: true },
 ];
 
 const SETTLEMENT_TIERS = [
@@ -238,6 +247,164 @@ const CROSSOVER_STATES = [
   { state: "Virginia", rate: 150, blackPop: "20.0%", totalRx: "13,497", dmas: "Norfolk, Richmond" },
   { state: "North Carolina", rate: 130, blackPop: "22.2%", totalRx: "14,251", dmas: "Charlotte, Raleigh" },
   { state: "Michigan", rate: 132, blackPop: "14.1%", totalRx: "13,151", dmas: "Detroit, Grand Rapids" },
+];
+
+const ORGANIC_SERP_RESULTS = [
+  {
+    position: 1,
+    title: "Depo-Provera Lawsuit | Brain Tumor Claims — TorHoerman Law",
+    url: "https://www.torhoermanlaw.com/depo-provera-lawsuit/",
+    description: "Were you diagnosed with a meningioma brain tumor after receiving Depo-Provera injections? You may qualify for compensation. Free case review.",
+    domain: "torhoermanlaw.com",
+  },
+  {
+    position: 2,
+    title: "Depo-Provera Meningioma Lawsuit — AboutLawsuits.com",
+    url: "https://www.aboutlawsuits.com/depo-provera-meningioma-lawsuit/",
+    description: "Depo-Provera lawsuits are being pursued by women diagnosed with meningioma brain tumors after use of the injectable birth control.",
+    domain: "aboutlawsuits.com",
+  },
+  {
+    position: 3,
+    title: "Depo-Provera Lawsuit Update 2026 — Drugwatch",
+    url: "https://www.drugwatch.com/depo-provera/lawsuit/",
+    description: "More than 3,400 Depo-Provera lawsuits have been filed alleging the birth control injection causes meningioma brain tumors.",
+    domain: "drugwatch.com",
+  },
+  {
+    position: 4,
+    title: "Depo-Provera Brain Tumor Lawsuit — Morgan & Morgan",
+    url: "https://www.forthepeople.com/mass-tort/depo-provera-lawsuit/",
+    description: "If you used Depo-Provera and developed a brain tumor, you may be entitled to compensation. Contact Morgan & Morgan for a free consultation.",
+    domain: "forthepeople.com",
+  },
+  {
+    position: 5,
+    title: "Depo-Provera Lawsuit — Ben Crump Law",
+    url: "https://bencrump.com/mass-torts/depo-provera-lawsuit/",
+    description: "Depo-Provera has been linked to meningioma brain tumors. Learn about the lawsuit and your legal options.",
+    domain: "bencrump.com",
+  },
+];
+
+const TRACKED_KEYWORDS = [
+  { keyword: "depo provera lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$42.80" },
+  { keyword: "depo provera meningioma", volume: "22,200", difficulty: "High" as const, cpc: "$38.50" },
+  { keyword: "depo provera brain tumor", volume: "14,800", difficulty: "Medium" as const, cpc: "$35.20" },
+  { keyword: "depo provera lawyer", volume: "8,100", difficulty: "High" as const, cpc: "$52.00" },
+  { keyword: "depo provera settlement", volume: "6,600", difficulty: "Medium" as const, cpc: "$28.40" },
+  { keyword: "depo shot lawsuit", volume: "4,400", difficulty: "Medium" as const, cpc: "$31.00" },
+];
+
+const PAID_AD_DATA = {
+  meta: {
+    platform: "Meta (Facebook / Instagram)",
+    activeAds: 96,
+    advertisers: 34,
+    avgSpend: "$15K–$45K/mo",
+    commonFormats: ["Lead Form Ads", "Video Ads", "Carousel"],
+    topAdvertisers: [
+      { name: "TorHoerman Law", ads: 12, status: "Active" },
+      { name: "Lawsuit Legal News", ads: 9, status: "Active" },
+      { name: "Morgan & Morgan", ads: 8, status: "Active" },
+      { name: "Ben Crump Law", ads: 7, status: "Active" },
+      { name: "OnderLaw", ads: 5, status: "Active" },
+    ],
+  },
+  google: {
+    platform: "Google Ads",
+    activeAds: 45,
+    advertisers: 22,
+    avgSpend: "$20K–$60K/mo",
+    commonFormats: ["Search Ads", "Local Service Ads (LSAs)", "Display"],
+    topAdvertisers: [
+      { name: "Morgan & Morgan", ads: 8, status: "Active" },
+      { name: "Sokolove Law", ads: 6, status: "Active" },
+      { name: "Weitz & Luxenberg", ads: 5, status: "Active" },
+      { name: "Pintas & Mullins", ads: 4, status: "Active" },
+      { name: "Riddle & Brantley", ads: 3, status: "Active" },
+    ],
+  },
+  tiktok: {
+    platform: "TikTok",
+    activeAds: 18,
+    advertisers: 8,
+    avgSpend: "$5K–$15K/mo",
+    commonFormats: ["In-Feed Video", "Spark Ads"],
+    topAdvertisers: [
+      { name: "Lawsuit Legal News", ads: 5, status: "Active" },
+      { name: "TorHoerman Law", ads: 4, status: "Active" },
+      { name: "Mass Tort Alliance", ads: 3, status: "Active" },
+    ],
+  },
+};
+
+const SAMPLE_ADS = [
+  {
+    platform: "Meta",
+    advertiser: "TorHoerman Law",
+    type: "Lead Form Ad",
+    headline: "Depo-Provera Linked to Brain Tumors",
+    body: "Were you diagnosed with a meningioma after Depo-Provera injections? You may qualify for significant compensation. Free case review — no fees unless you win.",
+    cta: "Sign Up",
+    landingPage: "https://www.torhoermanlaw.com/depo-provera-lawsuit/",
+  },
+  {
+    platform: "Meta",
+    advertiser: "Lawsuit Legal News",
+    type: "Video Ad",
+    headline: "Depo Shot & Brain Tumor Risk",
+    body: "New studies confirm Depo-Provera users face 5.5x higher risk of meningioma. Find out if you qualify for the lawsuit.",
+    cta: "Learn More",
+    landingPage: "#",
+  },
+  {
+    platform: "Google",
+    advertiser: "Morgan & Morgan",
+    type: "Search Ad",
+    headline: "Depo-Provera Lawsuit — Free Case Review | ForThePeople.com",
+    body: "Diagnosed With A Brain Tumor After Depo-Provera? You May Be Entitled To Compensation. America's Largest Injury Firm. No Win, No Fee.",
+    cta: null,
+    landingPage: "https://www.forthepeople.com/mass-tort/depo-provera-lawsuit/",
+  },
+  {
+    platform: "Google",
+    advertiser: "Sokolove Law",
+    type: "Search Ad",
+    headline: "Depo Provera Meningioma Lawyers — Experienced Mass Tort Attorneys",
+    body: "Over 40 Years of Experience. Exposed to Depo-Provera & Diagnosed with Meningioma? Act Now.",
+    cta: null,
+    landingPage: "#",
+  },
+  {
+    platform: "TikTok",
+    advertiser: "TorHoerman Law",
+    type: "In-Feed Video",
+    headline: "Did you know Depo-Provera is linked to brain tumors?",
+    body: "If you or a loved one used Depo-Provera and were diagnosed with a meningioma, you may be entitled to compensation. Link in bio.",
+    cta: "Learn More",
+    landingPage: "#",
+  },
+  {
+    platform: "TikTok",
+    advertiser: "Lawsuit Legal News",
+    type: "Spark Ad",
+    headline: "Depo-Provera Brain Tumor Lawsuit Update 2026",
+    body: "Over 3,400 cases filed. Settlement talks could begin next year. See if you qualify.",
+    cta: "Sign Up",
+    landingPage: "#",
+  },
+];
+
+const TOP_FIRMS = [
+  { firm: "TorHoerman Law", totalAds: 21, platforms: 3, markets: 12, estSpend: "$85K/mo", trend: "up" as const },
+  { firm: "Morgan & Morgan", totalAds: 18, platforms: 2, markets: 28, estSpend: "$120K/mo", trend: "up" as const },
+  { firm: "Lawsuit Legal News", totalAds: 17, platforms: 3, markets: 8, estSpend: "$55K/mo", trend: "up" as const },
+  { firm: "Ben Crump Law", totalAds: 12, platforms: 2, markets: 15, estSpend: "$70K/mo", trend: "up" as const },
+  { firm: "Sokolove Law", totalAds: 11, platforms: 1, markets: 22, estSpend: "$95K/mo", trend: "stable" as const },
+  { firm: "OnderLaw", totalAds: 8, platforms: 2, markets: 6, estSpend: "$35K/mo", trend: "up" as const },
+  { firm: "Weitz & Luxenberg", totalAds: 7, platforms: 1, markets: 18, estSpend: "$80K/mo", trend: "down" as const },
+  { firm: "Pintas & Mullins", totalAds: 6, platforms: 2, markets: 10, estSpend: "$40K/mo", trend: "stable" as const },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -649,44 +816,38 @@ export default function DepoProveraPage() {
             Litigation Timeline
           </h2>
         </div>
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-[79px] top-0 bottom-0 w-px bg-cloud sm:left-[99px]" />
-          <div className="space-y-0">
+        <div className="overflow-x-auto pb-2">
+          <div className="relative flex items-start" style={{ minWidth: `${LITIGATION_TIMELINE.length * 140}px` }}>
+            {/* Connecting line */}
+            <div className="absolute left-[70px] right-[70px] top-[52px] h-px bg-intelligence-teal/30" />
             {LITIGATION_TIMELINE.map((e, i) => (
               <div
                 key={i}
-                className={`flex gap-4 py-2.5 ${e.future ? "opacity-60" : ""}`}
+                className={`flex min-w-[140px] flex-1 flex-col items-center text-center ${e.future ? "opacity-60" : ""}`}
               >
-                <div className="w-[72px] shrink-0 text-right sm:w-[92px]">
-                  <p
-                    className={`text-xs font-semibold ${
-                      e.future ? "text-slate-gray" : "text-midnight-navy"
-                    }`}
-                  >
-                    {e.date}
-                  </p>
-                </div>
-                <div className="relative flex items-center">
-                  <div
-                    className={`z-10 h-2.5 w-2.5 rounded-full border-2 ${
-                      e.future
-                        ? "border-slate-gray/40 bg-white"
-                        : "border-intelligence-teal bg-intelligence-teal"
-                    }`}
-                  />
-                </div>
-                <div className="flex-1 min-w-0 pb-0.5">
-                  <p
-                    className={`text-sm leading-snug ${
-                      e.future
-                        ? "italic text-slate-gray"
-                        : "text-midnight-navy/80"
-                    }`}
-                  >
-                    {e.event}
-                  </p>
-                </div>
+                <p
+                  className={`mb-2 text-[10px] font-semibold leading-tight ${
+                    e.future ? "text-slate-gray" : "text-midnight-navy"
+                  }`}
+                >
+                  {e.date}
+                </p>
+                <div
+                  className={`relative z-10 h-3 w-3 shrink-0 rounded-full border-2 ${
+                    e.future
+                      ? "border-slate-gray/40 bg-white border-dashed"
+                      : "border-intelligence-teal bg-intelligence-teal"
+                  }`}
+                />
+                <p
+                  className={`mt-2 max-w-[120px] text-[10px] leading-tight ${
+                    e.future
+                      ? "italic text-slate-gray"
+                      : "text-midnight-navy/80"
+                  }`}
+                >
+                  {e.short}
+                </p>
               </div>
             ))}
           </div>
@@ -970,7 +1131,410 @@ export default function DepoProveraPage() {
         </div>
       </div>
 
-      {/* ── 10. Geographic & Demographic Targeting ──────────────────────── */}
+      {/* ── 10. Organic Search Landscape ──────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Eye className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Organic Search Landscape
+          </h2>
+        </div>
+        <p className="mb-4 text-xs text-slate-gray">
+          Top organic search results for Depo-Provera litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
+        </p>
+
+        {/* Tracked Keywords Table */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Tracked Keywords
+        </h3>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Keyword
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Monthly Volume
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Difficulty
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Est. CPC
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {TRACKED_KEYWORDS.map((k) => (
+                <tr
+                  key={k.keyword}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-3 pr-4 font-medium text-midnight-navy">
+                    {k.keyword}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
+                    {k.volume}
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span
+                      className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        k.difficulty === "High"
+                          ? "bg-red-50 text-alert border-alert/20"
+                          : k.difficulty === "Medium"
+                          ? "bg-amber-50 text-warning border-warning/20"
+                          : "bg-emerald-50 text-success border-success/20"
+                      }`}
+                    >
+                      {k.difficulty}
+                    </span>
+                  </td>
+                  <td className="py-3 pl-3 text-right font-mono text-midnight-navy">
+                    {k.cpc}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* SERP Preview Cards */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          SERP Preview
+        </h3>
+        <div className="space-y-0 divide-y divide-cloud">
+          {ORGANIC_SERP_RESULTS.map((r) => (
+            <div key={r.position} className="relative py-3 first:pt-0 last:pb-0">
+              <span className="absolute top-3 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-intelligence-teal/10 text-[10px] font-bold text-intelligence-teal">
+                {r.position}
+              </span>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-gray/20 text-[8px] font-bold text-slate-gray">
+                  {r.domain.charAt(0).toUpperCase()}
+                </span>
+                <span className="text-xs text-success">{r.domain}</span>
+              </div>
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-intelligence-teal hover:underline"
+              >
+                {r.title}
+              </a>
+              <p className="mt-0.5 text-sm text-midnight-navy/60 pr-8">
+                {r.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live SERP tracking coming soon.</p>
+      </div>
+
+      {/* ── 11. Paid Advertising by Platform ─────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <DollarSign className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Paid Advertising by Platform
+          </h2>
+        </div>
+        <p className="mb-4 text-xs text-slate-gray">
+          Active paid advertising across major platforms for Depo-Provera litigation.
+        </p>
+
+        <div className="space-y-4">
+          {(
+            [
+              { key: "meta" as const, border: "border-l-blue-500", accent: "bg-blue-50" },
+              { key: "google" as const, border: "border-l-emerald-500", accent: "bg-emerald-50" },
+              { key: "tiktok" as const, border: "border-l-slate-800", accent: "bg-slate-50" },
+            ] as const
+          ).map(({ key, border, accent }) => {
+            const platform = PAID_AD_DATA[key];
+            return (
+              <div
+                key={key}
+                className={`rounded-lg border border-l-4 ${border} ${accent} p-4`}
+              >
+                <h3 className="text-sm font-bold text-midnight-navy mb-3">
+                  {platform.platform}
+                </h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Active Ads</p>
+                    <p className="text-lg font-bold text-midnight-navy">{platform.activeAds}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Advertisers</p>
+                    <p className="text-lg font-bold text-midnight-navy">{platform.advertisers}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Est. Spend</p>
+                    <p className="text-sm font-bold text-midnight-navy">{platform.avgSpend}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Formats</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {platform.commonFormats.map((f) => (
+                        <span
+                          key={f}
+                          className="inline-block rounded-full bg-white/80 border border-cloud px-1.5 py-0.5 text-[9px] font-medium text-midnight-navy/70"
+                        >
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Advertisers Mini-Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-cloud">
+                        <th className="py-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+                          Advertiser
+                        </th>
+                        <th className="py-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray text-right">
+                          # Ads
+                        </th>
+                        <th className="py-2 pl-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray text-center">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {platform.topAdvertisers.map((a) => (
+                        <tr
+                          key={a.name}
+                          className="border-b border-cloud/50 hover:bg-white/60 transition-colors"
+                        >
+                          <td className="py-2 pr-4 font-medium text-midnight-navy text-xs">
+                            {a.name}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono text-midnight-navy/80 text-xs">
+                            {a.ads}
+                          </td>
+                          <td className="py-2 pl-3 text-center">
+                            <span className="inline-block rounded-full bg-emerald-50 border border-success/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success">
+                              {a.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
+      </div>
+
+      {/* ── 12. Sample Ads ───────────────────────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Image className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Sample Ads
+          </h2>
+        </div>
+        <p className="mb-4 text-xs text-slate-gray">
+          Representative ad creative currently running across platforms. 2 samples per channel.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {SAMPLE_ADS.map((ad, i) => {
+            const platformColor =
+              ad.platform === "Meta"
+                ? "bg-blue-500"
+                : ad.platform === "Google"
+                ? "bg-emerald-500"
+                : "bg-slate-800";
+            return (
+              <div
+                key={i}
+                className="rounded-lg border border-cloud bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white ${platformColor}`}
+                  >
+                    {ad.platform}
+                  </span>
+                  <span className="inline-block rounded-full bg-cloud px-2 py-0.5 text-[10px] font-medium text-midnight-navy/70">
+                    {ad.type}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-gray mb-1">{ad.advertiser}</p>
+                <p className="text-sm font-bold text-midnight-navy mb-1">{ad.headline}</p>
+                <p className="text-sm text-midnight-navy/70 mb-3">{ad.body}</p>
+                {ad.cta && (
+                  <span className="inline-block rounded bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal mb-2">
+                    {ad.cta}
+                  </span>
+                )}
+                <div className="mt-auto pt-2 border-t border-cloud">
+                  {ad.landingPage !== "#" ? (
+                    <a
+                      href={ad.landingPage}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-intelligence-teal hover:underline"
+                    >
+                      View Landing Page
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <p className="text-xs text-slate-gray/50 italic">Landing page not available</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
+      </div>
+
+      {/* ── 13. Top Firms Advertising ────────────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Users className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Top Firms Advertising
+          </h2>
+        </div>
+        <p className="mb-4 text-xs text-slate-gray">
+          Competitive landscape — firms with the highest advertising presence for Depo-Provera litigation.
+        </p>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
+          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Total Active Ads</p>
+            <p className="text-2xl font-bold text-midnight-navy">
+              {TOP_FIRMS.reduce((sum, f) => sum + f.totalAds, 0)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Unique Firms</p>
+            <p className="text-2xl font-bold text-midnight-navy">{TOP_FIRMS.length}</p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Avg Platforms</p>
+            <p className="text-2xl font-bold text-midnight-navy">
+              {(TOP_FIRMS.reduce((sum, f) => sum + f.platforms, 0) / TOP_FIRMS.length).toFixed(1)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Total Est. Spend</p>
+            <p className="text-2xl font-bold text-midnight-navy">$580K/mo</p>
+          </div>
+        </div>
+
+        {/* CSS Bar Chart */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Estimated Monthly Ad Spend
+        </h3>
+        <div className="space-y-2 mb-6">
+          {TOP_FIRMS.map((f) => {
+            const spend = parseInt(f.estSpend.replace(/[^0-9]/g, ""));
+            const maxSpend = 120; // $120K is the max
+            const widthPercent = (spend / maxSpend) * 100;
+            return (
+              <div key={f.firm} className="flex items-center gap-3">
+                <p className="w-[140px] shrink-0 truncate text-xs font-medium text-midnight-navy">
+                  {f.firm}
+                </p>
+                <div className="flex-1 h-6 rounded bg-cloud/60">
+                  <div
+                    className="h-6 rounded bg-intelligence-teal flex items-center justify-end px-2"
+                    style={{ width: `${widthPercent}%` }}
+                  >
+                    <span className="text-[10px] font-bold text-white whitespace-nowrap">
+                      {f.estSpend}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Detail Table */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Detailed Breakdown
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Firm
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Total Ads
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Platforms
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Markets
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Est. Monthly Spend
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Trend
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {TOP_FIRMS.map((f) => (
+                <tr
+                  key={f.firm}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-3 pr-4 font-medium text-midnight-navy">
+                    {f.firm}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
+                    {f.totalAds}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
+                    {f.platforms}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
+                    {f.markets}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono font-semibold text-midnight-navy">
+                    {f.estSpend}
+                  </td>
+                  <td className="py-3 pl-3 text-center">
+                    {f.trend === "up" ? (
+                      <TrendingUp className="inline w-4 h-4 text-success" />
+                    ) : f.trend === "down" ? (
+                      <TrendingDown className="inline w-4 h-4 text-alert" />
+                    ) : (
+                      <Minus className="inline w-4 h-4 text-slate-gray" />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
+      </div>
+
+      {/* ── 14. Geographic & Demographic Targeting ──────────────────────── */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1167,7 +1731,7 @@ export default function DepoProveraPage() {
         </div>
       </div>
 
-      {/* ── 11. Footer / Disclaimer ─────────────────────────────────────── */}
+      {/* ── 15. Footer / Disclaimer ─────────────────────────────────────── */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly
