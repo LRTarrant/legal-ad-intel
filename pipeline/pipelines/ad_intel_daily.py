@@ -571,6 +571,8 @@ def step_normalize(step) -> int:
         step.set_counts(rows_in=0, rows_out=0)
         return 0
 
+    raw = [r for r in raw if r.get("advertiser_id")]
+
     # Group by (advertiser, tort, geo, format, week_start)
     groups: dict[tuple, dict] = {}
     for r in raw:
