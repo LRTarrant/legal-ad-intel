@@ -883,6 +883,32 @@ def classify_via_exclusion(
             master_docket_id,
         )
         master_parties = _fetch_parties_for_docket(master_docket_id)
+        logger.info(
+            "Master docket parties endpoint returned %d party groups",
+            len(master_parties),
+        )
+        # Log a sample of attorney names from the parties endpoint
+        party_atty_names_sample = []
+        for party in master_parties:
+            pname = (party.get("name") or "").strip()
+            for ae in party.get("attorneys", []) or []:
+                if isinstance(ae, dict):
+                    ao = ae.get("attorney", {})
+                    if isinstance(ao, dict):
+                        an = (ao.get("name") or "").strip()
+                        if an:
+                            party_atty_names_sample.append(f"{an} (party: {pname[:40]})")
+        logger.info(
+            "Master docket has %d attorneys. Sample: %s",
+            len(party_atty_names_sample),
+            "; ".join(party_atty_names_sample[:5]),
+        )
+        # Also log a sample of registry names for comparison
+        reg_names_sample = list(name_to_reg_aid.keys())[:5]
+        logger.info(
+            "Registry has %d attorney names. Sample: %s",
+            len(name_to_reg_aid), "; ".join(reg_names_sample),
+        )
 
         overrides = 0
         matched = 0
