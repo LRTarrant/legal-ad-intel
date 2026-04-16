@@ -462,6 +462,37 @@ def _fetch_parties_for_docket(cl_docket_id: int) -> list[dict]:
     return parties
 
 
+def _fetch_attorneys_for_docket(cl_docket_id: int) -> dict[int, dict]:
+    """
+    Fetch all attorney objects for a docket via /attorneys/?docket=<id>.
+
+    Returns {attorney_id: {name, contact_raw, ...}} — the full attorney
+    objects including contact information.
+
+    The /parties/ endpoint returns attorney references (URLs) rather than
+    inline objects for large dockets, so this endpoint is needed to get
+    actual attorney details like contact_raw.
+    """
+    attorneys: dict[int, dict] = {}
+    url = f"{CL_BASE}/attorneys/"
+    params = {"docket": cl_docket_id}
+
+    while url:
+        data = _http_get(url, params=params, auth=True)
+        params = None
+
+        if not isinstance(data, dict):
+            break
+
+        for atty in data.get("results", []):
+            if isinstance(atty, dict) and atty.get("id"):
+                attorneys[int(atty["id"])] = atty
+
+        url = data.get("next")
+
+    return attorneys
+
+
 def build_defendant_set(
     member_dockets: list[dict],
     master_docket_id: int,
@@ -878,106 +909,50 @@ def classify_via_exclusion(
                 name_to_reg_aid[name] = aid
 
         logger.info(
-            "Querying master docket %d parties endpoint to resolve "
+            "Querying master docket %d attorneys endpoint to resolve "
             "leadership attorney firms",
             master_docket_id,
         )
-        master_parties = _fetch_parties_for_docket(master_docket_id)
+        # Use /attorneys/?docket=<id> which returns full attorney objects
+        # with contact_raw. The /parties/ endpoint only returns URL
+        # references to attorneys on large dockets.
+        master_attorneys = _fetch_attorneys_for_docket(master_docket_id)
         logger.info(
-            "Master docket parties endpoint returned %d party groups",
-            len(master_parties),
-        )
-        # Log raw structure of first party to understand the response format
-        if master_parties:
-            p0 = master_parties[0]
-            p0_keys = list(p0.keys()) if isinstance(p0, dict) else str(type(p0))
-            p0_name = (p0.get("name") or "") if isinstance(p0, dict) else ""
-            p0_attorneys = p0.get("attorneys", "MISSING") if isinstance(p0, dict) else "N/A"
-            atty_count = len(p0_attorneys) if isinstance(p0_attorneys, list) else "not-list"
-            logger.info(
-                "First party keys=%s, name=%s, attorneys type=%s count=%s",
-                p0_keys, p0_name[:50], type(p0_attorneys).__name__, atty_count,
-            )
-            if isinstance(p0_attorneys, list) and p0_attorneys:
-                a0 = p0_attorneys[0]
-                logger.info("First attorney entry keys=%s", list(a0.keys()) if isinstance(a0, dict) else str(type(a0)))
-                if isinstance(a0, dict):
-                    a0_atty = a0.get("attorney")
-                    logger.info(
-                        "attorney field type=%s value=%s",
-                        type(a0_atty).__name__,
-                        str(a0_atty)[:200] if a0_atty else "None",
-                    )
-            elif isinstance(p0_attorneys, str) and p0_attorneys.startswith("http"):
-                logger.info("Attorneys field is a URL: %s", p0_attorneys[:120])
-
-        # Log a sample of attorney names from the parties endpoint
-        party_atty_names_sample = []
-        for party in master_parties:
-            pname = (party.get("name") or "").strip()
-            for ae in party.get("attorneys", []) or []:
-                if isinstance(ae, dict):
-                    ao = ae.get("attorney", {})
-                    if isinstance(ao, dict):
-                        an = (ao.get("name") or "").strip()
-                        if an:
-                            party_atty_names_sample.append(f"{an} (party: {pname[:40]})")
-        logger.info(
-            "Master docket has %d attorneys. Sample: %s",
-            len(party_atty_names_sample),
-            "; ".join(party_atty_names_sample[:5]),
-        )
-        # Also log a sample of registry names for comparison
-        reg_names_sample = list(name_to_reg_aid.keys())[:5]
-        logger.info(
-            "Registry has %d attorney names. Sample: %s",
-            len(name_to_reg_aid), "; ".join(reg_names_sample),
+            "Master docket attorneys endpoint returned %d attorneys",
+            len(master_attorneys),
         )
 
         overrides = 0
         matched = 0
-        for party in master_parties:
-            for atty_entry in party.get("attorneys", []) or []:
-                if not isinstance(atty_entry, dict):
-                    continue
-                atty_obj = atty_entry.get("attorney", {})
-                if not isinstance(atty_obj, dict):
-                    continue
+        for atty_id, atty_obj in master_attorneys.items():
+            atty_name = (atty_obj.get("name") or "").strip().lower()
+            if not atty_name:
+                continue
 
-                atty_name = (atty_obj.get("name") or "").strip().lower()
-                if not atty_name:
-                    continue
+            # Only process attorneys that are in our registry
+            reg_aid = name_to_reg_aid.get(atty_name)
+            if reg_aid is None:
+                continue
 
-                # Only process attorneys that are in our registry
-                reg_aid = name_to_reg_aid.get(atty_name)
-                if reg_aid is None:
-                    continue
-
-                matched += 1
-                real_firm = _extract_firm_from_attorney(atty_obj)
-                if real_firm:
-                    old_firm = registry[reg_aid].get("firm_name")
-                    normed_real = _normalize_firm(real_firm)
-                    if normed_real and normed_real != old_firm:
-                        logger.info(
-                            "Override firm for %s: %s -> %s",
-                            registry[reg_aid].get("attorney_name"),
-                            old_firm, normed_real,
-                        )
-                        registry[reg_aid]["firm_name"] = normed_real
-                        overrides += 1
-                    elif normed_real and not old_firm:
-                        registry[reg_aid]["firm_name"] = normed_real
-                        overrides += 1
-                    else:
-                        logger.info(
-                            "No change for %s: parties firm=%s, existing=%s",
-                            registry[reg_aid].get("attorney_name"),
-                            normed_real, old_firm,
-                        )
+            matched += 1
+            real_firm = _extract_firm_from_attorney(atty_obj)
+            if real_firm:
+                old_firm = registry[reg_aid].get("firm_name")
+                normed_real = _normalize_firm(real_firm)
+                if normed_real and normed_real != old_firm:
+                    logger.info(
+                        "Override firm for %s: %s -> %s",
+                        registry[reg_aid].get("attorney_name"),
+                        old_firm, normed_real,
+                    )
+                    registry[reg_aid]["firm_name"] = normed_real
+                    overrides += 1
+                elif normed_real and not old_firm:
+                    registry[reg_aid]["firm_name"] = normed_real
+                    overrides += 1
 
         logger.info(
-            "Parties-endpoint override: %d matched, %d firms corrected",
+            "Attorneys-endpoint override: %d matched, %d firms corrected",
             matched, overrides,
         )
 
