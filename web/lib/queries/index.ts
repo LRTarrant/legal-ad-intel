@@ -48,6 +48,7 @@ export * from "./creative-gallery";
 export * from "./market-heatmap";
 export * from "./saturation-scores";
 export * from "./tort-benchmarks";
+export * from "./sample-ads";
 
 export {
   getMdlFirmSummary,
