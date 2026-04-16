@@ -24,6 +24,7 @@ import { AdvertisingInsight } from "../components/advertising-insight";
 import { CloudLightning } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export const metadata = {
   title: "Storm Events | Legal Marketing Intelligence",
