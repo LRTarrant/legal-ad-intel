@@ -27,6 +27,8 @@ import {
   getTortCostBenchmarks,
   getSerpVisibilityWindowed,
   getSerpTopResults,
+  getSampleAds,
+  extractDomain,
 } from "@/lib/queries";
 import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
 
@@ -336,7 +338,7 @@ export default async function DepoProveraPage() {
   windowStartDate.setDate(windowStartDate.getDate() - 90);
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
-  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults] =
+  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds] =
     await Promise.all([
       getSegmentSummary(TORT_SLUG),
       getTopAdvertisersBySegment(TORT_SLUG, 25),
@@ -345,6 +347,7 @@ export default async function DepoProveraPage() {
       getTortCostBenchmarks(),
       getSerpVisibilityWindowed(windowStart, windowEnd, TORT_SLUG),
       getSerpTopResults(TORT_SLUG, 5),
+      getSampleAds(TORT_SLUG, 12),
     ]);
 
   // Build platform lookup by advertiser
@@ -391,12 +394,12 @@ export default async function DepoProveraPage() {
       {/* ── 1. Page Header ──────────────────────────────────────────────── */}
       <div>
         <Link
-          href="/torts"
+          href="/mdl-tracker"
           className="text-sm text-slate-gray hover:text-midnight-navy"
         >
           <span className="flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" />
-            All Torts
+            MDL Tracker
           </span>
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -1391,6 +1394,88 @@ export default async function DepoProveraPage() {
           </div>
         )}
       </div>
+
+      {/* ── 10b. Sample Ads (LIVE DATA) ──────────────────────────────── */}
+      {sampleAds.length > 0 && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Eye className="w-4.5 h-4.5 text-intelligence-teal" />
+            <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+              Sample Ads
+            </h2>
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          </div>
+          <p className="mb-4 text-xs text-slate-gray">
+            Recent advertisements observed across platforms
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {sampleAds.map((ad) => {
+              const domain = ad.creative_url
+                ? extractDomain(ad.creative_url)
+                : null;
+              const sourceBadge =
+                ad.source === "google_ads"
+                  ? { label: "Google Ads", color: "#10B981" }
+                  : ad.source === "meta_ad_library"
+                  ? { label: "Meta", color: "#3B82F6" }
+                  : ad.source === "ispot"
+                  ? { label: "TV", color: "#6366F1" }
+                  : ad.source === "tiktok_ads"
+                  ? { label: "TikTok", color: "#EC4899" }
+                  : { label: ad.source, color: "#6B7280" };
+
+              return (
+                <div
+                  key={ad.id}
+                  className="rounded-lg border border-cloud bg-cloud/40 p-4 flex flex-col gap-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
+                      style={{ backgroundColor: sourceBadge.color }}
+                    >
+                      {sourceBadge.label}
+                    </span>
+                    <span className="text-[10px] text-slate-gray">
+                      {ad.ad_format ?? "—"}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-midnight-navy leading-snug line-clamp-2">
+                    {ad.advertiser_raw}
+                  </p>
+                  {ad.creative_text && (
+                    <p className="text-xs text-midnight-navy/60 line-clamp-2">
+                      {ad.creative_text}
+                    </p>
+                  )}
+                  {ad.source === "google_ads" && domain && (
+                    <p className="text-xs text-intelligence-teal truncate">
+                      {domain}
+                    </p>
+                  )}
+                  {ad.source === "meta_ad_library" && ad.creative_url && (
+                    <a
+                      href={ad.creative_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-intelligence-teal hover:underline"
+                    >
+                      View in Ad Library &rarr;
+                    </a>
+                  )}
+                  <p className="mt-auto text-[10px] text-slate-gray">
+                    {ad.first_seen === ad.last_seen
+                      ? ad.last_seen
+                      : `${ad.first_seen} — ${ad.last_seen}`}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── 11. Top Advertisers (LIVE DATA) ────────────────────────────── */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
