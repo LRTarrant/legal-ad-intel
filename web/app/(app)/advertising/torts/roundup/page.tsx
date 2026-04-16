@@ -29,89 +29,96 @@ import { AskAIPanel } from "../../../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
-/* ── Metadata ──────────────────────────────────────────────────────────── */
+/* -- Metadata ------------------------------------------------------------ */
 
 export function generateMetadata() {
   return {
     title:
-      "Depo-Provera (Meningioma) Tort Intelligence | Legal Marketing Intelligence",
+      "Roundup (Glyphosate) Tort Intelligence | Legal Marketing Intelligence",
     description:
-      "Comprehensive advertising intelligence brief for Depo-Provera meningioma litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
+      "Comprehensive advertising intelligence brief for Roundup glyphosate litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
   };
 }
 
-/* ── Static Data ───────────────────────────────────────────────────────── */
+/* -- Static Data --------------------------------------------------------- */
 
-const DEPO_TORT_CONTEXT = {
-  tortName: "Depo-Provera (Meningioma)",
-  injury: "Meningioma — brain tumor in the meninges (tissue lining the brain/spinal cord)",
-  mdlNumber: "MDL 3140, N.D. Florida, Judge M. Casey Rodgers",
-  pendingCases: "3,490+ (April 2026), 3,873% increase from March 2025 to March 2026",
-  settlementRange: "$100K–$1.5M depending on severity tier. Tier 1 (Severe): $500K–$1.5M+, Tier 2 (Moderate): $250K–$500K, Tier 3 (Lower): $100K–$250K, Tier 4 (Minimal): $25K–$100K",
-  estimatedCPA: "$2,500–$4,500. Comparable torts: Tylenol ~$2,550, PFAS ~$3,000, NEC ~$4,000, Hair Relaxer ~$4,500, Paraquat ~$9,950",
-  bellwetherDate: "December 2026 (first bellwether trial). Settlement negotiations could begin 2027, first payments late 2027–2028.",
-  caseSummary: "Depo-Provera (DMPA) is a Pfizer-manufactured injectable contraceptive. Thousands of women allege prolonged use caused meningioma brain tumors. MDL 3140 consolidated in N.D. Florida. Pfizer's central defense is federal preemption, but the FDA's December 2025 label change adding a meningioma warning undercuts this defense. Key studies: López-González (BMJ, 2024) 5.5x risk, Griffin (2024) 1.53x odds, Xiao (JAMA Neurology, 2025) 2.43x risk.",
-  qualification: "Product: Depo-Provera, Depo-SubQ Provera 104, or authorized generic. Minimum 2 injections or 12 months use. Diagnosed with meningioma after initiating use. Use window 1992–present. Not currently represented. Statute of limitations 2–3 years from diagnosis. Three screening tiers: Tier 1 Basic (2–3 questions, lowest CPL), Tier 2 Qualified (4–6 steps, mid CPL), Tier 3 Retainer-Ready (10–15 steps, highest CPA but lowest fallout).",
-  advertisingLandscape: "Stage: Early-to-mid (2–3). ~96 active Meta ads from ~34 advertisers. ~45 Google Ads from ~22 advertisers. ~18 TikTok ads from ~8 advertisers. Primary channels: Meta lead forms, Google Search/LSAs, legal lead gen networks. Top advertisers: TorHoerman Law (21 ads, ~$85K/mo), Morgan & Morgan (18 ads, ~$120K/mo), Lawsuit Legal News (17 ads, ~$55K/mo), Ben Crump Law (12 ads, ~$70K/mo). Platform risk: Meta removed law firm ads for social media addiction lawsuits in April 2026.",
-  targetingInsights: "41.2% of Black women have ever used Depo-Provera vs 20.3% White. Higher use among women without HS diploma (39.9%), rural women (29.4%). Top prescribing states (Medicaid, per 10K): RI (376), MS (309), MD (303), LA (291), SC (280), NM (268), OH (265), IA (253). High-value crossover states (high DMPA + high Black pop): MS, MD, LA, SC, OH, PA, TN, VA, NC, MI. Key DMAs: Baltimore, New Orleans, Columbia SC, Cleveland/Columbus, Jackson MS, Memphis, Philadelphia, Detroit. 424K+ Medicaid DMPA prescriptions in 2023.",
+const ROUNDUP_TORT_CONTEXT = {
+  tortName: "Roundup (Glyphosate)",
+  injury: "Non-Hodgkin Lymphoma (NHL) — cancer of the lymphatic system",
+  mdlNumber: "MDL 2741, N.D. California, Judge Vince Chhabria",
+  pendingCases: "3,887+ in MDL (March 2026), ~61,000 additional active state court cases. ~100,000 claims already settled for $11B+.",
+  settlementRange: "$5K–$250K per individual claim. Tier 1 (Severe/Terminal): $200K–$250K+, Tier 2 (Moderate): $100K–$200K, Tier 3 (Lower): $50K–$100K, Tier 4 (Minimal/Class): $10K–$50K. $7.25B class settlement proposed Feb 2026.",
+  estimatedCPA: "$2,500–$3,500. Comparable torts: Depo-Provera ~$2,500–$4,500, Tylenol ~$2,550, PFAS ~$3,000, NEC ~$4,000, Hair Relaxer ~$4,500, Paraquat ~$9,950",
+  bellwetherDate: "N/A — litigation is late-stage. $7.25B class settlement prelim approved March 2026. SCOTUS preemption decision expected June 2026. Fairness hearing July 2026.",
+  caseSummary: "Roundup is a glyphosate-based herbicide manufactured by Monsanto (acquired by Bayer in 2018). Over 170,000 plaintiffs allege prolonged exposure caused NHL. MDL 2741 in N.D. California. Bayer has settled ~100,000 claims for $11B+. In Feb 2026, Bayer proposed a $7.25B class settlement. SCOTUS is hearing Bayer's preemption appeal (Durnell case) with a decision expected summer 2026. Key studies: IARC 2015 Group 2A 'probably carcinogenic', Zhang 2019 meta-analysis 41% increased NHL risk. EPA maintains 'not likely carcinogenic.'",
+  qualification: "Product: Roundup or any glyphosate-based herbicide. Minimum 40 hours lifetime use OR 3+ years regular use. Occupational users (farmers, landscapers) have strongest claims. Diagnosis: NHL or related subtype. Not currently represented. SOL: 2–3 years from diagnosis. Three screening tiers: Tier 1 Basic (2–3 questions, lowest CPL), Tier 2 Qualified (4–6 steps, mid CPL), Tier 3 Retainer-Ready (full intake, highest CPA but lowest fallout).",
+  advertisingLandscape: "Stage: Late-stage (winding down). ~15 active Meta ads from ~8 advertisers. ~25 Google Ads from ~12 advertisers. ~5 TikTok ads from ~3 advertisers. Most firms paused due to class settlement + SCOTUS uncertainty. Peak was 2019–2021. CPA ~$2,500–$3,500. New ad spend not recommended until after June 2026. Firms with existing inventory hold cases worth $50K–$250K each at ~$3,000 CPA.",
+  targetingInsights: "Occupational exposure drives strongest claims — agricultural workers, landscapers, groundskeepers. Residential users (homeowners using Roundup 3+ years) also qualify. Age 40–75, male skew. Top glyphosate states: Iowa, Illinois, Kansas, Texas, Minnesota, Indiana, Nebraska, Ohio, Missouri, Wisconsin. High-value crossover states (high glyphosate + high NHL): Iowa, Wisconsin, Minnesota, Ohio, Kentucky, Nebraska, Illinois, Missouri, Kansas, Michigan. Key DMAs: Des Moines, Minneapolis–St. Paul, Milwaukee, Cleveland/Columbus, St. Louis, Kansas City, Omaha, Louisville.",
 };
 
 const SCIENTIFIC_STUDIES = [
   {
-    study: "López-González et al. (French national case-control)",
-    year: "2024",
-    source: "BMJ",
+    study: "IARC Monograph (Working Group)",
+    year: "2015",
+    source: "WHO/IARC",
     finding:
-      "5.5x higher odds of meningioma with 1+ year use",
+      "Classified glyphosate as \"probably carcinogenic to humans\" (Group 2A). Based on \"limited\" evidence in humans and \"sufficient\" evidence in animals.",
   },
   {
-    study: "Griffin et al. (U.S. insurance database)",
-    year: "2024",
-    source: "Medical journal",
+    study: "Zhang et al. (UW meta-analysis)",
+    year: "2019",
+    source: "Mutation Research",
     finding:
-      "1.53x higher odds (OR 1.53, CI 1.40–1.67). 117,503 cases analyzed",
+      "41% increased risk of NHL with high glyphosate exposure (meta-analysis of 6 studies)",
   },
   {
-    study: "Xiao et al. (U.S. cohort, TriNetX)",
-    year: "2025",
-    source: "JAMA Neurology",
+    study: "Andreotti et al. (Agricultural Health Study)",
+    year: "2018",
+    source: "JNCI",
     finding:
-      "2.43x relative risk (CI 1.77–3.33). Highest for 4+ years use. NNH of 1,152",
+      "No statistically significant association between glyphosate and NHL overall in 54,000+ pesticide applicators",
   },
   {
-    study: "Roland et al. (European case-control)",
-    year: "2022–2023",
-    source: "French study",
+    study: "Weisenburger (review)",
+    year: "2021",
+    source: "Clin Lymphoma",
     finding:
-      "5.5x higher odds among injectable users (small sample)",
+      "\"Coherent and compelling evidence\" that glyphosate/GBFs are a cause of NHL",
+  },
+  {
+    study: "EPA Interim Decision",
+    year: "2020",
+    source: "U.S. EPA",
+    finding:
+      "\"Not likely to be carcinogenic to humans\" — contradicts IARC classification",
   },
 ];
 
 const QUALIFICATION_CRITERIA = [
   {
     criterion: "Product",
-    standard: "Depo-Provera, Depo-SubQ Provera 104, or authorized generic",
-    notes: "Unauthorized generics and oral MPA do not qualify",
+    standard: "Roundup or any glyphosate-based herbicide",
+    notes: "Includes all Roundup formulations and generic glyphosate products",
   },
   {
     criterion: "Minimum Exposure",
-    standard: "At least 2 injections or 12 months of use",
-    notes: "Some screen at 6+ months; most firms require 12 months",
+    standard: "At least 40 hours lifetime use OR 3+ years of regular use",
+    notes: "Occupational users (landscapers, farmers) have strongest claims",
+  },
+  {
+    criterion: "Exposure Type",
+    standard: "Occupational or residential",
+    notes: "Occupational claimants receive higher settlement tiers",
   },
   {
     criterion: "Diagnosis",
-    standard: "Meningioma (intracranial or spinal)",
-    notes: "Some forms accept other brain tumors; meningioma is primary",
+    standard: "Non-Hodgkin lymphoma or related subtype",
+    notes: "DLBCL, follicular lymphoma, CLL, mantle cell, etc.",
   },
   {
     criterion: "Diagnosis Timing",
-    standard: "After initiating Depo-Provera use",
-    notes: "Most accepted within 5–15 years of first use",
-  },
-  {
-    criterion: "Use Window",
-    standard: "1992–present",
-    notes: "Pre-1992 use before FDA approval",
+    standard: "After exposure period",
+    notes: "Latency can be 5–20+ years",
   },
   {
     criterion: "Existing Representation",
@@ -121,92 +128,112 @@ const QUALIFICATION_CRITERIA = [
   {
     criterion: "Statute of Limitations",
     standard: "2–3 years from diagnosis (varies by state)",
-    notes: "Filing deadlines are a real constraint",
+    notes: "Some states have discovery rule exceptions",
   },
 ];
 
 const SCREENING_QUESTIONS = [
-  "Who is the claimant? (You or loved one)",
-  "Which product? (Depo-Provera / SubQ / generic)",
-  "How many injections? (Minimum 2)",
-  "Duration of use? (6 months to 1+ year)",
-  "When did you start/stop?",
-  "Diagnosed with brain tumor? (Meningioma specifically)",
-  "When diagnosed?",
-  "Treatment received? (Surgery, radiation, etc.)",
-  "Symptoms? (Headaches, seizures, vision, etc.)",
-  "Already have an attorney?",
+  "Did you use Roundup or a glyphosate weedkiller?",
+  "How many years did you use it? (Minimum 3 years)",
+  "Was your use occupational or residential?",
+  "How often did you use it? (Weekly, monthly, seasonally)",
+  "Have you been diagnosed with non-Hodgkin lymphoma or another blood cancer?",
+  "When were you diagnosed?",
+  "What type of NHL? (If known)",
+  "What treatment have you received?",
+  "Do you currently have an attorney for this claim?",
+  "What state do you reside in?",
 ];
 
 const DISQUALIFIERS = [
-  "Never used Depo-Provera",
-  "Only 1 injection / less than 6 months",
-  "No brain tumor diagnosis",
-  "Brain tumor existed before Depo use",
-  "Already represented",
-  "Use prior to 1992",
+  "Never used Roundup/glyphosate products",
+  "Less than 40 hours total lifetime exposure / less than 3 years use",
+  "No NHL or blood cancer diagnosis",
+  "Cancer diagnosis preceded Roundup exposure",
+  "Already represented by an attorney",
+  "Statute of limitations expired",
 ];
 
 const LITIGATION_TIMELINE = [
-  { date: "1992", event: "FDA approves Depo-Provera for U.S. contraceptive use", short: "FDA Approves Depo-Provera" },
-  { date: "March 2024", event: "BMJ publishes French study — 5.5x meningioma risk", short: "BMJ Study: 5.5x Risk" },
-  { date: "October 2024", event: "First Depo-Provera meningioma lawsuit filed", short: "First Lawsuit Filed" },
-  { date: "December 2024", event: "Motion filed with JPML to consolidate into MDL", short: "MDL Consolidation Motion" },
-  { date: "February 2025", event: "MDL No. 3140 established in N.D. Florida; Judge Rodgers assigned", short: "MDL 3140 Established" },
-  { date: "April 2025", event: "Proof of Use/Injury Questionnaire deadline set", short: "Questionnaire Deadline" },
-  { date: "June 2025", event: "Third-party review of MDL complaints begins", short: "Complaint Review Begins" },
-  { date: "September 2025", event: "Pfizer files summary judgment motion (preemption); JAMA Neurology study published", short: "Pfizer SJ Motion Filed" },
-  { date: "October 2025", event: "1,346 cases in MDL; 439+ in state courts", short: "1,346 Cases in MDL" },
-  { date: "December 2025", event: "FDA adds meningioma warning to Depo-Provera label", short: "FDA Label Warning Added" },
-  { date: "February 2026", event: "2,100+ cases; court orders supplemental briefing on preemption", short: "2,100+ Cases Filed" },
-  { date: "March 2026", event: "3,099 cases — 47.7% jump in one month", short: "3,099 Cases — 47.7% Jump" },
-  { date: "April 2026", event: "MDL leadership reappointed; 3,490+ cases pending", short: "3,490+ Cases Pending" },
-  { date: "Spring 2026", event: "Expert witness challenges (Daubert) expected", short: "Daubert Challenges", future: true },
-  { date: "December 2026", event: "First bellwether trial scheduled", short: "Bellwether Trial", future: true },
-  { date: "2027 (projected)", event: "Settlement negotiations could begin; first payments late 2027–2028", short: "Settlement Negotiations", future: true },
+  { date: "1974", event: "Glyphosate first registered as herbicide by EPA", short: "Glyphosate Registered" },
+  { date: "1996", event: "Roundup Ready GMO crops introduced; glyphosate usage surges", short: "Roundup Ready Launch" },
+  { date: "March 2015", event: "IARC classifies glyphosate as 'probably carcinogenic' (Group 2A)", short: "IARC: Probably Carcinogenic" },
+  { date: "2016", event: "MDL 2741 established in N.D. California; Judge Chhabria assigned", short: "MDL 2741 Established" },
+  { date: "June 2018", event: "Bayer acquires Monsanto for $63 billion", short: "Bayer Acquires Monsanto" },
+  { date: "August 2018", event: "Johnson v. Monsanto: first trial, $289M verdict (reduced to $78M)", short: "First Verdict: $289M" },
+  { date: "March 2019", event: "Hardeman v. Monsanto: $80M federal verdict", short: "Hardeman: $80M" },
+  { date: "May 2019", event: "Pilliod v. Monsanto: $2B verdict (reduced to $87M on appeal)", short: "Pilliod: $2B" },
+  { date: "June 2020", event: "Bayer announces $10.9B global settlement (~100K claims)", short: "$10.9B Settlement" },
+  { date: "Nov 2023", event: "Missouri jury awards $1.5B (reduced to $611M on appeal)", short: "$1.5B Missouri Verdict" },
+  { date: "Feb 2024", event: "Philadelphia jury awards $2.25B (reduced to $400M)", short: "$2.25B Philly Verdict" },
+  { date: "March 2025", event: "Georgia jury awards $2B ($65M compensatory + $2B punitive)", short: "$2B Georgia Verdict" },
+  { date: "May 2025", event: "Pennsylvania court upholds $175M Caranci verdict", short: "$175M Upheld" },
+  { date: "June 2025", event: "Missouri court upholds $611M verdict for 3 plaintiffs", short: "$611M Upheld" },
+  { date: "Aug 2025", event: "Bayer reserves additional $1.4B for Roundup litigation", short: "$1.4B Reserve Added" },
+  { date: "Jan 2026", event: "SCOTUS agrees to hear Bayer's preemption appeal (Durnell case)", short: "SCOTUS Takes Case" },
+  { date: "Feb 2026", event: "Bayer proposes $7.25B class settlement for current + future claims", short: "$7.25B Settlement Proposed" },
+  { date: "March 2026", event: "Missouri judge grants preliminary approval of $7.25B settlement", short: "Settlement Prelim Approved" },
+  { date: "April 2026", event: "SCOTUS oral arguments on federal preemption", short: "SCOTUS Arguments", future: true },
+  { date: "June 2026", event: "Opt-out deadline June 4; SCOTUS decision expected", short: "Opt-Out / SCOTUS Decision", future: true },
+  { date: "July 2026", event: "Fairness hearing scheduled for class settlement approval", short: "Fairness Hearing", future: true },
 ];
 
 const SETTLEMENT_TIERS = [
   {
-    tier: "Tier 1: Severe",
+    tier: "Tier 1: Severe / Terminal",
     severity: "High",
-    range: "$500K – $1.5M+",
+    range: "$200K – $250K+",
     factors:
-      "WHO Grade II/III, craniotomy/multiple surgeries, radiation, permanent neuro damage, disability, lost earning capacity",
+      "Occupational exposure, aggressive NHL (DLBCL), terminal diagnosis, long duration (10+ years), significant medical costs, lost earning capacity",
   },
   {
     tier: "Tier 2: Moderate",
     severity: "Moderate",
-    range: "$250K – $500K",
+    range: "$100K – $200K",
     factors:
-      "Symptomatic Grade I requiring surgery, partial recovery with residual effects, ongoing monitoring",
+      "Significant exposure, NHL diagnosis with treatment, moderate severity, good documentation",
   },
   {
     tier: "Tier 3: Lower",
     severity: "Mild",
-    range: "$100K – $250K",
+    range: "$50K – $100K",
     factors:
-      "Small non-surgical Grade I, incidental finding, watch-and-wait, minimal symptoms",
+      "Residential exposure, indolent NHL, treatable condition, moderate documentation",
   },
   {
-    tier: "Tier 4: Minimal",
+    tier: "Tier 4: Minimal / Class",
     severity: "Lowest",
-    range: "$25K – $100K",
+    range: "$10K – $50K",
     factors:
-      "Suspected/unconfirmed diagnosis, limited documentation",
+      "Class settlement tier: residential claimants, older age, indolent NHL, limited documentation",
   },
+];
+
+const CLASS_SETTLEMENT_TIERS = [
+  { category: "Occupational, under 60, aggressive NHL", avgPayout: "$165,000" },
+  { category: "Occupational, 60–77, aggressive NHL", avgPayout: "$105,000" },
+  { category: "Occupational, under 60, indolent NHL", avgPayout: "$85,000" },
+  { category: "Occupational, 60–77, indolent NHL", avgPayout: "$60,000" },
+  { category: "Residential, under 60, aggressive NHL", avgPayout: "$40,000" },
+  { category: "Residential, 60–77, aggressive NHL", avgPayout: "$30,000" },
+  { category: "Residential, under 60, indolent NHL", avgPayout: "$25,000" },
+  { category: "Residential, 60–77, indolent NHL", avgPayout: "$20,000" },
+  { category: "Any, age 78+", avgPayout: "$10,000" },
 ];
 
 const AD_METRICS = [
-  { metric: "Stage", value: "Early-to-mid (Stage 2–3)" },
-  { metric: "Estimated CPA", value: "~$2,500 – $4,500" },
-  { metric: "Active Meta advertisers", value: "~96 active ads (April 2026)" },
-  { metric: "Primary channels", value: "Meta, Google Ads/LSAs, legal lead gen networks" },
-  { metric: "Case growth rate", value: "~40–50% month-over-month" },
+  { metric: "Stage", value: "Late-stage (mature litigation, winding down)" },
+  { metric: "Estimated CPA", value: "~$2,500 – $3,500 (signed retainer)" },
+  { metric: "Raw Lead Cost", value: "~$265 – $375" },
+  { metric: "Qualification Rate", value: "8–12%" },
+  { metric: "Current Ad Activity", value: "Minimal — most firms paused due to class settlement + SCOTUS uncertainty" },
+  { metric: "Peak Advertising Period", value: "2019–2021" },
+  { metric: "Channel Mix (historical)", value: "~40% social, ~25% search, ~20% broadcast, ~5% CTV" },
 ];
 
 const COMPARATIVE_CPA = [
-  { tort: "Depo-Provera", stage: "Early-mid", cpa: "~$2,500–$4,500", settlement: "TBD ($100K–$1.5M)", highlight: true },
+  { tort: "Roundup", stage: "Late", cpa: "~$2,500–$3,500", settlement: "$5K–$250K", highlight: true },
+  { tort: "Depo-Provera", stage: "Early-mid", cpa: "~$2,500–$4,500", settlement: "$100K–$1.5M" },
   { tort: "Tylenol", stage: "Early", cpa: "~$2,550", settlement: "$60–90K" },
   { tort: "PFAS (AFFF)", stage: "Mid-late", cpa: "~$3,000", settlement: "$75–175K" },
   { tort: "NEC Formula", stage: "Mid", cpa: "~$4,000", settlement: "$100–300K" },
@@ -214,142 +241,87 @@ const COMPARATIVE_CPA = [
   { tort: "Paraquat", stage: "Mid-late", cpa: "~$9,950", settlement: "$105–250K" },
 ];
 
-const DEMOGRAPHIC_PROFILE = [
-  { demographic: "Overall", value: "24.5%" },
-  { demographic: "Black women", value: "41.2%" },
-  { demographic: "Hispanic women", value: "27.2%" },
-  { demographic: "White women", value: "20.3%" },
-  { demographic: "Asian women", value: "7.1%" },
-  { demographic: "No HS diploma", value: "39.9%" },
-  { demographic: "HS diploma/GED", value: "33.7%" },
-  { demographic: "Some college", value: "29.2%" },
-  { demographic: "Bachelor's+", value: "12.7%" },
-  { demographic: "Rural", value: "29.4%" },
-  { demographic: "Urban", value: "23.5%" },
-];
-
-const STATE_PRESCRIBING = [
-  { rank: 1, state: "Rhode Island", totalRx: "4,138", rate: 376, blackPop: "8.5%", signal: "HIGH" as const },
-  { rank: 2, state: "Mississippi", totalRx: "9,873", rate: 309, blackPop: "38.0%", signal: "HIGH" as const },
-  { rank: 3, state: "Maryland", totalRx: "19,676", rate: 303, blackPop: "31.1%", signal: "HIGH" as const },
-  { rank: 4, state: "Louisiana", totalRx: "14,822", rate: 291, blackPop: "33.1%", signal: "HIGH" as const },
-  { rank: 5, state: "South Carolina", totalRx: "15,109", rate: 280, blackPop: "27.0%", signal: "HIGH" as const },
-  { rank: 6, state: "New Mexico", totalRx: "5,637", rate: 268, blackPop: "2.6%", signal: "HIGH" as const },
-  { rank: 7, state: "Ohio", totalRx: "31,814", rate: 265, blackPop: "13.1%", signal: "HIGH" as const },
-  { rank: 8, state: "Iowa", totalRx: "8,087", rate: 253, blackPop: "4.1%", signal: "HIGH" as const },
-  { rank: 9, state: "Oklahoma", totalRx: "9,638", rate: 235, blackPop: "7.8%", signal: "MED-HI" as const },
-  { rank: 10, state: "Vermont", totalRx: "1,139", rate: 207, blackPop: "1.4%", signal: "MED-HI" as const },
-  { rank: 11, state: "West Virginia", totalRx: "3,396", rate: 200, blackPop: "3.6%", signal: "MED-HI" as const },
-  { rank: 12, state: "Montana", totalRx: "1,774", rate: 177, blackPop: "0.6%", signal: "MED-HI" as const },
-  { rank: 13, state: "Pennsylvania", totalRx: "21,632", rate: 166, blackPop: "12.0%", signal: "MED-HI" as const },
-  { rank: 14, state: "Oregon", totalRx: "6,462", rate: 154, blackPop: "2.2%", signal: "MED-HI" as const },
-  { rank: 15, state: "Tennessee", totalRx: "11,053", rate: 154, blackPop: "17.1%", signal: "MED-HI" as const },
-  { rank: 16, state: "Kentucky", totalRx: "7,180", rate: 153, blackPop: "8.6%", signal: "MED-HI" as const },
-  { rank: 17, state: "Virginia", totalRx: "13,497", rate: 150, blackPop: "20.0%", signal: "MED" as const },
-  { rank: 18, state: "Colorado", totalRx: "9,160", rate: 148, blackPop: "4.6%", signal: "MED" as const },
-  { rank: 19, state: "Arizona", totalRx: "11,121", rate: 144, blackPop: "5.2%", signal: "MED" as const },
-  { rank: 20, state: "Delaware", totalRx: "1,424", rate: 142, blackPop: "23.2%", signal: "MED" as const },
-];
-
-const CROSSOVER_STATES = [
-  { state: "Mississippi", rate: 309, blackPop: "38.0%", totalRx: "9,873", dmas: "Jackson" },
-  { state: "Maryland", rate: 303, blackPop: "31.1%", totalRx: "19,676", dmas: "Baltimore, DC suburbs" },
-  { state: "Louisiana", rate: 291, blackPop: "33.1%", totalRx: "14,822", dmas: "New Orleans, Baton Rouge" },
-  { state: "South Carolina", rate: 280, blackPop: "27.0%", totalRx: "15,109", dmas: "Columbia, Charleston" },
-  { state: "Ohio", rate: 265, blackPop: "13.1%", totalRx: "31,814", dmas: "Cleveland, Columbus, Cincinnati" },
-  { state: "Pennsylvania", rate: 166, blackPop: "12.0%", totalRx: "21,632", dmas: "Philadelphia, Pittsburgh" },
-  { state: "Tennessee", rate: 154, blackPop: "17.1%", totalRx: "11,053", dmas: "Memphis, Nashville" },
-  { state: "Virginia", rate: 150, blackPop: "20.0%", totalRx: "13,497", dmas: "Norfolk, Richmond" },
-  { state: "North Carolina", rate: 130, blackPop: "22.2%", totalRx: "14,251", dmas: "Charlotte, Raleigh" },
-  { state: "Michigan", rate: 132, blackPop: "14.1%", totalRx: "13,151", dmas: "Detroit, Grand Rapids" },
+const TRACKED_KEYWORDS = [
+  { keyword: "roundup lawsuit", volume: "74,000", difficulty: "High" as const, cpc: "$38.50" },
+  { keyword: "roundup settlement", volume: "49,500", difficulty: "High" as const, cpc: "$32.00" },
+  { keyword: "roundup cancer", volume: "33,100", difficulty: "High" as const, cpc: "$28.75" },
+  { keyword: "roundup lawsuit payout", volume: "22,200", difficulty: "Medium" as const, cpc: "$35.40" },
+  { keyword: "roundup lawyer", volume: "14,800", difficulty: "High" as const, cpc: "$48.00" },
+  { keyword: "roundup non hodgkin lymphoma", volume: "8,100", difficulty: "Medium" as const, cpc: "$42.50" },
 ];
 
 const ORGANIC_SERP_RESULTS = [
   {
     position: 1,
-    title: "Depo-Provera Lawsuit | Brain Tumor Claims — TorHoerman Law",
-    url: "https://www.torhoermanlaw.com/depo-provera-lawsuit/",
-    description: "Were you diagnosed with a meningioma brain tumor after receiving Depo-Provera injections? You may qualify for compensation. Free case review.",
-    domain: "torhoermanlaw.com",
+    title: "Roundup Lawsuit | April 2026 Update & Settlement",
+    url: "https://www.lawsuit-information-center.com/roundup-lawsuit.html",
+    description: "Updated information on the Roundup lawsuit including the $7.25B class settlement proposal, SCOTUS preemption case, and current claim values.",
+    domain: "lawsuit-information-center.com",
   },
   {
     position: 2,
-    title: "Depo-Provera Meningioma Lawsuit — AboutLawsuits.com",
-    url: "https://www.aboutlawsuits.com/depo-provera-meningioma-lawsuit/",
-    description: "Depo-Provera lawsuits are being pursued by women diagnosed with meningioma brain tumors after use of the injectable birth control.",
-    domain: "aboutlawsuits.com",
+    title: "Roundup Cancer Lawsuit Settlement Update",
+    url: "https://www.millerandzois.com/roundup-lawsuit/",
+    description: "Roundup cancer lawsuit update for April 2026 — new settlement values, class action details, and how to file a claim.",
+    domain: "millerandzois.com",
   },
   {
     position: 3,
-    title: "Depo-Provera Lawsuit Update 2026 — Drugwatch",
-    url: "https://www.drugwatch.com/depo-provera/lawsuit/",
-    description: "More than 3,400 Depo-Provera lawsuits have been filed alleging the birth control injection causes meningioma brain tumors.",
-    domain: "drugwatch.com",
+    title: "Roundup Cancer Lawsuit | April 2026 Update",
+    url: "https://www.motleyrice.com/roundup-lawsuit/",
+    description: "Motley Rice attorneys represent Roundup users diagnosed with non-Hodgkin lymphoma. Free case review.",
+    domain: "motleyrice.com",
   },
   {
     position: 4,
-    title: "Depo-Provera Brain Tumor Lawsuit — Morgan & Morgan",
-    url: "https://www.forthepeople.com/mass-tort/depo-provera-lawsuit/",
-    description: "If you used Depo-Provera and developed a brain tumor, you may be entitled to compensation. Contact Morgan & Morgan for a free consultation.",
-    domain: "forthepeople.com",
+    title: "Roundup Lawsuit - April 2026 Update",
+    url: "https://www.robertkinglawfirm.com/roundup-lawsuit/",
+    description: "Everything you need to know about the Roundup lawsuit in 2026 — settlement amounts, qualification criteria, and deadlines.",
+    domain: "robertkinglawfirm.com",
   },
   {
     position: 5,
-    title: "Depo-Provera Lawsuit — Ben Crump Law",
-    url: "https://bencrump.com/mass-torts/depo-provera-lawsuit/",
-    description: "Depo-Provera has been linked to meningioma brain tumors. Learn about the lawsuit and your legal options.",
-    domain: "bencrump.com",
+    title: "Roundup Lawsuit: Cancer Claims, Settlements & Eligibility",
+    url: "https://www.drugwatch.com/roundup/lawsuit/",
+    description: "Comprehensive guide to Roundup lawsuits alleging glyphosate causes non-Hodgkin lymphoma. Settlement updates and eligibility criteria.",
+    domain: "drugwatch.com",
   },
-];
-
-const TRACKED_KEYWORDS = [
-  { keyword: "depo provera lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$42.80" },
-  { keyword: "depo provera meningioma", volume: "22,200", difficulty: "High" as const, cpc: "$38.50" },
-  { keyword: "depo provera brain tumor", volume: "14,800", difficulty: "Medium" as const, cpc: "$35.20" },
-  { keyword: "depo provera lawyer", volume: "8,100", difficulty: "High" as const, cpc: "$52.00" },
-  { keyword: "depo provera settlement", volume: "6,600", difficulty: "Medium" as const, cpc: "$28.40" },
-  { keyword: "depo shot lawsuit", volume: "4,400", difficulty: "Medium" as const, cpc: "$31.00" },
 ];
 
 const PAID_AD_DATA = {
   meta: {
     platform: "Meta (Facebook / Instagram)",
-    activeAds: 96,
-    advertisers: 34,
-    avgSpend: "$15K–$45K/mo",
-    commonFormats: ["Lead Form Ads", "Video Ads", "Carousel"],
+    activeAds: 15,
+    advertisers: 8,
+    avgSpend: "$5K–$15K/mo",
+    commonFormats: ["Lead Form Ads", "Video Ads"],
     topAdvertisers: [
-      { name: "TorHoerman Law", ads: 12, status: "Active" },
-      { name: "Lawsuit Legal News", ads: 9, status: "Active" },
-      { name: "Morgan & Morgan", ads: 8, status: "Active" },
-      { name: "Ben Crump Law", ads: 7, status: "Active" },
-      { name: "OnderLaw", ads: 5, status: "Active" },
+      { name: "Simmons Hanly Conroy", ads: 5, status: "Active" },
+      { name: "King Law", ads: 4, status: "Active" },
+      { name: "ConsumerShield", ads: 3, status: "Active" },
     ],
   },
   google: {
     platform: "Google Ads",
-    activeAds: 45,
-    advertisers: 22,
-    avgSpend: "$20K–$60K/mo",
-    commonFormats: ["Search Ads", "Local Service Ads (LSAs)", "Display"],
+    activeAds: 25,
+    advertisers: 12,
+    avgSpend: "$15K–$40K/mo",
+    commonFormats: ["Search Ads", "Local Service Ads"],
     topAdvertisers: [
       { name: "Morgan & Morgan", ads: 8, status: "Active" },
-      { name: "Sokolove Law", ads: 6, status: "Active" },
-      { name: "Weitz & Luxenberg", ads: 5, status: "Active" },
-      { name: "Pintas & Mullins", ads: 4, status: "Active" },
-      { name: "Riddle & Brantley", ads: 3, status: "Active" },
+      { name: "Simmons Hanly Conroy", ads: 5, status: "Active" },
+      { name: "Sokolove Law", ads: 4, status: "Active" },
     ],
   },
   tiktok: {
     platform: "TikTok",
-    activeAds: 18,
-    advertisers: 8,
-    avgSpend: "$5K–$15K/mo",
-    commonFormats: ["In-Feed Video", "Spark Ads"],
+    activeAds: 5,
+    advertisers: 3,
+    avgSpend: "$2K–$8K/mo",
+    commonFormats: ["In-Feed Video"],
     topAdvertisers: [
-      { name: "Lawsuit Legal News", ads: 5, status: "Active" },
-      { name: "TorHoerman Law", ads: 4, status: "Active" },
-      { name: "Mass Tort Alliance", ads: 3, status: "Active" },
+      { name: "Lawsuit Legal News", ads: 3, status: "Active" },
+      { name: "King Law", ads: 2, status: "Active" },
     ],
   },
 };
@@ -357,19 +329,19 @@ const PAID_AD_DATA = {
 const SAMPLE_ADS = [
   {
     platform: "Meta",
-    advertiser: "TorHoerman Law",
+    advertiser: "Simmons Hanly Conroy",
     type: "Lead Form Ad",
-    headline: "Depo-Provera Linked to Brain Tumors",
-    body: "Were you diagnosed with a meningioma after Depo-Provera injections? You may qualify for significant compensation. Free case review — no fees unless you win.",
+    headline: "Used Roundup Weed Killer? Diagnosed with Cancer?",
+    body: "You may be entitled to compensation. Over $11 billion already paid. Free case review.",
     cta: "Sign Up",
-    landingPage: "https://www.torhoermanlaw.com/depo-provera-lawsuit/",
+    landingPage: "#",
   },
   {
     platform: "Meta",
-    advertiser: "Lawsuit Legal News",
+    advertiser: "King Law",
     type: "Video Ad",
-    headline: "Depo Shot & Brain Tumor Risk",
-    body: "New studies confirm Depo-Provera users face 5.5x higher risk of meningioma. Find out if you qualify for the lawsuit.",
+    headline: "Roundup Lawsuit Update: $7.25 Billion Settlement Proposed",
+    body: "Were you exposed? Find out if you qualify for the Roundup class action settlement.",
     cta: "Learn More",
     landingPage: "#",
   },
@@ -377,52 +349,126 @@ const SAMPLE_ADS = [
     platform: "Google",
     advertiser: "Morgan & Morgan",
     type: "Search Ad",
-    headline: "Depo-Provera Lawsuit — Free Case Review | ForThePeople.com",
-    body: "Diagnosed With A Brain Tumor After Depo-Provera? You May Be Entitled To Compensation. America's Largest Injury Firm. No Win, No Fee.",
+    headline: "Roundup Cancer Lawsuit — Free Case Review | ForThePeople.com",
+    body: "Used Roundup & Diagnosed With NHL? America's Largest Injury Firm. No Win, No Fee.",
     cta: null,
-    landingPage: "https://www.forthepeople.com/mass-tort/depo-provera-lawsuit/",
+    landingPage: "https://www.forthepeople.com/mass-tort/roundup-lawsuit/",
   },
   {
     platform: "Google",
     advertiser: "Sokolove Law",
     type: "Search Ad",
-    headline: "Depo Provera Meningioma Lawyers — Experienced Mass Tort Attorneys",
-    body: "Over 40 Years of Experience. Exposed to Depo-Provera & Diagnosed with Meningioma? Act Now.",
+    headline: "Roundup Lymphoma Lawyers — 40+ Years Experience",
+    body: "Exposed to Roundup & Diagnosed with Cancer? Act Now Before Deadlines Pass.",
     cta: null,
     landingPage: "#",
   },
   {
     platform: "TikTok",
-    advertiser: "TorHoerman Law",
+    advertiser: "Lawsuit Legal News",
     type: "In-Feed Video",
-    headline: "Did you know Depo-Provera is linked to brain tumors?",
-    body: "If you or a loved one used Depo-Provera and were diagnosed with a meningioma, you may be entitled to compensation. Link in bio.",
+    headline: "Bayer just proposed $7.25 BILLION to settle Roundup lawsuits",
+    body: "If you used this weed killer and got cancer, you need to see this.",
     cta: "Learn More",
     landingPage: "#",
   },
   {
     platform: "TikTok",
-    advertiser: "Lawsuit Legal News",
+    advertiser: "King Law",
     type: "Spark Ad",
-    headline: "Depo-Provera Brain Tumor Lawsuit Update 2026",
-    body: "Over 3,400 cases filed. Settlement talks could begin next year. See if you qualify.",
+    headline: "Roundup Settlement Update 2026",
+    body: "New class action could pay up to $165K. Link in bio.",
     cta: "Sign Up",
     landingPage: "#",
   },
 ];
 
 const TOP_FIRMS = [
-  { firm: "TorHoerman Law", totalAds: 21, platforms: 3, markets: 12, estSpend: "$85K/mo", trend: "up" as const },
-  { firm: "Morgan & Morgan", totalAds: 18, platforms: 2, markets: 28, estSpend: "$120K/mo", trend: "up" as const },
-  { firm: "Lawsuit Legal News", totalAds: 17, platforms: 3, markets: 8, estSpend: "$55K/mo", trend: "up" as const },
-  { firm: "Ben Crump Law", totalAds: 12, platforms: 2, markets: 15, estSpend: "$70K/mo", trend: "up" as const },
-  { firm: "Sokolove Law", totalAds: 11, platforms: 1, markets: 22, estSpend: "$95K/mo", trend: "stable" as const },
-  { firm: "OnderLaw", totalAds: 8, platforms: 2, markets: 6, estSpend: "$35K/mo", trend: "up" as const },
-  { firm: "Weitz & Luxenberg", totalAds: 7, platforms: 1, markets: 18, estSpend: "$80K/mo", trend: "down" as const },
-  { firm: "Pintas & Mullins", totalAds: 6, platforms: 2, markets: 10, estSpend: "$40K/mo", trend: "stable" as const },
+  { firm: "Simmons Hanly Conroy", totalAds: 12, platforms: 2, markets: 18, estSpend: "$45K/mo", trend: "stable" as const },
+  { firm: "Morgan & Morgan", totalAds: 10, platforms: 1, markets: 28, estSpend: "$55K/mo", trend: "down" as const },
+  { firm: "King Law", totalAds: 8, platforms: 3, markets: 10, estSpend: "$25K/mo", trend: "up" as const },
+  { firm: "Sokolove Law", totalAds: 7, platforms: 1, markets: 22, estSpend: "$40K/mo", trend: "down" as const },
+  { firm: "ConsumerShield", totalAds: 6, platforms: 2, markets: 8, estSpend: "$18K/mo", trend: "stable" as const },
+  { firm: "Lawsuit Legal News", totalAds: 5, platforms: 2, markets: 6, estSpend: "$12K/mo", trend: "stable" as const },
+  { firm: "Motley Rice", totalAds: 4, platforms: 1, markets: 15, estSpend: "$30K/mo", trend: "down" as const },
+  { firm: "Weitz & Luxenberg", totalAds: 3, platforms: 1, markets: 12, estSpend: "$22K/mo", trend: "down" as const },
 ];
 
-/* ── Helpers ────────────────────────────────────────────────────────────── */
+const EXPOSURE_PROFILES = [
+  {
+    group: "Agricultural Workers",
+    detail: "Farmers, farmhands, crop dusters — highest exposure, strongest claims, highest settlement tiers",
+  },
+  {
+    group: "Landscapers / Groundskeepers",
+    detail: "Professional applicators with regular occupational exposure",
+  },
+  {
+    group: "Residential Users",
+    detail: "Homeowners who used Roundup on lawns/gardens regularly for 3+ years",
+  },
+  {
+    group: "General Characteristics",
+    detail: "Age 40–75, male skew, NHL demographics — more common in men and non-Hispanic Whites, incidence increases with age",
+  },
+];
+
+const STATE_GLYPHOSATE = [
+  { rank: 1, state: "Iowa", usage: "20M+ lbs", crops: "Corn, soybeans", nhlRate: "14.9", signal: "HIGH" as const },
+  { rank: 2, state: "Illinois", usage: "20M+ lbs", crops: "Corn, soybeans", nhlRate: "12.7", signal: "HIGH" as const },
+  { rank: 3, state: "Kansas", usage: "20M+ lbs", crops: "Wheat, soybeans, sorghum", nhlRate: "12.3", signal: "HIGH" as const },
+  { rank: 4, state: "Texas", usage: "20M+ lbs", crops: "Cotton, corn, sorghum", nhlRate: "11.0", signal: "MED-HI" as const },
+  { rank: 5, state: "Minnesota", usage: "15–20M lbs", crops: "Corn, soybeans, sugar beets", nhlRate: "14.1", signal: "HIGH" as const },
+  { rank: 6, state: "Indiana", usage: "15–20M lbs", crops: "Corn, soybeans", nhlRate: "N/A", signal: "HIGH" as const },
+  { rank: 7, state: "Nebraska", usage: "15–20M lbs", crops: "Corn, soybeans", nhlRate: "12.8", signal: "HIGH" as const },
+  { rank: 8, state: "Ohio", usage: "10–15M lbs", crops: "Corn, soybeans", nhlRate: "13.4", signal: "HIGH" as const },
+  { rank: 9, state: "Missouri", usage: "10–15M lbs", crops: "Soybeans, corn", nhlRate: "12.7", signal: "HIGH" as const },
+  { rank: 10, state: "Wisconsin", usage: "10–15M lbs", crops: "Corn, soybeans", nhlRate: "14.2", signal: "HIGH" as const },
+  { rank: 11, state: "South Dakota", usage: "10–15M lbs", crops: "Corn, soybeans", nhlRate: "13.3", signal: "MED-HI" as const },
+  { rank: 12, state: "North Dakota", usage: "10–15M lbs", crops: "Wheat, soybeans", nhlRate: "13.2", signal: "MED-HI" as const },
+  { rank: 13, state: "Michigan", usage: "10–15M lbs", crops: "Corn, soybeans", nhlRate: "12.5", signal: "MED-HI" as const },
+  { rank: 14, state: "Kentucky", usage: "5–10M lbs", crops: "Corn, soybeans", nhlRate: "13.6", signal: "MED-HI" as const },
+  { rank: 15, state: "Pennsylvania", usage: "5–10M lbs", crops: "Corn, soybeans", nhlRate: "13.1", signal: "MED-HI" as const },
+];
+
+const CROSSOVER_STATES = [
+  { state: "Iowa", usage: "20M+ lbs", nhlRate: "14.9 (highest)", dmas: "Des Moines, Cedar Rapids" },
+  { state: "Wisconsin", usage: "10–15M lbs", nhlRate: "14.2", dmas: "Milwaukee, Madison" },
+  { state: "Minnesota", usage: "15–20M lbs", nhlRate: "14.1", dmas: "Minneapolis–St. Paul" },
+  { state: "Ohio", usage: "10–15M lbs", nhlRate: "13.4", dmas: "Cleveland, Columbus, Cincinnati" },
+  { state: "Kentucky", usage: "5–10M lbs", nhlRate: "13.6", dmas: "Louisville, Lexington" },
+  { state: "Nebraska", usage: "15–20M lbs", nhlRate: "12.8", dmas: "Omaha, Lincoln" },
+  { state: "Illinois", usage: "20M+ lbs", nhlRate: "12.7", dmas: "Chicago, Springfield, Champaign" },
+  { state: "Missouri", usage: "10–15M lbs", nhlRate: "12.7", dmas: "St. Louis, Kansas City" },
+  { state: "Kansas", usage: "20M+ lbs", nhlRate: "12.3", dmas: "Wichita, Kansas City" },
+  { state: "Michigan", usage: "10–15M lbs", nhlRate: "12.5", dmas: "Detroit, Grand Rapids" },
+];
+
+const TARGETING_IMPLICATIONS = [
+  { title: "Concentrate in Agricultural States", detail: "Focus spend in Midwest/Great Plains: Iowa, Illinois, Minnesota, Wisconsin, Ohio, Missouri, Kansas, Nebraska, Indiana" },
+  { title: "Occupational Targeting on Meta", detail: "Men 40–75, agriculture/farming interests, landscaping/lawn care professionals, rural zip codes" },
+  { title: "Residential Targeting", detail: "Homeowners 45–75, lawn/garden interests, suburban zip codes in high-usage states" },
+  { title: "High-Volume Search Keywords", detail: "\"Roundup lawsuit\" (74K/mo) and \"Roundup settlement\" (49K/mo) still have massive search volume" },
+  { title: "DMA-Level Focus", detail: "Des Moines, Minneapolis–St. Paul, Milwaukee, Cleveland/Columbus, St. Louis, Kansas City, Omaha, Louisville" },
+  { title: "Timing: Wait for Clarity", detail: "New ad spend should wait until after SCOTUS decision (expected June 2026) and class settlement opt-out deadline (June 4, 2026)" },
+];
+
+/* -- Helpers ------------------------------------------------------------- */
+
+function SignalBadge({ signal }: { signal: "HIGH" | "MED-HI" | "MED" }) {
+  const styles = {
+    HIGH: "bg-red-50 text-alert border-alert/20",
+    "MED-HI": "bg-amber-50 text-warning border-warning/20",
+    MED: "bg-slate-50 text-slate-gray border-slate-gray/20",
+  };
+  return (
+    <span
+      className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styles[signal]}`}
+    >
+      {signal}
+    </span>
+  );
+}
 
 function PlatformBadge({ platform }: { platform: string }) {
   if (platform === "Meta") {
@@ -446,27 +492,12 @@ function PlatformBadge({ platform }: { platform: string }) {
   );
 }
 
-function SignalBadge({ signal }: { signal: "HIGH" | "MED-HI" | "MED" }) {
-  const styles = {
-    HIGH: "bg-red-50 text-alert border-alert/20",
-    "MED-HI": "bg-amber-50 text-warning border-warning/20",
-    MED: "bg-slate-50 text-slate-gray border-slate-gray/20",
-  };
-  return (
-    <span
-      className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styles[signal]}`}
-    >
-      {signal}
-    </span>
-  );
-}
+/* -- Page ---------------------------------------------------------------- */
 
-/* ── Page ───────────────────────────────────────────────────────────────── */
-
-export default function DepoProveraPage() {
+export default function RoundupPage() {
   return (
     <div className="space-y-8">
-      {/* ── 1. Page Header ──────────────────────────────────────────────── */}
+      {/* -- 1. Page Header ------------------------------------------------ */}
       <div>
         <Link
           href="/torts"
@@ -479,21 +510,24 @@ export default function DepoProveraPage() {
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            Depo-Provera
+            Roundup (Glyphosate)
           </h1>
           <span className="rounded-full bg-emerald-50 border border-success/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-success">
             Active Litigation
           </span>
+          <span className="rounded-full bg-amber-50 border border-warning/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-warning">
+            Class Settlement Pending
+          </span>
         </div>
         <p className="mt-1 text-lg text-slate-gray">
-          Meningioma (Brain Tumor)
+          Non-Hodgkin Lymphoma (NHL)
         </p>
         <p className="mt-0.5 text-xs text-slate-gray">
           Last Updated: April 16, 2026
         </p>
       </div>
 
-      {/* ── 2. Key Stats Row ────────────────────────────────────────────── */}
+      {/* -- 2. Key Stats Row ---------------------------------------------- */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
@@ -502,69 +536,72 @@ export default function DepoProveraPage() {
               Pending Cases
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">3,490+</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 3140</p>
+          <p className="text-2xl font-bold text-midnight-navy">3,887+</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 2741 (March 2026)</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Settlement Range
+              Total Settled
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">$100K – $1.5M</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Projected</p>
+          <p className="text-2xl font-bold text-midnight-navy">$11B+</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">~100K claims resolved</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <Target className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Estimated CPA
+              Settlement Range
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">~$2,500 – $4,500</p>
+          <p className="text-2xl font-bold text-midnight-navy">$5K – $250K</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">Per individual claim</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <Calendar className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Bellwether Trial
+              Estimated CPA
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">Dec 2026</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">First scheduled</p>
+          <p className="text-2xl font-bold text-midnight-navy">~$2,500 – $3,500</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">Signed retainer</p>
         </div>
       </div>
 
-      {/* ── 3. Case Summary ─────────────────────────────────────────────── */}
+      {/* -- 3. Case Summary ----------------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-midnight-navy mb-4">
           Case Summary
         </h2>
         <div className="space-y-4 text-sm leading-relaxed text-midnight-navy/80">
           <p>
-            Depo-Provera (depot medroxyprogesterone acetate, or DMPA) is a
-            Pfizer-manufactured injectable contraceptive administered every three
-            months, FDA-approved in the United States since 1992. Thousands of
-            women are alleging that prolonged use caused them to develop
-            meningioma — a tumor of the tissue lining the brain and spinal cord —
-            and that Pfizer knew or should have known about this risk for decades
-            but failed to update the U.S. warning label.
+            Roundup is a glyphosate-based herbicide manufactured by Monsanto
+            (acquired by Bayer in 2018) and the most widely used weedkiller in
+            the world. Over 170,000 plaintiffs have filed lawsuits alleging that
+            prolonged exposure to Roundup caused them to develop non-Hodgkin
+            lymphoma (NHL) and that Monsanto knew about the cancer risk but
+            failed to warn consumers.
           </p>
           <p>
-            The litigation is consolidated as MDL No. 3140 in the U.S. District
-            Court for the Northern District of Florida under Judge M. Casey
-            Rodgers. As of April 2026, more than 3,490 cases are pending in the
-            MDL, with additional filings in state courts across Delaware, New
-            York, California, Illinois, and Pennsylvania. Case volume has grown
-            dramatically — a 3,873% increase from March 2025 to March 2026.
+            The litigation is consolidated as MDL No. 2741 in the U.S. District
+            Court for the Northern District of California under Judge Vince
+            Chhabria. As of March 2026, approximately 3,887 cases remain pending
+            in the MDL, with roughly 61,000 additional active cases in state
+            courts across the country. Bayer has already settled approximately
+            100,000 claims for over $11 billion.
           </p>
           <p>
-            Pfizer&apos;s central defense is federal preemption: the argument that
-            the FDA previously rejected a stronger warning label, so state-level
-            failure-to-warn claims should be blocked. In December 2025, the FDA
-            approved a label change adding a meningioma warning — a pivotal
-            development that undercuts this defense.
+            In February 2026, Bayer proposed a $7.25 billion class-action
+            settlement (preliminarily approved March 2026) to resolve both
+            current and future claims over a 17–21 year period. Separately, the
+            U.S. Supreme Court is hearing Bayer&apos;s preemption appeal (Durnell
+            case), with arguments in April 2026 and a decision expected by summer
+            2026. Bayer argues that federal pesticide law (FIFRA) preempts state
+            failure-to-warn claims because EPA-approved labels could not legally
+            add a cancer warning.
           </p>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -573,9 +610,7 @@ export default function DepoProveraPage() {
               Defendants
             </p>
             <p className="text-sm text-midnight-navy">
-              Pfizer Inc., Greenstone LLC, Pharmacia &amp; Upjohn Company LLC,
-              A-S Medication Solutions, Prasco Laboratories, Preferred
-              Pharmaceuticals Inc.
+              Bayer AG, Monsanto Company
             </p>
           </div>
           <div className="rounded-md bg-cloud/60 px-4 py-3">
@@ -583,14 +618,14 @@ export default function DepoProveraPage() {
               Legal Theories
             </p>
             <p className="text-sm text-midnight-navy">
-              Failure to warn, negligent design, negligence, fraudulent
-              concealment, breach of implied warranty of safety.
+              Failure to warn, design defect, negligence, fraudulent
+              concealment, breach of warranty
             </p>
           </div>
         </div>
       </div>
 
-      {/* ── 4. Harm / Injury ────────────────────────────────────────────── */}
+      {/* -- 4. Harm / Injury ---------------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-4.5 h-4.5 text-alert" />
@@ -599,10 +634,11 @@ export default function DepoProveraPage() {
           </h2>
         </div>
         <p className="text-sm leading-relaxed text-midnight-navy/80 mb-4">
-          The core injury is meningioma — a tumor forming in the meninges (tissue
-          surrounding the brain and spinal cord). ~90% intracranial, ~10% spinal.
-          While most are classified as benign (WHO Grade I), they can cause
-          serious neurological complications requiring craniotomy.
+          The core injury is non-Hodgkin lymphoma (NHL) — a cancer of the
+          lymphatic system. NHL encompasses over 60 subtypes, with the most
+          common being diffuse large B-cell lymphoma (DLBCL) and follicular
+          lymphoma. The 5-year survival rate is approximately 74%, but aggressive
+          subtypes have significantly worse prognosis.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -611,14 +647,14 @@ export default function DepoProveraPage() {
             </p>
             <ul className="space-y-1.5">
               {[
-                "Chronic headaches and migraines",
-                "Seizures",
-                "Vision problems (blurred vision, partial vision loss)",
-                "Hearing loss",
-                "Memory loss and cognitive impairment",
-                "Trouble speaking",
-                "Weakness in arms or legs",
-                "Permanent neurological damage or disability",
+                "Swollen lymph nodes (painless)",
+                "Fatigue and weakness",
+                "Unexplained weight loss",
+                "Fever and night sweats",
+                "Abdominal pain or swelling",
+                "Chest pain, coughing, difficulty breathing",
+                "Frequent infections",
+                "Easy bruising or bleeding",
               ].map((s) => (
                 <li
                   key={s}
@@ -635,23 +671,23 @@ export default function DepoProveraPage() {
               Treatment
             </p>
             <p className="text-sm leading-relaxed text-midnight-navy/80">
-              Brain surgery (craniotomy/tumor excision), radiation therapy,
-              chemotherapy, hospitalization, long-term &quot;watch and wait&quot;
-              surveillance with serial MRI.
+              Chemotherapy, immunotherapy, radiation therapy, targeted therapy,
+              stem cell transplant, CAR T-cell therapy, hospitalization,
+              long-term surveillance.
             </p>
-            <div className="mt-4 rounded-md border border-alert/20 bg-red-50 px-4 py-3">
-              <p className="text-xs font-semibold text-alert">FDA Label Update</p>
+            <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
+              <p className="text-xs font-semibold text-warning">Other Linked Conditions</p>
               <p className="mt-1 text-sm text-midnight-navy/80">
-                The FDA&apos;s updated label now instructs providers to
-                discontinue Depo-Provera immediately if a meningioma is
-                diagnosed.
+                Multiple myeloma, B-cell lymphoma, chronic lymphocytic leukemia
+                (CLL), hairy cell leukemia. Some research also suggests links to
+                liver damage, endocrine disruption, and kidney disease.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── 5. Scientific Evidence ──────────────────────────────────────── */}
+      {/* -- 5. Scientific Evidence ---------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -702,17 +738,20 @@ export default function DepoProveraPage() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
+        <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
           <p className="text-sm text-midnight-navy/80">
-            <span className="font-semibold text-midnight-navy">Key point:</span>{" "}
-            Multiple independent studies consistently show elevated risk. Other
-            contraceptives (IUDs, oral pills, etc.) show NO increased risk —
-            strengthening the DMPA-specific association.
+            <span className="font-semibold text-warning">Key point:</span>{" "}
+            Scientific evidence is genuinely contested. IARC (WHO) classifies
+            glyphosate as &quot;probably carcinogenic&quot; while the EPA maintains it is
+            &quot;not likely carcinogenic.&quot; This tension is central to the litigation.
+            Plaintiff attorneys rely heavily on the IARC classification and the
+            Zhang meta-analysis. Bayer/defense cites EPA and the Agricultural
+            Health Study.
           </p>
         </div>
       </div>
 
-      {/* ── 6. Qualification Criteria ───────────────────────────────────── */}
+      {/* -- 6. Qualification Criteria ------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -770,7 +809,7 @@ export default function DepoProveraPage() {
               color: "border-success/30 bg-emerald-50",
               tagColor: "bg-success/10 text-success",
               details:
-                "2–3 yes/no questions + contact info. Cheapest but highest rejection at intake.",
+                "2–3 yes/no questions + contact info. \"Did you use Roundup? Diagnosed with cancer?\" Cheapest but highest rejection at intake.",
             },
             {
               label: "Tier 2: Qualified Lead",
@@ -778,7 +817,7 @@ export default function DepoProveraPage() {
               color: "border-warning/30 bg-amber-50",
               tagColor: "bg-warning/10 text-warning",
               details:
-                "4–6 step form. Confirmed 12+ months use, meningioma, diagnosis year, attorney check. Better conversion.",
+                "4–6 step form. Confirmed 3+ years use, NHL diagnosis, exposure type (occupational vs. residential), diagnosis year, attorney check. Better conversion.",
             },
             {
               label: "Tier 3: Retainer-Ready",
@@ -786,7 +825,7 @@ export default function DepoProveraPage() {
               color: "border-alert/30 bg-red-50",
               tagColor: "bg-alert/10 text-alert",
               details:
-                "10–15 step deep intake. Product ID, injection dates/count, tumor type, treatment, symptoms, narrative. Most expensive but lowest fallout.",
+                "Full intake with exposure history, specific product ID, diagnosis details (NHL subtype, stage, treatment), medical records auth, employment history. Most expensive but lowest fallout.",
             },
           ].map((tier) => (
             <div
@@ -845,7 +884,7 @@ export default function DepoProveraPage() {
         </div>
       </div>
 
-      {/* ── 7. Litigation Timeline ──────────────────────────────────────── */}
+      {/* -- 7. Litigation Timeline ---------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -891,7 +930,7 @@ export default function DepoProveraPage() {
         </div>
       </div>
 
-      {/* ── 8. Settlement Projections ───────────────────────────────────── */}
+      {/* -- 8. Settlement Projections ------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <DollarSign className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -900,10 +939,9 @@ export default function DepoProveraPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          No settlements reached yet. Projections based on attorney estimates and
-          comparable mass tort outcomes. Average jury verdict in prior meningioma
-          cases ~$3M; settlements ~$868K. Mass tort economics will bring
-          individual Depo settlements lower.
+          Projections based on the $7.25B class settlement proposal, prior payouts,
+          and jury verdicts. Bayer has already settled ~100,000 claims for $11B+.
+          Average payout in 2020 settlement: ~$160,000.
         </p>
 
         {/* Settlement Tiers */}
@@ -961,6 +999,43 @@ export default function DepoProveraPage() {
           </table>
         </div>
 
+        {/* $7.25B Class Settlement Tiers */}
+        <h3 className="mt-6 mb-3 text-sm font-semibold text-midnight-navy">
+          $7.25B Class Settlement Tiers (Proposed, Feb 2026)
+        </h3>
+        <div className="overflow-x-auto mb-4">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Category
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Avg Payout
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {CLASS_SETTLEMENT_TIERS.map((t) => (
+                <tr
+                  key={t.category}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-2.5 pr-4 text-midnight-navy/80">
+                    {t.category}
+                  </td>
+                  <td className="py-2.5 pl-3 text-right font-mono font-semibold text-midnight-navy">
+                    {t.avgPayout}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[11px] text-slate-gray">
+            Actual awards may range from 80% to 120% of the average based on individual claim scoring.
+          </p>
+        </div>
+
         {/* Factors */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-emerald-50/60 px-4 py-3">
@@ -969,12 +1044,13 @@ export default function DepoProveraPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "6+ years use",
-                "Multiple meningiomas",
+                "10+ years occupational use",
+                "Aggressive NHL subtype (DLBCL)",
+                "Terminal diagnosis",
                 "Younger age",
-                "Complex tumor location",
-                "WHO Grade II/III",
-                "Permanent impairment",
+                "High medical costs",
+                "Strong documentation",
+                "Occupational exposure",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <TrendingUp className="w-3 h-3 shrink-0 text-success" />
@@ -989,11 +1065,11 @@ export default function DepoProveraPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "Short duration",
-                "Incidental finding",
-                "No surgery",
-                "Pre-existing risk factors",
+                "Short/casual residential use",
+                "Indolent NHL",
+                "Older age at diagnosis",
                 "Weak documentation",
+                "Pre-existing risk factors",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <XCircle className="w-3 h-3 shrink-0 text-alert" />
@@ -1004,6 +1080,38 @@ export default function DepoProveraPage() {
           </div>
         </div>
 
+        {/* Key Verdict Benchmarks */}
+        <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
+          <p className="text-xs font-semibold text-midnight-navy mb-2">
+            Key Verdict Benchmarks
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-midnight-navy/70">
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $289M (2018)
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-gray" />
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $80M (2019)
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-gray" />
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $2B (2019)
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-gray" />
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $1.5B (2023)
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-gray" />
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $2.25B (2024)
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-gray" />
+            <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
+              $2B (2025)
+            </span>
+          </div>
+        </div>
+
         {/* Timeline to Payout */}
         <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
           <p className="text-xs font-semibold text-midnight-navy mb-2">
@@ -1011,25 +1119,25 @@ export default function DepoProveraPage() {
           </p>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-midnight-navy/70">
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Bellwether Dec 2026
+              Prelim Approved Mar 2026
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Settlement Framework Spring 2027
+              Opt-Out Jun 4, 2026
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Claims Admin Summer 2027
+              Fairness Hearing Jul 2026
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              First Payments Late 2027–2028
+              Payments Begin (21-yr schedule)
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── 9. Advertising Landscape ────────────────────────────────────── */}
+      {/* -- 9. Advertising Landscape -------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1075,24 +1183,24 @@ export default function DepoProveraPage() {
           {[
             {
               channel: "Meta (Facebook/Instagram)",
-              detail: "Dominant channel, ~96 active ads, quiz-style lead forms",
+              detail: "Was dominant, currently minimal (~15 ads), $5K–$15K/mo",
               color: "border-blue-500/30 bg-blue-50",
             },
             {
               channel: "Google Ads/LSAs",
-              detail: "High-intent search queries, pay-per-lead pricing",
+              detail: "Reduced (~25 ads), $15K–$40K/mo, high-intent search still running",
               color: "border-emerald-500/30 bg-emerald-50",
             },
             {
-              channel: "Legal Lead Gen Networks",
+              channel: "TV / Broadcast",
+              detail: "Was ~20% of spend at peak, most firms pulled back",
+              color: "border-indigo-500/30 bg-indigo-50",
+            },
+            {
+              channel: "Lead Gen Networks",
               detail:
                 "Per-lead or per-retainer pricing through legal lead generation networks",
               color: "border-purple-500/30 bg-purple-50",
-            },
-            {
-              channel: "TV",
-              detail: "Less prevalent, may increase as litigation matures",
-              color: "border-indigo-500/30 bg-indigo-50",
             },
           ].map((ch) => (
             <div
@@ -1157,18 +1265,19 @@ export default function DepoProveraPage() {
           </table>
         </div>
 
-        {/* Meta Warning */}
+        {/* Warning Callout */}
         <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
           <p className="text-xs text-midnight-navy/80">
-            <span className="font-semibold text-warning">Platform Risk:</span>{" "}
-            Meta recently removed law firm ads recruiting plaintiffs for social
-            media addiction lawsuits (April 2026). Has not affected Depo-Provera,
-            but signals platform risk for firms reliant on Meta.
+            <span className="font-semibold text-warning">Market Timing Risk:</span>{" "}
+            The $7.25B class settlement (Feb 2026) and pending SCOTUS preemption
+            decision created a &quot;double pause&quot; in advertising. New ad spend is not
+            recommended until after June 2026. Firms with existing inventory hold
+            cases worth $50K–$250K at ~$3,000 CPA.
           </p>
         </div>
       </div>
 
-      {/* ── 10. Organic Search Landscape ──────────────────────────────── */}
+      {/* -- 10. Organic Search Landscape ---------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Eye className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1177,7 +1286,7 @@ export default function DepoProveraPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Top organic search results for Depo-Provera litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
+          Top organic search results for Roundup litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
         </p>
 
         {/* Tracked Keywords Table */}
@@ -1270,7 +1379,7 @@ export default function DepoProveraPage() {
         <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live SERP tracking coming soon.</p>
       </div>
 
-      {/* ── 11. Paid Advertising by Platform ─────────────────────────────── */}
+      {/* -- 11. Paid Advertising by Platform ------------------------------ */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <DollarSign className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1279,7 +1388,7 @@ export default function DepoProveraPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Active paid advertising across major platforms for Depo-Provera litigation.
+          Roundup advertising is currently at minimal levels due to the pending class settlement and SCOTUS decision.
         </p>
 
         <div className="space-y-4">
@@ -1376,7 +1485,7 @@ export default function DepoProveraPage() {
         <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
       </div>
 
-      {/* ── 12. Sample Ads ───────────────────────────────────────────────── */}
+      {/* -- 12. Sample Ads ------------------------------------------------ */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Image className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1389,50 +1498,48 @@ export default function DepoProveraPage() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_ADS.map((ad, i) => {
-            return (
-              <div
-                key={i}
-                className="rounded-lg border border-cloud bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <PlatformBadge platform={ad.platform} />
-                  <span className="inline-block rounded-full bg-cloud px-2 py-0.5 text-[10px] font-medium text-midnight-navy/70">
-                    {ad.type}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-gray mb-1">{ad.advertiser}</p>
-                <p className="text-sm font-bold text-midnight-navy mb-1">{ad.headline}</p>
-                <p className="text-sm text-midnight-navy/70 mb-3">{ad.body}</p>
-                {ad.cta && (
-                  <span className="inline-block rounded bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal mb-2">
-                    {ad.cta}
-                  </span>
-                )}
-                <div className="mt-auto pt-2 border-t border-cloud">
-                  {ad.landingPage !== "#" ? (
-                    <a
-                      href={ad.landingPage}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-intelligence-teal hover:underline"
-                    >
-                      View Landing Page
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : (
-                    <p className="text-xs text-slate-gray/50 italic">Landing page not available</p>
-                  )}
-                </div>
+          {SAMPLE_ADS.map((ad, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-cloud bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <PlatformBadge platform={ad.platform} />
+                <span className="inline-block rounded-full bg-cloud px-2 py-0.5 text-[10px] font-medium text-midnight-navy/70">
+                  {ad.type}
+                </span>
               </div>
-            );
-          })}
+              <p className="text-[10px] text-slate-gray mb-1">{ad.advertiser}</p>
+              <p className="text-sm font-bold text-midnight-navy mb-1">{ad.headline}</p>
+              <p className="text-sm text-midnight-navy/70 mb-3">{ad.body}</p>
+              {ad.cta && (
+                <span className="inline-block rounded bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal mb-2">
+                  {ad.cta}
+                </span>
+              )}
+              <div className="mt-auto pt-2 border-t border-cloud">
+                {ad.landingPage !== "#" ? (
+                  <a
+                    href={ad.landingPage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-intelligence-teal hover:underline"
+                  >
+                    View Landing Page
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <p className="text-xs text-slate-gray/50 italic">Landing page not available</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
       </div>
 
-      {/* ── 13. Top Firms Advertising ────────────────────────────────────── */}
+      {/* -- 13. Top Firms Advertising ------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Users className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1441,7 +1548,7 @@ export default function DepoProveraPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Competitive landscape — firms with the highest advertising presence for Depo-Provera litigation.
+          Competitive landscape — firms with the highest advertising presence for Roundup litigation.
         </p>
 
         {/* Summary Stats */}
@@ -1464,7 +1571,7 @@ export default function DepoProveraPage() {
           </div>
           <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Total Est. Spend</p>
-            <p className="text-2xl font-bold text-midnight-navy">$580K/mo</p>
+            <p className="text-2xl font-bold text-midnight-navy">$247K/mo</p>
           </div>
         </div>
 
@@ -1475,7 +1582,7 @@ export default function DepoProveraPage() {
         <div className="space-y-2 mb-6">
           {TOP_FIRMS.map((f) => {
             const spend = parseInt(f.estSpend.replace(/[^0-9]/g, ""));
-            const maxSpend = 120; // $120K is the max
+            const maxSpend = 55; // $55K is the max
             const widthPercent = (spend / maxSpend) * 100;
             return (
               <div key={f.firm} className="flex items-center gap-3">
@@ -1564,7 +1671,7 @@ export default function DepoProveraPage() {
         <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
       </div>
 
-      {/* ── 14. Geographic & Demographic Targeting ──────────────────────── */}
+      {/* -- 14. Geographic & Demographic Targeting ------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1573,50 +1680,30 @@ export default function DepoProveraPage() {
           </h2>
         </div>
 
-        {/* Demographic Profile */}
+        {/* Exposure Profile */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Demographic Profile of Depo-Provera Users
+          Exposure Profile
         </h3>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Demographic
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Ever Used Depo-Provera
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {DEMOGRAPHIC_PROFILE.map((d) => (
-                <tr
-                  key={d.demographic}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                >
-                  <td className="py-2.5 pr-4 text-midnight-navy">
-                    {d.demographic}
-                  </td>
-                  <td className="py-2.5 pl-3 text-right font-mono font-semibold text-midnight-navy">
-                    {d.value}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2 text-[11px] text-slate-gray">
-            Source: CDC National Health Statistics Report, 2023
-          </p>
+        <div className="grid gap-3 sm:grid-cols-2 mb-6">
+          {EXPOSURE_PROFILES.map((ep) => (
+            <div key={ep.group} className="rounded-lg border border-cloud bg-cloud/40 p-4">
+              <p className="text-sm font-bold text-midnight-navy mb-1">
+                {ep.group}
+              </p>
+              <p className="text-xs leading-relaxed text-midnight-navy/70">
+                {ep.detail}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* State Prescribing */}
+        {/* Top Glyphosate Usage States */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          State-Level DMPA Prescribing Intensity (Medicaid, 2023)
+          Top Glyphosate Usage States (Agricultural, USGS 2019)
         </h3>
         <p className="mb-3 text-xs text-slate-gray">
-          Top 20 states by per-capita prescribing rate. Higher rates indicate
-          greater drug exposure in the Medicaid population.
+          States with the highest agricultural glyphosate usage, primarily
+          Midwest/Great Plains reflecting corn and soybean production.
         </p>
         <div className="overflow-x-auto mb-6">
           <table className="w-full text-left text-sm">
@@ -1629,13 +1716,13 @@ export default function DepoProveraPage() {
                   State
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Total Rx
+                  Usage Level
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Key Crops
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Rate/10K
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  % Black Pop
+                  NHL Incidence
                 </th>
                 <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
                   Signal
@@ -1643,7 +1730,7 @@ export default function DepoProveraPage() {
               </tr>
             </thead>
             <tbody>
-              {STATE_PRESCRIBING.map((s) => (
+              {STATE_GLYPHOSATE.map((s) => (
                 <tr
                   key={s.state}
                   className={`border-b border-cloud/50 transition-colors ${
@@ -1659,13 +1746,13 @@ export default function DepoProveraPage() {
                     {s.state}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
-                    {s.totalRx}
+                    {s.usage}
+                  </td>
+                  <td className="py-2.5 px-3 text-midnight-navy/70 text-xs">
+                    {s.crops}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono font-semibold text-midnight-navy">
-                    {s.rate}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
-                    {s.blackPop}
+                    {s.nhlRate}
                   </td>
                   <td className="py-2.5 pl-3 text-center">
                     <SignalBadge signal={s.signal} />
@@ -1674,20 +1761,15 @@ export default function DepoProveraPage() {
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[11px] text-slate-gray">
-            Source: CMS Medicaid State Drug Utilization Data, 2023. Rate per 10K
-            women of reproductive age.
-          </p>
         </div>
 
         {/* Crossover States */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          High-Value Targeting Crossover States
+          High-Value Crossover: Glyphosate Usage + NHL Incidence
         </h3>
         <p className="mb-3 text-xs text-slate-gray">
-          States with both above-median DMPA prescribing rates AND above-median
-          Black population — where drug exposure and the most impacted
-          demographic overlap.
+          States where both agricultural glyphosate usage AND NHL incidence rates
+          are above the national average — the overlap of exposure and disease.
         </p>
         <div className="overflow-x-auto mb-6">
           <table className="w-full text-left text-sm">
@@ -1697,13 +1779,10 @@ export default function DepoProveraPage() {
                   State
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Rate/10K
+                  Glyphosate Usage
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  % Black
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Total Rx
+                  NHL Rate (per 100K)
                 </th>
                 <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
                   Key DMAs
@@ -1719,14 +1798,11 @@ export default function DepoProveraPage() {
                   <td className="py-2.5 pr-4 font-medium text-midnight-navy">
                     {s.state}
                   </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
+                    {s.usage}
+                  </td>
                   <td className="py-2.5 px-3 text-right font-mono font-semibold text-midnight-navy">
-                    {s.rate}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
-                    {s.blackPop}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
-                    {s.totalRx}
+                    {s.nhlRate}
                   </td>
                   <td className="py-2.5 pl-3 text-midnight-navy/80">
                     {s.dmas}
@@ -1737,17 +1813,12 @@ export default function DepoProveraPage() {
           </table>
         </div>
 
-        {/* Targeting Implications */}
+        {/* Targeting Implications — Card Layout */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
           Targeting Implications
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            { title: "Concentrate in High-Rate States", detail: "Focus ad spend in high-prescribing states rather than running nationally — RI, MS, MD, LA, SC, NM, OH, IA" },
-            { title: "Layer Demographic Targeting on Meta", detail: "Women 25–55, Black women, lower-education, Medicaid-eligible income brackets" },
-            { title: "DMA-Level Focus", detail: "Baltimore, New Orleans, Columbia SC, Cleveland/Columbus OH, Jackson MS, Memphis, Philadelphia, Detroit" },
-            { title: "Pharmacist-Prescribing States", detail: "States where pharmacists can directly administer DMPA: CA, CO, HI, ID, IL, IN, MD, ME, MN, NV, NM, NH, OR, SC, TN, VA + DC" },
-          ].map((imp, i) => (
+          {TARGETING_IMPLICATIONS.map((imp, i) => (
             <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
               <div className="flex items-start gap-2">
                 <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
@@ -1759,9 +1830,13 @@ export default function DepoProveraPage() {
             </div>
           ))}
         </div>
+
+        <p className="mt-4 text-[11px] text-slate-gray">
+          Source: USGS Pesticide National Synthesis Project (2019), NCI State Cancer Profiles (2018–2022)
+        </p>
       </div>
 
-      {/* ── 15. Footer / Disclaimer ─────────────────────────────────────── */}
+      {/* -- 15. Footer / Disclaimer --------------------------------------- */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly
@@ -1770,13 +1845,14 @@ export default function DepoProveraPage() {
           constitute legal advice.
         </p>
         <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: CMS Medicaid State Drug Utilization Data (2023), CDC
-          National Health Statistics Reports (2023), U.S. Census Bureau, CBTRUS,
-          Meta Ad Library, JPML, court filings.
+          Data sources: USGS Pesticide National Synthesis Project (2019), NCI
+          SEER, State Cancer Profiles (CDC/NCI, 2018–2022), IARC Monograph Vol.
+          112, Meta Ad Library, JPML MDL Statistics, court filings,
+          ConsumerShield, Taqtics Mass Tort Report, Lawsuit Information Center.
         </p>
       </div>
 
-      <AskAIPanel tortContext={DEPO_TORT_CONTEXT} />
+      <AskAIPanel tortContext={ROUNDUP_TORT_CONTEXT} />
     </div>
   );
 }
