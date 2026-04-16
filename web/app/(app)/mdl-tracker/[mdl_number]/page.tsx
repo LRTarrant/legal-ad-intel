@@ -331,7 +331,18 @@ export default async function MdlDetailPage({
                 Master Docket
               </p>
               <p className="mt-2 font-mono text-sm text-midnight-navy">
-                {jpmlSnapshot.master_docket ?? "—"}
+                {jpmlSnapshot.master_docket ? (
+                  <a
+                    href={`https://www.courtlistener.com/?q=&type=r&docket_number=${encodeURIComponent(jpmlSnapshot.master_docket)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-intelligence-teal/40 underline-offset-2 transition hover:text-intelligence-teal hover:decoration-intelligence-teal"
+                  >
+                    {jpmlSnapshot.master_docket}
+                  </a>
+                ) : (
+                  "—"
+                )}
               </p>
             </div>
 
