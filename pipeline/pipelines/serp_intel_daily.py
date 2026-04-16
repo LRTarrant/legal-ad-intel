@@ -66,6 +66,7 @@ SERP_SEARCH_TERMS: dict[str, list[str]] = {
     "workers_comp":      ["workers compensation lawyer", "workers comp attorney near me"],
     "roblox_abuse":      ["roblox child abuse lawsuit", "roblox predator lawsuit"],
     "social_media_addiction": ["social media addiction lawsuit", "tiktok addiction lawsuit teens"],
+    "depo_provera":          ["depo provera lawsuit", "depo provera meningioma", "depo provera brain tumor lawyer"],
 }
 
 
