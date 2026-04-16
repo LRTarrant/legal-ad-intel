@@ -7,25 +7,26 @@ import {
   Calendar,
   AlertTriangle,
   TrendingUp,
-  TrendingDown,
-  Minus,
   FileText,
   Shield,
   MapPin,
   Users,
   Clock,
-  CheckCircle,
   XCircle,
   ChevronRight,
-  Search,
-  Megaphone,
-  Image,
-  BarChart3,
-  ExternalLink,
-  Globe,
   Eye,
+  Monitor,
+  Database,
 } from "lucide-react";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
+import {
+  getSegmentSummary,
+  getTopAdvertisersBySegment,
+  getAdvertiserPlatforms,
+  getAdSaturationWindowed,
+  getTortCostBenchmarks,
+} from "@/lib/queries";
+import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
 
 export const dynamic = "force-dynamic";
 
@@ -221,15 +222,7 @@ const CLASS_SETTLEMENT_TIERS = [
   { category: "Any, age 78+", avgPayout: "$10,000" },
 ];
 
-const AD_METRICS = [
-  { metric: "Stage", value: "Late-stage (mature litigation, winding down)" },
-  { metric: "Estimated CPA", value: "~$2,500 – $3,500 (signed retainer)" },
-  { metric: "Raw Lead Cost", value: "~$265 – $375" },
-  { metric: "Qualification Rate", value: "8–12%" },
-  { metric: "Current Ad Activity", value: "Minimal — most firms paused due to class settlement + SCOTUS uncertainty" },
-  { metric: "Peak Advertising Period", value: "2019–2021" },
-  { metric: "Channel Mix (historical)", value: "~40% social, ~25% search, ~20% broadcast, ~5% CTV" },
-];
+/* AD_METRICS removed — now sourced from Supabase live queries */
 
 const COMPARATIVE_CPA = [
   { tort: "Roundup", stage: "Late", cpa: "~$2,500–$3,500", settlement: "$5K–$250K", highlight: true },
@@ -288,111 +281,7 @@ const ORGANIC_SERP_RESULTS = [
   },
 ];
 
-const PAID_AD_DATA = {
-  meta: {
-    platform: "Meta (Facebook / Instagram)",
-    activeAds: 15,
-    advertisers: 8,
-    avgSpend: "$5K–$15K/mo",
-    commonFormats: ["Lead Form Ads", "Video Ads"],
-    topAdvertisers: [
-      { name: "Simmons Hanly Conroy", ads: 5, status: "Active" },
-      { name: "King Law", ads: 4, status: "Active" },
-      { name: "ConsumerShield", ads: 3, status: "Active" },
-    ],
-  },
-  google: {
-    platform: "Google Ads",
-    activeAds: 25,
-    advertisers: 12,
-    avgSpend: "$15K–$40K/mo",
-    commonFormats: ["Search Ads", "Local Service Ads"],
-    topAdvertisers: [
-      { name: "Morgan & Morgan", ads: 8, status: "Active" },
-      { name: "Simmons Hanly Conroy", ads: 5, status: "Active" },
-      { name: "Sokolove Law", ads: 4, status: "Active" },
-    ],
-  },
-  tiktok: {
-    platform: "TikTok",
-    activeAds: 5,
-    advertisers: 3,
-    avgSpend: "$2K–$8K/mo",
-    commonFormats: ["In-Feed Video"],
-    topAdvertisers: [
-      { name: "Lawsuit Legal News", ads: 3, status: "Active" },
-      { name: "King Law", ads: 2, status: "Active" },
-    ],
-  },
-};
-
-const SAMPLE_ADS = [
-  {
-    platform: "Meta",
-    advertiser: "Simmons Hanly Conroy",
-    type: "Lead Form Ad",
-    headline: "Used Roundup Weed Killer? Diagnosed with Cancer?",
-    body: "You may be entitled to compensation. Over $11 billion already paid. Free case review.",
-    cta: "Sign Up",
-    landingPage: "#",
-  },
-  {
-    platform: "Meta",
-    advertiser: "King Law",
-    type: "Video Ad",
-    headline: "Roundup Lawsuit Update: $7.25 Billion Settlement Proposed",
-    body: "Were you exposed? Find out if you qualify for the Roundup class action settlement.",
-    cta: "Learn More",
-    landingPage: "#",
-  },
-  {
-    platform: "Google",
-    advertiser: "Morgan & Morgan",
-    type: "Search Ad",
-    headline: "Roundup Cancer Lawsuit — Free Case Review | ForThePeople.com",
-    body: "Used Roundup & Diagnosed With NHL? America's Largest Injury Firm. No Win, No Fee.",
-    cta: null,
-    landingPage: "https://www.forthepeople.com/mass-tort/roundup-lawsuit/",
-  },
-  {
-    platform: "Google",
-    advertiser: "Sokolove Law",
-    type: "Search Ad",
-    headline: "Roundup Lymphoma Lawyers — 40+ Years Experience",
-    body: "Exposed to Roundup & Diagnosed with Cancer? Act Now Before Deadlines Pass.",
-    cta: null,
-    landingPage: "#",
-  },
-  {
-    platform: "TikTok",
-    advertiser: "Lawsuit Legal News",
-    type: "In-Feed Video",
-    headline: "Bayer just proposed $7.25 BILLION to settle Roundup lawsuits",
-    body: "If you used this weed killer and got cancer, you need to see this.",
-    cta: "Learn More",
-    landingPage: "#",
-  },
-  {
-    platform: "TikTok",
-    advertiser: "King Law",
-    type: "Spark Ad",
-    headline: "Roundup Settlement Update 2026",
-    body: "New class action could pay up to $165K. Link in bio.",
-    cta: "Sign Up",
-    landingPage: "#",
-  },
-];
-
-const TOP_FIRMS = [
-  { firm: "Simmons Hanly Conroy", totalAds: 12, platforms: 2, markets: 18, estSpend: "$45K/mo", trend: "stable" as const },
-  { firm: "Morgan & Morgan", totalAds: 10, platforms: 1, markets: 28, estSpend: "$55K/mo", trend: "down" as const },
-  { firm: "King Law", totalAds: 8, platforms: 3, markets: 10, estSpend: "$25K/mo", trend: "up" as const },
-  { firm: "Sokolove Law", totalAds: 7, platforms: 1, markets: 22, estSpend: "$40K/mo", trend: "down" as const },
-  { firm: "ConsumerShield", totalAds: 6, platforms: 2, markets: 8, estSpend: "$18K/mo", trend: "stable" as const },
-  { firm: "Lawsuit Legal News", totalAds: 5, platforms: 2, markets: 6, estSpend: "$12K/mo", trend: "stable" as const },
-  { firm: "Motley Rice", totalAds: 4, platforms: 1, markets: 15, estSpend: "$30K/mo", trend: "down" as const },
-  { firm: "Weitz & Luxenberg", totalAds: 3, platforms: 1, markets: 12, estSpend: "$22K/mo", trend: "down" as const },
-];
+/* PAID_AD_DATA, SAMPLE_ADS, TOP_FIRMS removed — now sourced from Supabase live queries */
 
 const EXPOSURE_PROFILES = [
   {
@@ -470,31 +359,101 @@ function SignalBadge({ signal }: { signal: "HIGH" | "MED-HI" | "MED" }) {
   );
 }
 
-function PlatformBadge({ platform }: { platform: string }) {
-  if (platform === "Meta") {
-    return (
-      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
-        M
-      </div>
-    );
-  }
-  if (platform === "Google") {
-    return (
-      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
-        G
-      </div>
-    );
-  }
-  return (
-    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-white">
-      T
-    </div>
-  );
+/* -- Format Helpers (from dynamic page) --------------------------------- */
+
+function fmtCur(n: number | null): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`;
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
+
+function fmtNum(n: number | null): string {
+  if (n == null) return "—";
+  return n.toLocaleString();
+}
+
+const SEGMENT_META: Record<string, { label: string; color: string; bg: string; bar: string }> = {
+  on_docket:  { label: "On-Docket Firms",  color: "#10B981", bg: "#ECFDF5", bar: "bg-emerald-500" },
+  off_docket: { label: "Off-Docket Firms", color: "#F59E0B", bg: "#FFFBEB", bar: "bg-amber-500" },
+  aggregator: { label: "Aggregators",       color: "#7C3AED", bg: "#FAF5FF", bar: "bg-purple-500" },
+  unknown:    { label: "Unknown",           color: "#6B7280", bg: "#F9FAFB", bar: "bg-slate-400" },
+};
+
+function segMeta(seg: string) {
+  return SEGMENT_META[seg] ?? SEGMENT_META.unknown;
+}
+
+const PLATFORM_COLORS: Record<string, string> = {
+  meta:       "#3B82F6",
+  google:     "#10B981",
+  tiktok:     "#EC4899",
+  youtube:    "#EF4444",
+  ispot:      "#8B5CF6",
+  mediaradar: "#F59E0B",
+  tv:         "#6366F1",
+};
 
 /* -- Page ---------------------------------------------------------------- */
 
-export default function RoundupPage() {
+const TORT_SLUG = "roundup";
+
+export default async function RoundupPage() {
+  /* -- Live data fetch from Supabase ------------------------------------ */
+  const now = new Date();
+  const windowEnd = now.toISOString().slice(0, 10);
+  const windowStartDate = new Date(now);
+  windowStartDate.setDate(windowStartDate.getDate() - 90);
+  const windowStart = windowStartDate.toISOString().slice(0, 10);
+
+  const [segments, topAdvertisers, platforms, saturation, benchmarks] =
+    await Promise.all([
+      getSegmentSummary(TORT_SLUG),
+      getTopAdvertisersBySegment(TORT_SLUG, 25),
+      getAdvertiserPlatforms(TORT_SLUG),
+      getAdSaturationWindowed(windowStart, windowEnd, TORT_SLUG),
+      getTortCostBenchmarks(),
+    ]);
+
+  // Build platform lookup by advertiser
+  const platformMap = new Map<string, string[]>();
+  for (const p of platforms) {
+    if (p.advertiser_name) {
+      platformMap.set(p.advertiser_name, p.platforms);
+    }
+  }
+
+  // Aggregate stats
+  const totalAdvertisers = segments.reduce((s, r) => s + r.advertiser_count, 0);
+  const totalSpend = segments.reduce((s, r) => s + r.total_spend, 0);
+  const totalCreatives = segments.reduce((s, r) => s + r.total_creatives, 0);
+
+  // All unique platforms
+  const allPlatforms = new Set<string>();
+  for (const p of platforms) {
+    for (const plat of p.platforms) allPlatforms.add(plat);
+  }
+
+  // Get saturation markets (top by saturation score)
+  const topMarkets = [...saturation]
+    .sort((a, b) => (b.saturation_score ?? 0) - (a.saturation_score ?? 0))
+    .slice(0, 10);
+
+  // Fuzzy-match benchmark
+  const tortLabel = "Roundup";
+  const tortLabelLower = tortLabel.toLowerCase();
+  const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
+  const benchmark = benchmarks
+    .sort((a, b) => b.observed_date.localeCompare(a.observed_date))
+    .find((b) => {
+      const bName = b.tort_name.toLowerCase();
+      if (bName === tortLabelLower) return true;
+      if (bName.includes(tortLabelLower) || tortLabelLower.includes(bName)) return true;
+      return tortLabelWords.some((w) => w.length > 3 && bName.includes(w));
+    }) ?? null;
+
+  const hasLiveData = totalAdvertisers > 0 || totalSpend > 0 || totalCreatives > 0;
+
   return (
     <div className="space-y-8">
       {/* -- 1. Page Header ------------------------------------------------ */}
@@ -1137,45 +1096,131 @@ export default function RoundupPage() {
         </div>
       </div>
 
-      {/* -- 9. Advertising Landscape -------------------------------------- */}
+      {/* -- 9. Advertising Landscape (LIVE DATA) --------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
           <h2 className="font-heading text-lg font-semibold text-midnight-navy">
             Advertising Landscape
           </h2>
+          {hasLiveData && (
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          )}
         </div>
 
-        {/* Metrics Table */}
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Metric
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Value
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {AD_METRICS.map((m) => (
-                <tr
-                  key={m.metric}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy whitespace-nowrap">
-                    {m.metric}
-                  </td>
-                  <td className="py-3 pl-3 text-midnight-navy/80">{m.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {hasLiveData ? (
+          <>
+            {/* Live Summary Stats */}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
+              <div className="rounded-lg bg-cloud/60 p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Users className="w-3.5 h-3.5 text-intelligence-teal" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                    Advertisers
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-midnight-navy">{fmtNum(totalAdvertisers)}</p>
+              </div>
+              <div className="rounded-lg bg-cloud/60 p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <DollarSign className="w-3.5 h-3.5 text-intelligence-teal" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                    Est. Spend
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-midnight-navy">{fmtCur(totalSpend)}</p>
+              </div>
+              <div className="rounded-lg bg-cloud/60 p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Eye className="w-3.5 h-3.5 text-intelligence-teal" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                    Unique Creatives
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-midnight-navy">{fmtNum(totalCreatives)}</p>
+              </div>
+              <div className="rounded-lg bg-cloud/60 p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Monitor className="w-3.5 h-3.5 text-intelligence-teal" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                    Platforms
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-midnight-navy">{allPlatforms.size}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {Array.from(allPlatforms).sort().map((p) => (
+                    <span
+                      key={p}
+                      className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+                      style={{ backgroundColor: PLATFORM_COLORS[p] ?? "#6B7280" }}
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {/* Channel Breakdown */}
+            {/* Live Segment Breakdown */}
+            {segments.length > 0 && (
+              <>
+                <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+                  Advertiser Segments
+                </h3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-6">
+                  {segments.map((seg) => {
+                    const meta = segMeta(seg.segment);
+                    const spendPct = totalSpend > 0 ? (seg.total_spend / totalSpend) * 100 : 0;
+                    return (
+                      <div
+                        key={seg.segment}
+                        className="rounded-lg border p-4"
+                        style={{ borderColor: meta.color + "40", backgroundColor: meta.bg }}
+                      >
+                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: meta.color }}>
+                          {meta.label}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-midnight-navy">
+                          {seg.advertiser_count}
+                        </p>
+                        <div className="mt-2 space-y-1">
+                          <div className="flex justify-between text-xs text-slate-gray">
+                            <span>Spend</span>
+                            <span className="font-medium text-midnight-navy">{fmtCur(seg.total_spend)}</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-white/60">
+                            <div
+                              className={`h-1.5 rounded-full ${meta.bar}`}
+                              style={{ width: `${Math.min(spendPct, 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-gray">
+                            <span>Creatives</span>
+                            <span className="font-medium text-midnight-navy">{fmtNum(seg.total_creatives)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center mb-6">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              Live advertising data collection in progress
+            </p>
+            <p className="mt-1 text-xs text-slate-gray">
+              Data will appear here automatically once collected from ad platforms.
+            </p>
+          </div>
+        )}
+
+        {/* Channel Breakdown (editorial) */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
           Channel Breakdown
         </h3>
@@ -1183,12 +1228,12 @@ export default function RoundupPage() {
           {[
             {
               channel: "Meta (Facebook/Instagram)",
-              detail: "Was dominant, currently minimal (~15 ads), $5K–$15K/mo",
+              detail: "Was dominant, currently minimal due to class settlement uncertainty",
               color: "border-blue-500/30 bg-blue-50",
             },
             {
               channel: "Google Ads/LSAs",
-              detail: "Reduced (~25 ads), $15K–$40K/mo, high-intent search still running",
+              detail: "Reduced activity, high-intent search still running",
               color: "border-emerald-500/30 bg-emerald-50",
             },
             {
@@ -1215,7 +1260,7 @@ export default function RoundupPage() {
           ))}
         </div>
 
-        {/* Comparative CPA */}
+        {/* Comparative CPA (editorial) */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
           Comparative CPA
         </h3>
@@ -1265,7 +1310,7 @@ export default function RoundupPage() {
           </table>
         </div>
 
-        {/* Warning Callout */}
+        {/* Warning Callout (editorial) */}
         <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
           <p className="text-xs text-midnight-navy/80">
             <span className="font-semibold text-warning">Market Timing Risk:</span>{" "}
@@ -1276,6 +1321,9 @@ export default function RoundupPage() {
           </p>
         </div>
       </div>
+
+      {/* -- 9b. Cost Benchmark Scorecard (LIVE DATA) ---------------------- */}
+      <CostBenchmarkScorecard data={benchmark} />
 
       {/* -- 10. Organic Search Landscape ---------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -1379,297 +1427,185 @@ export default function RoundupPage() {
         <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live SERP tracking coming soon.</p>
       </div>
 
-      {/* -- 11. Paid Advertising by Platform ------------------------------ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <DollarSign className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Paid Advertising by Platform
-          </h2>
-        </div>
-        <p className="mb-4 text-xs text-slate-gray">
-          Roundup advertising is currently at minimal levels due to the pending class settlement and SCOTUS decision.
-        </p>
-
-        <div className="space-y-4">
-          {(
-            [
-              { key: "meta" as const, border: "border-l-blue-500", accent: "bg-blue-50", badge: "Meta" as const },
-              { key: "google" as const, border: "border-l-emerald-500", accent: "bg-emerald-50", badge: "Google" as const },
-              { key: "tiktok" as const, border: "border-l-slate-800", accent: "bg-slate-50", badge: "TikTok" as const },
-            ] as const
-          ).map(({ key, border, accent, badge }) => {
-            const platform = PAID_AD_DATA[key];
-            return (
-              <div
-                key={key}
-                className={`rounded-lg border border-l-4 ${border} ${accent} p-4`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <PlatformBadge platform={badge} />
-                  <h3 className="text-sm font-bold text-midnight-navy">
-                    {platform.platform}
-                  </h3>
-                </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Active Ads</p>
-                    <p className="text-lg font-bold text-midnight-navy">{platform.activeAds}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Advertisers</p>
-                    <p className="text-lg font-bold text-midnight-navy">{platform.advertisers}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Est. Spend</p>
-                    <p className="text-sm font-bold text-midnight-navy">{platform.avgSpend}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">Formats</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {platform.commonFormats.map((f) => (
-                        <span
-                          key={f}
-                          className="inline-block rounded-full bg-white/80 border border-cloud px-1.5 py-0.5 text-[9px] font-medium text-midnight-navy/70"
-                        >
-                          {f}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Top Advertisers Mini-Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-cloud">
-                        <th className="py-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                          Advertiser
-                        </th>
-                        <th className="py-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray text-right">
-                          # Ads
-                        </th>
-                        <th className="py-2 pl-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray text-center">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {platform.topAdvertisers.map((a) => (
-                        <tr
-                          key={a.name}
-                          className="border-b border-cloud/50 hover:bg-white/60 transition-colors"
-                        >
-                          <td className="py-2 pr-4 font-medium text-midnight-navy text-xs">
-                            {a.name}
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono text-midnight-navy/80 text-xs">
-                            {a.ads}
-                          </td>
-                          <td className="py-2 pl-3 text-center">
-                            <span className="inline-block rounded-full bg-emerald-50 border border-success/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success">
-                              {a.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
-      </div>
-
-      {/* -- 12. Sample Ads ------------------------------------------------ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <Image className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Sample Ads
-          </h2>
-        </div>
-        <p className="mb-4 text-xs text-slate-gray">
-          Representative ad creative currently running across platforms. 2 samples per channel.
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_ADS.map((ad, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-cloud bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <PlatformBadge platform={ad.platform} />
-                <span className="inline-block rounded-full bg-cloud px-2 py-0.5 text-[10px] font-medium text-midnight-navy/70">
-                  {ad.type}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-gray mb-1">{ad.advertiser}</p>
-              <p className="text-sm font-bold text-midnight-navy mb-1">{ad.headline}</p>
-              <p className="text-sm text-midnight-navy/70 mb-3">{ad.body}</p>
-              {ad.cta && (
-                <span className="inline-block rounded bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal mb-2">
-                  {ad.cta}
-                </span>
-              )}
-              <div className="mt-auto pt-2 border-t border-cloud">
-                {ad.landingPage !== "#" ? (
-                  <a
-                    href={ad.landingPage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-intelligence-teal hover:underline"
-                  >
-                    View Landing Page
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                ) : (
-                  <p className="text-xs text-slate-gray/50 italic">Landing page not available</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
-      </div>
-
-      {/* -- 13. Top Firms Advertising ------------------------------------- */}
+      {/* -- 11. Top Advertisers (LIVE DATA) -------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Users className="w-4.5 h-4.5 text-intelligence-teal" />
           <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Top Firms Advertising
+            Top Advertisers
           </h2>
+          {topAdvertisers.length > 0 && (
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          )}
         </div>
         <p className="mb-4 text-xs text-slate-gray">
           Competitive landscape — firms with the highest advertising presence for Roundup litigation.
         </p>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
-          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Total Active Ads</p>
-            <p className="text-2xl font-bold text-midnight-navy">
-              {TOP_FIRMS.reduce((sum, f) => sum + f.totalAds, 0)}
+        {topAdvertisers.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs text-slate-gray">{topAdvertisers.length} advertisers tracked</p>
+              <Link
+                href="/advertising/saturation/roundup"
+                className="flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
+              >
+                Full saturation view <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-cloud">
+                    <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                      Advertiser
+                    </th>
+                    <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                      Segment
+                    </th>
+                    <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                      Platforms
+                    </th>
+                    <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                      Est. Spend
+                    </th>
+                    <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                      Creatives
+                    </th>
+                    <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                      Markets
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topAdvertisers.map((adv, i) => {
+                    const meta = segMeta(adv.segment);
+                    const advPlatforms = platformMap.get(adv.advertiser_name) ?? [];
+                    return (
+                      <tr
+                        key={`${adv.advertiser_name}-${i}`}
+                        className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                      >
+                        <td className="py-3 pr-4 font-medium text-midnight-navy">
+                          {adv.advertiser_name}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span
+                            className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: meta.bg, color: meta.color }}
+                          >
+                            {meta.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {advPlatforms.length > 0 ? (
+                              advPlatforms.map((p) => (
+                                <span
+                                  key={p}
+                                  className="rounded-full px-1.5 py-0.5 text-[10px] font-medium text-white"
+                                  style={{ backgroundColor: PLATFORM_COLORS[p] ?? "#6B7280" }}
+                                >
+                                  {p}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-slate-gray">—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-sm text-midnight-navy">
+                          {fmtCur(adv.total_spend)}
+                        </td>
+                        <td className="py-3 px-3 text-right text-sm text-midnight-navy">
+                          {fmtNum(adv.total_creatives)}
+                        </td>
+                        <td className="py-3 pl-3 text-right text-sm text-midnight-navy">
+                          {fmtNum(adv.market_count)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              Advertiser data collection in progress
+            </p>
+            <p className="mt-1 text-xs text-slate-gray">
+              Top advertisers will appear here once data is collected from ad platforms.
             </p>
           </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Unique Firms</p>
-            <p className="text-2xl font-bold text-midnight-navy">{TOP_FIRMS.length}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Avg Platforms</p>
-            <p className="text-2xl font-bold text-midnight-navy">
-              {(TOP_FIRMS.reduce((sum, f) => sum + f.platforms, 0) / TOP_FIRMS.length).toFixed(1)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm border border-cloud">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">Total Est. Spend</p>
-            <p className="text-2xl font-bold text-midnight-navy">$247K/mo</p>
-          </div>
-        </div>
+        )}
+      </div>
 
-        {/* CSS Bar Chart */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Estimated Monthly Ad Spend
-        </h3>
-        <div className="space-y-2 mb-6">
-          {TOP_FIRMS.map((f) => {
-            const spend = parseInt(f.estSpend.replace(/[^0-9]/g, ""));
-            const maxSpend = 55; // $55K is the max
-            const widthPercent = (spend / maxSpend) * 100;
-            return (
-              <div key={f.firm} className="flex items-center gap-3">
-                <p className="w-[140px] shrink-0 truncate text-xs font-medium text-midnight-navy">
-                  {f.firm}
-                </p>
-                <div className="flex-1 h-6 rounded bg-cloud/60">
-                  <div
-                    className="h-6 rounded bg-intelligence-teal flex items-center justify-end px-2"
-                    style={{ width: `${widthPercent}%` }}
-                  >
-                    <span className="text-[10px] font-bold text-white whitespace-nowrap">
-                      {f.estSpend}
+      {/* -- 12. Top Markets by Saturation (LIVE DATA) --------------------- */}
+      {topMarkets.length > 0 && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+            <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+              Top Markets by Saturation
+            </h2>
+            <span className="rounded-full bg-emerald-50 border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
+              <Database className="w-3 h-3" /> Live Data
+            </span>
+          </div>
+          <div className="space-y-2">
+            {topMarkets.map((m, i) => {
+              const score = m.saturation_score ?? 0;
+              const scoreColor =
+                score >= 75 ? "#EF4444" :
+                score >= 50 ? "#F59E0B" :
+                score >= 25 ? "#F59E0B" :
+                "#10B981";
+              return (
+                <div
+                  key={`${m.geo_name}-${i}`}
+                  className="flex items-center gap-4 rounded-md bg-cloud/60 px-4 py-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-midnight-navy truncate">
+                      {m.geo_name}
+                      {m.state_abbr && (
+                        <span className="ml-1.5 text-xs text-slate-gray">
+                          {m.state_abbr}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-gray">
+                      {fmtNum(m.total_advertisers)} advertisers · {fmtCur(m.estimated_spend)} spend
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-24 h-2 rounded-full bg-white">
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(score, 100)}%`,
+                          backgroundColor: scoreColor,
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-sm font-bold w-10 text-right"
+                      style={{ color: scoreColor }}
+                    >
+                      {score.toFixed(0)}
                     </span>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-
-        {/* Detail Table */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Detailed Breakdown
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Firm
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Total Ads
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Platforms
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Markets
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Est. Monthly Spend
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Trend
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {TOP_FIRMS.map((f) => (
-                <tr
-                  key={f.firm}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy">
-                    {f.firm}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
-                    {f.totalAds}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
-                    {f.platforms}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono text-midnight-navy/80">
-                    {f.markets}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono font-semibold text-midnight-navy">
-                    {f.estSpend}
-                  </td>
-                  <td className="py-3 pl-3 text-center">
-                    {f.trend === "up" ? (
-                      <TrendingUp className="inline w-4 h-4 text-success" />
-                    ) : f.trend === "down" ? (
-                      <TrendingDown className="inline w-4 h-4 text-alert" />
-                    ) : (
-                      <Minus className="inline w-4 h-4 text-slate-gray" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="mt-3 text-[11px] text-slate-gray/60 italic">Sample data — live tracking coming soon.</p>
-      </div>
+      )}
 
       {/* -- 14. Geographic & Demographic Targeting ------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
