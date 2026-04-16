@@ -901,6 +901,13 @@ def classify_via_exclusion(
             if isinstance(p0_attorneys, list) and p0_attorneys:
                 a0 = p0_attorneys[0]
                 logger.info("First attorney entry keys=%s", list(a0.keys()) if isinstance(a0, dict) else str(type(a0)))
+                if isinstance(a0, dict):
+                    a0_atty = a0.get("attorney")
+                    logger.info(
+                        "attorney field type=%s value=%s",
+                        type(a0_atty).__name__,
+                        str(a0_atty)[:200] if a0_atty else "None",
+                    )
             elif isinstance(p0_attorneys, str) and p0_attorneys.startswith("http"):
                 logger.info("Attorneys field is a URL: %s", p0_attorneys[:120])
 
