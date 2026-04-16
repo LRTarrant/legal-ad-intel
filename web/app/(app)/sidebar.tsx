@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Truck,
   Bike,
+  Scissors,
   Syringe,
   Leaf,
   Users,
@@ -105,6 +106,7 @@ const dataModules: NavGroup[] = [
         items: [
           { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
           { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
+          { label: "Hair Relaxer", href: "/advertising/torts/hair-relaxer", Icon: Scissors },
         ],
       },
     ],
