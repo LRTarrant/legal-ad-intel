@@ -251,9 +251,23 @@ export async function getStormHeatmapPoints(
   }
 }
 
+export async function getStormDataFreshness(): Promise<{ latestDate: string | null }> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.rpc("get_storm_data_freshness");
+    if (error) throw error;
+    const row = ((data ?? []) as { latest_date: string; total_rows: number }[])[0];
+    return { latestDate: row?.latest_date ?? null };
+  } catch (err) {
+    console.error('[storm-events] getStormDataFreshness failed:', err);
+    return { latestDate: null };
+  }
+}
+
 export async function getRecentStormEvents(
   filters?: StormFilters,
-  limit = 25
+  limit = 25,
+  impactfulOnly = true
 ): Promise<RecentStormEvent[]> {
   try {
     const supabase = getSupabase();
@@ -264,6 +278,7 @@ export async function getRecentStormEvents(
         filter_event_type: filters?.eventType ?? undefined,
         filter_days: filters?.days ?? undefined,
         result_limit: limit,
+        impactful_only: impactfulOnly,
       }
     );
     if (error) throw error;

@@ -8,6 +8,7 @@ import {
   getStormCountiesByState,
   getStormHeatmapPoints,
   getRecentStormEvents,
+  getStormDataFreshness,
   type StormFilters,
   type StormEventByState,
   type StormEventByType,
@@ -115,11 +116,11 @@ export default async function StormEventsPage({
   const params = await searchParams;
   const filters = parseFilters(
     getSingleValue(params.state),
-    getSingleValue(params.period),
+    getSingleValue(params.period) || "12m",
     getSingleValue(params.event_type)
   );
 
-  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints, recentEvents] =
+  const [totals, byState, byType, trend, states, eventTypes, rawHeatmapPoints, recentEvents, freshness] =
     await Promise.all([
       getStormEventTotals(filters),
       getStormEventsByState(filters),
@@ -129,6 +130,7 @@ export default async function StormEventsPage({
       getStormDistinctEventTypes(),
       getStormHeatmapPoints(filters),
       getRecentStormEvents(filters),
+      getStormDataFreshness(),
     ]);
 
   const heatmapPoints: HeatmapPoint[] = rawHeatmapPoints.map((p) => ({
@@ -144,6 +146,12 @@ export default async function StormEventsPage({
 
   const filterSummary = getFilterSummary(filters);
   const recentSubtitle = getRecentSubtitle(filters);
+
+  let freshnessLabel: string | null = null;
+  if (freshness.latestDate) {
+    const d = new Date(freshness.latestDate);
+    freshnessLabel = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
 
   return (
     <div className="space-y-8">
@@ -164,6 +172,12 @@ export default async function StormEventsPage({
       </div>
 
       <StormFilterBar states={states} eventTypes={eventTypes} />
+
+      {freshnessLabel && (
+        <p className="text-xs text-slate-gray -mt-4">
+          Data through {freshnessLabel}
+        </p>
+      )}
 
       <AdvertisingInsight>
         <p>
