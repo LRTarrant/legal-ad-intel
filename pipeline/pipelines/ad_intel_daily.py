@@ -661,6 +661,17 @@ def step_score(step) -> int:
     period_start = all_weeks[0]
     period_end = all_weeks[-1]
 
+    # Fetch advertiser names for top_advertisers objects
+    adv_entities = supabase_query("advertiser_entities", {"select": "id,canonical_name"})
+    adv_name_map = {e["id"]: e["canonical_name"] for e in adv_entities}
+
+    # Fallback names from raw observations
+    raw_names = supabase_query("ad_observations_raw", {"select": "advertiser_id,advertiser_raw"})
+    raw_name_map: dict[str, str] = {}
+    for rn in raw_names:
+        if rn.get("advertiser_id") and rn.get("advertiser_raw"):
+            raw_name_map[rn["advertiser_id"]] = rn["advertiser_raw"]
+
     # Group by tort × geo
     groups: dict[tuple, dict] = {}
     for r in norm:
@@ -669,36 +680,50 @@ def step_score(step) -> int:
             groups[key] = {
                 "tort_id": r["tort_id"],
                 "geo_target_id": r["geo_target_id"],
-                "advertisers": set(),
+                "advertiser_stats": {},
                 "total_creatives": 0,
                 "total_observations": 0,
                 "total_spend": 0.0,
                 "total_impressions": 0,
             }
         g = groups[key]
-        g["advertisers"].add(r["advertiser_id"])
+        adv_id = r["advertiser_id"]
+        if adv_id not in g["advertiser_stats"]:
+            g["advertiser_stats"][adv_id] = {"id": adv_id, "spend": 0.0, "creatives": 0}
+        g["advertiser_stats"][adv_id]["spend"] += float(r.get("estimated_spend") or 0)
+        g["advertiser_stats"][adv_id]["creatives"] += r.get("unique_creatives") or 0
         g["total_creatives"] += r.get("unique_creatives") or 0
         g["total_observations"] += r.get("observation_count") or 0
         g["total_spend"] += float(r.get("estimated_spend") or 0)
         g["total_impressions"] += r.get("impressions") or 0
 
-    max_advertisers = max((len(g["advertisers"]) for g in groups.values()), default=1)
+    max_advertisers = max((len(g["advertiser_stats"]) for g in groups.values()), default=1)
     max_spend = max((g["total_spend"] for g in groups.values()), default=1)
     max_creatives = max((g["total_creatives"] for g in groups.values()), default=1)
 
     score_rows = []
     for g in groups.values():
-        adv_score = len(g["advertisers"]) / max(max_advertisers, 1)
+        adv_score = len(g["advertiser_stats"]) / max(max_advertisers, 1)
         spend_score = g["total_spend"] / max(max_spend, 1)
         creative_score = g["total_creatives"] / max(max_creatives, 1)
         saturation = round((adv_score * 0.4 + spend_score * 0.35 + creative_score * 0.25) * 100, 1)
+
+        adv_list = sorted(g["advertiser_stats"].values(), key=lambda a: a["spend"], reverse=True)[:5]
+        top_advertisers = [
+            {
+                "name": adv_name_map.get(a["id"]) or raw_name_map.get(a["id"]) or a["id"],
+                "spend": round(a["spend"], 2),
+                "creatives": a["creatives"],
+            }
+            for a in adv_list
+        ]
 
         score_rows.append({
             "tort_id": g["tort_id"],
             "geo_target_id": g["geo_target_id"],
             "period_start": period_start,
             "period_end": period_end,
-            "total_advertisers": len(g["advertisers"]),
+            "total_advertisers": len(g["advertiser_stats"]),
             "total_creatives": g["total_creatives"],
             "total_observations": g["total_observations"],
             "estimated_spend": round(g["total_spend"], 2),
@@ -706,7 +731,7 @@ def step_score(step) -> int:
             "saturation_score": saturation,
             "spend_rank": 0,
             "format_breakdown": {},
-            "top_advertisers": list(g["advertisers"])[:5],
+            "top_advertisers": top_advertisers,
             "computed_at": datetime.now(timezone.utc).isoformat(),
         })
 
