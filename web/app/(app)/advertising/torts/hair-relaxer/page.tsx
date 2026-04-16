@@ -17,6 +17,7 @@ import {
   Eye,
   Monitor,
   Database,
+  Activity,
 } from "lucide-react";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import {
@@ -84,6 +85,31 @@ const SCIENTIFIC_STUDIES = [
       "Chemical hair relaxers contain endocrine-disrupting chemicals (EDCs) — formaldehyde, phthalates, parabens — that interfere with hormone production and may accelerate cancer cell growth in reproductive organs.",
   },
 ];
+
+const CANCER_INCIDENCE_DATA = {
+  cancerSite: "Ovary",
+  subtitle: "Ovarian cancer incidence rates across U.S. counties",
+  nationalAvg: 25.7,
+  states: [
+    { state: "IL", avgRate: 31.1, annualCases: "3,544", pctRising: 71 },
+    { state: "MD", avgRate: 30.8, annualCases: "1,827", pctRising: 79 },
+    { state: "OH", avgRate: 28.2, annualCases: "3,902", pctRising: 80 },
+    { state: "CA", avgRate: 27.5, annualCases: "10,419", pctRising: 76 },
+    { state: "NC", avgRate: 27.2, annualCases: "3,476", pctRising: 74 },
+    { state: "FL", avgRate: 27.1, annualCases: "8,065", pctRising: 52 },
+    { state: "GA", avgRate: 26.3, annualCases: "2,869", pctRising: 44 },
+    { state: "NY", avgRate: 23.8, annualCases: "4,405", pctRising: 80 },
+  ],
+  hotspots: [
+    { county: "Forsyth County", state: "GA", rate: 48.0, trend: 1.0, cases: 126 },
+    { county: "Virginia Beach", state: "VA", rate: 43.6, trend: 3.3, cases: 223 },
+    { county: "Carteret County", state: "NC", rate: 52.0, trend: 6.9, cases: 54 },
+    { county: "Warren County", state: "OH", rate: 42.0, trend: 4.1, cases: 117 },
+    { county: "Harford County", state: "MD", rate: 41.2, trend: 2.8, cases: 134 },
+    { county: "St. Johns County", state: "FL", rate: 46.8, trend: 0.5, cases: 177 },
+  ],
+  note: "Ovarian cancer is one of the qualifying injuries in the Hair Relaxer litigation. Counties with above-average incidence rates and rising trends may represent areas with larger potential claimant pools. Source: CDC/NCI USCS cancer statistics.",
+};
 
 const QUALIFICATION_CRITERIA = [
   {
@@ -547,6 +573,124 @@ export default async function HairRelaxerPage() {
             finding of a 156% increased uterine cancer risk among frequent users
             triggered the wave of lawsuits and MDL consolidation. The Daubert
             ruling on this evidence will be decisive.
+          </p>
+        </div>
+      </div>
+
+      {/* ── 5b. Cancer Incidence Insight ─────────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Cancer Incidence Insight
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-gray">
+          {CANCER_INCIDENCE_DATA.subtitle}
+        </p>
+
+        {/* National Benchmark */}
+        <div className="mb-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-3 py-1 text-sm font-semibold text-intelligence-teal">
+            National Avg: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
+          </span>
+        </div>
+
+        {/* Above-Average States Table */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Above-Average States
+        </h3>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  State
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Avg Rate
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Annual Cases
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  % Counties Rising
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {CANCER_INCIDENCE_DATA.states.map((s) => (
+                <tr
+                  key={s.state}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-3 pr-4 font-medium text-midnight-navy">
+                    {s.state}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-midnight-navy">
+                    {s.avgRate}
+                  </td>
+                  <td className="py-3 px-3 text-right text-midnight-navy/80">
+                    {s.annualCases}
+                  </td>
+                  <td className="py-3 pl-3 text-right">
+                    <span
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
+                        s.pctRising > 60
+                          ? "bg-red-50 text-alert"
+                          : s.pctRising >= 30
+                          ? "bg-amber-50 text-warning"
+                          : "bg-emerald-50 text-success"
+                      }`}
+                    >
+                      {s.pctRising}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Rising Hotspots */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Rising Hotspot Counties
+        </h3>
+        <div className="grid gap-2 sm:grid-cols-2 mb-6">
+          {CANCER_INCIDENCE_DATA.hotspots.map((h) => (
+            <div
+              key={`${h.county}-${h.state}`}
+              className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/5 px-4 py-3"
+            >
+              <p className="text-sm font-medium text-midnight-navy">
+                {h.county}, {h.state}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-midnight-navy/70">
+                <span>
+                  Rate: <span className="font-semibold text-midnight-navy">{h.rate}</span>
+                </span>
+                <span className="font-semibold text-intelligence-teal">
+                  ↑ +{h.trend}%
+                </span>
+                <span>~{h.cases} cases/yr</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Cross-link */}
+        <Link
+          href="/cancer-incidence"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-intelligence-teal hover:underline"
+        >
+          Explore full cancer incidence data
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+
+        {/* Explanatory Note */}
+        <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
+          <p className="text-xs leading-relaxed text-slate-gray">
+            {CANCER_INCIDENCE_DATA.note}
           </p>
         </div>
       </div>
