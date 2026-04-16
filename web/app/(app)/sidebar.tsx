@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Truck,
   Bike,
+  Syringe,
   Users,
 } from "lucide-react";
 
@@ -96,6 +97,12 @@ const dataModules: NavGroup[] = [
         heading: "Economics",
         items: [
           { label: "Cost Benchmarks", href: "/advertising/cost-benchmarks", Icon: DollarSign },
+        ],
+      },
+      {
+        heading: "Tort Profiles",
+        items: [
+          { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
         ],
       },
     ],
