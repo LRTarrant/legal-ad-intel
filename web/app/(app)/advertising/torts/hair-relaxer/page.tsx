@@ -18,6 +18,7 @@ import {
   Monitor,
   Database,
   Activity,
+  Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import {
@@ -110,6 +111,25 @@ const CANCER_INCIDENCE_DATA = {
   ],
   note: "Ovarian cancer is one of the qualifying injuries in the Hair Relaxer litigation. Counties with above-average incidence rates and rising trends may represent areas with larger potential claimant pools. Source: CDC/NCI USCS cancer statistics.",
 };
+
+const TRIPLE_SIGNAL_COUNTIES = [
+  { county: "Washington County", state: "MN", cancerRate: 51.0, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Chittenden County", state: "VT", cancerRate: 40.3, trend: "Rising" as const, judicial: "Liberal", piScore: 93.1, verdict: "High" },
+  { county: "Anoka County", state: "MN", cancerRate: 38.7, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Champaign County", state: "IL", cancerRate: 36.8, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
+  { county: "Sangamon County", state: "IL", cancerRate: 36.0, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
+  { county: "McLean County", state: "IL", cancerRate: 35.7, trend: "Rising" as const, judicial: "Liberal", piScore: 87.5, verdict: "Very High" },
+  { county: "Ramsey County (St. Paul)", state: "MN", cancerRate: 34.5, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Hennepin County (Minneapolis)", state: "MN", cancerRate: 33.3, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+];
+
+const TOP_PI_STATES = [
+  { state: "NY", piScore: 97.2, verdict: "Very High ($1M+)", cancerRate: "23.8", key: "Pure comparative, no caps" },
+  { state: "CA", piScore: 94.4, verdict: "Very High ($1M+)", cancerRate: "27.5", key: "Pure comparative, no caps" },
+  { state: "VT", piScore: 93.1, verdict: "High", cancerRate: "Elevated counties", key: "Pure comparative, no caps" },
+  { state: "MN", piScore: 88.9, verdict: "High", cancerRate: "Elevated counties", key: "No punitive cap" },
+  { state: "IL", piScore: 87.5, verdict: "Very High", cancerRate: "31.1", key: "MDL venue, caps struck down" },
+];
 
 const QUALIFICATION_CRITERIA = [
   {
@@ -692,6 +712,173 @@ export default async function HairRelaxerPage() {
           <p className="text-xs leading-relaxed text-slate-gray">
             {CANCER_INCIDENCE_DATA.note}
           </p>
+        </div>
+      </div>
+
+      {/* ── 5c. Market Opportunity Signals ─────────────────────────────── */}
+      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Crosshair className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Market Opportunity Signals
+          </h2>
+        </div>
+        <p className="mb-5 text-sm text-slate-gray">
+          Counties where cancer incidence, judicial climate, and plaintiff-friendly laws converge
+        </p>
+
+        {/* Signal Legend */}
+        <div className="mb-5 flex flex-wrap items-center gap-4">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#ef4444" }} />
+            Above-Avg Cancer Rate
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#14b8a6" }} />
+            Liberal/Moderate Judicial
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#10b981" }} />
+            Plaintiff-Friendly State
+          </span>
+        </div>
+
+        {/* Triple-Signal Counties Table */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Triple-Signal Counties
+        </h3>
+        <p className="mb-3 text-xs text-slate-gray">
+          All three signals present — national avg ovarian cancer rate: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
+        </p>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-intelligence-teal/20">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  County, State
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Cancer Rate
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Trend
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Judicial
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  PI Score
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Avg Jury Verdict
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {TRIPLE_SIGNAL_COUNTIES.map((c) => (
+                <tr
+                  key={`${c.county}-${c.state}`}
+                  className="border-b border-cloud/50 hover:bg-intelligence-teal/[0.04] transition-colors"
+                >
+                  <td className="py-3 pr-4 font-medium text-midnight-navy">
+                    {c.county}, {c.state}
+                  </td>
+                  <td className="py-3 px-3 text-right">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-midnight-navy">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#ef4444" }} />
+                      {c.cancerRate}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="text-intelligence-teal font-semibold text-xs">
+                      {c.trend === "Rising" ? "↑ Rising" : c.trend === "Falling" ? "↓ Falling" : "→ Stable"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-2 py-0.5 text-xs font-medium text-intelligence-teal">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#14b8a6" }} />
+                      {c.judicial}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-right">
+                    <span className="inline-flex items-center gap-1.5 font-mono font-semibold text-midnight-navy">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#10b981" }} />
+                      {c.piScore}
+                    </span>
+                  </td>
+                  <td className="py-3 pl-3 text-center">
+                    <span
+                      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        c.verdict === "Very High"
+                          ? "bg-red-50 text-alert"
+                          : "bg-amber-50 text-warning"
+                      }`}
+                    >
+                      {c.verdict}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* State PI Viability Summary */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Top PI Viability States
+        </h3>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {TOP_PI_STATES.map((s) => (
+            <div
+              key={s.state}
+              className="rounded-lg border border-intelligence-teal/20 bg-white px-4 py-2.5"
+            >
+              <p className="text-sm font-bold text-midnight-navy">
+                {s.state}{" "}
+                <span className="font-mono text-intelligence-teal">{s.piScore}</span>
+              </p>
+              <p className="text-[11px] text-midnight-navy/60">
+                {s.verdict}
+              </p>
+              <p className="text-[10px] text-slate-gray">{s.key}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Insight Callout */}
+        <div className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/[0.06] px-4 py-3 mb-4">
+          <p className="text-sm leading-relaxed text-midnight-navy/80">
+            These counties combine above-average ovarian cancer incidence with
+            plaintiff-friendly legal environments — liberal or moderate judicial
+            climates and states with no damage caps and high jury verdicts. Firms
+            advertising in these markets may find both a larger potential claimant
+            pool and more favorable litigation outcomes.
+          </p>
+        </div>
+
+        {/* Cross-links */}
+        <div className="flex flex-wrap gap-4">
+          <Link
+            href="/judicial-profiles"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
+          >
+            View Judicial Profiles
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link
+            href="/pi-viability"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
+          >
+            View PI Viability Scores
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link
+            href="/cancer-incidence"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
+          >
+            View Cancer Incidence Data
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
