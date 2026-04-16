@@ -9,7 +9,7 @@ on:
       dry_run:
         description: 'Run in dry-run mode (no DB writes)'
         required: false
-        default: 'true'
+        default: 'false'
         type: boolean
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
         run: |
-          if [ "${{ inputs.dry_run }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "Running in DRY-RUN mode"
             python -m pipelines.tiktok_ads_daily --dry-run
           else
