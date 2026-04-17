@@ -16,6 +16,69 @@ export const metadata = {
   title: "Overview | Legal Marketing Intelligence",
 };
 
+type StateCard = {
+  name: string;
+  description: string;
+  href: string;
+};
+
+const STATE_INTELLIGENCE_CARDS: StateCard[] = [
+  {
+    name: "Alabama",
+    description: "Highest rural fatal crash rate, lowest PI ad competition",
+    href: "/state-intelligence/alabama",
+  },
+  {
+    name: "Florida",
+    description: "3× motorcycle fatalities vs. national avg, 11 active PI competitors",
+    href: "/state-intelligence/florida",
+  },
+  {
+    name: "California",
+    description: "Largest PI ad market, 13 competitors across 4 metros",
+    href: "/state-intelligence/california",
+  },
+];
+
+type FeaturedTort = {
+  name: string;
+  status: string;
+  href: string;
+};
+
+const FEATURED_TORT_PROFILES: FeaturedTort[] = [
+  {
+    name: "Depo-Provera",
+    status: "Active MDL · 18,000+ cases filed",
+    href: "/advertising/torts/depo-provera",
+  },
+  {
+    name: "Roundup",
+    status: "Post-settlement · $11B+ resolved",
+    href: "/advertising/torts/roundup",
+  },
+  {
+    name: "Hair Relaxer",
+    status: "Active MDL · Discovery phase",
+    href: "/advertising/torts/hair-relaxer",
+  },
+  {
+    name: "Social Media Addiction",
+    status: "Active MDL · 800+ school districts",
+    href: "/advertising/social-media-addiction",
+  },
+  {
+    name: "GLP-1 Gastroparesis",
+    status: "Pre-MDL · Emerging litigation",
+    href: "/advertising/glp1-gastroparesis",
+  },
+  {
+    name: "Bard PowerPort",
+    status: "Active MDL · Bellwether trials",
+    href: "/advertising/torts/bard-powerport",
+  },
+];
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -59,6 +122,50 @@ export default async function OverviewPage() {
         <SummaryCard title="Active Competitors" value={formatNumber(firmCount)} />
         <SummaryCard title="Markets with Opportunity" value={formatNumber(marketCount)} />
       </div>
+
+      {/* State Intelligence */}
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-midnight-navy">State Intelligence</h2>
+        <p className="mt-1 text-sm text-slate-gray">
+          Deep market research combining accident data, demographics, PI advertising, and case-type opportunity.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {STATE_INTELLIGENCE_CARDS.map((state) => (
+            <div key={state.name} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-midnight-navy">{state.name}</h3>
+              <p className="mt-2 text-sm text-slate-gray">{state.description}</p>
+              <Link
+                href={state.href}
+                className="mt-4 inline-flex items-center text-sm font-medium text-intelligence-teal hover:text-intelligence-teal/80 transition-colors"
+              >
+                View State →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured Tort Profiles */}
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-midnight-navy">Featured Tort Profiles</h2>
+        <p className="mt-1 text-sm text-slate-gray">
+          In-depth research on active mass torts — case summaries, MDL status, buying criteria, and market opportunity signals.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURED_TORT_PROFILES.map((tort) => (
+            <div key={tort.name} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-midnight-navy">{tort.name}</h3>
+              <p className="mt-2 text-sm text-slate-gray">{tort.status}</p>
+              <Link
+                href={tort.href}
+                className="mt-4 inline-flex items-center text-sm font-medium text-intelligence-teal hover:text-intelligence-teal/80 transition-colors"
+              >
+                View Profile →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Top Firms by Spend */}
