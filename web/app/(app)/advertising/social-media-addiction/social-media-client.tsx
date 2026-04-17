@@ -245,9 +245,17 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
 
   // Judicial summary stats
   const judicialStates = Object.entries(data.judicialByState);
-  const plaintiffFriendlyCount = judicialStates.filter(([, v]) => {
+  const liberalCount = judicialStates.filter(([, v]) => {
     const dominant = Object.entries(v.profiles).sort((a, b) => b[1] - a[1])[0];
-    return dominant && dominant[0] === "Plaintiff-Friendly";
+    return dominant && dominant[0] === "Liberal";
+  }).length;
+  const moderateCount = judicialStates.filter(([, v]) => {
+    const dominant = Object.entries(v.profiles).sort((a, b) => b[1] - a[1])[0];
+    return dominant && dominant[0] === "Moderate";
+  }).length;
+  const conservativeCount = judicialStates.filter(([, v]) => {
+    const dominant = Object.entries(v.profiles).sort((a, b) => b[1] - a[1])[0];
+    return dominant && dominant[0] === "Conservative";
   }).length;
 
   // PI score stats
@@ -783,8 +791,14 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
           {judicialStates.length > 0 ? (
             <div className="rounded-lg bg-white p-4">
               <div className="mb-4 flex flex-wrap gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-success">
-                  {plaintiffFriendlyCount} Plaintiff-Friendly States
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  {liberalCount} Liberal
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                  {moderateCount} Moderate
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                  {conservativeCount} Conservative
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-3 py-1 text-xs font-semibold text-intelligence-teal">
                   {judicialStates.length} States with Data
@@ -793,15 +807,16 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {judicialStates
                   .sort(([a], [b]) => a.localeCompare(b))
-                  .slice(0, 20)
                   .map(([state, v]) => {
                     const dominant = Object.entries(v.profiles).sort((a, b) => b[1] - a[1])[0];
                     const profile = dominant?.[0] ?? "Unknown";
                     const color =
-                      profile === "Plaintiff-Friendly"
-                        ? "border-success/30 bg-emerald-50"
-                        : profile === "Moderate" || profile === "Mixed"
-                        ? "border-intelligence-teal/30 bg-intelligence-teal/5"
+                      profile === "Liberal"
+                        ? "border-blue-300/50 bg-blue-50"
+                        : profile === "Moderate"
+                        ? "border-amber-300/50 bg-amber-50"
+                        : profile === "Conservative"
+                        ? "border-rose-300/50 bg-rose-50"
                         : "border-slate-200 bg-slate-50";
                     return (
                       <div key={state} className={`rounded-md border p-2.5 ${color}`}>
