@@ -36,6 +36,7 @@ import {
   ResponsiveContainer,
   Cell,
   Legend,
+  LabelList,
 } from "recharts";
 import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
 import type { BenchmarkScorecardData } from "../../components/cost-benchmark-scorecard";
@@ -70,6 +71,11 @@ interface RideshareRegulatoryRow {
   independent_review: boolean;
   sol_adult_sexual_assault_years: number;
   sol_notes: string | null;
+}
+
+interface MdlFilingConcentrationRow {
+  state: string;
+  estimated_plaintiff_count: number;
 }
 
 interface SegmentRow {
@@ -129,6 +135,7 @@ export interface UberSexualAssaultPageData {
   ridesharePenetrationTop15: RidesharePenetrationRow[];
   uberSafetyGap: UberSafetyGapRow[];
   rideshareRegulatory: RideshareRegulatoryRow[];
+  mdlFilingConcentration: MdlFilingConcentrationRow[];
   judicialByState: Record<string, { counties: number; profiles: Record<string, number> }>;
   // advertising
   segments: SegmentRow[];
@@ -479,12 +486,12 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           </h2>
         </div>
         <div className="overflow-x-auto pb-2">
-          <div className="relative flex items-start" style={{ minWidth: `${LITIGATION_TIMELINE.length * 150}px` }}>
-            <div className="absolute left-[75px] right-[75px] top-[52px] h-px bg-intelligence-teal/30" />
+          <div className="relative flex items-start" style={{ minWidth: `${LITIGATION_TIMELINE.length * 170}px` }}>
+            <div className="absolute left-[85px] right-[85px] top-[52px] h-px bg-intelligence-teal/30" />
             {LITIGATION_TIMELINE.map((e, i) => (
               <div
                 key={i}
-                className={`flex min-w-[150px] flex-1 flex-col items-center text-center ${e.future ? "opacity-60" : ""}`}
+                className={`flex min-w-[170px] flex-1 flex-col items-center text-center ${e.future ? "opacity-60" : ""}`}
               >
                 <p
                   className={`mb-2 text-[10px] font-semibold leading-tight ${
@@ -501,7 +508,7 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
                   }`}
                 />
                 <p
-                  className={`mt-2 max-w-[130px] text-[10px] leading-tight ${
+                  className={`mt-2 max-w-[155px] text-[10px] leading-tight ${
                     e.future ? "italic text-slate-gray" : "text-midnight-navy/80"
                   }`}
                 >
@@ -522,7 +529,7 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           </h2>
         </div>
         <p className="mb-6 text-sm text-slate-gray">
-          Five intelligence layers for identifying high-opportunity markets
+          Six intelligence layers for identifying high-opportunity markets
         </p>
 
         {/* -- Signal 1: Sexual Assault Rates by State (Choropleth) -------- */}
@@ -687,10 +694,10 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
               <p className="mb-3 text-xs font-semibold text-midnight-navy">
                 Publicly Disclosed vs. Internal Reports by Period
               </p>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={340}>
                 <BarChart
                   data={data.uberSafetyGap}
-                  margin={{ top: 10, right: 30, bottom: 0, left: 10 }}
+                  margin={{ top: 30, right: 30, bottom: 0, left: 10 }}
                 >
                   <XAxis dataKey="report_period" tick={{ fontSize: 11, fill: "#1B2A4A" }} />
                   <YAxis
@@ -710,10 +717,32 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
                     }
                     wrapperStyle={{ fontSize: 11 }}
                   />
-                  <Bar dataKey="public_disclosed_incidents" fill="#DC2626" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="internal_reports_estimated" fill="#1B2A4A" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="public_disclosed_incidents" fill="#DC2626" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="public_disclosed_incidents" position="top" formatter={(v) => fmtK(Number(v))} style={{ fontSize: 10, fill: "#DC2626", fontWeight: 600 }} />
+                  </Bar>
+                  <Bar dataKey="internal_reports_estimated" fill="#1B2A4A" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="internal_reports_estimated" position="top" formatter={(v) => fmtK(Number(v))} style={{ fontSize: 10, fill: "#1B2A4A", fontWeight: 600 }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {/* Gap multiplier annotations */}
+              <div className="mt-2 flex justify-around">
+                {data.uberSafetyGap.map((row) => {
+                  const gap = row.public_disclosed_incidents > 0
+                    ? Math.round(row.internal_reports_estimated / row.public_disclosed_incidents)
+                    : 0;
+                  return (
+                    <div key={row.report_period} className="text-center">
+                      <span className="inline-block rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700">
+                        ~{gap}x gap
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-center text-[10px] text-slate-gray">
+                Gap widened over time: the ratio of concealed-to-disclosed reports grew from ~23x to ~52x even as public numbers decreased
+              </p>
             </div>
           ) : (
             <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
@@ -753,13 +782,16 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
               {/* Legend */}
               <div className="mb-4 flex flex-wrap gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: "#134e4a" }}>
-                  Fingerprint Required
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[9px]">1</span>
+                  Tier 1: Fingerprint Required
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: "#0d9488" }}>
-                  Independent Review
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[9px]">2</span>
+                  Tier 2: Independent Review
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600" style={{ backgroundColor: "#cbd5e1" }}>
-                  Name-Based Only
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-500/20 text-[9px]">3</span>
+                  Tier 3: Name-Based Only
                 </span>
               </div>
               {/* State grid */}
@@ -779,7 +811,7 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
                           {STATE_ABBR[row.state] ?? row.state}
                         </p>
                         <p className={`text-[8px] ${isLight ? "text-slate-500" : "text-white/70"}`}>
-                          {row.fingerprint_required ? "FP" : row.independent_review ? "IR" : "NB"}
+                          {row.fingerprint_required ? "Tier 1" : row.independent_review ? "Tier 2" : "Tier 3"}
                         </p>
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20">
                           <div className="rounded-md bg-midnight-navy px-3 py-2 text-xs text-white shadow-lg whitespace-nowrap">
@@ -909,6 +941,75 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           )}
         </div>
 
+        {/* -- Signal 6: MDL Filing Concentration by State --------------- */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="w-4 h-4 text-rose-700" />
+            <h3 className="text-sm font-semibold text-midnight-navy">
+              Signal 6: MDL Filing Concentration by State
+            </h3>
+          </div>
+          <p className="mb-2 text-xs text-slate-gray">
+            Top states by estimated plaintiff count in MDL 3084
+          </p>
+
+          <div className="mb-4 rounded-md border border-rose-200 bg-rose-50/50 px-4 py-3">
+            <p className="text-sm text-midnight-navy/80">
+              Filing concentration reveals where plaintiff attorneys are most active
+              and where case acquisition has gained the most traction.
+              California leads with additional 500+ state court cases outside the MDL.
+            </p>
+          </div>
+
+          {data.mdlFilingConcentration.length > 0 ? (
+            <div className="rounded-lg bg-white p-4">
+              <p className="mb-3 text-xs font-semibold text-midnight-navy">
+                Estimated Plaintiff Count by State
+              </p>
+              <ResponsiveContainer width="100%" height={data.mdlFilingConcentration.length * 32 + 20}>
+                <BarChart
+                  data={data.mdlFilingConcentration}
+                  layout="vertical"
+                  margin={{ top: 0, right: 60, bottom: 0, left: 0 }}
+                >
+                  <XAxis type="number" domain={[0, "auto"]} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="state"
+                    width={140}
+                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      `${Number(value).toLocaleString()} estimated plaintiffs`,
+                      "Plaintiff Count",
+                    ]}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Bar dataKey="estimated_plaintiff_count" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="estimated_plaintiff_count" position="right" formatter={(v) => Number(v).toLocaleString()} style={{ fontSize: 10, fill: "#64748b" }} />
+                    {data.mdlFilingConcentration.map((row, i) => (
+                      <Cell key={i} fill={row.state === "California" ? "#9f1239" : i < 5 ? "#be123c" : "#94a3b8"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              {data.mdlFilingConcentration.some((r) => r.state === "California") && (
+                <p className="mt-2 text-[10px] text-rose-700 font-medium">
+                  * California: +500 additional state court cases outside MDL 3084
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+              <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+              <p className="text-sm font-medium text-midnight-navy/60">
+                MDL filing concentration data loading...
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Cross-links */}
         <div className="flex flex-wrap gap-4">
           <Link
@@ -923,6 +1024,57 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           >
             View PI Viability Scores <ChevronRight className="w-3.5 h-3.5" />
           </Link>
+        </div>
+      </div>
+
+      {/* -- Cross-Signal Analysis Callout ------------------------------- */}
+      <div className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/[0.04] p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="w-5 h-5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Cross-Signal Analysis
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-midnight-navy/80">
+          States combining high rideshare penetration + elevated assault rates + weak screening
+          regulations represent the strongest markets for plaintiff acquisition:
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-md border border-intelligence-teal/20 bg-white px-4 py-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-midnight-navy">Texas</p>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">5-yr SOL</span>
+            </div>
+            <p className="text-xs text-midnight-navy/70">8.2% rideshare share &middot; 51.3/100K assault rate &middot; Name-based checks only</p>
+          </div>
+          <div className="rounded-md border border-intelligence-teal/20 bg-white px-4 py-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-midnight-navy">Florida</p>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">4-yr SOL</span>
+            </div>
+            <p className="text-xs text-midnight-navy/70">7.5% rideshare share &middot; 28.9/100K assault rate &middot; Name-based checks</p>
+          </div>
+          <div className="rounded-md border border-intelligence-teal/20 bg-white px-4 py-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-midnight-navy">Arizona</p>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">2-yr SOL (urgent)</span>
+            </div>
+            <p className="text-xs text-midnight-navy/70">2.8% rideshare share &middot; 40.8/100K assault rate &middot; Name-based checks</p>
+          </div>
+          <div className="rounded-md border border-intelligence-teal/20 bg-white px-4 py-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-midnight-navy">Illinois</p>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">2-yr SOL (urgent)</span>
+            </div>
+            <p className="text-xs text-midnight-navy/70">5.1% rideshare share &middot; 47.5/100K assault rate &middot; Name-based checks</p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-md bg-intelligence-teal/10 px-4 py-3">
+          <p className="text-xs font-semibold text-intelligence-teal uppercase tracking-wider mb-1">Regulatory Watch</p>
+          <p className="text-sm text-midnight-navy/80">
+            California&apos;s 2026 ballot initiative could redefine rideshare companies as common carriers &mdash;
+            a ruling here would set precedent nationwide.
+          </p>
         </div>
       </div>
 
