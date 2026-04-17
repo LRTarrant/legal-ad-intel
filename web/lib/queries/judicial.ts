@@ -56,6 +56,7 @@ export async function getJudicialProfiles(
     .rpc("get_judicial_profiles", {
       filter_state: filterState ?? null,
     } as never)
+    .range(0, 3999)
     .throwOnError();
 
   return ((data ?? []) as UnknownRow[]).map((row) => ({

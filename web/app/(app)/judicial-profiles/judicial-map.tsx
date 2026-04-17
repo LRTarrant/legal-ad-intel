@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GeoJSON, MapContainer, TileLayer } from "react-leaflet";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import type { JudicialProfileRow } from "@/lib/queries";
 
 const COUNTY_GEOJSON_URL =
   "https://cdn.jsdelivr.net/gh/plotly/datasets@master/geojson-counties-fips.json";
+
+const DEFAULT_CENTER: [number, number] = [39.5, -98.35];
+const DEFAULT_ZOOM = 4;
 
 const profileColors: Record<string, string> = {
   Conservative: "#EF4444",
@@ -24,6 +27,30 @@ function countyFeatureId(feature: Feature<Geometry, GeoJsonProperties>): string 
   const propertyId = feature.properties?.GEOID;
   const value = typeof id === "string" || typeof id === "number" ? id : propertyId;
   return value == null ? null : fipsCode(value);
+}
+
+function MapViewUpdater({
+  filteredGeoJson,
+  selectedState,
+}: {
+  filteredGeoJson: FeatureCollection<Geometry, GeoJsonProperties>;
+  selectedState: string | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (selectedState && filteredGeoJson.features.length > 0) {
+      const geoJsonLayer = L.geoJSON(filteredGeoJson);
+      const bounds = geoJsonLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [20, 20] });
+      }
+    } else {
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    }
+  }, [map, filteredGeoJson, selectedState]);
+
+  return null;
 }
 
 export function JudicialMap({
@@ -149,8 +176,8 @@ export function JudicialMap({
         <div className="mt-4 overflow-hidden rounded-2xl border border-midnight-navy/10">
           <MapContainer
             key={mapKey}
-            center={[39.5, -98.35]}
-            zoom={4}
+            center={DEFAULT_CENTER}
+            zoom={DEFAULT_ZOOM}
             scrollWheelZoom={false}
             className="h-[520px] w-full"
           >
@@ -174,6 +201,10 @@ export function JudicialMap({
                 };
               }}
               onEachFeature={onEachFeature}
+            />
+            <MapViewUpdater
+              filteredGeoJson={filteredGeoJson}
+              selectedState={selectedState}
             />
           </MapContainer>
         </div>

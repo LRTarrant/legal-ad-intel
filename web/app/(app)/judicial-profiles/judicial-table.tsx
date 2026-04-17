@@ -6,6 +6,8 @@ import type { JudicialProfileRow } from "@/lib/queries";
 type SortKey = "county_name" | "state" | "judicial_profile";
 type SortDirection = "asc" | "desc";
 
+const ROWS_PER_PAGE = 50;
+
 const profilePillStyles: Record<string, string> = {
   Conservative: "bg-rose-50 text-rose-600 ring-rose-200",
   Moderate: "bg-amber-50 text-amber-700 ring-amber-200",
@@ -27,10 +29,28 @@ function compareValues(
 export function JudicialTable({ rows }: { rows: JudicialProfileRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("county_name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows;
+    const query = searchQuery.trim().toLowerCase();
+    return rows.filter((row) => row.county_name.toLowerCase().includes(query));
+  }, [rows, searchQuery]);
 
   const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) => compareValues(a, b, sortKey, sortDirection));
-  }, [rows, sortDirection, sortKey]);
+    return [...filteredRows].sort((a, b) =>
+      compareValues(a, b, sortKey, sortDirection)
+    );
+  }, [filteredRows, sortDirection, sortKey]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / ROWS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * ROWS_PER_PAGE;
+  const paginatedRows = sortedRows.slice(
+    startIndex,
+    startIndex + ROWS_PER_PAGE
+  );
 
   function toggleSort(nextKey: SortKey) {
     if (nextKey === sortKey) {
@@ -50,6 +70,11 @@ export function JudicialTable({ rows }: { rows: JudicialProfileRow[] }) {
     return `${label} ${sortDirection === "asc" ? "↑" : "↓"}`;
   }
 
+  function handleSearch(value: string) {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }
+
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-midnight-navy/5">
       <div className="flex items-end justify-between gap-4">
@@ -62,8 +87,18 @@ export function JudicialTable({ rows }: { rows: JudicialProfileRow[] }) {
           </p>
         </div>
         <div className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-intelligence-teal">
-          {rows.length.toLocaleString()} counties
+          {sortedRows.length.toLocaleString()} counties
         </div>
+      </div>
+
+      <div className="mt-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Search by county name…"
+          className="w-full max-w-sm rounded-xl border border-midnight-navy/10 bg-cloud px-4 py-2.5 text-sm text-midnight-navy placeholder:text-slate-gray/60 outline-none transition focus:border-intelligence-teal"
+        />
       </div>
 
       <div className="mt-4 overflow-x-auto">
@@ -100,15 +135,21 @@ export function JudicialTable({ rows }: { rows: JudicialProfileRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {sortedRows.length === 0 ? (
+            {paginatedRows.length === 0 ? (
               <tr>
-                <td colSpan={3} className="py-8 text-center text-sm text-slate-gray">
+                <td
+                  colSpan={3}
+                  className="py-8 text-center text-sm text-slate-gray"
+                >
                   No counties match the current filter.
                 </td>
               </tr>
             ) : (
-              sortedRows.map((row) => (
-                <tr key={row.fips} className="border-b border-cloud last:border-0">
+              paginatedRows.map((row) => (
+                <tr
+                  key={row.fips}
+                  className="border-b border-cloud last:border-0"
+                >
                   <td className="py-3 pr-4 font-semibold text-midnight-navy">
                     {row.county_name}
                   </td>
@@ -131,6 +172,30 @@ export function JudicialTable({ rows }: { rows: JudicialProfileRow[] }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between border-t border-cloud pt-4">
+          <button
+            type="button"
+            disabled={safePage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="rounded-lg border border-midnight-navy/10 px-4 py-2 text-sm font-medium text-midnight-navy transition hover:border-intelligence-teal hover:text-intelligence-teal disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-slate-gray">
+            Page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={safePage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            className="rounded-lg border border-midnight-navy/10 px-4 py-2 text-sm font-medium text-midnight-navy transition hover:border-intelligence-teal hover:text-intelligence-teal disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

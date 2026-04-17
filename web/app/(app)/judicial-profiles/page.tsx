@@ -3,6 +3,7 @@ import {
   getJudicialProfiles,
   getJudicialStates,
 } from "@/lib/queries";
+import type { JudicialSummary } from "@/lib/queries";
 import { Scale } from "lucide-react";
 import { AdvertisingInsight } from "../components/advertising-insight";
 import { JudicialFilterBar } from "./judicial-filter-bar";
@@ -116,6 +117,8 @@ export default async function JudicialProfilesPage({
         />
       </div>
 
+      <DistributionBar summary={summary} />
+
       <JudicialMapPanel rows={rows} selectedState={selectedState} />
 
       <JudicialTable rows={rows} />
@@ -141,6 +144,71 @@ function SummaryCard({
         {value}
       </p>
       {sub ? <p className="mt-0.5 text-xs text-slate-gray">{sub}</p> : null}
+    </div>
+  );
+}
+
+function DistributionBar({ summary }: { summary: JudicialSummary }) {
+  const total = summary.total_counties || 1;
+  const segments = [
+    {
+      label: "Conservative",
+      count: summary.conservative,
+      pct: ((summary.conservative / total) * 100).toFixed(1),
+      color: "bg-rose-500",
+      textColor: "text-white",
+    },
+    {
+      label: "Moderate",
+      count: summary.moderate,
+      pct: ((summary.moderate / total) * 100).toFixed(1),
+      color: "bg-amber-400",
+      textColor: "text-midnight-navy",
+    },
+    {
+      label: "Liberal",
+      count: summary.liberal,
+      pct: ((summary.liberal / total) * 100).toFixed(1),
+      color: "bg-blue-500",
+      textColor: "text-white",
+    },
+  ];
+
+  return (
+    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-midnight-navy/5">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-gray">
+        Distribution
+      </p>
+      <div className="flex h-8 w-full overflow-hidden rounded-full">
+        {segments.map((seg) => {
+          const widthPct = (seg.count / total) * 100;
+          if (widthPct === 0) return null;
+          return (
+            <div
+              key={seg.label}
+              className={`${seg.color} flex items-center justify-center`}
+              style={{ width: `${widthPct}%` }}
+              title={`${seg.label}: ${seg.count.toLocaleString()} (${seg.pct}%)`}
+            >
+              {widthPct > 10 && (
+                <span className={`text-xs font-semibold ${seg.textColor}`}>
+                  {seg.pct}%
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-gray">
+        {segments.map((seg) => (
+          <span key={seg.label} className="flex items-center gap-1.5">
+            <span
+              className={`inline-block h-2.5 w-2.5 rounded-full ${seg.color}`}
+            />
+            {seg.label}: {seg.count.toLocaleString()} ({seg.pct}%)
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
