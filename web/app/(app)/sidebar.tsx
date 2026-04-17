@@ -292,6 +292,7 @@ export function Sidebar() {
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin })}
               {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
+              {renderNavLink({ label: "California", href: "/state-intelligence/california", Icon: MapPin })}
             </div>
           </div>
         </nav>
