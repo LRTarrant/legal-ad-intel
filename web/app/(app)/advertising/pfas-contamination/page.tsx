@@ -160,7 +160,8 @@ async function fetchJudicialProfiles(): Promise<JudicialRow[]> {
   };
   const { data, error } = await sb
     .from("judicial_profiles")
-    .select("state,county_name,judicial_profile");
+    .select("state,county_name,judicial_profile")
+    .range(0, 3999);
 
   if (error) throw error;
   return (data ?? []) as unknown as JudicialRow[];
