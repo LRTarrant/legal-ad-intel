@@ -109,8 +109,8 @@ async function fetchPfasSites(): Promise<PfasSiteRow[]> {
 interface CancerRow {
   state: string;
   cancer_site: string;
-  age_adjusted_rate: number;
-  case_count: number | null;
+  incidence_rate: number;
+  average_annual_count: number | null;
 }
 
 async function fetchCancerIncidence(): Promise<CancerRow[]> {
@@ -120,15 +120,15 @@ async function fetchCancerIncidence(): Promise<CancerRow[]> {
   };
   const { data, error } = await sb
     .from("cancer_incidence")
-    .select("state,cancer_site,age_adjusted_rate,case_count")
+    .select("state,cancer_site,incidence_rate,average_annual_count")
     .in("cancer_site", ["Kidney and Renal Pelvis", "Urinary Bladder"]);
 
   if (error) throw error;
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((d) => ({
     state: String(d.state),
     cancer_site: String(d.cancer_site),
-    age_adjusted_rate: Number(d.age_adjusted_rate) || 0,
-    case_count: d.case_count != null ? Number(d.case_count) : null,
+    incidence_rate: Number(d.incidence_rate) || 0,
+    average_annual_count: d.average_annual_count != null ? Number(d.average_annual_count) : null,
   }));
 }
 
@@ -149,8 +149,8 @@ async function fetchPiScores(): Promise<PiRow[]> {
 
 interface JudicialRow {
   state: string;
-  county: string;
-  orientation: string;
+  county_name: string;
+  judicial_profile: string;
 }
 
 async function fetchJudicialProfiles(): Promise<JudicialRow[]> {
@@ -160,7 +160,7 @@ async function fetchJudicialProfiles(): Promise<JudicialRow[]> {
   };
   const { data, error } = await sb
     .from("judicial_profiles")
-    .select("state,county,orientation");
+    .select("state,county_name,judicial_profile");
 
   if (error) throw error;
   return (data ?? []) as unknown as JudicialRow[];
@@ -185,16 +185,24 @@ export default async function PfasContaminationPage() {
   let piScores: PiRow[] = [];
   let judicialRows: JudicialRow[] = [];
 
-  try {
-    [pfasSites, cancerRows, piScores, judicialRows] = await Promise.all([
-      fetchPfasSites(),
-      fetchCancerIncidence(),
-      fetchPiScores(),
-      fetchJudicialProfiles(),
-    ]);
-  } catch (err) {
-    console.error("[PFAS] Failed to fetch data:", err);
-  }
+  const results = await Promise.allSettled([
+    fetchPfasSites(),
+    fetchCancerIncidence(),
+    fetchPiScores(),
+    fetchJudicialProfiles(),
+  ]);
+
+  if (results[0].status === "fulfilled") pfasSites = results[0].value;
+  else console.error("[PFAS] fetchPfasSites failed:", results[0].reason);
+
+  if (results[1].status === "fulfilled") cancerRows = results[1].value;
+  else console.error("[PFAS] fetchCancerIncidence failed:", results[1].reason);
+
+  if (results[2].status === "fulfilled") piScores = results[2].value;
+  else console.error("[PFAS] fetchPiScores failed:", results[2].reason);
+
+  if (results[3].status === "fulfilled") judicialRows = results[3].value;
+  else console.error("[PFAS] fetchJudicialProfiles failed:", results[3].reason);
 
   // Build state-level aggregation for pfas
   const stateAgg = new Map<string, { siteCount: number; maxPpt: number; highCount: number; sites: PfasSiteRow[] }>();
@@ -216,8 +224,8 @@ export default async function PfasContaminationPage() {
     const abbr = STATE_ABBR_MAP[row.state] ?? row.state;
     let entry = cancerByState.get(abbr);
     if (!entry) entry = { kidney: 0, bladder: 0 };
-    if (row.cancer_site === "Kidney and Renal Pelvis") entry.kidney = row.age_adjusted_rate;
-    if (row.cancer_site === "Urinary Bladder") entry.bladder = row.age_adjusted_rate;
+    if (row.cancer_site === "Kidney and Renal Pelvis") entry.kidney = row.incidence_rate;
+    if (row.cancer_site === "Urinary Bladder") entry.bladder = row.incidence_rate;
     cancerByState.set(abbr, entry);
   }
 
@@ -235,7 +243,7 @@ export default async function PfasContaminationPage() {
     const abbr = STATE_ABBR_MAP[j.state] ?? j.state;
     // Take the most common orientation per state
     const existing = judicialByState.get(abbr);
-    if (!existing) judicialByState.set(abbr, j.orientation);
+    if (!existing) judicialByState.set(abbr, j.judicial_profile);
   }
 
   // Compute composite targeting scores
