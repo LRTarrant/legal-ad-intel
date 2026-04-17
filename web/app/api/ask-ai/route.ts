@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { messages, tortContext } = await req.json();
+  const { messages, tortContext, pageContext } = await req.json();
 
   if (!process.env.OPENAI_API_KEY) {
     return new Response(
@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const systemMessage = `You are an AI analyst embedded in a legal advertising intelligence platform. You help plaintiff law firms and their marketing agencies make better case-acquisition and advertising decisions.
+  let systemMessage: string;
+
+  if (tortContext) {
+    systemMessage = `You are an AI analyst embedded in a legal advertising intelligence platform. You help plaintiff law firms and their marketing agencies make better case-acquisition and advertising decisions.
 
 You are currently on the ${tortContext.tortName} tort intelligence page. Answer questions using ONLY the data provided below. If you don't have enough information to answer, say so clearly — do not make up data.
 
@@ -39,6 +42,23 @@ Advertising Landscape: ${tortContext.advertisingLandscape}
 
 Targeting Insights: ${tortContext.targetingInsights}
 --- END PAGE DATA ---`;
+  } else if (pageContext) {
+    systemMessage = `You are an AI analyst embedded in a legal advertising intelligence platform. You help plaintiff law firms and their marketing agencies make better case-acquisition and advertising decisions.
+
+You are currently on the ${pageContext.pageName} page. Answer questions using ONLY the data provided below. If you don't have enough information to answer, say so clearly — do not make up data.
+
+Be concise, data-driven, and actionable. Use specific numbers from the context when relevant. Format responses with markdown when helpful (bold key numbers, use bullet lists for comparisons).
+
+--- PAGE DATA ---
+Page: ${pageContext.pageName}
+Description: ${pageContext.pageDescription}
+
+Data Summary:
+${pageContext.dataSummary}
+--- END PAGE DATA ---`;
+  } else {
+    systemMessage = `You are an AI analyst embedded in a legal advertising intelligence platform. You help plaintiff law firms and their marketing agencies make better case-acquisition and advertising decisions. Be concise, data-driven, and actionable.`;
+  }
 
   const stream = await openai.chat.completions.create({
     model: "gpt-4o-mini",

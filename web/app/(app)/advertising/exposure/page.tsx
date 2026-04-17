@@ -7,6 +7,7 @@ import {
   type CrossRefRow,
   type ExposurePageData,
 } from "./exposure-client";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -468,5 +469,27 @@ export default async function ExposurePage() {
     diseaseSummary,
   };
 
-  return <ExposureClient data={pageData} />;
+  const topParaquatStates = pesticideStates.paraquat
+    .sort((a, b) => b.avg_high_lbs - a.avg_high_lbs)
+    .slice(0, 5)
+    .map((s) => s.state_name);
+
+  const topGlyphosateStates = pesticideStates.glyphosate
+    .sort((a, b) => b.avg_high_lbs - a.avg_high_lbs)
+    .slice(0, 5)
+    .map((s) => s.state_name);
+
+  return (
+    <>
+      <ExposureClient data={pageData} />
+      <AskAIPanel
+        pageContext={{
+          pageName: "Environmental & Occupational Exposure Intelligence",
+          pageDescription:
+            "Cross-references county-level pesticide exposure data (USGS) with state-level disease mortality (CDC) and PI viability scores to identify highest-value markets for environmental tort case acquisition.",
+          dataSummary: `Paraquat: ${summaryStats.paraquat.stateCount} states, ${summaryStats.paraquat.countyCount} counties, ${Math.round(summaryStats.paraquat.totalLbs).toLocaleString()} lbs/yr avg. Top states: ${topParaquatStates.join(", ")}. Glyphosate: ${summaryStats.glyphosate.stateCount} states, ${summaryStats.glyphosate.countyCount} counties, ${Math.round(summaryStats.glyphosate.totalLbs).toLocaleString()} lbs/yr avg. Top states: ${topGlyphosateStates.join(", ")}. Parkinson's Disease mortality: national avg ${diseaseSummary.avgRate.toFixed(1)} per 100K, highest state: ${diseaseSummary.highestState} (${diseaseSummary.highestRate.toFixed(1)}), ${diseaseSummary.aboveAvgCount} states above average. Compound-to-tort mapping: Paraquat → Parkinson's Disease → Paraquat tort; Glyphosate → Non-Hodgkin Lymphoma → Roundup tort.`,
+        }}
+      />
+    </>
+  );
 }

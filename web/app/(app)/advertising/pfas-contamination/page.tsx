@@ -1,5 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import { PfasClient, type PfasPageData } from "./pfas-client";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,17 @@ async function fetchPfasSites(): Promise<PfasSiteRow[]> {
 
     if (error) throw error;
     if (!data || data.length === 0) break;
-    rows.push(...(data as unknown as PfasSiteRow[]));
+    rows.push(
+      ...(data as unknown as Record<string, unknown>[]).map((d) => ({
+        id: String(d.id),
+        state: String(d.state),
+        installation_name: String(d.installation_name),
+        pfas_ppt: Number(d.pfas_ppt) || 0,
+        severity: String(d.severity),
+        source: String(d.source),
+        data_year: Number(d.data_year) || 0,
+      }))
+    );
     if (data.length < pageSize) break;
     from += pageSize;
   }
@@ -95,7 +106,12 @@ async function fetchCancerIncidence(): Promise<CancerRow[]> {
     .in("cancer_site", ["Kidney and Renal Pelvis", "Urinary Bladder"]);
 
   if (error) throw error;
-  return (data ?? []) as unknown as CancerRow[];
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((d) => ({
+    state: String(d.state),
+    cancer_site: String(d.cancer_site),
+    age_adjusted_rate: Number(d.age_adjusted_rate) || 0,
+    case_count: d.case_count != null ? Number(d.case_count) : null,
+  }));
 }
 
 interface PiRow {
@@ -312,5 +328,21 @@ export default async function PfasContaminationPage() {
     judicialByState: Object.fromEntries(judicialByState),
   };
 
-  return <PfasClient data={pageData} />;
+  const topCrossRefStates = crossRefStates
+    .slice(0, 5)
+    .map((s) => s.state);
+
+  return (
+    <>
+      <PfasClient data={pageData} />
+      <AskAIPanel
+        pageContext={{
+          pageName: "PFAS Contamination Intelligence",
+          pageDescription:
+            "PFAS contamination levels at 500+ U.S. military installations — geographic targeting tool for AFFF plaintiff recruitment.",
+          dataSummary: `Total Sites: ${totalSites}. Above EPA Limit (4 ppt): ${aboveEpa} (${totalSites > 0 ? ((aboveEpa / totalSites) * 100).toFixed(1) : "0"}%). Extreme Contamination (>10,000 ppt): ${above10k}. Highest Reading: ${highestSite ? `${highestSite.pfas_ppt.toLocaleString()} ppt at ${highestSite.installation_name}, ${highestSite.state}` : "N/A"}. States with sites: ${uniqueStates.length}. Top priority markets (by composite targeting score): ${topCrossRefStates.join(", ")}. Composite score factors: contamination density (30%), cancer incidence (25%), PI viability (25%), judicial climate (20%). Cross-referenced with cancer incidence (kidney & bladder), PI viability scores, and judicial profiles.`,
+        }}
+      />
+    </>
+  );
 }
