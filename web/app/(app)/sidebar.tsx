@@ -29,6 +29,8 @@ import {
   Users,
   Droplets,
   Tractor,
+  FlameKindling,
+  Radiation,
 } from "lucide-react";
 
 const navItems = [
@@ -73,6 +75,7 @@ const dataModules: NavGroup[] = [
     items: [
       { label: "Cancer Incidents", href: "/cancer-incidence", Icon: HeartPulse },
       { label: "Exposure Data", href: "/advertising/exposure", Icon: Biohazard },
+      { label: "PFAS Contamination", href: "/advertising/pfas-contamination", Icon: Radiation },
     ],
   },
   {
@@ -113,6 +116,7 @@ const dataModules: NavGroup[] = [
           { label: "Hair Relaxer", href: "/advertising/torts/hair-relaxer", Icon: Scissors },
           { label: "Talcum Powder", href: "/advertising/torts/talcum-powder", Icon: Droplets },
           { label: "Paraquat", href: "/advertising/torts/paraquat", Icon: Tractor },
+          { label: "AFFF / Firefighter Foam", href: "/advertising/torts/afff-firefighting-foam", Icon: FlameKindling },
         ],
       },
     ],
