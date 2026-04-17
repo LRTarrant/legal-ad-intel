@@ -31,6 +31,7 @@ import {
   Tractor,
   FlameKindling,
   Radiation,
+  Smartphone,
 } from "lucide-react";
 
 const navItems = [
@@ -117,6 +118,7 @@ const dataModules: NavGroup[] = [
           { label: "Talcum Powder", href: "/advertising/torts/talcum-powder", Icon: Droplets },
           { label: "Paraquat", href: "/advertising/torts/paraquat", Icon: Tractor },
           { label: "AFFF / Firefighter Foam", href: "/advertising/torts/afff-firefighting-foam", Icon: FlameKindling },
+          { label: "Social Media Addiction", href: "/advertising/social-media-addiction", Icon: Smartphone },
         ],
       },
     ],
