@@ -60,6 +60,11 @@ interface RideshareRegulatoryRow {
   sol_notes: string | null;
 }
 
+interface MdlFilingConcentrationRow {
+  state: string;
+  estimated_plaintiff_count: number;
+}
+
 interface JudicialRow {
   state: string;
   county_name: string;
@@ -140,6 +145,23 @@ async function fetchRideshareRegulatory(): Promise<RideshareRegulatoryRow[]> {
   }));
 }
 
+async function fetchMdlFilingConcentration(): Promise<MdlFilingConcentrationRow[]> {
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  const { data, error } = await sb
+    .from("uber_mdl_filing_concentration")
+    .select("state,estimated_plaintiff_count")
+    .order("estimated_plaintiff_count", { ascending: false });
+
+  if (error) throw error;
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((d) => ({
+    state: String(d.state),
+    estimated_plaintiff_count: Number(d.estimated_plaintiff_count) || 0,
+  }));
+}
+
 async function fetchJudicialProfiles(): Promise<JudicialRow[]> {
   const supabase = getSupabase();
   const sb = supabase as unknown as {
@@ -163,6 +185,7 @@ export default async function UberSexualAssaultPage() {
   let ridesharePenetration: RidesharePenetrationRow[] = [];
   let uberSafetyGap: UberSafetyGapRow[] = [];
   let rideshareRegulatory: RideshareRegulatoryRow[] = [];
+  let mdlFilingConcentration: MdlFilingConcentrationRow[] = [];
   let judicialRows: JudicialRow[] = [];
 
   /* -- Supabase data (Promise.allSettled -- resilient) --------------- */
@@ -171,6 +194,7 @@ export default async function UberSexualAssaultPage() {
     fetchRidesharePenetration(),
     fetchUberSafetyGap(),
     fetchRideshareRegulatory(),
+    fetchMdlFilingConcentration(),
     fetchJudicialProfiles(),
   ]);
 
@@ -186,8 +210,11 @@ export default async function UberSexualAssaultPage() {
   if (results[3].status === "fulfilled") rideshareRegulatory = results[3].value;
   else console.error("[Uber] fetchRideshareRegulatory failed:", results[3].reason);
 
-  if (results[4].status === "fulfilled") judicialRows = results[4].value;
-  else console.error("[Uber] fetchJudicialProfiles failed:", results[4].reason);
+  if (results[4].status === "fulfilled") mdlFilingConcentration = results[4].value;
+  else console.error("[Uber] fetchMdlFilingConcentration failed:", results[4].reason);
+
+  if (results[5].status === "fulfilled") judicialRows = results[5].value;
+  else console.error("[Uber] fetchJudicialProfiles failed:", results[5].reason);
 
   /* -- Advertising data (standard query helpers) --------------------- */
   const now = new Date();
@@ -256,6 +283,7 @@ export default async function UberSexualAssaultPage() {
     ridesharePenetrationTop15: ridesharePenetration,
     uberSafetyGap,
     rideshareRegulatory,
+    mdlFilingConcentration,
     judicialByState,
     // advertising data
     segments,
