@@ -37,6 +37,7 @@ import {
   EyeOff,
   CarFront,
   Activity,
+  Newspaper,
 } from "lucide-react";
 
 const navItems = [
@@ -116,6 +117,8 @@ const dataModules: NavGroup[] = [
       {
         heading: "Mass Torts",
         items: [
+          { label: "Mass Tort Overview", href: "/mass-tort-overview", Icon: Newspaper },
+          { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
           { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
           { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
           { label: "Hair Relaxer", href: "/advertising/torts/hair-relaxer", Icon: Scissors },
@@ -129,7 +132,6 @@ const dataModules: NavGroup[] = [
           { label: "Bard PowerPort", href: "/advertising/torts/bard-powerport", Icon: Activity },
           { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
           { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
-          { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
         ],
       },
     ],
