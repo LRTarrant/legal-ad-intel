@@ -1473,7 +1473,100 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
         )}
       </div>
 
-      {/* ── 14. Sources & Methodology ──────────────────────────────────── */}
+      {/* ── 14. Geographic & Demographic Targeting ─────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Geographic &amp; Demographic Targeting
+          </h2>
+        </div>
+
+        {/* Target Demographics */}
+        <div className="mb-6">
+          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+            Target Demographics
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Primary Demographic
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Parents of adolescents aged 10–17 with diagnosed mental health conditions linked to social media use
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Age Range
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Parents 30–55; claimants were minors (under 18 or 21) during 2012–present
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Regional Focus
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Highest youth MDE states: OR, WV, SD, CO, VT; high regulatory activity: CA, NY, TX, FL, IL
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metro Areas */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Key Metro Areas
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
+          {[
+            "Los Angeles, CA",
+            "New York City, NY",
+            "San Francisco, CA",
+            "Chicago, IL",
+            "Houston, TX",
+            "Denver, CO",
+            "Portland, OR",
+            "Miami, FL",
+            "Seattle, WA",
+            "Austin, TX",
+          ].map((metro) => (
+            <div
+              key={metro}
+              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
+              <p className="text-sm text-midnight-navy">{metro}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Targeting Implications */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Targeting Implications
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { title: "Parent-Centric Messaging", detail: "Claimants are minors, but parents initiate claims. Target parents aged 30–55 with children 10–17. Use Meta\u2019s \u2018Parents with teenagers\u2019 behavioral segment and Google\u2019s \u2018Parenting\u2019 affinity audiences" },
+            { title: "High MDE State Prioritization", detail: "States with the highest youth Major Depressive Episode rates (OR, WV, SD, CO, VT) represent the deepest plaintiff pools. Cross-reference teen screen time data to identify where exposure and harm overlap most" },
+            { title: "Regulatory Momentum States", detail: "The 41+ state AGs pursuing actions create built-in awareness. Prioritize states with regulatory scores of 4–5 — prospective clients in these states are more likely to have heard about the litigation and be primed to act" },
+            { title: "Bellwether Urgency Window", detail: "Federal bellwether trials in June and August 2026 will drive massive media coverage. Pre-position campaigns in top signal states 4–6 weeks ahead to capture intent spikes. Use Google In-Market \u2018Legal Services\u2019 audiences to catch active searchers" },
+          ].map((imp, i) => (
+            <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
+                <div>
+                  <p className="text-sm font-semibold text-midnight-navy">{imp.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-midnight-navy/70">{imp.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 15. Sources & Methodology ──────────────────────────────────── */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1502,7 +1595,7 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
         </div>
       </div>
 
-      {/* ── 15. Footer / Disclaimer ─────────────────────────────────────── */}
+      {/* ── 16. Footer / Disclaimer ─────────────────────────────────────── */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly

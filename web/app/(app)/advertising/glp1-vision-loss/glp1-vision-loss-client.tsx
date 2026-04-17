@@ -1407,7 +1407,100 @@ export function GLP1VisionLossClient({ data }: { data: GLP1VisionLossPageData })
         )}
       </div>
 
-      {/* -- 15. Sources & Methodology -------------------------------- */}
+      {/* -- 15. Geographic & Demographic Targeting --------------------- */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Geographic &amp; Demographic Targeting
+          </h2>
+        </div>
+
+        {/* Target Demographics */}
+        <div className="mb-6">
+          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+            Target Demographics
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Primary Demographic
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Adults prescribed GLP-1 receptor agonists who experienced sudden vision loss (NAION)
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Age Range
+              </p>
+              <p className="text-sm text-midnight-navy">
+                30–70 (weight-loss patients skew younger 30–55; diabetes patients extend to 70)
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Regional Focus
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Same GLP-1 prescription corridors: WV, MS, AL, LA, AR, TN; weight-loss patients at 7.64× risk are key demographic
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metro Areas */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Key Metro Areas
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
+          {[
+            "Houston, TX",
+            "Birmingham, AL",
+            "Memphis, TN",
+            "New Orleans, LA",
+            "Nashville, TN",
+            "San Antonio, TX",
+            "Louisville, KY",
+            "Dallas, TX",
+            "Atlanta, GA",
+            "Charleston, WV",
+          ].map((metro) => (
+            <div
+              key={metro}
+              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
+              <p className="text-sm text-midnight-navy">{metro}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Targeting Implications */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Targeting Implications
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { title: "Weight-Loss Patient Priority", detail: "Harvard/JAMA study shows 7.64× NAION risk for weight-loss users vs. 4.28× for diabetic users. Weight-loss patients are the higher-risk segment. Target health & wellness, diet/fitness, and weight management interest audiences on Meta and TikTok" },
+            { title: "Regulatory Gap Messaging", detail: "EMA added NAION warning to EU semaglutide labels in June 2025, but FDA has NOT. This is the core failure-to-warn argument and a powerful messaging angle: \u2018Europe warned patients. The U.S. didn\u2019t.\u2019 Use this regulatory gap in creative to drive urgency" },
+            { title: "Vision & Eye Health Communities", detail: "Target people interested in eye health, optometry, and vision care. Google\u2019s In-Market \u2018Eye Care\u2019 and \u2018Health\u2019 affinity audiences can reach people already concerned about vision. Meta interest targeting for \u2018eye health\u2019 and \u2018vision loss\u2019 can supplement" },
+            { title: "Nascent Tort Advantage", detail: "Only ~30 federal cases currently, but growing rapidly. Early movers in advertising will face minimal competition and lower CPAs. Same judge (Marston) oversees both GLP-1 MDLs, so gastroparesis bellwether outcomes will accelerate this tort. Position campaigns now before the rush" },
+          ].map((imp, i) => (
+            <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
+                <div>
+                  <p className="text-sm font-semibold text-midnight-navy">{imp.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-midnight-navy/70">{imp.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* -- 16. Sources & Methodology -------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1439,7 +1532,7 @@ export function GLP1VisionLossClient({ data }: { data: GLP1VisionLossPageData })
         </div>
       </div>
 
-      {/* -- 16. Footer / Disclaimer ---------------------------------- */}
+      {/* -- 17. Footer / Disclaimer ---------------------------------- */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly
