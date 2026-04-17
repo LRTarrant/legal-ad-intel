@@ -69,7 +69,9 @@ export function MobileNav() {
               Log In
             </Link>
             <a
-              href="mailto:admin@legalmarketingintelligence.com"
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-1 inline-block rounded-full bg-intelligence-teal px-6 py-2.5 text-center text-sm font-semibold text-white hover:bg-intelligence-teal/90"
             >
               Schedule a Demo

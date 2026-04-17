@@ -91,7 +91,9 @@ export default async function HomePage() {
               Log In
             </Link>
             <a
-              href="mailto:admin@legalmarketingintelligence.com"
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+              target="_blank"
+              rel="noopener noreferrer"
               className="rounded-full bg-intelligence-teal px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
             >
               Schedule a Demo
@@ -130,7 +132,9 @@ export default async function HomePage() {
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <a
-                href="mailto:admin@legalmarketingintelligence.com"
+                href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-full bg-intelligence-teal px-8 py-3.5 text-base font-semibold text-white transition hover:bg-intelligence-teal/90"
               >
                 Schedule a Demo
@@ -513,7 +517,9 @@ export default async function HomePage() {
             like for your markets and torts.
           </p>
           <a
-            href="mailto:admin@legalmarketingintelligence.com"
+            href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+            target="_blank"
+            rel="noopener noreferrer"
             className="mt-8 inline-block rounded-full bg-intelligence-teal px-10 py-4 text-lg font-semibold text-white transition hover:bg-intelligence-teal/90"
           >
             Schedule a Demo
@@ -569,7 +575,7 @@ export default async function HomePage() {
               </p>
               <nav className="mt-4 flex flex-col gap-2">
                 <FooterLink href="/pricing">Pricing</FooterLink>
-                <FooterLink href="mailto:admin@legalmarketingintelligence.com">
+                <FooterLink href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ" target="_blank" rel="noopener noreferrer">
                   Schedule a Demo
                 </FooterLink>
                 <FooterLink href="/login">Log In</FooterLink>
@@ -773,14 +779,20 @@ function ComparisonCell({ value }: { value: boolean | string }) {
 function FooterLink({
   href,
   children,
+  target,
+  rel,
 }: {
   href: string;
   children: React.ReactNode;
+  target?: string;
+  rel?: string;
 }) {
-  if (href.startsWith("mailto:") || href.startsWith("#")) {
+  if (href.startsWith("mailto:") || href.startsWith("#") || href.startsWith("http")) {
     return (
       <a
         href={href}
+        target={target}
+        rel={rel}
         className="text-sm text-white/60 transition hover:text-white"
       >
         {children}
