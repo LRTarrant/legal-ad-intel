@@ -1495,7 +1495,100 @@ export function RobloxClient({ data }: { data: RobloxPageData }) {
         )}
       </div>
 
-      {/* -- 14. Sources & Methodology -------------------------------- */}
+      {/* -- 14. Geographic & Demographic Targeting --------------------- */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Geographic &amp; Demographic Targeting
+          </h2>
+        </div>
+
+        {/* Target Demographics */}
+        <div className="mb-6">
+          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+            Target Demographics
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Primary Demographic
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Parents of children aged 8–16 who played Roblox and experienced grooming, exploitation, or sextortion
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Age Range
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Parents 28–50; victims were children during Roblox usage period
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Regional Focus
+              </p>
+              <p className="text-sm text-midnight-navy">
+                States with highest parental concern: TX, FL, CA, OH, PA; states with AG enforcement actions
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metro Areas */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Key Metro Areas
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
+          {[
+            "Dallas/Fort Worth, TX",
+            "Houston, TX",
+            "Los Angeles, CA",
+            "Miami, FL",
+            "Columbus, OH",
+            "Philadelphia, PA",
+            "Atlanta, GA",
+            "Phoenix, AZ",
+            "Chicago, IL",
+            "San Francisco, CA",
+          ].map((metro) => (
+            <div
+              key={metro}
+              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
+              <p className="text-sm text-midnight-navy">{metro}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Targeting Implications */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Targeting Implications
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { title: "Parent & Guardian Targeting", detail: "Parents are the claimants. Target adults 28–50 with children 8–16 using Meta\u2019s \u2018Parents with pre-teens/teens\u2019 and Google\u2019s \u2018Family & Parenting\u2019 affinity segments. TikTok\u2019s parenting interest categories also strong for awareness" },
+            { title: "AG Action Amplification", detail: "States where Attorneys General have taken enforcement action against Roblox see elevated public awareness. Concentrate spend in these states — parents are already primed by media coverage of their state\u2019s investigation" },
+            { title: "Cross-Platform Exploitation Angle", detail: "Grooming started on Roblox but escalated on Discord, Snapchat, and Instagram. Messaging should reference this cross-platform pattern — it broadens the audience to parents concerned about any of these platforms, not just gaming" },
+            { title: "School District Parallel", detail: "With school districts also filing in the Social Media MDL, PTA and parent community awareness is high. Target audiences interested in child safety, online predators, and parenting forums. Use Custom Intent audiences on Google with keywords like \u2018child online safety\u2019 and \u2018Roblox predators\u2019" },
+          ].map((imp, i) => (
+            <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
+                <div>
+                  <p className="text-sm font-semibold text-midnight-navy">{imp.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-midnight-navy/70">{imp.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* -- 15. Sources & Methodology -------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1525,7 +1618,7 @@ export function RobloxClient({ data }: { data: RobloxPageData }) {
         </div>
       </div>
 
-      {/* -- 15. Footer / Disclaimer ---------------------------------- */}
+      {/* -- 16. Footer / Disclaimer ---------------------------------- */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly

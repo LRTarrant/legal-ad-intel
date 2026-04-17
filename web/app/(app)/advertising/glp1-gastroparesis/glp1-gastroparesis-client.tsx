@@ -1373,7 +1373,100 @@ export function GLP1GastroparesisClient({ data }: { data: GLP1GastroparesisPageD
         )}
       </div>
 
-      {/* -- 14. Sources & Methodology ------------------------------------- */}
+      {/* -- 14. Geographic & Demographic Targeting ----------------------- */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Geographic &amp; Demographic Targeting
+          </h2>
+        </div>
+
+        {/* Target Demographics */}
+        <div className="mb-6">
+          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+            Target Demographics
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Primary Demographic
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Adults prescribed Ozempic, Wegovy, Mounjaro, or Zepbound who developed gastroparesis or severe GI injuries
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Age Range
+              </p>
+              <p className="text-sm text-midnight-navy">
+                25–65 (spans both Type 2 diabetes patients and weight-loss users)
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Regional Focus
+              </p>
+              <p className="text-sm text-midnight-navy">
+                South and Appalachia dominate GLP-1 prescriptions: WV, MS, AL, LA, AR, TN, KY; obesity belt overlap
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metro Areas */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Key Metro Areas
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
+          {[
+            "Houston, TX",
+            "Birmingham, AL",
+            "Memphis, TN",
+            "New Orleans, LA",
+            "Jackson, MS",
+            "Louisville, KY",
+            "Charleston, WV",
+            "Nashville, TN",
+            "San Antonio, TX",
+            "Oklahoma City, OK",
+          ].map((metro) => (
+            <div
+              key={metro}
+              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
+              <p className="text-sm text-midnight-navy">{metro}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Targeting Implications */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Targeting Implications
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { title: "Prescription Corridor Targeting", detail: "The South and Appalachia have the highest GLP-1 prescription volume per capita. These same states lead in obesity and diabetes prevalence, creating a triple-signal overlap. Concentrate spend in WV, MS, AL, LA, AR where all three indicators converge" },
+            { title: "Weight-Loss vs. Diabetes Segmentation", detail: "Both patient populations qualify, but messaging differs. Weight-loss users respond to \u2018Did Ozempic for weight loss cause stomach problems?\u2019 while diabetes patients respond to medication safety angles. Run parallel creative sets with distinct messaging" },
+            { title: "FDA Label Change Urgency", detail: "FDA\u2019s post-market addition of gastroparesis and ileus warnings validates plaintiff claims. Messaging should reference the label changes and growing case count (3,546+) to establish credibility. Use Google Custom Intent audiences targeting \u2018Ozempic side effects\u2019 and \u2018Ozempic lawsuit\u2019 keywords" },
+            { title: "Cross-Reference PI Viability", detail: "Layer GLP-1 prescription data with PI viability scores and judicial profiles. States with high prescriptions AND plaintiff-favorable courts represent the highest-opportunity markets for case acquisition campaigns" },
+          ].map((imp, i) => (
+            <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
+                <div>
+                  <p className="text-sm font-semibold text-midnight-navy">{imp.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-midnight-navy/70">{imp.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* -- 15. Sources & Methodology ------------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
@@ -1405,7 +1498,7 @@ export function GLP1GastroparesisClient({ data }: { data: GLP1GastroparesisPageD
         </div>
       </div>
 
-      {/* -- 15. Footer / Disclaimer --------------------------------------- */}
+      {/* -- 16. Footer / Disclaimer --------------------------------------- */}
       <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
         <p className="text-xs leading-relaxed text-slate-gray">
           This page is refreshed monthly. Content reflects research and publicly
