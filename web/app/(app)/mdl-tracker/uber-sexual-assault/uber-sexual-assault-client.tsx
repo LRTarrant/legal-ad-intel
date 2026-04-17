@@ -486,12 +486,12 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           </h2>
         </div>
         <div className="overflow-x-auto pb-2">
-          <div className="relative flex items-start" style={{ minWidth: `${LITIGATION_TIMELINE.length * 170}px` }}>
-            <div className="absolute left-[85px] right-[85px] top-[52px] h-px bg-intelligence-teal/30" />
+          <div className="relative flex items-start" style={{ minWidth: `${LITIGATION_TIMELINE.length * 195}px` }}>
+            <div className="absolute left-[97px] right-[97px] top-[52px] h-px bg-intelligence-teal/30" />
             {LITIGATION_TIMELINE.map((e, i) => (
               <div
                 key={i}
-                className={`flex min-w-[170px] flex-1 flex-col items-center text-center ${e.future ? "opacity-60" : ""}`}
+                className={`flex min-w-[195px] flex-1 flex-col items-center text-center ${e.future ? "opacity-60" : ""}`}
               >
                 <p
                   className={`mb-2 text-[10px] font-semibold leading-tight ${
@@ -508,7 +508,7 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
                   }`}
                 />
                 <p
-                  className={`mt-2 max-w-[155px] text-[10px] leading-tight ${
+                  className={`mt-2 max-w-[180px] text-[10px] leading-tight ${
                     e.future ? "italic text-slate-gray" : "text-midnight-navy/80"
                   }`}
                 >
@@ -1075,6 +1075,99 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
             California&apos;s 2026 ballot initiative could redefine rideshare companies as common carriers &mdash;
             a ruling here would set precedent nationwide.
           </p>
+        </div>
+      </div>
+
+      {/* -- Geographic & Demographic Targeting ----------------------------- */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Geographic &amp; Demographic Targeting
+          </h2>
+        </div>
+
+        {/* Target Demographics */}
+        <div className="mb-6">
+          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+            Target Demographics
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Primary Demographic
+              </p>
+              <p className="text-sm text-midnight-navy">
+                Women aged 18-35 who use rideshare services, particularly late-night and bar/restaurant pickup riders
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Age Range
+              </p>
+              <p className="text-sm text-midnight-navy">
+                18-45 (peak rideshare usage demographic; 81% of victims are women)
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Regional Focus
+              </p>
+              <p className="text-sm text-midnight-navy">
+                States with highest rideshare penetration + weak screening: CA, TX, FL, NY, IL, AZ, GA
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metro Areas */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Key Metro Areas
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
+          {[
+            "San Francisco, CA",
+            "Los Angeles, CA",
+            "New York City, NY",
+            "Chicago, IL",
+            "Miami, FL",
+            "Houston, TX",
+            "Phoenix/Tempe, AZ",
+            "Atlanta, GA",
+            "Boston, MA",
+            "Seattle, WA",
+          ].map((metro) => (
+            <div
+              key={metro}
+              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
+              <p className="text-sm text-midnight-navy">{metro}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Targeting Implications */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Targeting Implications
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { title: "Late-Night & Nightlife Targeting", detail: "Uber\u2019s internal data shows assaults peak late at night with pickups near bars. Target women 18-35 in nightlife districts and college towns \u2014 use time-of-day and location-based audiences on Meta and Google" },
+            { title: "Weak-Regulation State Focus", detail: "Prioritize states with name-based-only background checks (TX, FL, AZ, IL) where Uber\u2019s own screening was the only safeguard. The regulatory gap strengthens the negligence argument" },
+            { title: "Cross-Reference Signal Data", detail: "Layer rideshare penetration with sexual assault rates to identify highest-opportunity DMAs. States like Texas (8.2% market share, 51.3/100K assault rate) and Illinois (5.1%, 47.5/100K) top the combined index" },
+            { title: "Creative Messaging Angles", detail: "Lead with the \u20181 report every 8 minutes\u2019 stat and the 400,181 concealed reports. Reference the $8.5M bellwether verdict to establish credibility. Emphasize the statute of limitations window \u2014 several states have 2-year or shorter deadlines" },
+          ].map((imp, i) => (
+            <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 mt-0.5 shrink-0 text-intelligence-teal" />
+                <div>
+                  <p className="text-sm font-semibold text-midnight-navy">{imp.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-midnight-navy/70">{imp.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
