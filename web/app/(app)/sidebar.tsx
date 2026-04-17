@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Anchor,
+  Biohazard,
   Building2,
   Car,
   CloudLightning,
@@ -71,6 +72,7 @@ const dataModules: NavGroup[] = [
     heading: "Exposure & Health Signals",
     items: [
       { label: "Cancer Incidents", href: "/cancer-incidence", Icon: HeartPulse },
+      { label: "Exposure Data", href: "/advertising/exposure", Icon: Biohazard },
     ],
   },
   {
