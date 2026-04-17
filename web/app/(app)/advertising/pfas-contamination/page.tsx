@@ -51,6 +51,13 @@ interface PfasSiteRow {
   data_year: number;
 }
 
+function computeSeverity(pfas_ppt: number): string {
+  if (pfas_ppt > 100000) return "extreme";
+  if (pfas_ppt > 10000) return "high";
+  if (pfas_ppt > 1000) return "moderate";
+  return "low";
+}
+
 async function fetchPfasSites(): Promise<PfasSiteRow[]> {
   const supabase = getSupabase();
   const sb = supabase as unknown as {
@@ -61,28 +68,39 @@ async function fetchPfasSites(): Promise<PfasSiteRow[]> {
   let from = 0;
   const pageSize = 1000;
 
-  while (true) {
-    const { data, error } = await sb
-      .from("pfas_contamination_sites")
-      .select("id,state,installation_name,pfas_ppt,severity,source,data_year")
-      .order("pfas_ppt", { ascending: false })
-      .range(from, from + pageSize - 1);
+  try {
+    while (true) {
+      const { data, error } = await sb
+        .from("pfas_contamination_sites")
+        .select("id,state,installation_name,pfas_ppt,source,data_year")
+        .order("pfas_ppt", { ascending: false })
+        .range(from, from + pageSize - 1);
 
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    rows.push(
-      ...(data as unknown as Record<string, unknown>[]).map((d) => ({
-        id: String(d.id),
-        state: String(d.state),
-        installation_name: String(d.installation_name),
-        pfas_ppt: Number(d.pfas_ppt) || 0,
-        severity: String(d.severity),
-        source: String(d.source),
-        data_year: Number(d.data_year) || 0,
-      }))
-    );
-    if (data.length < pageSize) break;
-    from += pageSize;
+      if (error) {
+        console.error("[PFAS] fetchPfasSites query error:", error);
+        throw error;
+      }
+      if (!data || data.length === 0) break;
+      rows.push(
+        ...(data as unknown as Record<string, unknown>[]).map((d) => {
+          const pfas_ppt = Number(d.pfas_ppt) || 0;
+          return {
+            id: String(d.id),
+            state: String(d.state),
+            installation_name: String(d.installation_name),
+            pfas_ppt,
+            severity: computeSeverity(pfas_ppt),
+            source: String(d.source),
+            data_year: Number(d.data_year) || 0,
+          };
+        })
+      );
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+  } catch (err) {
+    console.error("[PFAS] fetchPfasSites failed:", err);
+    throw err;
   }
 
   return rows;
@@ -174,8 +192,8 @@ export default async function PfasContaminationPage() {
       fetchPiScores(),
       fetchJudicialProfiles(),
     ]);
-  } catch {
-    // Gracefully degrade — render empty state
+  } catch (err) {
+    console.error("[PFAS] Failed to fetch data:", err);
   }
 
   // Build state-level aggregation for pfas
