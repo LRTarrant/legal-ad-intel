@@ -11,6 +11,7 @@ import {
   getSerpTopResults,
   getSampleAds,
 } from "@/lib/queries";
+import { getJudicialProfiles, type JudicialProfileRow } from "@/lib/queries/judicial";
 
 export const dynamic = "force-dynamic";
 
@@ -63,12 +64,6 @@ interface RideshareRegulatoryRow {
 interface MdlFilingConcentrationRow {
   state: string;
   estimated_plaintiff_count: number;
-}
-
-interface JudicialRow {
-  state: string;
-  county_name: string;
-  judicial_profile: string;
 }
 
 async function fetchSexualAssaultRates(): Promise<SexualAssaultRateRow[]> {
@@ -162,20 +157,6 @@ async function fetchMdlFilingConcentration(): Promise<MdlFilingConcentrationRow[
   }));
 }
 
-async function fetchJudicialProfiles(): Promise<JudicialRow[]> {
-  const supabase = getSupabase();
-  const sb = supabase as unknown as {
-    from: (table: string) => ReturnType<typeof supabase.from>;
-  };
-  const { data, error } = await sb
-    .from("judicial_profiles")
-    .select("state,county_name,judicial_profile")
-    .range(0, 3999);
-
-  if (error) throw error;
-  return (data ?? []) as unknown as JudicialRow[];
-}
-
 /* ------------------------------------------------------------------ */
 /*  Page Component                                                      */
 /* ------------------------------------------------------------------ */
@@ -186,7 +167,7 @@ export default async function UberSexualAssaultPage() {
   let uberSafetyGap: UberSafetyGapRow[] = [];
   let rideshareRegulatory: RideshareRegulatoryRow[] = [];
   let mdlFilingConcentration: MdlFilingConcentrationRow[] = [];
-  let judicialRows: JudicialRow[] = [];
+  let judicialRows: JudicialProfileRow[] = [];
 
   /* -- Supabase data (Promise.allSettled -- resilient) --------------- */
   const results = await Promise.allSettled([
@@ -195,7 +176,7 @@ export default async function UberSexualAssaultPage() {
     fetchUberSafetyGap(),
     fetchRideshareRegulatory(),
     fetchMdlFilingConcentration(),
-    fetchJudicialProfiles(),
+    getJudicialProfiles(),
   ]);
 
   if (results[0].status === "fulfilled") sexualAssaultRates = results[0].value;
