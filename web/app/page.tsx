@@ -65,10 +65,10 @@ export default async function HomePage() {
           <Image
             src="/logo-horizontal-white.svg"
             alt="Legal Marketing Intelligence"
-            width={180}
-            height={40}
+            width={260}
+            height={56}
             priority
-            className="h-9 w-auto"
+            className="h-14 w-auto"
           />
 
           <nav className="hidden items-center gap-8 lg:flex">
