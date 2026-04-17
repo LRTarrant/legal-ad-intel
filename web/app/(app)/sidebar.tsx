@@ -36,6 +36,7 @@ import {
   Pill,
   EyeOff,
   CarFront,
+  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -126,6 +127,7 @@ const dataModules: NavGroup[] = [
           { label: "Roblox Abuse", href: "/advertising/roblox-abuse", Icon: Gamepad2 },
           { label: "GLP-1 Gastroparesis", href: "/advertising/glp1-gastroparesis", Icon: Pill },
           { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
+          { label: "Bard PowerPort", href: "/advertising/torts/bard-powerport", Icon: Activity },
         ],
       },
       {
