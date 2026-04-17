@@ -36,6 +36,23 @@ export async function getMdlDevelopments(
   }
 }
 
+export async function getAllDevelopments(): Promise<MdlDevelopment[]> {
+  try {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("mdl_developments")
+      .select(
+        "id, mdl_number, title, summary, source_name, source_url, event_date, event_type, created_at"
+      )
+      .order("event_date", { ascending: false })
+      .throwOnError();
+
+    return (data ?? []) as MdlDevelopmentRow[];
+  } catch {
+    return [];
+  }
+}
+
 export async function getLatestDevelopments(
   limit = 5
 ): Promise<MdlDevelopment[]> {
