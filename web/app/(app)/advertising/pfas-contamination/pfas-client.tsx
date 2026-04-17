@@ -384,7 +384,7 @@ export function PfasClient({ data }: { data: PfasPageData }) {
                   "#10B981";
                 return (
                   <div key={s.state} className="flex items-center gap-3">
-                    <span className="w-8 text-xs font-semibold text-midnight-navy text-right shrink-0">
+                    <span className="w-32 text-[11px] font-semibold text-midnight-navy text-right shrink-0">
                       {s.state}
                     </span>
                     <div className="flex-1 h-5 bg-cloud rounded">
