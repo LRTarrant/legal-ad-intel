@@ -5,6 +5,28 @@ import type { MarketAdEvent, MarketFilters } from "@/lib/queries";
 import { MethodologySources } from "../../components/methodology-sources";
 import { TortQuickStart } from "../../components/tort-quick-start";
 
+const TORT_DISPLAY_NAMES: Record<string, string> = {
+  camp_lejeune: "Camp Lejeune",
+  "bard-powerport": "Bard PowerPort",
+  glp1_gastroparesis: "GLP-1 Gastroparesis",
+  glp1_vision_loss: "GLP-1 Vision Loss",
+  hair_relaxer: "Hair Relaxer",
+  social_media_addiction: "Social Media Addiction",
+  afff_firefighting_foam: "AFFF / Firefighter Foam",
+  depo_provera: "Depo-Provera",
+  roundup: "Roundup",
+  talcum_powder: "Talcum Powder",
+  paraquat: "Paraquat",
+  roblox_abuse: "Roblox Abuse",
+  uber_sexual_assault: "Uber Sexual Assault",
+  lyft_sexual_assault: "Lyft Sexual Assault",
+  "Social Media Youth Harm": "Social Media Addiction",
+};
+
+function tortDisplayName(slug: string): string {
+  return TORT_DISPLAY_NAMES[slug] ?? slug.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 type MarketRow = {
   market_name: string;
   state_code: string;
@@ -226,7 +248,7 @@ export function MarketsClient({
           <option value="">All Torts</option>
           {filters.torts.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {tortDisplayName(t)}
             </option>
           ))}
         </select>

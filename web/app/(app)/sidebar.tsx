@@ -87,7 +87,6 @@ const dataModules: NavGroup[] = [
   {
     heading: "Litigation Intelligence",
     items: [
-      { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
       { label: "Judicial Profiles", href: "/judicial-profiles", Icon: Scale },
       { label: "PI Viability", href: "/pi-viability", Icon: Gavel },
     ],
@@ -115,7 +114,7 @@ const dataModules: NavGroup[] = [
         ],
       },
       {
-        heading: "Tort Profiles",
+        heading: "Mass Torts",
         items: [
           { label: "Depo-Provera", href: "/advertising/torts/depo-provera", Icon: Syringe },
           { label: "Roundup", href: "/advertising/torts/roundup", Icon: Leaf },
@@ -128,13 +127,9 @@ const dataModules: NavGroup[] = [
           { label: "GLP-1 Gastroparesis", href: "/advertising/glp1-gastroparesis", Icon: Pill },
           { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
           { label: "Bard PowerPort", href: "/advertising/torts/bard-powerport", Icon: Activity },
-        ],
-      },
-      {
-        heading: "Transportation",
-        items: [
           { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
           { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
+          { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
         ],
       },
     ],
