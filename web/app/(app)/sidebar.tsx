@@ -127,6 +127,12 @@ const dataModules: NavGroup[] = [
           { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
         ],
       },
+      {
+        heading: "Transportation",
+        items: [
+          { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
+        ],
+      },
     ],
   },
 ];
