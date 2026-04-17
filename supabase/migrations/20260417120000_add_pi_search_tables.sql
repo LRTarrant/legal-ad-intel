@@ -40,14 +40,15 @@ CREATE TABLE public.pi_search_observations (
     ad_description TEXT,
     ad_link TEXT,
     observed_at TIMESTAMPTZ DEFAULT now(),
+    observed_date DATE NOT NULL DEFAULT CURRENT_DATE,
     source TEXT DEFAULT 'searchapi_google',
     raw_json JSONB,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Functional unique index (observed_at::date expression not allowed inline)
+-- Unique index uses observed_date column (expression indexes require IMMUTABLE)
 CREATE UNIQUE INDEX idx_pi_search_obs_unique
-    ON public.pi_search_observations(metro_id, case_type, keyword_used, advertiser_domain, (observed_at::date));
+    ON public.pi_search_observations(metro_id, case_type, keyword_used, advertiser_domain, observed_date);
 
 CREATE INDEX idx_pi_search_obs_metro ON public.pi_search_observations(metro_id);
 CREATE INDEX idx_pi_search_obs_case ON public.pi_search_observations(case_type);
@@ -132,7 +133,7 @@ ALTER TABLE public.pipeline_configs
     CHECK (source_domain IN (
         'ad_intelligence', 'ad_events_legacy', 'litigation_mdl',
         'mva_fars', 'boating', 'weather_storms', 'reference_geo',
-        'pi_advertising'
+        'serp_intelligence', 'pi_advertising'
     ));
 
 -- 5. Pipeline config row

@@ -135,6 +135,7 @@ def _extract_ads(serp_data: dict, metro: dict, case_type: str,
             "ad_description": ad.get("description", ""),
             "ad_link": link or None,
             "observed_at": now.isoformat(),
+            "observed_date": now.date().isoformat(),
             "source": "searchapi_google",
             "raw_json": json.dumps(ad, default=str),
         })
@@ -193,6 +194,7 @@ def _generate_seed_observations(metros: list[dict],
                 "ad_description": f"Injured in {metro['metro_name']}? Call {firm_name} for a free case review.",
                 "ad_link": f"https://{firm_domain}/{cluster['case_type']}",
                 "observed_at": observed.isoformat(),
+                "observed_date": observed.date().isoformat(),
                 "source": "seed_data",
                 "raw_json": json.dumps({"seed": True}),
             })
@@ -217,7 +219,7 @@ def step_fetch_raw(step) -> list[dict]:
         rows = _generate_seed_observations(metros, clusters)
         step.set_metadata({"source": "seed_data", "seed_rows": len(rows)})
         count = _bulk_insert("pi_search_observations", rows,
-                             on_conflict="metro_id,case_type,keyword_used,advertiser_domain",
+                             on_conflict="metro_id,case_type,keyword_used,advertiser_domain,observed_date",
                              resolution="ignore-duplicates")
         step.set_counts(rows_in=0, rows_out=count)
         return rows
@@ -265,7 +267,7 @@ def step_fetch_raw(step) -> list[dict]:
     })
 
     count = _bulk_insert("pi_search_observations", rows,
-                         on_conflict="metro_id,case_type,keyword_used,advertiser_domain",
+                         on_conflict="metro_id,case_type,keyword_used,advertiser_domain,observed_date",
                          resolution="ignore-duplicates")
     step.set_counts(rows_in=0, rows_out=count)
     return rows
