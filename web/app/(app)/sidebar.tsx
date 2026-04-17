@@ -32,6 +32,7 @@ import {
   FlameKindling,
   Radiation,
   Smartphone,
+  Gamepad2,
 } from "lucide-react";
 
 const navItems = [
@@ -119,6 +120,7 @@ const dataModules: NavGroup[] = [
           { label: "Paraquat", href: "/advertising/torts/paraquat", Icon: Tractor },
           { label: "AFFF / Firefighter Foam", href: "/advertising/torts/afff-firefighting-foam", Icon: FlameKindling },
           { label: "Social Media Addiction", href: "/advertising/social-media-addiction", Icon: Smartphone },
+          { label: "Roblox Abuse", href: "/advertising/roblox-abuse", Icon: Gamepad2 },
         ],
       },
     ],
