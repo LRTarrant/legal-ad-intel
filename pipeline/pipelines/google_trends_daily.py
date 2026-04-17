@@ -65,6 +65,8 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "roblox_abuse": ["roblox child abuse lawsuit"],
     "social_media_addiction": ["social media addiction lawsuit teens"],
     "depo_provera":          ["depo provera lawsuit"],
+    "glp1_gastroparesis":     ["ozempic lawsuit gastroparesis"],
+    "glp1_vision_loss":       ["ozempic blindness lawsuit"],
 }
 
 
