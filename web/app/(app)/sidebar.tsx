@@ -35,6 +35,7 @@ import {
   Gamepad2,
   Pill,
   EyeOff,
+  CarFront,
 } from "lucide-react";
 
 const navItems = [
@@ -131,6 +132,7 @@ const dataModules: NavGroup[] = [
         heading: "Transportation",
         items: [
           { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
+          { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
         ],
       },
     ],
