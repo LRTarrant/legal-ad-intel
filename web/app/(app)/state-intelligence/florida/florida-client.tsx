@@ -35,6 +35,7 @@ import {
   Cell,
 } from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -57,9 +58,6 @@ interface RuralUrbanRow {
   category: string;
   fatal_crashes: number;
   total_deaths: number;
-  total_population: number | null;
-  deaths_per_100k: number | null;
-  avg_deaths_per_100k: number | null;
   avg_median_income: number | null;
   avg_poverty_pct: number | null;
   avg_internet_pct: number | null;
@@ -195,6 +193,16 @@ const COMMUTE_FL = {
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
+
+function formatNegligenceRule(rule: string): string {
+  const map: Record<string, string> = {
+    'pure_comparative': 'Pure Comparative',
+    'modified_51': 'Modified Comparative (51% Bar)',
+    'modified_50': 'Modified Comparative (50% Bar)',
+    'contributory': 'Contributory Negligence',
+  };
+  return map[rule] || rule;
+}
 
 function fmtNum(n: number | null | undefined): string {
   if (n == null) return "\u2014";
@@ -591,7 +599,7 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
                   Negligence Rule
                 </p>
                 <p className="text-sm font-bold text-amber-600">
-                  {piData.negligence_rule}
+                  {formatNegligenceRule(piData.negligence_rule)}
                 </p>
               </div>
               <div className="rounded-md bg-cloud/60 px-4 py-3">
@@ -1160,17 +1168,6 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
                     </td>
                     <td className="py-3 pl-3 text-right font-semibold text-midnight-navy">
                       {fmtNum(urbanRow.total_deaths)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Avg Deaths per 100K
-                    </td>
-                    <td className="py-3 px-3 text-right font-semibold text-midnight-navy">
-                      {ruralRow.deaths_per_100k?.toFixed(1) ?? "\u2014"}
-                    </td>
-                    <td className="py-3 pl-3 text-right font-semibold text-midnight-navy">
-                      {urbanRow.deaths_per_100k?.toFixed(1) ?? "\u2014"}
                     </td>
                   </tr>
                   <tr className="border-b border-cloud/50">
@@ -1824,6 +1821,18 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* ASK AI PANEL                                                 */}
+      {/* ============================================================ */}
+      <AskAIPanel
+        pageContext={{
+          pageName: "Florida State Intelligence",
+          pageDescription:
+            "State-level intelligence for plaintiff firm advertising and case acquisition in Florida — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, boating accidents, cancer incidence, and market opportunity signals.",
+          dataSummary: `State: Florida. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_51')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 67. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Construction workers: ${BLS_FL.constructionWorkers.toLocaleString()}. Key corridors: I-95, I-75, I-4, FL Turnpike.`,
+        }}
+      />
 
       {/* ============================================================ */}
       {/* 12. SOURCES & METHODOLOGY                                    */}
