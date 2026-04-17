@@ -284,6 +284,15 @@ export function Sidebar() {
               </div>
             ))}
           </div>
+
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              State Intelligence
+            </p>
+            <div className="flex flex-col gap-0.5 pl-2">
+              {renderNavLink({ label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin })}
+            </div>
+          </div>
         </nav>
 
         <div className="px-5 py-4">
