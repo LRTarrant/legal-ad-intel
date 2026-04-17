@@ -91,7 +91,7 @@ export default async function HomePage() {
               Log In
             </Link>
             <a
-              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0JT0P1BiH1fwrVK1nEgj9qJBNkct0Rqc7LZodi0vH92DJmuvMJeVTkI5pR1u5cK8LIfF5ps0x8"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-intelligence-teal px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
@@ -132,7 +132,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <a
-                href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+                href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0JT0P1BiH1fwrVK1nEgj9qJBNkct0Rqc7LZodi0vH92DJmuvMJeVTkI5pR1u5cK8LIfF5ps0x8"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-intelligence-teal px-8 py-3.5 text-base font-semibold text-white transition hover:bg-intelligence-teal/90"
@@ -517,7 +517,7 @@ export default async function HomePage() {
             like for your markets and torts.
           </p>
           <a
-            href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ"
+            href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0JT0P1BiH1fwrVK1nEgj9qJBNkct0Rqc7LZodi0vH92DJmuvMJeVTkI5pR1u5cK8LIfF5ps0x8"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-8 inline-block rounded-full bg-intelligence-teal px-10 py-4 text-lg font-semibold text-white transition hover:bg-intelligence-teal/90"
@@ -575,7 +575,7 @@ export default async function HomePage() {
               </p>
               <nav className="mt-4 flex flex-col gap-2">
                 <FooterLink href="/pricing">Pricing</FooterLink>
-                <FooterLink href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3XXY399Oa7NMayI440CLGX6lfbB9yEKqA5XSMIZ_0zYG9RwkL0ajU8usBrg3oJcPSLWbhP7OsJ" target="_blank" rel="noopener noreferrer">
+                <FooterLink href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0JT0P1BiH1fwrVK1nEgj9qJBNkct0Rqc7LZodi0vH92DJmuvMJeVTkI5pR1u5cK8LIfF5ps0x8" target="_blank" rel="noopener noreferrer">
                   Schedule a Demo
                 </FooterLink>
                 <FooterLink href="/login">Log In</FooterLink>
