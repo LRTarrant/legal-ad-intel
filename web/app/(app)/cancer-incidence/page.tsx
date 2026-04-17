@@ -19,6 +19,7 @@ import { TortMarketPanel } from "./tort-market-panel";
 import { TortSelector } from "./tort-selector";
 import { TORTS, parseTortId } from "./tort-data";
 import { HeartPulse } from "lucide-react";
+import { AskAIPanel } from "../components/ask-ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -334,6 +335,15 @@ export default async function CancerIncidencePage({
           ))}
         </div>
       </section>
+
+      <AskAIPanel
+        pageContext={{
+          pageName: "Cancer Incidence",
+          pageDescription:
+            "County-level cancer incidence rates from NCI State Cancer Profiles (2018–2022), mapped to active mass tort litigation.",
+          dataSummary: `Filter: ${filterSummary}. Counties Reporting: ${totals.counties_reporting.toLocaleString()}. Average Incidence Rate: ${totals.average_incidence_rate.toFixed(1)} per 100K. Total Annual Cases: ${Math.round(totals.total_annual_cases).toLocaleString()}. Cancer Sites Tracked: ${cancerSites.length}. Top states by incidence: ${stateRows.slice(0, 10).map((s) => s.state).join(", ")}. Mass tort connections: ${massTortConnections.map((c) => `${c.cancerSite} → ${c.mdls.map((m) => m.label).join(", ")}`).join("; ")}.`,
+        }}
+      />
     </div>
   );
 }

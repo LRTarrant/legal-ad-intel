@@ -17,22 +17,37 @@ interface TortContext {
   targetingInsights: string;
 }
 
-interface AskAIPanelProps {
-  tortContext: TortContext;
+export interface PageContext {
+  pageName: string;
+  pageDescription: string;
+  dataSummary: string;
 }
+
+type AskAIPanelProps =
+  | { tortContext: TortContext; pageContext?: never }
+  | { tortContext?: never; pageContext: PageContext };
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-const SUGGESTED_QUESTIONS = [
+const TORT_SUGGESTED_QUESTIONS = [
   "What are the qualification criteria?",
   "Which states should I target?",
   "What's the current CPA benchmark?",
   "How does the settlement range compare?",
   "Who are the top advertisers?",
   "What's the litigation timeline?",
+];
+
+const PAGE_SUGGESTED_QUESTIONS = [
+  "What are the key takeaways?",
+  "Which states should I target?",
+  "How can I use this data for advertising?",
+  "What trends are most significant?",
+  "Where are the biggest opportunities?",
+  "How does this connect to active torts?",
 ];
 
 function renderMarkdown(text: string) {
@@ -85,13 +100,16 @@ function renderMarkdown(text: string) {
   return elements;
 }
 
-export function AskAIPanel({ tortContext }: AskAIPanelProps) {
+export function AskAIPanel({ tortContext, pageContext }: AskAIPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const displayName = tortContext?.tortName ?? pageContext?.pageName ?? "this page";
+  const suggestedQuestions = tortContext ? TORT_SUGGESTED_QUESTIONS : PAGE_SUGGESTED_QUESTIONS;
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -130,7 +148,10 @@ export function AskAIPanel({ tortContext }: AskAIPanelProps) {
       const res = await fetch("/api/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages, tortContext }),
+        body: JSON.stringify({
+          messages: newMessages,
+          ...(tortContext ? { tortContext } : { pageContext }),
+        }),
       });
 
       const reader = res.body?.getReader();
@@ -188,7 +209,7 @@ export function AskAIPanel({ tortContext }: AskAIPanelProps) {
               <div>
                 <h3 className="font-heading text-sm font-semibold text-white">Ask AI</h3>
                 <p className="text-[11px] text-white/60">
-                  Powered by {tortContext.tortName} intelligence data
+                  Powered by {displayName} intelligence data
                 </p>
               </div>
             </div>
@@ -208,10 +229,10 @@ export function AskAIPanel({ tortContext }: AskAIPanelProps) {
                   <Sparkles className="h-6 w-6 text-intelligence-teal" />
                 </div>
                 <p className="text-center text-sm text-slate-gray">
-                  Ask anything about {tortContext.tortName} — CPA, targeting, settlements, and more.
+                  Ask anything about {displayName} — data insights, targeting, trends, and more.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {SUGGESTED_QUESTIONS.map((q) => (
+                  {suggestedQuestions.map((q) => (
                     <button
                       key={q}
                       onClick={() => sendMessage(q)}
@@ -263,7 +284,7 @@ export function AskAIPanel({ tortContext }: AskAIPanelProps) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask about ${tortContext.tortName}...`}
+              placeholder={`Ask about ${displayName}...`}
               disabled={isLoading}
               className="flex-1 rounded-lg border border-cloud bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-gray/60 focus:border-intelligence-teal focus:outline-none disabled:opacity-50"
             />
