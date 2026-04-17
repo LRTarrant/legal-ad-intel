@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -21,7 +21,6 @@ import {
   BarChart3,
   Database,
   Target,
-  Clock,
   Footprints,
   HeartPulse,
 } from "lucide-react";
@@ -36,6 +35,11 @@ import {
 } from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import {
+  PIAdvertisingSection,
+  buildPIAdSummary,
+  type PIAdvertisingData,
+} from "../../components/pi-advertising-section";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -269,6 +273,8 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
   const [countyFilter, setCountyFilter] = useState("");
   const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
   const [msaSortAsc, setMsaSortAsc] = useState(false);
+  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
+  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
   /* -- Sorted / filtered accident table data -- */
   const filteredAccidentData = useMemo(() => {
@@ -1645,30 +1651,9 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 10. ADVERTISING LANDSCAPE (PLACEHOLDER)                      */}
+      {/* 10. SEARCH ADVERTISING LANDSCAPE                             */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Advertising Landscape
-          </h2>
-          <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-            Coming Soon
-          </span>
-        </div>
-        <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-          <Clock className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-          <p className="text-sm font-medium text-midnight-navy/60">
-            Local advertising activity data for California is being collected.
-          </p>
-          <p className="mt-2 text-xs text-slate-gray max-w-md mx-auto">
-            This section will show: TV/CTV ad spending by plaintiff firms,
-            digital ad volume on Meta/Google, top advertisers by market, and
-            competitive density metrics.
-          </p>
-        </div>
-      </div>
+      <PIAdvertisingSection stateAbbr="CA" onDataLoaded={handlePIAdDataLoaded} />
 
       {/* ============================================================ */}
       {/* 11. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1879,7 +1864,7 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
           pageName: "California State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in California — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, cancer incidence, and market opportunity signals across MVA, trucking, motorcycle, construction, and pedestrian/bicycle cases.",
-          dataSummary: `State: California. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite (highest tracked). Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 58. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => `${r.county} (${r.total_deaths.toLocaleString()})`).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Drunk-driver crashes: ${totalDrunkDriverCrashes.toLocaleString()}. Pedestrian fatalities (2023): ${OTS.pedestrianFatalities.toLocaleString()}. Bicycle fatalities (2023): ${OTS.bicycleFatalities.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-5, I-10, I-15, US-101, CA-99.`,
+          dataSummary: `State: California. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite (highest tracked). Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 58. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => `${r.county} (${r.total_deaths.toLocaleString()})`).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Drunk-driver crashes: ${totalDrunkDriverCrashes.toLocaleString()}. Pedestrian fatalities (2023): ${OTS.pedestrianFatalities.toLocaleString()}. Bicycle fatalities (2023): ${OTS.bicycleFatalities.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-5, I-10, I-15, US-101, CA-99.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
         }}
       />
 
