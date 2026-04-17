@@ -33,6 +33,8 @@ interface RuralUrbanRow {
   category: string;
   fatal_crashes: number;
   total_deaths: number;
+  total_population: number | null;
+  deaths_per_100k: number | null;
   avg_deaths_per_100k: number | null;
   avg_median_income: number | null;
   avg_poverty_pct: number | null;
@@ -61,9 +63,15 @@ interface PIViabilityRow {
   negligence_rule: string;
   statute_of_limitations: string;
   composite_score: number;
-  avg_jury_verdict: number | null;
+  avg_jury_verdict: number | string | null;
   non_economic_cap: string | null;
   punitive_cap: string | null;
+  negligence_score: number | null;
+  non_economic_score: number | null;
+  punitive_score: number | null;
+  med_mal_score: number | null;
+  sol_score: number | null;
+  verdict_score: number | null;
 }
 
 interface CensusDemographicsRow {
@@ -183,6 +191,17 @@ async function fetchMSADemographics(): Promise<MSADemographicsRow[]> {
   return (data ?? []) as unknown as MSADemographicsRow[];
 }
 
+async function fetchStormCount(): Promise<number> {
+  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count, error } = await (supabase as any)
+    .from("storm_events")
+    .select("*", { count: "exact", head: true })
+    .eq("state", "Alabama");
+  if (error) throw error;
+  return count ?? 0;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Page Component                                                      */
 /* ------------------------------------------------------------------ */
@@ -196,6 +215,7 @@ export default async function AlabamaStatePage() {
   let censusDemographics: CensusDemographicsRow[] = [];
   let msaDemographics: MSADemographicsRow[] = [];
   let judicialRows: JudicialProfileRow[] = [];
+  let stormCount = 0;
 
   const results = await Promise.allSettled([
     fetchAccidentSummary(),
@@ -206,6 +226,7 @@ export default async function AlabamaStatePage() {
     fetchCensusDemographics(),
     fetchMSADemographics(),
     getJudicialProfiles("AL"),
+    fetchStormCount(),
   ]);
 
   if (results[0].status === "fulfilled") accidentSummary = results[0].value;
@@ -232,6 +253,9 @@ export default async function AlabamaStatePage() {
   if (results[7].status === "fulfilled") judicialRows = results[7].value;
   else console.error("[Alabama] fetchJudicialProfiles failed:", results[7].reason);
 
+  if (results[8].status === "fulfilled") stormCount = results[8].value;
+  else console.error("[Alabama] fetchStormCount failed:", results[8].reason);
+
   const pageData: AlabamaPageData = {
     accidentSummary,
     ruralUrban,
@@ -241,6 +265,7 @@ export default async function AlabamaStatePage() {
     censusDemographics,
     msaDemographics,
     judicialProfiles: judicialRows,
+    stormCount,
   };
 
   return <AlabamaClient data={pageData} />;

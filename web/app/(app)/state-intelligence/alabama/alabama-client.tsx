@@ -56,6 +56,8 @@ interface RuralUrbanRow {
   category: string;
   fatal_crashes: number;
   total_deaths: number;
+  total_population: number | null;
+  deaths_per_100k: number | null;
   avg_deaths_per_100k: number | null;
   avg_median_income: number | null;
   avg_poverty_pct: number | null;
@@ -84,9 +86,15 @@ interface PIViabilityRow {
   negligence_rule: string;
   statute_of_limitations: string;
   composite_score: number;
-  avg_jury_verdict: number | null;
+  avg_jury_verdict: number | string | null;
   non_economic_cap: string | null;
   punitive_cap: string | null;
+  negligence_score: number | null;
+  non_economic_score: number | null;
+  punitive_score: number | null;
+  med_mal_score: number | null;
+  sol_score: number | null;
+  verdict_score: number | null;
 }
 
 interface CensusDemographicsRow {
@@ -127,6 +135,7 @@ export interface AlabamaPageData {
   censusDemographics: CensusDemographicsRow[];
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
+  stormCount: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -570,7 +579,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             </p>
           </div>
           <p className="text-3xl font-bold text-midnight-navy">
-            {fmtNum(totalStormEvents)}
+            {fmtNum(data.stormCount)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">NOAA records</p>
         </div>
@@ -627,8 +636,11 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                   Average Jury Verdict
                 </p>
                 <p className="text-sm font-semibold text-midnight-navy">
-                  {piData.avg_jury_verdict
-                    ? fmtCur(piData.avg_jury_verdict)
+                  {piData.avg_jury_verdict != null
+                    ? typeof piData.avg_jury_verdict === "string" &&
+                      /^[a-zA-Z]/.test(piData.avg_jury_verdict)
+                      ? piData.avg_jury_verdict
+                      : fmtCur(Number(piData.avg_jury_verdict))
                     : "\u2014"}
                 </p>
               </div>
@@ -702,6 +714,12 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                 <span className="text-slate-gray">Rural Share</span>
                 <span className="font-medium text-midnight-navy">58%</span>
               </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Impaired Driving Deaths (2023)</span>
+                <span className="font-semibold text-midnight-navy">
+                  {ALDOT.impairedDrivingDeaths}
+                </span>
+              </div>
             </div>
             <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
               <p className="text-[11px] text-midnight-navy/70">
@@ -710,7 +728,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                 </span>{" "}
                 Target ages 25-44 in high-fatality rural counties. Carpool
                 corridors (Winston, DeKalb, Franklin) indicate blue-collar
-                commuter populations with high road exposure.
+                commuter populations with high road exposure. Impaired driving accounts for 20% of fatalities &mdash; consider campaigns tied to holiday weekends and enforcement awareness.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
@@ -1147,10 +1165,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                       Avg Deaths per 100K
                     </td>
                     <td className="py-3 px-3 text-right font-semibold text-midnight-navy">
-                      {ruralRow.avg_deaths_per_100k?.toFixed(1) ?? "\u2014"}
+                      {ruralRow.deaths_per_100k?.toFixed(1) ?? "\u2014"}
                     </td>
                     <td className="py-3 pl-3 text-right font-semibold text-midnight-navy">
-                      {urbanRow.avg_deaths_per_100k?.toFixed(1) ?? "\u2014"}
+                      {urbanRow.deaths_per_100k?.toFixed(1) ?? "\u2014"}
                     </td>
                   </tr>
                   <tr className="border-b border-cloud/50">
@@ -1505,13 +1523,16 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               <p className="mb-3 text-xs font-semibold text-midnight-navy">
                 Component Scores
               </p>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart
                   data={[
-                    {
-                      name: "Composite",
-                      score: piData.composite_score,
-                    },
+                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
                   ]}
                   layout="vertical"
                   margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
@@ -1520,12 +1541,22 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={140}
+                    width={160}
                     tick={{ fontSize: 11, fill: "#1B2A4A" }}
                   />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                    <Cell fill="#14B8A6" />
+                    {[
+                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
+                    ].map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -1603,7 +1634,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             </div>
             <div className="space-y-1.5 mb-3">
               <p className="text-xs text-midnight-navy/70">
-                Fatality rate: <strong>92.0 per 100K</strong> (highest in state)
+                Fatality rate: <strong>552.3 per 100K</strong> (2019&ndash;2024, highest in state)
               </p>
               <p className="text-xs text-midnight-navy/70">
                 Population: <strong>7,424</strong>
@@ -1688,7 +1719,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             </div>
             <div className="space-y-1.5 mb-3">
               <p className="text-xs text-midnight-navy/70">
-                Storm events: <strong>{fmtNum(totalStormEvents)}</strong> NOAA
+                Storm events: <strong>{fmtNum(data.stormCount)}</strong> NOAA
                 records
               </p>
               <p className="text-xs text-midnight-navy/70">
@@ -1730,6 +1761,32 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                 along I-65/I-20/I-59 corridors targeting truck accident victims.
                 Billboards at major truck stops and weigh stations reach CDL
                 drivers for workplace injury cases.
+              </p>
+            </div>
+          </div>
+
+          {/* Insight 6 */}
+          <div className="rounded-lg border border-red-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Impaired Driving: 1 in 5 Alabama Traffic Deaths
+              </h3>
+            </div>
+            <div className="space-y-1.5 mb-3">
+              <p className="text-xs text-midnight-navy/70">
+                <strong>{ALDOT.impairedDrivingDeaths}</strong> impaired driving deaths in 2023 (ALDOT)
+              </p>
+              <p className="text-xs text-midnight-navy/70">
+                <strong>20%</strong> of all traffic fatalities
+              </p>
+              <p className="text-xs text-midnight-navy/70">
+                DUI conviction rates vary significantly by county
+              </p>
+            </div>
+            <div className="rounded-md bg-red-50 border border-red-100 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                Alabama&apos;s impaired driving fatality share aligns with the national average, but concentrated in rural counties with limited law enforcement resources. Holiday weekends and local event calendars create predictable spikes &mdash; time-triggered digital campaigns (Memorial Day, Labor Day, July 4th, New Year&apos;s) can reach recent DUI accident victims when they&apos;re actively searching for legal representation.
               </p>
             </div>
           </div>
