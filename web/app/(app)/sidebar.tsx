@@ -8,6 +8,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
 import {
   Anchor,
+  Bell,
   Biohazard,
   Building2,
   Car,
@@ -146,6 +147,7 @@ const dataModules: NavGroup[] = [
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [alertUnreadCount, setAlertUnreadCount] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
   const tenant = useTenant();
@@ -177,6 +179,25 @@ export function Sidebar() {
       }
     }
     checkRole();
+  }, []);
+
+  useEffect(() => {
+    async function fetchUnreadAlerts() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { count } = await supabase
+          .from("alert_events")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("is_read", false);
+        setAlertUnreadCount(count ?? 0);
+      } catch {
+        // ignore
+      }
+    }
+    fetchUnreadAlerts();
   }, []);
 
   useEffect(() => {
@@ -336,6 +357,30 @@ export function Sidebar() {
             </p>
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Campaign Builder", href: "/campaigns/builder", Icon: Crosshair })}
+            </div>
+          </div>
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              Monitoring
+            </p>
+            <div className="flex flex-col gap-0.5 pl-2">
+              <Link
+                href="/alerts"
+                onClick={closeSidebar}
+                className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  pathname === "/alerts" || pathname.startsWith("/alerts/")
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Bell className="w-4 h-4 shrink-0" />
+                Alerts
+                {alertUnreadCount > 0 && (
+                  <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-alert px-1.5 text-[11px] font-semibold text-white">
+                    {alertUnreadCount > 99 ? "99+" : alertUnreadCount}
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
           {isAdmin && (
