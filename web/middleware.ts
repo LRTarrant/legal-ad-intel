@@ -1,7 +1,21 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  // Redirect white-label tenant subdomains from "/" to "/login"
+  if (request.nextUrl.pathname === "/") {
+    const host = request.headers.get("host") ?? "";
+    const hostname = host.split(":")[0]; // strip port for localhost
+    const parts = hostname.split(".");
+    // If there are 3+ parts (sub.domain.tld) and the subdomain isn't "www",
+    // this is a tenant subdomain — skip the public homepage.
+    if (parts.length >= 3 && parts[0] !== "www") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return await updateSession(request);
 }
 
