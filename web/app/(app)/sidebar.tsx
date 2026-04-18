@@ -12,6 +12,7 @@ import {
   Building2,
   Car,
   CloudLightning,
+  Crosshair,
   DollarSign,
   Eye,
   Gavel,
@@ -327,6 +328,14 @@ export function Sidebar() {
               {renderNavLink({ label: "Arizona", href: "/state-intelligence/arizona", Icon: MapPin })}
               {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
               {renderNavLink({ label: "California", href: "/state-intelligence/california", Icon: MapPin })}
+            </div>
+          </div>
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              Campaign Tools
+            </p>
+            <div className="flex flex-col gap-0.5 pl-2">
+              {renderNavLink({ label: "Campaign Builder", href: "/campaigns/builder", Icon: Crosshair })}
             </div>
           </div>
           {isAdmin && (
