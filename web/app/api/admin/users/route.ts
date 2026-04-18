@@ -37,10 +37,10 @@ export async function GET() {
 
     const serviceClient = getServiceClient();
 
-    // Get all profiles for this tenant
+    // Get all profiles for this tenant (email lives in auth.users, not profiles)
     const { data: profiles, error } = await serviceClient
       .from("profiles")
-      .select("id, full_name, email, role, created_at")
+      .select("id, full_name, role, created_at")
       .eq("tenant_id", profile.tenant_id)
       .order("created_at", { ascending: true });
 
@@ -51,25 +51,29 @@ export async function GET() {
       );
     }
 
-    // Fetch last_sign_in_at from auth.users via admin API
+    // Fetch email and last_sign_in_at from auth.users via admin API
     const userIds = (profiles ?? []).map((p) => p.id);
-    const usersWithSignIn = await Promise.allSettled(
+    const authResults = await Promise.allSettled(
       userIds.map((uid) => serviceClient.auth.admin.getUserById(uid)),
     );
 
-    const signInMap = new Map<string, string | null>();
-    usersWithSignIn.forEach((result, i) => {
+    const authMap = new Map<string, { email: string | null; last_sign_in_at: string | null }>();
+    authResults.forEach((result, i) => {
       if (result.status === "fulfilled" && result.value.data?.user) {
-        signInMap.set(userIds[i], result.value.data.user.last_sign_in_at ?? null);
+        const authUser = result.value.data.user;
+        authMap.set(userIds[i], {
+          email: authUser.email ?? null,
+          last_sign_in_at: authUser.last_sign_in_at ?? null,
+        });
       }
     });
 
     const users = (profiles ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name,
-      email: p.email,
+      email: authMap.get(p.id)?.email ?? null,
       role: p.role,
-      last_sign_in_at: signInMap.get(p.id) ?? null,
+      last_sign_in_at: authMap.get(p.id)?.last_sign_in_at ?? null,
       created_at: p.created_at,
     }));
 
