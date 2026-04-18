@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Antenna,
   ArrowUpDown,
   Building2,
   Loader2,
@@ -11,6 +12,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { MediaLandscape } from "./media-landscape";
 
 interface Station {
   id: string;
@@ -68,7 +70,10 @@ const STATE_OPTIONS = [
   { code: "TX", name: "Texas" },
 ];
 
+type ActiveTab = "fcc-stations" | "media-landscape";
+
 export function BroadcastIntelClient() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>("fcc-stations");
   const [selectedState, setSelectedState] = useState("FL");
   const [intel, setIntel] = useState<MarketIntel | null>(null);
   const [loading, setLoading] = useState(false);
@@ -185,6 +190,38 @@ export function BroadcastIntelClient() {
 
   return (
     <div className="mt-6 space-y-8">
+      {/* Tab navigation */}
+      <div className="flex gap-1 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab("fcc-stations")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "fcc-stations"
+              ? "border-intelligence-teal text-intelligence-teal"
+              : "border-transparent text-slate-gray hover:text-midnight-navy hover:border-gray-300"
+          }`}
+        >
+          <Radio className="h-4 w-4" />
+          FCC Stations
+        </button>
+        <button
+          onClick={() => setActiveTab("media-landscape")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "media-landscape"
+              ? "border-intelligence-teal text-intelligence-teal"
+              : "border-transparent text-slate-gray hover:text-midnight-navy hover:border-gray-300"
+          }`}
+        >
+          <Antenna className="h-4 w-4" />
+          Media Landscape
+        </button>
+      </div>
+
+      {/* Media Landscape tab */}
+      {activeTab === "media-landscape" && <MediaLandscape />}
+
+      {/* FCC Stations tab */}
+      {activeTab === "fcc-stations" && (
+        <>
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-4">
         <div>
@@ -480,6 +517,8 @@ export function BroadcastIntelClient() {
           </section>
         </>
       ) : null}
+        </>
+      )}
     </div>
   );
 }
