@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import {
   Anchor,
   Biohazard,
@@ -152,7 +152,7 @@ export function Sidebar() {
   useEffect(() => {
     async function checkRole() {
       try {
-        const supabase = getSupabase();
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data: profile } = await supabase
