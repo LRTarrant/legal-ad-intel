@@ -6,6 +6,7 @@ interface InviteEmailParams {
   token: string;
   branding: TenantBranding;
   appUrl: string;
+  emailLogoUrl: string;
 }
 
 export function buildInviteEmailHtml({
@@ -13,15 +14,12 @@ export function buildInviteEmailHtml({
   token,
   branding,
   appUrl,
+  emailLogoUrl,
 }: InviteEmailParams): string {
   const productName =
     branding.productName ?? DEFAULT_LMI_BRANDING.productName ?? "Legal Marketing Intelligence";
   const accentColor = branding.accentColor ?? "#1A8C96";
-  const logoUrl = branding.logoUrl
-    ? branding.logoUrl.startsWith("http")
-      ? branding.logoUrl
-      : `${appUrl}${branding.logoUrl}`
-    : `${appUrl}/logo-horizontal.svg`;
+  const logoUrl = emailLogoUrl;
   const acceptUrl = `${appUrl}/invite/${token}`;
 
   return `<!DOCTYPE html>

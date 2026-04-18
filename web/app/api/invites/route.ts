@@ -114,9 +114,16 @@ export async function POST(req: NextRequest) {
       ? `https://${tenant.domain}`
       : defaultAppUrl;
 
+    // Use tenant-specific email logo (dark logo for white email background).
+    // Convention: each tenant has /tenants/{slug}/logo-email.png — a dark logo
+    // that renders well on the white email background.
+    const tenantSlug = tenant?.slug ?? "lmi";
+    const emailLogoUrl = `${appUrl}/tenants/${tenantSlug}/logo-email.png`;
+
     const emailHtml = buildInviteEmailHtml({
       inviterName: profile.full_name ?? "A team administrator",
       token: invitation.token,
+      emailLogoUrl,
       branding: {
         tenantId: profile.tenant_id,
         slug: tenant?.slug ?? "lmi",
