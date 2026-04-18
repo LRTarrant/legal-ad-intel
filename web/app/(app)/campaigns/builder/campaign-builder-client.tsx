@@ -21,7 +21,10 @@ import {
   AlertTriangle,
   Lightbulb,
   Search,
+  Download,
+  Check,
 } from "lucide-react";
+import { downloadCampaignZip } from "@/lib/campaign-export";
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
@@ -209,6 +212,10 @@ export function CampaignBuilderClient() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
 
+  // Export state
+  const [exporting, setExporting] = useState(false);
+  const [exportDone, setExportDone] = useState(false);
+
   // Fetch tort names on mount
   useEffect(() => {
     async function fetchTorts() {
@@ -319,6 +326,20 @@ export function CampaignBuilderClient() {
   }
 
   const canGenerate = selectedTort && selectedStates.length > 0 && !loading;
+  const canExport = plan && aiInsights && !exporting;
+
+  async function handleExport() {
+    if (!plan || !aiInsights) return;
+    setExporting(true);
+    setExportDone(false);
+    try {
+      await downloadCampaignZip(plan, aiInsights);
+      setExportDone(true);
+      setTimeout(() => setExportDone(false), 3000);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -560,6 +581,36 @@ export function CampaignBuilderClient() {
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
           )}
+
+          {/* Export Button */}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={handleExport}
+              disabled={!canExport}
+              className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors ${
+                canExport
+                  ? "bg-intelligence-teal hover:bg-intelligence-teal/90 shadow-sm"
+                  : "bg-slate-300 cursor-not-allowed"
+              }`}
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Preparing export...
+                </>
+              ) : exportDone ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Campaign exported — 2 files ready for upload
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download Campaign Plan
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>
