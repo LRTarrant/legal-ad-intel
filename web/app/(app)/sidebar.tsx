@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -41,6 +41,7 @@ import {
   CarFront,
   Activity,
   Newspaper,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -145,9 +146,16 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const tenant = useTenant();
 
   const closeSidebar = () => setIsOpen(false);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   useEffect(() => {
     async function checkRole() {
@@ -333,7 +341,17 @@ export function Sidebar() {
           )}
         </nav>
 
-        <div className="px-5 py-4">
+        <div className="border-t border-white/10 px-3 pt-3 pb-2">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Log out
+          </button>
+        </div>
+
+        <div className="px-5 pb-4">
           <p className="text-xs text-slate-gray">{tenant.footerText ?? tenant.productName ?? "Legal Marketing Intelligence"}</p>
         </div>
       </aside>

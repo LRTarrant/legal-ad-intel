@@ -109,14 +109,16 @@ export default async function LoginPage({
           </button>
         </form>
 
-        <p className="text-center text-sm text-white/40">
-          <Link
-            href="/"
-            className="text-intelligence-teal transition hover:text-light-teal"
-          >
-            &larr; Back to homepage
-          </Link>
-        </p>
+        {(!branding || branding.slug === "lmi") && (
+          <p className="text-center text-sm text-white/40">
+            <Link
+              href="/"
+              className="text-intelligence-teal transition hover:text-light-teal"
+            >
+              &larr; Back to homepage
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );
