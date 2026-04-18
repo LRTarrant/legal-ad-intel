@@ -2,7 +2,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestDevelopments } from "@/lib/queries/mdl-developments";
-import { Scale, Megaphone, Tv, Landmark } from "lucide-react";
+import {
+  Scale,
+  Megaphone,
+  Tv,
+  Landmark,
+  Paintbrush,
+  Users,
+  LayoutDashboard,
+  Settings,
+} from "lucide-react";
 import { MobileNav } from "./home-nav";
 
 export const metadata = {
@@ -506,7 +515,99 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── 8. CTA Section ─────────────────────────────── */}
+      {/* ── 8. White-Label Section ─────────────────────── */}
+      <section className="bg-[#0f172a] py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Your Brand. Our Intelligence.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-white/60 sm:text-lg">
+              Offer your clients legal advertising intelligence under your own
+              brand — powered by the same data and research that drives LMI.
+            </p>
+          </div>
+
+          {/* Mockup Images */}
+          <div className="mt-16 flex flex-col items-center justify-center gap-8 sm:flex-row sm:gap-12">
+            <div className="-rotate-2 rounded-xl shadow-2xl shadow-black/40 transition duration-500 hover:rotate-0 hover:scale-105">
+              <Image
+                src="/images/whitelabel-login-mockup.png"
+                alt="White-label branded login page"
+                width={480}
+                height={340}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="rotate-2 rounded-xl shadow-2xl shadow-black/40 transition duration-500 hover:rotate-0 hover:scale-105">
+              <Image
+                src="/images/whitelabel-dashboard-mockup.png"
+                alt="White-label branded dashboard"
+                width={480}
+                height={340}
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Feature Bullets */}
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+              <Paintbrush className="mx-auto h-8 w-8 text-intelligence-teal" />
+              <h3 className="mt-4 text-base font-semibold text-white">
+                Custom Branding
+              </h3>
+              <p className="mt-2 text-sm text-white/60">
+                Your logo, colors, fonts, and product name on every screen
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+              <Users className="mx-auto h-8 w-8 text-intelligence-teal" />
+              <h3 className="mt-4 text-base font-semibold text-white">
+                Dedicated Tenant
+              </h3>
+              <p className="mt-2 text-sm text-white/60">
+                Separate user management, invitations, and access control
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+              <LayoutDashboard className="mx-auto h-8 w-8 text-intelligence-teal" />
+              <h3 className="mt-4 text-base font-semibold text-white">
+                Full Platform Access
+              </h3>
+              <p className="mt-2 text-sm text-white/60">
+                Tort profiles, state intelligence, market signals — the complete
+                toolkit
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+              <Settings className="mx-auto h-8 w-8 text-intelligence-teal" />
+              <h3 className="mt-4 text-base font-semibold text-white">
+                Managed Setup
+              </h3>
+              <p className="mt-2 text-sm text-white/60">
+                We handle configuration, DNS, and onboarding so you can focus on
+                clients
+              </p>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-14 text-center">
+            <a
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0JT0P1BiH1fwrVK1nEgj9qJBNkct0Rqc7LZodi0vH92DJmuvMJeVTkI5pR1u5cK8LIfF5ps0x8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-full bg-intelligence-teal px-10 py-4 text-lg font-semibold text-white transition hover:bg-intelligence-teal/90"
+            >
+              Schedule a Demo
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 9. CTA Section ─────────────────────────────── */}
       <section className="bg-midnight-navy py-20">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-3xl font-bold text-white">
