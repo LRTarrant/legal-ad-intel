@@ -8,6 +8,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
 import {
   Anchor,
+  Antenna,
   Bell,
   Biohazard,
   Building2,
@@ -381,6 +382,7 @@ export function Sidebar() {
                   </span>
                 )}
               </Link>
+              {renderNavLink({ label: "Broadcast Intel", href: "/broadcast-intel", Icon: Antenna })}
             </div>
           </div>
           {isAdmin && (
