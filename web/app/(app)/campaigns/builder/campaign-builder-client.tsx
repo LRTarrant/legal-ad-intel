@@ -15,6 +15,12 @@ import {
   Activity,
   ChevronDown,
   X,
+  Sparkles,
+  FileText,
+  Shield,
+  AlertTriangle,
+  Lightbulb,
+  Search,
 } from "lucide-react";
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
@@ -128,6 +134,27 @@ interface CampaignPlan {
   } | null;
 }
 
+interface AiInsights {
+  strategic_brief: string;
+  market_context: string;
+  ad_copy: {
+    meta: {
+      headlines: string[];
+      body_options: string[];
+      ctas: string[];
+    };
+    google_search: {
+      headlines: string[];
+      descriptions: string[];
+    };
+  };
+  compliance_notes: string[];
+  risk_factors: string[];
+  opportunities: string[];
+  competitive_insights: string;
+  historical_playbook: string;
+}
+
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function fmtCurrency(val: number | null): string {
@@ -177,6 +204,11 @@ export function CampaignBuilderClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // AI Insights
+  const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+
   // Fetch tort names on mount
   useEffect(() => {
     async function fetchTorts() {
@@ -202,6 +234,50 @@ export function CampaignBuilderClient() {
     );
   }, [stateSearch]);
 
+  // Trigger AI insights when plan data arrives
+  useEffect(() => {
+    if (!plan) return;
+
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError(false);
+    setAiInsights(null);
+
+    fetch("/api/campaigns/ai-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tort_name: selectedTort,
+        states: selectedStates,
+        monthly_budget: monthlyBudget ? Number(monthlyBudget) : undefined,
+        plan_data: {
+          tort_overview: plan.tort_overview,
+          geo_recommendations: plan.geo_recommendations,
+          channel_mix: plan.channel_mix,
+          budget_projection: plan.budget_projection,
+        },
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("AI request failed");
+        return res.json();
+      })
+      .then((data: AiInsights) => {
+        if (!cancelled) setAiInsights(data);
+      })
+      .catch(() => {
+        if (!cancelled) setAiError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setAiLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
+
   function toggleState(state: string) {
     setSelectedStates((prev) =>
       prev.includes(state) ? prev.filter((s) => s !== state) : [...prev, state],
@@ -213,6 +289,9 @@ export function CampaignBuilderClient() {
     setLoading(true);
     setError(null);
     setPlan(null);
+    setAiInsights(null);
+    setAiError(false);
+    setAiLoading(false);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -450,6 +529,37 @@ export function CampaignBuilderClient() {
               </div>
             )}
           </div>
+
+          {/* AI Insights Section */}
+          {aiLoading && (
+            <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-6">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
+                <div>
+                  <p className="text-sm font-semibold text-violet-700">
+                    Generating AI insights...
+                  </p>
+                  <p className="text-xs text-violet-500 mt-0.5">
+                    Analyzing strategy, generating ad copy, and reviewing compliance
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {aiError && !aiLoading && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-gray">
+              AI insights unavailable. Data-driven recommendations are shown above.
+            </div>
+          )}
+
+          {aiInsights && !aiLoading && (
+            <div className="space-y-6">
+              <AiStrategicBriefCard insights={aiInsights} />
+              <AiAdCopyCard adCopy={aiInsights.ad_copy} />
+              <AiIntelligenceComplianceCard insights={aiInsights} />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -952,6 +1062,294 @@ function BudgetProjectionCard({
           <p className="mt-3 text-xs text-slate-gray">
             Conv. rate: {fmtPct(projection.lead_to_retainer_pct)} lead-to-retainer
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── AI Card Components ────────────────────────────────────────────────── */
+
+function AiBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-600">
+      <Sparkles className="h-3 w-3" />
+      AI
+    </span>
+  );
+}
+
+function AiStrategicBriefCard({ insights }: { insights: AiInsights }) {
+  return (
+    <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5 text-violet-500" />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            AI Strategic Brief
+          </h3>
+        </div>
+        <AiBadge />
+      </div>
+
+      <div className="space-y-4">
+        {/* Strategic Narrative */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+            Strategic Overview
+          </p>
+          <div className="text-sm leading-relaxed text-midnight-navy whitespace-pre-line">
+            {insights.strategic_brief}
+          </div>
+        </div>
+
+        {/* Market Context */}
+        <div className="rounded-md bg-violet-50/50 border border-violet-100 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 mb-2">
+            Market Context & External Intelligence
+          </p>
+          <div className="text-sm leading-relaxed text-midnight-navy">
+            {insights.market_context}
+          </div>
+        </div>
+
+        {/* Historical Playbook */}
+        <div className="rounded-md bg-cloud p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+            Historical Playbook
+          </p>
+          <div className="text-sm leading-relaxed text-midnight-navy">
+            {insights.historical_playbook}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiAdCopyCard({
+  adCopy,
+}: {
+  adCopy: AiInsights["ad_copy"];
+}) {
+  return (
+    <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Megaphone className="h-5 w-5 text-violet-500" />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            AI-Generated Ad Copy
+          </h3>
+        </div>
+        <AiBadge />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Meta Ad Preview */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-3">
+            Meta (Facebook / Instagram)
+          </p>
+          <div className="space-y-3">
+            {adCopy.meta.headlines.map((headline, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-slate-200 overflow-hidden"
+              >
+                {/* Image placeholder */}
+                <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                  <span className="text-xs text-slate-400">Ad Creative</span>
+                </div>
+                <div className="p-3 space-y-2">
+                  <p className="text-sm font-semibold text-midnight-navy leading-tight">
+                    {headline}
+                  </p>
+                  {adCopy.meta.body_options[i] && (
+                    <p className="text-xs text-slate-gray leading-relaxed">
+                      {adCopy.meta.body_options[i]}
+                    </p>
+                  )}
+                  {adCopy.meta.ctas[i] && (
+                    <button className="w-full rounded-md bg-violet-500 py-1.5 text-xs font-semibold text-white">
+                      {adCopy.meta.ctas[i]}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Google Search Ad Preview */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-3">
+            Google Search (RSA Format)
+          </p>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-slate-200 p-4 space-y-2 bg-white">
+              <p className="text-xs text-slate-gray">Ad preview</p>
+              {/* RSA headline combinations */}
+              <div>
+                <p className="text-base font-medium text-blue-700 leading-snug">
+                  {adCopy.google_search.headlines.slice(0, 3).join(" | ")}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  www.example.com/legal
+                </p>
+              </div>
+              {adCopy.google_search.descriptions[0] && (
+                <p className="text-sm text-midnight-navy leading-relaxed">
+                  {adCopy.google_search.descriptions[0]}
+                </p>
+              )}
+            </div>
+
+            {/* All headlines */}
+            <div className="rounded-md bg-cloud p-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+                RSA Headlines (30 char max)
+              </p>
+              <div className="space-y-1">
+                {adCopy.google_search.headlines.map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded bg-white px-2 py-1 border border-slate-100"
+                  >
+                    <span className="text-xs text-midnight-navy">{h}</span>
+                    <span
+                      className={`text-[10px] font-mono ${h.length > 30 ? "text-alert" : "text-slate-gray"}`}
+                    >
+                      {h.length}/30
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* All descriptions */}
+            <div className="rounded-md bg-cloud p-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+                RSA Descriptions (90 char max)
+              </p>
+              <div className="space-y-1">
+                {adCopy.google_search.descriptions.map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start justify-between gap-2 rounded bg-white px-2 py-1.5 border border-slate-100"
+                  >
+                    <span className="text-xs text-midnight-navy leading-relaxed">
+                      {d}
+                    </span>
+                    <span
+                      className={`text-[10px] font-mono shrink-0 ${d.length > 90 ? "text-alert" : "text-slate-gray"}`}
+                    >
+                      {d.length}/90
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiIntelligenceComplianceCard({
+  insights,
+}: {
+  insights: AiInsights;
+}) {
+  return (
+    <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-violet-500" />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            Intelligence & Compliance
+          </h3>
+        </div>
+        <AiBadge />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Left: Opportunities + Competitive Insights */}
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Lightbulb className="h-4 w-4 text-success" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-success">
+                Opportunities
+              </p>
+            </div>
+            <ul className="space-y-1.5">
+              {insights.opportunities.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-midnight-navy"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-md bg-cloud p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Search className="h-4 w-4 text-steel-blue" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-steel-blue">
+                Competitive Insights
+              </p>
+            </div>
+            <p className="text-sm text-midnight-navy leading-relaxed">
+              {insights.competitive_insights}
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Risk Factors + Compliance Notes */}
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-warning">
+                Risk Factors
+              </p>
+            </div>
+            <ul className="space-y-1.5">
+              {insights.risk_factors.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-midnight-navy"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-md bg-violet-50/50 border border-violet-100 p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Shield className="h-4 w-4 text-violet-500" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">
+                Compliance Notes
+              </p>
+            </div>
+            <ul className="space-y-1.5">
+              {insights.compliance_notes.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-midnight-navy"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
