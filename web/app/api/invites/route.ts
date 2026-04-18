@@ -156,8 +156,9 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: `${productName} <onboarding@resend.dev>`,
+          from: `${productName} <noreply@legalmarketingintelligence.com>`,
           to: [email],
+          reply_to: "sales@legalmarketingintelligence.com",
           subject: `You've been invited to ${productName}`,
           html: emailHtml,
         }),
