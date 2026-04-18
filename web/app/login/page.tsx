@@ -12,9 +12,9 @@ export const metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, success } = await searchParams;
 
   let branding;
   try {
@@ -50,6 +50,12 @@ export default async function LoginPage({
             {headline}
           </p>
         </div>
+
+        {success && (
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm text-green-300">
+            {success}
+          </div>
+        )}
 
         {error && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-center text-sm text-red-300">

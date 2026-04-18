@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
+import { getSupabase } from "@/lib/supabase";
 import {
   Anchor,
   Biohazard,
@@ -28,6 +29,7 @@ import {
   Syringe,
   Leaf,
   Users,
+  UserCog,
   Droplets,
   Tractor,
   FlameKindling,
@@ -141,10 +143,32 @@ const dataModules: NavGroup[] = [
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   const tenant = useTenant();
 
   const closeSidebar = () => setIsOpen(false);
+
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const supabase = getSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile && ["tenant_admin", "super_admin"].includes(profile.role)) {
+          setIsAdmin(true);
+        }
+      } catch {
+        // ignore — default to non-admin
+      }
+    }
+    checkRole();
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -297,6 +321,16 @@ export function Sidebar() {
               {renderNavLink({ label: "California", href: "/state-intelligence/california", Icon: MapPin })}
             </div>
           </div>
+          {isAdmin && (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                Admin
+              </p>
+              <div className="flex flex-col gap-0.5 pl-2">
+                {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="px-5 py-4">

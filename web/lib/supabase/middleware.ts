@@ -42,7 +42,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/auth") ||
-    request.nextUrl.pathname.startsWith("/sample");
+    request.nextUrl.pathname.startsWith("/sample") ||
+    request.nextUrl.pathname.startsWith("/invite");
 
   if (!user && !isPublicRoute) {
     // No user, redirect to login page
