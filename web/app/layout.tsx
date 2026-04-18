@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import { headers } from "next/headers";
+import { resolveTenant, DEFAULT_LMI_BRANDING } from "@/lib/tenant";
+import { TenantProvider } from "@/contexts/TenantContext";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -33,17 +36,73 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+/** Fonts that are already loaded via next/font and don't need a Google Fonts link */
+const BUILT_IN_FONTS = new Set(["inter", "dm sans", "jetbrains mono"]);
+
+/** Build a Google Fonts URL for non-built-in fonts */
+function getGoogleFontUrl(fontName: string): string {
+  const family = fontName.replace(/\s+/g, "+");
+  return `https://fonts.googleapis.com/css2?family=${family}:wght@400;500;600;700;800&display=swap`;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Resolve tenant branding from the request hostname
+  let branding = DEFAULT_LMI_BRANDING;
+  try {
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "";
+    if (host) {
+      branding = await resolveTenant(host);
+    }
+  } catch {
+    // Fall back to LMI defaults on any error
+  }
+
+  // Determine which extra fonts need Google Fonts links
+  const extraFonts = new Set<string>();
+  if (
+    branding.fontHeading &&
+    !BUILT_IN_FONTS.has(branding.fontHeading.toLowerCase())
+  ) {
+    extraFonts.add(branding.fontHeading);
+  }
+  if (
+    branding.fontBody &&
+    !BUILT_IN_FONTS.has(branding.fontBody.toLowerCase())
+  ) {
+    extraFonts.add(branding.fontBody);
+  }
+
+  // CSS custom properties for tenant branding
+  const cssVars = {
+    "--color-primary": branding.primaryColor,
+    "--color-accent": branding.accentColor,
+    "--color-bg": branding.backgroundColor,
+    "--color-surface": branding.surfaceColor,
+    "--color-text": branding.textColor,
+    "--tenant-font-heading": `'${branding.fontHeading}', system-ui, sans-serif`,
+    "--tenant-font-body": `'${branding.fontBody}', system-ui, sans-serif`,
+  } as React.CSSProperties;
+
   return (
     <html
       lang="en"
       className={`${dmSans.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      style={cssVars}
     >
       <head>
+        {/* Dynamic Google Fonts for non-default tenant fonts */}
+        {Array.from(extraFonts).map((font) => (
+          <link
+            key={font}
+            rel="stylesheet"
+            href={getGoogleFontUrl(font)}
+          />
+        ))}
         <Script id="gtm" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -61,7 +120,9 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        {children}
+        <TenantProvider branding={branding}>
+          {children}
+        </TenantProvider>
       </body>
     </html>
   );

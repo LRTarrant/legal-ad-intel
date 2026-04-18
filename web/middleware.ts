@@ -15,6 +15,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (images, robots.txt, sitemap, etc.)
      */
-    "/((?!api/courtlistener|_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|apple-touch-icon\\.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api/courtlistener|api/tenant-branding|_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|apple-touch-icon\\.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
