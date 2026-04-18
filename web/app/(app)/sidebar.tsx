@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Anchor,
   Biohazard,
@@ -141,6 +142,7 @@ const dataModules: NavGroup[] = [
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const tenant = useTenant();
 
   const closeSidebar = () => setIsOpen(false);
 
@@ -186,7 +188,8 @@ export function Sidebar() {
   return (
     <>
       <button
-        className="fixed top-4 left-4 z-50 md:hidden rounded p-2 bg-midnight-navy text-white"
+        className="fixed top-4 left-4 z-50 md:hidden rounded p-2 text-white"
+        style={{ backgroundColor: "var(--color-primary, #0B1D3A)" }}
         onClick={() => setIsOpen(true)}
         aria-label="Open navigation menu"
       >
@@ -213,11 +216,12 @@ export function Sidebar() {
 
       <aside
         className={`
-          fixed top-0 left-0 h-full w-60 bg-midnight-navy text-white flex flex-col z-50
+          fixed top-0 left-0 h-full w-60 text-white flex flex-col z-50
           transition-transform duration-200 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static md:shrink-0
         `}
+        style={{ backgroundColor: "var(--color-primary, #0B1D3A)" }}
       >
         <button
           className="md:hidden absolute top-4 right-4 text-white/70 hover:text-white"
@@ -242,8 +246,8 @@ export function Sidebar() {
 
         <div className="flex items-center justify-center px-4 pt-6 pb-8">
           <Image
-            src="/logo-horizontal-white.svg"
-            alt="Legal Marketing Intelligence"
+            src={tenant.logoUrl ?? "/logo-horizontal-white.svg"}
+            alt={tenant.productName ?? "Legal Marketing Intelligence"}
             width={220}
             height={52}
             priority
@@ -296,7 +300,7 @@ export function Sidebar() {
         </nav>
 
         <div className="px-5 py-4">
-          <p className="text-xs text-slate-gray">Legal Marketing Intelligence</p>
+          <p className="text-xs text-slate-gray">{tenant.footerText ?? tenant.productName ?? "Legal Marketing Intelligence"}</p>
         </div>
       </aside>
     </>

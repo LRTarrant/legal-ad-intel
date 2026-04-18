@@ -20,6 +20,15 @@
 
   --background: #F1F5F9;
   --foreground: #1E1E2E;
+
+  /* Tenant branding defaults (overridden via inline styles on <html> per tenant) */
+  --color-primary: #0B1D3A;
+  --color-accent: #1A8C96;
+  --color-bg: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-text: #1E1E2E;
+  --tenant-font-heading: var(--font-dm-sans), system-ui, sans-serif;
+  --tenant-font-body: var(--font-inter), system-ui, sans-serif;
 }
 
 @theme inline {

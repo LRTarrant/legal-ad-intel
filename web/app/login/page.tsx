@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import { headers } from "next/headers";
 import { login } from "./actions";
+import { resolveTenant } from "@/lib/tenant";
 
 export const metadata = {
   title: "Log In | Legal Marketing Intelligence",
@@ -14,14 +16,30 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
 
+  let branding;
+  try {
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "";
+    branding = host ? await resolveTenant(host) : null;
+  } catch {
+    branding = null;
+  }
+
+  const logoSrc = branding?.logoUrl ?? "/logo-horizontal-white.svg";
+  const altText = branding?.productName ?? "Legal Marketing Intelligence";
+  const headline = branding?.loginHeadline ?? "Sign in to access competitive intelligence";
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-midnight-navy px-4">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center px-4"
+      style={{ backgroundColor: "var(--color-primary, #0B1D3A)" }}
+    >
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <Link href="/">
             <Image
-              src="/logo-horizontal-white.svg"
-              alt="Legal Marketing Intelligence"
+              src={logoSrc}
+              alt={altText}
               width={200}
               height={48}
               priority
@@ -29,7 +47,7 @@ export default async function LoginPage({
             />
           </Link>
           <p className="mt-4 text-sm text-white/60">
-            Sign in to access competitive intelligence
+            {headline}
           </p>
         </div>
 
@@ -78,7 +96,8 @@ export default async function LoginPage({
 
           <button
             formAction={login}
-            className="w-full rounded-lg bg-intelligence-teal px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-light-teal focus:outline-none focus:ring-2 focus:ring-intelligence-teal focus:ring-offset-2 focus:ring-offset-midnight-navy"
+            className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-intelligence-teal focus:ring-offset-2 focus:ring-offset-midnight-navy"
+            style={{ backgroundColor: "var(--color-accent, #1A8C96)" }}
           >
             Log In
           </button>
