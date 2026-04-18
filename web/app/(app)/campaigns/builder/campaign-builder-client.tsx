@@ -23,6 +23,10 @@ import {
   Search,
   Download,
   Check,
+  Globe,
+  RefreshCw,
+  Clipboard,
+  ClipboardCheck,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 
@@ -216,6 +220,15 @@ export function CampaignBuilderClient() {
   const [exporting, setExporting] = useState(false);
   const [exportDone, setExportDone] = useState(false);
 
+  // Landing page state
+  const [hasLandingPage, setHasLandingPage] = useState<boolean | null>(null);
+  const [wantsLandingPage, setWantsLandingPage] = useState<boolean | null>(null);
+  const [landingPageHtml, setLandingPageHtml] = useState<string | null>(null);
+  const [landingPageTitle, setLandingPageTitle] = useState<string | null>(null);
+  const [landingPageLoading, setLandingPageLoading] = useState(false);
+  const [landingPageError, setLandingPageError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   // Fetch tort names on mount
   useEffect(() => {
     async function fetchTorts() {
@@ -299,6 +312,11 @@ export function CampaignBuilderClient() {
     setAiInsights(null);
     setAiError(false);
     setAiLoading(false);
+    setHasLandingPage(null);
+    setWantsLandingPage(null);
+    setLandingPageHtml(null);
+    setLandingPageTitle(null);
+    setLandingPageError(null);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -323,6 +341,80 @@ export function CampaignBuilderClient() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function generateLandingPage() {
+    if (!plan) return;
+    setLandingPageLoading(true);
+    setLandingPageError(null);
+    setLandingPageHtml(null);
+    setLandingPageTitle(null);
+
+    try {
+      const res = await fetch("/api/campaigns/generate-landing-page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tort_name: selectedTort,
+          states: selectedStates,
+          messaging: aiInsights
+            ? {
+                strategic_brief: aiInsights.strategic_brief,
+                headlines: aiInsights.ad_copy.meta.headlines,
+                body_options: aiInsights.ad_copy.meta.body_options,
+                ctas: aiInsights.ad_copy.meta.ctas,
+              }
+            : undefined,
+          audience: plan.audience_targeting
+            ? {
+                age_ranges: plan.audience_targeting.meta_targeting.age_ranges,
+                demographics: plan.audience_targeting.meta_targeting.demographics,
+              }
+            : undefined,
+          budget_info: plan.budget_projection
+            ? {
+                monthly_budget: plan.budget_projection.monthly_budget,
+                avg_cpl: plan.budget_projection.avg_cpl,
+              }
+            : undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+
+      const data: { html: string; title: string } = await res.json();
+      setLandingPageHtml(data.html);
+      setLandingPageTitle(data.title);
+    } catch (err) {
+      setLandingPageError(
+        err instanceof Error ? err.message : "Failed to generate landing page",
+      );
+    } finally {
+      setLandingPageLoading(false);
+    }
+  }
+
+  function downloadLandingPage() {
+    if (!landingPageHtml) return;
+    const blob = new Blob([landingPageHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${landingPageTitle?.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase() ?? "landing-page"}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function copyLandingPageHtml() {
+    if (!landingPageHtml) return;
+    await navigator.clipboard.writeText(landingPageHtml);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const canGenerate = selectedTort && selectedStates.length > 0 && !loading;
@@ -580,6 +672,25 @@ export function CampaignBuilderClient() {
               <AiAdCopyCard adCopy={aiInsights.ad_copy} />
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
+          )}
+
+          {/* Landing Page Steps — shown after AI insights load or error */}
+          {(aiInsights || aiError) && !aiLoading && (
+            <LandingPageSteps
+              hasLandingPage={hasLandingPage}
+              setHasLandingPage={setHasLandingPage}
+              wantsLandingPage={wantsLandingPage}
+              setWantsLandingPage={setWantsLandingPage}
+              landingPageHtml={landingPageHtml}
+              landingPageTitle={landingPageTitle}
+              landingPageLoading={landingPageLoading}
+              landingPageError={landingPageError}
+              copied={copied}
+              onGenerate={generateLandingPage}
+              onDownload={downloadLandingPage}
+              onCopy={copyLandingPageHtml}
+              accentColor={accentColor}
+            />
           )}
 
           {/* Export Button */}
@@ -1403,6 +1514,241 @@ function AiIntelligenceComplianceCard({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Landing Page Steps ────────────────────────────────────────────────── */
+
+function LandingPageSteps({
+  hasLandingPage,
+  setHasLandingPage,
+  wantsLandingPage,
+  setWantsLandingPage,
+  landingPageHtml,
+  landingPageTitle,
+  landingPageLoading,
+  landingPageError,
+  copied,
+  onGenerate,
+  onDownload,
+  onCopy,
+  accentColor,
+}: {
+  hasLandingPage: boolean | null;
+  setHasLandingPage: (v: boolean | null) => void;
+  wantsLandingPage: boolean | null;
+  setWantsLandingPage: (v: boolean | null) => void;
+  landingPageHtml: string | null;
+  landingPageTitle: string | null;
+  landingPageLoading: boolean;
+  landingPageError: string | null;
+  copied: boolean;
+  onGenerate: () => void;
+  onDownload: () => void;
+  onCopy: () => void;
+  accentColor: string;
+}) {
+  return (
+    <div className="space-y-6">
+      {/* Step A: Do you have a landing page? */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Globe className="h-5 w-5" style={{ color: accentColor }} />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            Landing Page
+          </h3>
+        </div>
+        <p className="text-sm text-slate-gray mb-4">
+          Do you already have a landing page for this campaign?
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setHasLandingPage(true);
+              setWantsLandingPage(null);
+            }}
+            className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              hasLandingPage === true
+                ? "text-white"
+                : "border-slate-200 text-midnight-navy hover:border-slate-300"
+            }`}
+            style={
+              hasLandingPage === true
+                ? { borderColor: accentColor, backgroundColor: accentColor }
+                : undefined
+            }
+          >
+            Yes, I have one
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setHasLandingPage(false);
+              setWantsLandingPage(null);
+            }}
+            className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              hasLandingPage === false
+                ? "text-white"
+                : "border-slate-200 text-midnight-navy hover:border-slate-300"
+            }`}
+            style={
+              hasLandingPage === false
+                ? { borderColor: accentColor, backgroundColor: accentColor }
+                : undefined
+            }
+          >
+            No, I don&apos;t
+          </button>
+        </div>
+      </div>
+
+      {/* Step B: Would you like us to generate one? */}
+      {hasLandingPage === false && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="h-5 w-5" style={{ color: accentColor }} />
+            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+              Generate a Landing Page
+            </h3>
+          </div>
+          <p className="text-sm text-slate-gray mb-4">
+            Would you like us to generate a professional landing page based on
+            your campaign data?
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setWantsLandingPage(true);
+                if (!landingPageHtml && !landingPageLoading) {
+                  onGenerate();
+                }
+              }}
+              className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                wantsLandingPage === true
+                  ? "text-white"
+                  : "border-slate-200 text-midnight-navy hover:border-slate-300"
+              }`}
+              style={
+                wantsLandingPage === true
+                  ? { borderColor: accentColor, backgroundColor: accentColor }
+                  : undefined
+              }
+            >
+              Yes, build me a landing page
+            </button>
+            <button
+              type="button"
+              onClick={() => setWantsLandingPage(false)}
+              className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                wantsLandingPage === false
+                  ? "text-white"
+                  : "border-slate-200 text-midnight-navy hover:border-slate-300"
+              }`}
+              style={
+                wantsLandingPage === false
+                  ? { borderColor: accentColor, backgroundColor: accentColor }
+                  : undefined
+              }
+            >
+              No thanks, skip this
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {landingPageLoading && (
+        <div className="rounded-lg border border-intelligence-teal/20 bg-intelligence-teal/5 p-6">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-intelligence-teal" />
+            <div>
+              <p className="text-sm font-semibold text-intelligence-teal">
+                Generating your landing page...
+              </p>
+              <p className="text-xs text-intelligence-teal/70 mt-0.5">
+                Building a responsive HTML page tailored to your campaign
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {landingPageError && !landingPageLoading && (
+        <div className="rounded-lg border border-alert/20 bg-alert/5 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-alert">{landingPageError}</p>
+            <button
+              onClick={onGenerate}
+              className="text-sm font-medium text-alert hover:text-alert/80 underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview + Download UI */}
+      {landingPageHtml && !landingPageLoading && (
+        <div className="rounded-lg bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5" style={{ color: accentColor }} />
+              <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+                {landingPageTitle ?? "Generated Landing Page"}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onGenerate}
+                disabled={landingPageLoading}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-midnight-navy hover:bg-cloud transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Regenerate
+              </button>
+              <button
+                onClick={onCopy}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-midnight-navy hover:bg-cloud transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <ClipboardCheck className="h-3.5 w-3.5 text-success" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Clipboard className="h-3.5 w-3.5" />
+                    Copy HTML
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onDownload}
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download HTML
+              </button>
+            </div>
+          </div>
+
+          {/* Iframe Preview */}
+          <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <iframe
+              srcDoc={landingPageHtml}
+              title={landingPageTitle ?? "Landing Page Preview"}
+              className="w-full border-0"
+              style={{ height: "600px" }}
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
