@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+interface TortPage {
+  url: string;
+  title: string;
+  headings: string[];
+  snippet: string;
+}
+
 interface BrandScrapeResult {
   logoUrl: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
   accentColor: string | null;
+  tortPages?: TortPage[];
 }
 
 /* ── Color helpers ─────────────────────────────────────────────────── */
@@ -163,6 +171,96 @@ async function fetchCssFromStylesheets(html: string, baseUrl: string): Promise<s
     .join("\n");
 }
 
+/* ── Tort-specific page scanning ──────────────────────────────────── */
+
+function tortSlug(tortName: string): string {
+  return tortName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
+function buildTortPatterns(baseUrl: string, tortName: string): string[] {
+  const slug = tortSlug(tortName);
+  const origin = baseUrl.replace(/\/$/, "");
+  return [
+    `${origin}/${slug}`,
+    `${origin}/${slug}-lawsuit`,
+    `${origin}/mass-tort/${slug}`,
+    `${origin}/practice-areas/${slug}`,
+    `${origin}/cases/${slug}`,
+  ];
+}
+
+function extractPageTitle(html: string): string {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match?.[1]?.trim() ?? "";
+}
+
+function extractPageHeadings(html: string): string[] {
+  const headings: string[] = [];
+  const matches = html.matchAll(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/gi);
+  for (const m of matches) {
+    const text = m[1].replace(/<[^>]+>/g, "").trim();
+    if (text) headings.push(text);
+    if (headings.length >= 5) break;
+  }
+  return headings;
+}
+
+function extractPageSnippet(html: string): string {
+  // Try meta description first
+  const metaDesc = html.match(
+    /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i,
+  );
+  if (metaDesc?.[1]?.trim()) return metaDesc[1].trim().slice(0, 500);
+
+  // Fall back to first <p> content
+  const paragraphs = html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+  const chunks: string[] = [];
+  for (const m of paragraphs) {
+    const text = m[1].replace(/<[^>]+>/g, "").trim();
+    if (text.length > 20) chunks.push(text);
+    if (chunks.join(" ").length >= 500) break;
+  }
+  return chunks.join(" ").slice(0, 500);
+}
+
+async function scanTortPages(baseUrl: string, tortName: string): Promise<TortPage[]> {
+  const urls = buildTortPatterns(baseUrl, tortName);
+  const results = await Promise.allSettled(
+    urls.map(async (url) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      try {
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (compatible; LegalAdIntel/1.0; +https://legaladvisory.com/bot)",
+            Accept: "text/html,application/xhtml+xml",
+          },
+          redirect: "follow",
+        });
+        if (!res.ok) return null;
+        const html = await res.text();
+        return {
+          url,
+          title: extractPageTitle(html),
+          headings: extractPageHeadings(html),
+          snippet: extractPageSnippet(html),
+        };
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }),
+  );
+
+  return results
+    .filter((r): r is PromiseFulfilledResult<TortPage | null> => r.status === "fulfilled")
+    .map((r) => r.value)
+    .filter((p): p is TortPage => p !== null);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -173,7 +271,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { url } = await req.json();
+    const { url, tort_name } = await req.json();
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
     }
@@ -217,21 +315,27 @@ export async function POST(req: NextRequest) {
       const html = await response.text();
       const baseUrl = parsedUrl.origin;
 
-      // Extract logo and CSS in parallel
-      const [logo, externalCss] = await Promise.allSettled([
+      // Extract logo, CSS, and tort pages in parallel
+      const [logo, externalCss, tortPagesResult] = await Promise.allSettled([
         Promise.resolve(extractLogo(html, baseUrl)),
         fetchCssFromStylesheets(html, baseUrl),
+        tort_name && typeof tort_name === "string"
+          ? scanTortPages(baseUrl, tort_name)
+          : Promise.resolve([]),
       ]);
 
       const logoUrl = logo.status === "fulfilled" ? logo.value : null;
       const css = externalCss.status === "fulfilled" ? externalCss.value : "";
       const topColors = extractColors(html, css);
+      const tortPages =
+        tortPagesResult.status === "fulfilled" ? tortPagesResult.value : [];
 
       const result: BrandScrapeResult = {
         logoUrl,
         primaryColor: topColors[0] ?? null,
         secondaryColor: topColors[1] ?? null,
         accentColor: topColors[2] ?? null,
+        ...(tortPages.length > 0 ? { tortPages } : {}),
       };
 
       return NextResponse.json(result);

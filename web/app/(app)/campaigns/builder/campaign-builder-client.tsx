@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
+import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import {
   getQualificationCriteriaByName,
   type TortQualificationCriteria,
@@ -253,6 +254,8 @@ export function CampaignBuilderClient() {
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([]);
+  const [tortPageData, setTortPageData] = useState<{ url: string; title: string; headings: string[]; snippet: string }[]>([]);
 
   // Recommended markets
   const [recommendedMarkets, setRecommendedMarkets] = useState<RecommendedMarket[]>([]);
@@ -407,6 +410,8 @@ export function CampaignBuilderClient() {
           channel_mix: plan.channel_mix,
           budget_projection: plan.budget_projection,
         },
+        brand_asset_urls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
+        tort_pages: tortPageData.length > 0 ? tortPageData : undefined,
       }),
     })
       .then((res) => {
@@ -492,7 +497,7 @@ export function CampaignBuilderClient() {
 
   // Feature 2: Brand scraping
   const scrapeBrand = useCallback(
-    async (url: string) => {
+    async (url: string, tortName?: string) => {
       if (!url || !isValidUrl(url)) return;
       brandScrapeAbort.current?.abort();
       const controller = new AbortController();
@@ -501,10 +506,13 @@ export function CampaignBuilderClient() {
       setBrandScraping(true);
       setBrandScraped(false);
       try {
+        const body: Record<string, string> = { url };
+        if (tortName) body.tort_name = tortName;
+
         const res = await fetch("/api/campaigns/scrape-brand", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -519,6 +527,9 @@ export function CampaignBuilderClient() {
           secondary: data.secondaryColor ?? null,
           accent: data.accentColor ?? null,
         });
+        if (data.tortPages && Array.isArray(data.tortPages)) {
+          setTortPageData(data.tortPages);
+        }
         setBrandScraped(true);
       } catch {
         // Silently fail — brand scraping is best-effort
@@ -554,6 +565,7 @@ export function CampaignBuilderClient() {
             secondary: brandColors.secondary,
             accent: brandColors.accent,
           },
+          brandAssetUrls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
         }),
       });
 
@@ -791,6 +803,8 @@ export function CampaignBuilderClient() {
           disqualify_message: matchedCriteria?.disqualifyMessage ?? undefined,
           qualify_message: matchedCriteria?.qualifyMessage ?? undefined,
           brand_colors: (brandColors.primary || brandColors.secondary || brandColors.accent) ? brandColors : undefined,
+          brand_asset_urls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
+          tort_pages: tortPageData.length > 0 ? tortPageData : undefined,
         }),
       });
 
@@ -889,7 +903,7 @@ export function CampaignBuilderClient() {
                 onBlur={(e) => {
                   const val = e.target.value.trim();
                   if (val && isValidUrl(val) && !brandScraped) {
-                    scrapeBrand(val);
+                    scrapeBrand(val, selectedTort || undefined);
                   }
                 }}
                 placeholder="e.g., https://www.smithlaw.com"
@@ -1134,6 +1148,19 @@ export function CampaignBuilderClient() {
               </div>
             )}
           </div>
+
+          {/* Brand Assets Upload */}
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <BrandAssetsUpload assets={brandAssets} onAssetsChange={setBrandAssets} accentColor={accentColor} />
+          </div>
+
+          {/* Tort page indicator */}
+          {tortPageData.length > 0 && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-intelligence-teal">
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              Found {tortPageData.length} existing {selectedTort} page{tortPageData.length !== 1 ? "s" : ""} on firm website
+            </div>
+          )}
         </div>
       </div>
 
