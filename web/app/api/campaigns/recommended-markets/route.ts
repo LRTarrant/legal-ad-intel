@@ -111,8 +111,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ recommended_markets: [] });
     }
 
-    const category = categorizeTort(tort_name);
+    // Check for curated recommendations first
     const db = supabase as any;
+    const { data: curatedData } = await db
+      .from("tort_recommended_markets")
+      .select("*")
+      .ilike("tort_name", `%${tort_name}%`)
+      .order("rank", { ascending: true })
+      .limit(10);
+
+    if (curatedData && curatedData.length > 0) {
+      return NextResponse.json({
+        recommended_markets: curatedData.map((row: any) => ({
+          state: row.state,
+          state_name: STATE_NAMES[row.state] ?? row.state,
+          score: row.score ?? 80,
+          signals: row.signals ?? [row.primary_signal],
+          primary_signal: row.primary_signal,
+        })),
+      });
+    }
+
+    // Fall through to scoring algorithm if no curated data
+    const category = categorizeTort(tort_name);
 
     // Parallel data fetches with Promise.allSettled
     const [
