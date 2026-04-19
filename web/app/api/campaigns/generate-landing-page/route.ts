@@ -37,7 +37,12 @@ interface LandingPageRequest {
   };
 }
 
-const SYSTEM_PROMPT = `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
+function buildSystemPrompt(audienceNotes: string | null): string {
+  const audienceContext = audienceNotes
+    ? `\nAUDIENCE CONTEXT: ${audienceNotes}. Tailor the tone, language complexity, and emotional appeal to this demographic.`
+    : "";
+
+  return `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
 
 Your landing pages must:
 - Be fully self-contained: all CSS inline in a <style> tag, no external dependencies
@@ -46,6 +51,12 @@ Your landing pages must:
 - Follow legal advertising best practices
 - Include proper HTML5 document structure (<!DOCTYPE html>, <html>, <head>, <body>)
 - Use system font stack for maximum compatibility
+${audienceContext}
+
+VISUAL IMAGERY GUIDANCE:
+- Any image references or visual descriptions should be tort-contextual, NOT generic legal imagery.
+- Do NOT reference or describe: courtrooms, gavels, legal scales, law firm conference rooms, people in business suits, handshakes, or generic "justice" imagery.
+- Instead, reference imagery that matches the specific tort and its affected audience (e.g., outdoor/agricultural scenes for herbicide torts, medical settings for pharmaceutical torts, family/home settings for consumer product torts).
 
 IMPORTANT ABOUT QUALIFICATION FORMS:
 - Do NOT generate any qualification form, screening questions, or multi-step form.
@@ -54,6 +65,7 @@ IMPORTANT ABOUT QUALIFICATION FORMS:
 - Focus on what you do best: compelling marketing copy, professional layout, and trust signals.
 
 IMPORTANT: Return ONLY valid JSON with exactly two keys: "html" (the complete HTML document as a string) and "title" (a short page title). Do not include markdown, code fences, or any text outside the JSON object.`;
+}
 
 function hasQualificationForm(req: LandingPageRequest): boolean {
   return !!(req.qualification_style && req.screening_questions?.length);
@@ -137,10 +149,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch audience profile for this tort
+    let audienceNotes: string | null = null;
+    try {
+      const { data: profile } = await (supabase as any)
+        .from("tort_audience_profiles")
+        .select("notes, age_band_weights")
+        .ilike("profile_name", `%${body.tort_name}%`)
+        .limit(1)
+        .maybeSingle();
+      if (profile?.notes) {
+        audienceNotes = profile.notes;
+      }
+    } catch {
+      // Non-blocking: proceed without audience context
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60_000);
 
     try {
+      const systemPrompt = buildSystemPrompt(audienceNotes);
+      const userPrompt = buildUserPrompt(body);
+
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -155,8 +186,8 @@ export async function POST(req: NextRequest) {
             max_tokens: 4000,
             response_format: { type: "json_object" },
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: buildUserPrompt(body) },
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
             ],
           }),
           signal: controller.signal,
