@@ -69,7 +69,9 @@ SERP_SEARCH_TERMS: dict[str, list[str]] = {
     "depo_provera":          ["depo provera lawsuit", "depo provera meningioma", "depo provera brain tumor lawyer"],
     "glp1_gastroparesis":     ["ozempic lawsuit", "ozempic stomach paralysis", "glp-1 gastroparesis lawsuit"],
     "glp1_vision_loss":       ["ozempic blindness lawsuit", "glp-1 vision loss naion", "ozempic naion lawsuit"],
-    "uber_sexual_assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "bard-powerport":         ["bard powerport lawsuit", "port catheter recall", "bard powerport complications"],
+    "lyft-sexual-assault":    ["lyft sexual assault lawsuit", "lyft ride assault lawyer"],
 }
 
 
