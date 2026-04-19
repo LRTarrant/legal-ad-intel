@@ -669,7 +669,7 @@ export function CampaignBuilderClient() {
           {aiInsights && !aiLoading && (
             <div className="space-y-6">
               <AiStrategicBriefCard insights={aiInsights} />
-              <AiAdCopyCard adCopy={aiInsights.ad_copy} />
+              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} />
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
           )}
@@ -1289,10 +1289,101 @@ function AiStrategicBriefCard({ insights }: { insights: AiInsights }) {
   );
 }
 
+const AD_CREATIVE_THEMES = [
+  { from: "#0f172a", to: "#1e3a5f", accent: "#3b82f6" },
+  { from: "#1a1a2e", to: "#16213e", accent: "#6366f1" },
+  { from: "#0d1b2a", to: "#1b2d4f", accent: "#06b6d4" },
+  { from: "#1e1b4b", to: "#312e81", accent: "#a78bfa" },
+  { from: "#162032", to: "#1c3d5a", accent: "#2dd4bf" },
+];
+
+function AdCreativeMockup({
+  headline,
+  tortName,
+  variantIndex,
+}: {
+  headline: string;
+  tortName: string;
+  variantIndex: number;
+}) {
+  const theme = AD_CREATIVE_THEMES[variantIndex % AD_CREATIVE_THEMES.length];
+  return (
+    <div
+      className="relative h-44 flex flex-col items-center justify-center overflow-hidden px-5"
+      style={{
+        background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+      }}
+    >
+      {/* Subtle pattern overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+
+      {/* Decorative accent line */}
+      <div
+        className="absolute top-0 left-0 h-1 w-full"
+        style={{ background: `linear-gradient(90deg, ${theme.accent}, transparent)` }}
+      />
+
+      {/* Scales of justice icon */}
+      <div className="absolute bottom-3 right-3 opacity-10">
+        <svg
+          width="64"
+          height="64"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 3v19" />
+          <path d="M5 7l7-4 7 4" />
+          <circle cx="5" cy="7" r="0.5" fill="white" />
+          <circle cx="19" cy="7" r="0.5" fill="white" />
+          <path d="M2 14c0-1.7 1.3-3 3-3s3 1.3 3 3H2z" />
+          <path d="M16 14c0-1.7 1.3-3 3-3s3 1.3 3 3h-6z" />
+          <rect x="10" y="2" width="4" height="2" rx="1" fill="white" opacity="0.3" />
+        </svg>
+      </div>
+
+      {/* Tort type badge */}
+      {tortName && (
+        <div className="absolute top-3 left-3">
+          <span
+            className="inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90"
+            style={{ backgroundColor: `${theme.accent}99` }}
+          >
+            {tortName}
+          </span>
+        </div>
+      )}
+
+      {/* Headline overlay */}
+      <p className="relative z-10 text-center text-base font-bold leading-snug text-white drop-shadow-md sm:text-lg">
+        {headline}
+      </p>
+
+      {/* Decorative bottom accent */}
+      <div
+        className="absolute bottom-0 left-0 h-0.5 w-full opacity-40"
+        style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }}
+      />
+    </div>
+  );
+}
+
 function AiAdCopyCard({
   adCopy,
+  tortName,
 }: {
   adCopy: AiInsights["ad_copy"];
+  tortName: string;
 }) {
   return (
     <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
@@ -1318,10 +1409,11 @@ function AiAdCopyCard({
                 key={i}
                 className="rounded-lg border border-slate-200 overflow-hidden"
               >
-                {/* Image placeholder */}
-                <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                  <span className="text-xs text-slate-400">Ad Creative</span>
-                </div>
+                <AdCreativeMockup
+                  headline={headline}
+                  tortName={tortName}
+                  variantIndex={i}
+                />
                 <div className="p-3 space-y-2">
                   <p className="text-sm font-semibold text-midnight-navy leading-tight">
                     {headline}
