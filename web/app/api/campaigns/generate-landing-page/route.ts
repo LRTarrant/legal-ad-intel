@@ -18,6 +18,7 @@ interface LandingPageRequest {
     monthly_budget?: number;
     avg_cpl?: number;
   };
+  logo_url?: string;
 }
 
 const SYSTEM_PROMPT = `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
@@ -33,7 +34,7 @@ Your landing pages must:
 IMPORTANT: Return ONLY valid JSON with exactly two keys: "html" (the complete HTML document as a string) and "title" (a short page title). Do not include markdown, code fences, or any text outside the JSON object.`;
 
 function buildUserPrompt(req: LandingPageRequest): string {
-  const { tort_name, states, messaging, audience, budget_info } = req;
+  const { tort_name, states, messaging, audience, budget_info, logo_url } = req;
 
   return `Create a complete, self-contained HTML landing page for a mass tort legal advertising campaign with these details:
 
@@ -46,6 +47,7 @@ ${messaging?.ctas?.length ? `\nCTA OPTIONS: ${messaging.ctas.join(", ")}` : ""}
 ${audience?.age_ranges?.length ? `\nTARGET AGE RANGES: ${audience.age_ranges.join(", ")}` : ""}
 ${audience?.demographics ? `\nDEMOGRAPHICS: ${audience.demographics}` : ""}
 ${budget_info?.monthly_budget ? `\nMONTHLY BUDGET: $${budget_info.monthly_budget.toLocaleString()}` : ""}
+${logo_url ? `\nBRAND LOGO: Include this logo in the header/navbar area of the landing page using an <img> tag with src="${logo_url}". Style it with max-height: 48px and auto width, placed in the top-left of the header.` : ""}
 
 The HTML landing page must include:
 1. A compelling hero section with a tort-specific headline and sub-headline
