@@ -31,6 +31,7 @@ import {
   ImageIcon,
   Palette,
   Mic,
+  Video,
   ChevronUp,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
@@ -322,6 +323,23 @@ export function CampaignBuilderClient() {
   const [voiceRecommendation, setVoiceRecommendation] = useState<{ gender: string; style: string; reason: string } | null>(null);
   const [audienceContext, setAudienceContext] = useState<{ primary_age_bands: string; audience_note: string } | null>(null);
 
+  // Feature 5: AI Video Creative
+  const [videoAvailable, setVideoAvailable] = useState<boolean | null>(null);
+  const [videoExpanded, setVideoExpanded] = useState(false);
+  const [videoPlatform, setVideoPlatform] = useState<"youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed">("youtube_ad");
+  const [videoDuration, setVideoDuration] = useState<"15s" | "30s" | "60s">("30s");
+  const [videoScript, setVideoScript] = useState("");
+  const [videoScriptLoading, setVideoScriptLoading] = useState(false);
+  const [videoScriptGenerated, setVideoScriptGenerated] = useState(false);
+  const [videoAvatars, setVideoAvatars] = useState<{ id: string; name: string; thumbnail: string; gender: string }[]>([]);
+  const [videoAvatarsLoading, setVideoAvatarsLoading] = useState(false);
+  const [videoSelectedAvatar, setVideoSelectedAvatar] = useState("");
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoVoiceRec, setVideoVoiceRec] = useState<{ gender: string; style: string; reason: string } | null>(null);
+  const [videoAudienceCtx, setVideoAudienceCtx] = useState<{ primary_age_bands: string; audience_note: string } | null>(null);
+
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
     () => (selectedTort ? getQualificationCriteriaByName(selectedTort) : undefined),
@@ -377,6 +395,14 @@ export function CampaignBuilderClient() {
       .then((res) => res.json())
       .then((data: { available: boolean }) => setRadioSpotAvailable(data.available))
       .catch(() => setRadioSpotAvailable(false));
+  }, []);
+
+  // Check Synthesia availability on mount
+  useEffect(() => {
+    fetch("/api/campaigns/video-check")
+      .then((res) => res.json())
+      .then((data: { available: boolean }) => setVideoAvailable(data.available))
+      .catch(() => setVideoAvailable(false));
   }, []);
 
   const filteredStates = useMemo(() => {
@@ -716,6 +742,133 @@ export function CampaignBuilderClient() {
     }
   }
 
+  // Feature 5: Video creative functions
+  async function fetchVideoAvatars() {
+    if (videoAvatars.length > 0) return;
+    setVideoAvatarsLoading(true);
+    try {
+      const res = await fetch("/api/campaigns/video-avatars");
+      if (!res.ok) throw new Error("Failed to fetch avatars");
+      const data = await res.json();
+      setVideoAvatars(data.avatars ?? []);
+      // Default to first avatar if none selected
+      if (data.avatars?.length > 0 && !videoSelectedAvatar) {
+        setVideoSelectedAvatar(data.avatars[0].id);
+      }
+    } catch {
+      // Avatars will remain empty — user can retry
+    } finally {
+      setVideoAvatarsLoading(false);
+    }
+  }
+
+  async function generateVideoScript(duration: "15s" | "30s" | "60s", platform: "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed") {
+    if (!plan || !selectedTort) return;
+    setVideoScriptLoading(true);
+    setVideoError(null);
+    try {
+      const res = await fetch("/api/campaigns/generate-video-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration,
+          platform,
+          tort_name: selectedTort,
+          firm_name: firmName.trim() || undefined,
+          firm_url: firmUrl.trim() || undefined,
+          states: selectedStates.length > 0 ? selectedStates : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Script generation failed");
+      const data = await res.json();
+      if (data.script) {
+        setVideoScript(data.script);
+        setVideoScriptGenerated(true);
+      }
+      if (data.voice_recommendation) {
+        setVideoVoiceRec(data.voice_recommendation);
+        // Auto-select avatar matching recommended gender
+        if (videoAvatars.length > 0) {
+          const recGender = (data.voice_recommendation.gender ?? "").toLowerCase();
+          const match = videoAvatars.find(
+            (a) => a.gender.toLowerCase() === recGender,
+          );
+          if (match) {
+            setVideoSelectedAvatar(match.id);
+          }
+        }
+      } else {
+        setVideoVoiceRec(null);
+      }
+      setVideoAudienceCtx(data.audience_context ?? null);
+    } catch {
+      setVideoError("Failed to generate script. You can write your own below.");
+    } finally {
+      setVideoScriptLoading(false);
+    }
+  }
+
+  async function generateVideo() {
+    if (!videoScript.trim() || !videoSelectedAvatar) return;
+    setVideoGenerating(true);
+    setVideoError(null);
+    setVideoUrl(null);
+
+    try {
+      const res = await fetch("/api/campaigns/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script: videoScript,
+          avatar_id: videoSelectedAvatar,
+          platform: videoPlatform,
+          title: `${selectedTort ?? "Legal"} Campaign - ${firmName.trim() || "Video Ad"}`,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error ?? "Video generation failed");
+      }
+      const data = await res.json();
+      const videoId = data.videoId;
+
+      // Poll for completion every 5 seconds
+      const poll = async () => {
+        const statusRes = await fetch(`/api/campaigns/video-status/${videoId}`);
+        if (!statusRes.ok) throw new Error("Status check failed");
+        const statusData = await statusRes.json();
+
+        if (statusData.status === "complete") {
+          setVideoUrl(statusData.downloadUrl);
+          setVideoGenerating(false);
+        } else if (statusData.status === "failed") {
+          throw new Error("Video rendering failed. Please try again.");
+        } else {
+          // Still in progress, poll again
+          setTimeout(poll, 5000);
+        }
+      };
+
+      // Start polling after initial delay
+      setTimeout(poll, 5000);
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : "Video generation failed. Please try again.");
+      setVideoGenerating(false);
+    }
+  }
+
+  function handleVideoExpand() {
+    if (!videoExpanded) {
+      setVideoExpanded(true);
+      fetchVideoAvatars();
+      if (!videoScriptGenerated && !videoScript) {
+        generateVideoScript(videoDuration, videoPlatform);
+      }
+    } else {
+      setVideoExpanded(false);
+    }
+  }
+
   async function generatePlan() {
     if (!selectedTort || selectedStates.length === 0) return;
     setLoading(true);
@@ -738,6 +891,11 @@ export function CampaignBuilderClient() {
     setRadioScriptGenerated(false);
     setRadioAudioUrl(null);
     setRadioError(null);
+    setVideoExpanded(false);
+    setVideoScript("");
+    setVideoScriptGenerated(false);
+    setVideoUrl(null);
+    setVideoError(null);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -1370,6 +1528,51 @@ export function CampaignBuilderClient() {
                   }}
                   voiceRecommendation={voiceRecommendation}
                   audienceContext={audienceContext}
+                />
+              )}
+
+              {/* AI Video Creative — only shown when Synthesia is configured */}
+              {videoAvailable && (
+                <AiVideoCard
+                  expanded={videoExpanded}
+                  onToggleExpand={handleVideoExpand}
+                  platform={videoPlatform}
+                  onPlatformChange={(p) => {
+                    setVideoPlatform(p);
+                    if (videoScriptGenerated) {
+                      setVideoScript("");
+                      setVideoScriptGenerated(false);
+                      setVideoUrl(null);
+                      generateVideoScript(videoDuration, p);
+                    }
+                  }}
+                  duration={videoDuration}
+                  onDurationChange={(d) => {
+                    setVideoDuration(d);
+                    if (videoScriptGenerated) {
+                      setVideoScript("");
+                      setVideoScriptGenerated(false);
+                      setVideoUrl(null);
+                      generateVideoScript(d, videoPlatform);
+                    }
+                  }}
+                  script={videoScript}
+                  onScriptChange={setVideoScript}
+                  scriptLoading={videoScriptLoading}
+                  avatars={videoAvatars}
+                  avatarsLoading={videoAvatarsLoading}
+                  selectedAvatar={videoSelectedAvatar}
+                  onAvatarChange={setVideoSelectedAvatar}
+                  generating={videoGenerating}
+                  videoUrl={videoUrl}
+                  error={videoError}
+                  onGenerate={generateVideo}
+                  onRegenerate={() => {
+                    setVideoUrl(null);
+                    generateVideo();
+                  }}
+                  voiceRecommendation={videoVoiceRec}
+                  audienceContext={videoAudienceCtx}
                 />
               )}
             </div>
@@ -2663,6 +2866,312 @@ function AiRadioSpotCard({
                     generating || cooldown
                       ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
                       : "border-violet-200 bg-violet-50 text-violet-600 hover:bg-violet-100"
+                  }`}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── AI Video Card ─────────────────────────────────────────────────────── */
+
+const VIDEO_PLATFORMS = [
+  { value: "youtube_ad" as const, label: "YouTube Ad", aspect: "16:9" },
+  { value: "youtube_short" as const, label: "YouTube Short", aspect: "9:16" },
+  { value: "tiktok" as const, label: "TikTok", aspect: "9:16" },
+  { value: "meta_reel" as const, label: "Meta Reel", aspect: "9:16" },
+  { value: "meta_feed" as const, label: "Meta Feed", aspect: "1:1" },
+] as const;
+
+function AiVideoCard({
+  expanded,
+  onToggleExpand,
+  platform,
+  onPlatformChange,
+  duration,
+  onDurationChange,
+  script,
+  onScriptChange,
+  scriptLoading,
+  avatars,
+  avatarsLoading,
+  selectedAvatar,
+  onAvatarChange,
+  generating,
+  videoUrl,
+  error,
+  onGenerate,
+  onRegenerate,
+  voiceRecommendation,
+  audienceContext,
+}: {
+  expanded: boolean;
+  onToggleExpand: () => void;
+  platform: "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed";
+  onPlatformChange: (p: "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed") => void;
+  duration: "15s" | "30s" | "60s";
+  onDurationChange: (d: "15s" | "30s" | "60s") => void;
+  script: string;
+  onScriptChange: (s: string) => void;
+  scriptLoading: boolean;
+  avatars: { id: string; name: string; thumbnail: string; gender: string }[];
+  avatarsLoading: boolean;
+  selectedAvatar: string;
+  onAvatarChange: (id: string) => void;
+  generating: boolean;
+  videoUrl: string | null;
+  error: string | null;
+  onGenerate: () => void;
+  onRegenerate: () => void;
+  voiceRecommendation?: { gender: string; style: string; reason: string } | null;
+  audienceContext?: { primary_age_bands: string; audience_note: string } | null;
+}) {
+  const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
+  const charCount = script.length;
+  const targetWords = duration === "15s" ? "35-40" : duration === "30s" ? "75-80" : "150-160";
+
+  // Filter avatars by recommended gender if available
+  const filteredAvatars = voiceRecommendation?.gender
+    ? avatars.filter((a) => a.gender === voiceRecommendation.gender || !a.gender)
+    : avatars;
+  const displayAvatars = filteredAvatars.length > 0 ? filteredAvatars : avatars;
+
+  return (
+    <div className="rounded-lg border-l-4 border-l-emerald-400 bg-white shadow-sm">
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={onToggleExpand}
+        className="flex w-full items-center justify-between p-6"
+      >
+        <div className="flex items-center gap-2">
+          <Video className="h-5 w-5 text-emerald-500" />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            AI Video Creative
+          </h3>
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+            <Sparkles className="h-3 w-3" />
+            AI
+          </span>
+          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+            BETA
+          </span>
+        </div>
+        {expanded ? (
+          <ChevronUp className="h-5 w-5 text-slate-gray" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-slate-gray" />
+        )}
+      </button>
+
+      {/* Expandable content */}
+      {expanded && (
+        <div className="border-t border-slate-100 px-6 pb-6 space-y-5">
+          {/* Platform selector */}
+          <div className="pt-4">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Platform
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {VIDEO_PLATFORMS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => onPlatformChange(p.value)}
+                  className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-colors ${
+                    platform === p.value
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-slate-200 text-midnight-navy hover:border-slate-300"
+                  }`}
+                >
+                  {p.label} <span className="text-xs opacity-75">({p.aspect})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Duration toggle */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Duration
+            </label>
+            <div className="flex gap-2">
+              {(["15s", "30s", "60s"] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => onDurationChange(d)}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                    duration === d
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-slate-200 text-midnight-navy hover:border-slate-300"
+                  }`}
+                >
+                  {d === "15s" ? "15 seconds" : d === "30s" ? "30 seconds" : "60 seconds"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Script textarea */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Script
+            </label>
+            {scriptLoading ? (
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                <span className="text-sm text-slate-gray">
+                  Generating {duration === "15s" ? "15-second" : duration === "30s" ? "30-second" : "60-second"} video script for {platform.replace(/_/g, " ")}...
+                </span>
+              </div>
+            ) : (
+              <textarea
+                value={script}
+                onChange={(e) => onScriptChange(e.target.value)}
+                placeholder="Enter your video script here, or wait for AI generation..."
+                rows={duration === "15s" ? 3 : duration === "30s" ? 4 : 7}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-300 resize-none"
+              />
+            )}
+            <div className="mt-1 flex items-center justify-between text-xs text-slate-gray">
+              <span>
+                {charCount} characters &middot; ~{wordCount} words
+              </span>
+              <span>Target: {targetWords} words for {duration}</span>
+            </div>
+          </div>
+
+          {/* Audience context */}
+          {audienceContext?.audience_note && (
+            <div className="text-xs text-slate-gray">
+              <span className="font-medium">Audience:</span> {audienceContext.audience_note}
+            </div>
+          )}
+
+          {/* Avatar selection */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Avatar
+            </label>
+            {voiceRecommendation && (
+              <div className="mb-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                Recommended: {voiceRecommendation.gender.charAt(0).toUpperCase() + voiceRecommendation.gender.slice(1)} presenter — {voiceRecommendation.reason}
+              </div>
+            )}
+            {avatarsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-slate-gray">
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                Loading avatars...
+              </div>
+            ) : displayAvatars.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {displayAvatars.slice(0, 12).map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => onAvatarChange(a.id)}
+                    className={`relative rounded-lg border-2 p-1 transition-colors ${
+                      selectedAvatar === a.id
+                        ? "border-teal-500 ring-2 ring-teal-200"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    {a.thumbnail ? (
+                      <img
+                        src={a.thumbnail}
+                        alt={a.name}
+                        className="h-20 w-full rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-full items-center justify-center rounded bg-slate-100">
+                        <Video className="h-6 w-6 text-slate-400" />
+                      </div>
+                    )}
+                    <p className="mt-1 truncate text-xs font-medium text-midnight-navy">
+                      {a.name}
+                    </p>
+                    {selectedAvatar === a.id && (
+                      <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-white">
+                        <Check className="h-3 w-3" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-gray">
+                No avatars available. Please check your Synthesia configuration.
+              </p>
+            )}
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Generate button */}
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={!script.trim() || !selectedAvatar || generating}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white transition-colors ${
+              !script.trim() || !selectedAvatar || generating
+                ? "bg-slate-300 cursor-not-allowed"
+                : "bg-emerald-500 hover:bg-emerald-600 shadow-sm"
+            }`}
+          >
+            {generating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating Video... (this may take 1-5 minutes)
+              </>
+            ) : (
+              <>
+                <Video className="h-4 w-4" />
+                Generate Video
+              </>
+            )}
+          </button>
+
+          {/* Video preview + download */}
+          {videoUrl && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <video
+                  src={videoUrl}
+                  controls
+                  className="w-full rounded"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <a
+                  href={videoUrl}
+                  download={`video-${platform}-${duration}.mp4`}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-midnight-navy hover:bg-slate-50 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  Download MP4
+                </a>
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  disabled={generating}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                    generating
+                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                   }`}
                 >
                   <RefreshCw className="h-4 w-4" />
