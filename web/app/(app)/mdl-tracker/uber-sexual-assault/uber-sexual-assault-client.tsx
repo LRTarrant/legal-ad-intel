@@ -520,7 +520,59 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
         </div>
       </div>
 
-      {/* -- 6. Market Opportunity Signals --------------------------------- */}
+      {/* -- 6. Research & Qualification Criteria --------------------------- */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Research &amp; Qualification Criteria
+          </h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-md border border-cloud bg-cloud/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Who Qualifies
+            </p>
+            <p className="text-sm text-midnight-navy/80 leading-relaxed">
+              Uber or rideshare passenger who was sexually assaulted, raped, kidnapped, or subjected
+              to sexual misconduct by an Uber driver. Includes non-consensual touching, groping,
+              attempted or completed sexual assault, kidnapping, and trafficking. Both current and
+              past Uber riders qualify.
+            </p>
+          </div>
+          <div className="rounded-md border border-cloud bg-cloud/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Required Documentation
+            </p>
+            <p className="text-sm text-midnight-navy/80 leading-relaxed">
+              Police reports, medical records, Uber ride history showing the trip, therapy/counseling
+              records documenting trauma, any communications with Uber about the incident.
+            </p>
+          </div>
+          <div className="rounded-md border border-cloud bg-cloud/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Statute of Limitations
+            </p>
+            <p className="text-sm text-midnight-navy/80 leading-relaxed">
+              Varies by state &mdash; see Signal 5 below for the full reference table.
+              Uber&apos;s arbitration clause has been challenged in court for sexual assault claims.
+              Discovery rules and tolling provisions may extend deadlines in some jurisdictions.
+            </p>
+          </div>
+          <div className="rounded-md border border-cloud bg-cloud/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Estimated Case Values
+            </p>
+            <p className="text-sm text-midnight-navy/80 leading-relaxed">
+              $500K&ndash;$5M+ per case depending on severity and jurisdiction. Uber&apos;s own
+              safety reports have documented thousands of sexual assault incidents. The $8.5M
+              bellwether verdict sets the current benchmark.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* -- 7. Market Opportunity Signals --------------------------------- */}
       <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <Crosshair className="w-4.5 h-4.5 text-intelligence-teal" />
