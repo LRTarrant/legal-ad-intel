@@ -69,7 +69,7 @@ MAX_ADS_PER_TERM_PLATFORM = 50
 # ---------------------------------------------------------------------------
 
 TORT_SEARCH_TERMS: dict[str, list[str]] = {
-    # Slugs match the `torts.slug` column in Supabase (underscore format)
+    # Slugs must exactly match the `torts.slug` column in Supabase
     "camp_lejeune":      ["camp lejeune water contamination"],
     "hair_relaxer":      ["hair relaxer lawsuit", "chemical hair straightener cancer"],
     "roundup":           ["roundup lawsuit", "roundup cancer lawsuit"],
@@ -90,7 +90,9 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "depo_provera":          ["depo provera lawsuit", "depo provera meningioma lawyer", "depo provera brain tumor lawsuit"],
     "glp1_gastroparesis":     ["ozempic lawsuit", "ozempic stomach paralysis lawyer", "glp-1 gastroparesis lawsuit"],
     "glp1_vision_loss":       ["ozempic blindness lawsuit", "glp-1 vision loss lawyer", "ozempic naion lawsuit"],
-    "uber_sexual_assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "bard-powerport":         ["bard powerport lawsuit", "port catheter recall", "bard powerport attorney"],
+    "lyft-sexual-assault":    ["lyft sexual assault lawyer", "lyft lawsuit", "lyft ride assault attorney", "rideshare sexual assault lyft"],
 }
 
 

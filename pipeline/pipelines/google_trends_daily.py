@@ -67,7 +67,9 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "depo_provera":          ["depo provera lawsuit"],
     "glp1_gastroparesis":     ["ozempic lawsuit gastroparesis"],
     "glp1_vision_loss":       ["ozempic blindness lawsuit"],
-    "uber_sexual_assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
+    "bard-powerport":         ["bard powerport lawsuit"],
+    "lyft-sexual-assault":    ["lyft sexual assault lawsuit"],
 }
 
 
