@@ -30,6 +30,9 @@ import {
   Plus,
   ImageIcon,
   Palette,
+  Mic,
+  Volume2,
+  Info,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
@@ -172,6 +175,20 @@ interface AiInsights {
   historical_playbook: string;
 }
 
+/* ── Radio / Voice Types ───────────────────────────────────────────────── */
+
+interface VoiceRecommendation {
+  gender: "male" | "female";
+  style: string;
+  reason: string;
+}
+
+interface ElevenLabsVoice {
+  voice_id: string;
+  name: string;
+  labels?: Record<string, string>;
+}
+
 /* ── Custom Question & Brand Types ──────────────────────────────────────── */
 
 interface CustomQuestion {
@@ -284,6 +301,16 @@ export function CampaignBuilderClient() {
   const [aiCreativeEnabled, setAiCreativeEnabled] = useState(false);
   const [creativeImages, setCreativeImages] = useState<(string | null)[]>([null, null, null]);
   const [creativeLoading, setCreativeLoading] = useState<boolean[]>([false, false, false]);
+
+  // Radio spot state
+  const [radioScript, setRadioScript] = useState<string | null>(null);
+  const [radioLoading, setRadioLoading] = useState(false);
+  const [radioError, setRadioError] = useState<string | null>(null);
+  const [radioDuration, setRadioDuration] = useState<30 | 60>(30);
+  const [voiceRecommendation, setVoiceRecommendation] = useState<VoiceRecommendation | null>(null);
+  const [voices, setVoices] = useState<ElevenLabsVoice[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+  const [voiceAutoSelected, setVoiceAutoSelected] = useState(false);
 
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
@@ -526,6 +553,94 @@ export function CampaignBuilderClient() {
     // Results handled by individual calls
   }
 
+  // Fetch ElevenLabs voice list once on mount
+  useEffect(() => {
+    async function fetchVoices() {
+      try {
+        const res = await fetch("https://api.elevenlabs.io/v1/voices", {
+          headers: {
+            "xi-api-key": process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY ?? "",
+          },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.voices) {
+          setVoices(data.voices as ElevenLabsVoice[]);
+        }
+      } catch {
+        // Voice list fetch is best-effort
+      }
+    }
+    fetchVoices();
+  }, []);
+
+  // Auto-select voice when recommendation arrives
+  useEffect(() => {
+    if (!voiceRecommendation || voices.length === 0) return;
+
+    const genderMatch = voices.filter(
+      (v) =>
+        v.labels?.gender?.toLowerCase() === voiceRecommendation.gender,
+    );
+
+    // Try to find a voice whose use_case or description matches the style
+    const styleLower = voiceRecommendation.style.toLowerCase();
+    const styleMatch = genderMatch.find((v) => {
+      const useCase = (v.labels?.use_case ?? "").toLowerCase();
+      const desc = (v.labels?.description ?? "").toLowerCase();
+      const accent = (v.labels?.accent ?? "").toLowerCase();
+      const combined = `${useCase} ${desc} ${accent}`;
+      return styleLower.split(/\s+/).some((word) => combined.includes(word));
+    });
+
+    const bestMatch = styleMatch ?? genderMatch[0];
+    if (bestMatch) {
+      setSelectedVoiceId(bestMatch.voice_id);
+      setVoiceAutoSelected(true);
+    }
+  }, [voiceRecommendation, voices]);
+
+  async function generateRadioScript() {
+    if (!selectedTort || selectedStates.length === 0 || !firmName.trim()) return;
+    setRadioLoading(true);
+    setRadioError(null);
+    setRadioScript(null);
+    setVoiceRecommendation(null);
+    setVoiceAutoSelected(false);
+
+    try {
+      const res = await fetch("/api/campaigns/generate-radio-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration: radioDuration,
+          tort_name: selectedTort,
+          firm_name: firmName.trim(),
+          firm_url: firmUrl.trim() || undefined,
+          states: selectedStates,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      setRadioScript(data.script);
+
+      if (data.voice_recommendation) {
+        setVoiceRecommendation(data.voice_recommendation as VoiceRecommendation);
+      }
+    } catch (err) {
+      setRadioError(
+        err instanceof Error ? err.message : "Failed to generate radio script",
+      );
+    } finally {
+      setRadioLoading(false);
+    }
+  }
+
   async function generatePlan() {
     if (!selectedTort || selectedStates.length === 0) return;
     setLoading(true);
@@ -543,6 +658,11 @@ export function CampaignBuilderClient() {
     setAiCreativeEnabled(false);
     setCreativeImages([null, null, null]);
     setCreativeLoading([false, false, false]);
+    setRadioScript(null);
+    setRadioLoading(false);
+    setRadioError(null);
+    setVoiceRecommendation(null);
+    setVoiceAutoSelected(false);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -1055,6 +1175,145 @@ export function CampaignBuilderClient() {
                 onRegenerateImage={generateCreativeImage}
               />
               <AiIntelligenceComplianceCard insights={aiInsights} />
+            </div>
+          )}
+
+          {/* Radio Spot Section — shown after AI insights load or error */}
+          {(aiInsights || aiError) && !aiLoading && (
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Mic className="h-5 w-5" style={{ color: accentColor }} />
+                <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+                  Radio Spot Generator
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-4 mb-4">
+                {/* Duration selector */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+                    Duration
+                  </label>
+                  <div className="flex gap-2">
+                    {([30, 60] as const).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setRadioDuration(d)}
+                        className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+                          radioDuration === d
+                            ? "text-white"
+                            : "border-slate-200 text-midnight-navy hover:border-slate-300"
+                        }`}
+                        style={
+                          radioDuration === d
+                            ? { backgroundColor: accentColor, borderColor: accentColor }
+                            : undefined
+                        }
+                      >
+                        {d}s
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Voice dropdown */}
+                {voices.length > 0 && (
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+                      Voice
+                    </label>
+                    <select
+                      value={selectedVoiceId}
+                      onChange={(e) => {
+                        setSelectedVoiceId(e.target.value);
+                        setVoiceAutoSelected(false);
+                      }}
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+                    >
+                      <option value="">Select a voice...</option>
+                      {voices.map((v) => (
+                        <option key={v.voice_id} value={v.voice_id}>
+                          {v.name}
+                          {v.labels?.gender ? ` (${v.labels.gender})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Generate button */}
+                <button
+                  type="button"
+                  onClick={generateRadioScript}
+                  disabled={radioLoading || !selectedTort || !firmName.trim()}
+                  className={`rounded-md px-5 py-2 text-sm font-semibold text-white transition-colors ${
+                    radioLoading || !selectedTort || !firmName.trim()
+                      ? "bg-slate-300 cursor-not-allowed"
+                      : ""
+                  }`}
+                  style={
+                    !radioLoading && selectedTort && firmName.trim()
+                      ? { backgroundColor: accentColor }
+                      : undefined
+                  }
+                >
+                  {radioLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4" />
+                      Generate Script
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Voice recommendation badge */}
+              {voiceRecommendation && (
+                <div className="mb-4 flex items-start gap-2 rounded-md border border-violet-200 bg-violet-50/50 p-3">
+                  <Info className="h-4 w-4 text-violet-500 mt-0.5 shrink-0" />
+                  <div className="text-sm text-midnight-navy">
+                    <span className="font-semibold">Recommended: </span>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                      style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+                    >
+                      {voiceRecommendation.gender === "female" ? "Female" : "Male"} voice — {voiceRecommendation.style}
+                    </span>
+                    <span className="ml-1.5 text-xs text-slate-gray">
+                      — {voiceRecommendation.reason}
+                    </span>
+                    {voiceAutoSelected && (
+                      <span className="ml-2 text-[10px] text-violet-500 font-medium">
+                        (auto-selected)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
+              {radioError && !radioLoading && (
+                <div className="mb-4 rounded-md border border-alert/20 bg-alert/5 p-3 text-sm text-alert">
+                  {radioError}
+                </div>
+              )}
+
+              {/* Script output */}
+              {radioScript && !radioLoading && (
+                <div className="rounded-md border border-slate-200 bg-cloud p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+                    {radioDuration}s Radio Script
+                  </p>
+                  <div className="text-sm leading-relaxed text-midnight-navy whitespace-pre-line">
+                    {radioScript}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
