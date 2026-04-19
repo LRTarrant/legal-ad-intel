@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
+import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import {
   getQualificationCriteriaByName,
   type TortQualificationCriteria,
@@ -253,6 +254,8 @@ export function CampaignBuilderClient() {
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([]);
+  const [tortPageData, setTortPageData] = useState<{ url: string; title: string; headings: string[]; snippet: string }[]>([]);
 
   // Recommended markets
   const [recommendedMarkets, setRecommendedMarkets] = useState<RecommendedMarket[]>([]);
@@ -305,7 +308,7 @@ export function CampaignBuilderClient() {
   // Feature 4: AI Radio Spot
   const [radioSpotAvailable, setRadioSpotAvailable] = useState<boolean | null>(null);
   const [radioExpanded, setRadioExpanded] = useState(false);
-  const [radioDuration, setRadioDuration] = useState<"30s" | "60s">("30s");
+  const [radioDuration, setRadioDuration] = useState<"15s" | "30s" | "60s">("30s");
   const [radioScript, setRadioScript] = useState("");
   const [radioScriptLoading, setRadioScriptLoading] = useState(false);
   const [radioScriptGenerated, setRadioScriptGenerated] = useState(false);
@@ -316,6 +319,8 @@ export function CampaignBuilderClient() {
   const [radioAudioUrl, setRadioAudioUrl] = useState<string | null>(null);
   const [radioError, setRadioError] = useState<string | null>(null);
   const [radioCooldown, setRadioCooldown] = useState(false);
+  const [voiceRecommendation, setVoiceRecommendation] = useState<{ gender: string; style: string; reason: string } | null>(null);
+  const [audienceContext, setAudienceContext] = useState<{ primary_age_bands: string; audience_note: string } | null>(null);
 
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
@@ -408,6 +413,8 @@ export function CampaignBuilderClient() {
           channel_mix: plan.channel_mix,
           budget_projection: plan.budget_projection,
         },
+        brand_asset_urls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
+        tort_pages: tortPageData.length > 0 ? tortPageData : undefined,
       }),
     })
       .then((res) => {
@@ -493,7 +500,7 @@ export function CampaignBuilderClient() {
 
   // Feature 2: Brand scraping
   const scrapeBrand = useCallback(
-    async (url: string) => {
+    async (url: string, tortName?: string) => {
       if (!url || !isValidUrl(url)) return;
       brandScrapeAbort.current?.abort();
       const controller = new AbortController();
@@ -502,10 +509,13 @@ export function CampaignBuilderClient() {
       setBrandScraping(true);
       setBrandScraped(false);
       try {
+        const body: Record<string, string> = { url };
+        if (tortName) body.tort_name = tortName;
+
         const res = await fetch("/api/campaigns/scrape-brand", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -520,6 +530,9 @@ export function CampaignBuilderClient() {
           secondary: data.secondaryColor ?? null,
           accent: data.accentColor ?? null,
         });
+        if (data.tortPages && Array.isArray(data.tortPages)) {
+          setTortPageData(data.tortPages);
+        }
         setBrandScraped(true);
       } catch {
         // Silently fail — brand scraping is best-effort
@@ -555,6 +568,7 @@ export function CampaignBuilderClient() {
             secondary: brandColors.secondary,
             accent: brandColors.accent,
           },
+          brandAssetUrls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
         }),
       });
 
@@ -611,7 +625,7 @@ export function CampaignBuilderClient() {
     }
   }
 
-  async function generateRadioScript(duration: "30s" | "60s") {
+  async function generateRadioScript(duration: "15s" | "30s" | "60s") {
     if (!plan || !selectedTort) return;
     setRadioScriptLoading(true);
     setRadioError(null);
@@ -633,6 +647,24 @@ export function CampaignBuilderClient() {
         setRadioScript(data.script);
         setRadioScriptGenerated(true);
       }
+      if (data.voice_recommendation) {
+        setVoiceRecommendation(data.voice_recommendation);
+        // Auto-select a matching voice from the loaded voices
+        if (radioVoices.length > 0) {
+          const recGender = (data.voice_recommendation.gender ?? "").toLowerCase();
+          const match = radioVoices.find(
+            (v) =>
+              v.name.toLowerCase().includes(recGender) ||
+              v.description.toLowerCase().includes(recGender),
+          );
+          if (match) {
+            setRadioSelectedVoice(match.id);
+          }
+        }
+      } else {
+        setVoiceRecommendation(null);
+      }
+      setAudienceContext(data.audience_context ?? null);
     } catch {
       setRadioError("Failed to generate script. You can write your own below.");
     } finally {
@@ -777,6 +809,8 @@ export function CampaignBuilderClient() {
           disqualify_message: matchedCriteria?.disqualifyMessage ?? undefined,
           qualify_message: matchedCriteria?.qualifyMessage ?? undefined,
           brand_colors: (brandColors.primary || brandColors.secondary || brandColors.accent) ? brandColors : undefined,
+          brand_asset_urls: brandAssets.length > 0 ? brandAssets.map((a) => a.url) : undefined,
+          tort_pages: tortPageData.length > 0 ? tortPageData : undefined,
         }),
       });
 
@@ -905,7 +939,7 @@ export function CampaignBuilderClient() {
                 onBlur={(e) => {
                   const val = e.target.value.trim();
                   if (val && isValidUrl(val) && !brandScraped) {
-                    scrapeBrand(val);
+                    scrapeBrand(val, selectedTort || undefined);
                   }
                 }}
                 placeholder="e.g., https://www.smithlaw.com"
@@ -1150,6 +1184,19 @@ export function CampaignBuilderClient() {
               </div>
             )}
           </div>
+
+          {/* Brand Assets Upload */}
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <BrandAssetsUpload assets={brandAssets} onAssetsChange={setBrandAssets} accentColor={accentColor} />
+          </div>
+
+          {/* Tort page indicator */}
+          {tortPageData.length > 0 && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-intelligence-teal">
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              Found {tortPageData.length} existing {selectedTort} page{tortPageData.length !== 1 ? "s" : ""} on firm website
+            </div>
+          )}
         </div>
       </div>
 
@@ -1272,7 +1319,7 @@ export function CampaignBuilderClient() {
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-slate-gray">
-                  Uses DALL-E 3 to generate background images for ad creatives (~$0.12 for 3 images). Gradient mockups are used as fallback.
+                  Uses AI to generate background images for ad creatives. Gradient mockups are used as fallback.
                 </p>
               </div>
 
@@ -1321,6 +1368,8 @@ export function CampaignBuilderClient() {
                     setRadioAudioUrl(null);
                     generateRadioSpot();
                   }}
+                  voiceRecommendation={voiceRecommendation}
+                  audienceContext={audienceContext}
                 />
               )}
             </div>
@@ -2410,11 +2459,13 @@ function AiRadioSpotCard({
   cooldown,
   onGenerate,
   onRegenerate,
+  voiceRecommendation,
+  audienceContext,
 }: {
   expanded: boolean;
   onToggleExpand: () => void;
-  duration: "30s" | "60s";
-  onDurationChange: (d: "30s" | "60s") => void;
+  duration: "15s" | "30s" | "60s";
+  onDurationChange: (d: "15s" | "30s" | "60s") => void;
   script: string;
   onScriptChange: (s: string) => void;
   scriptLoading: boolean;
@@ -2428,10 +2479,12 @@ function AiRadioSpotCard({
   cooldown: boolean;
   onGenerate: () => void;
   onRegenerate: () => void;
+  voiceRecommendation?: { gender: string; style: string; reason: string } | null;
+  audienceContext?: { primary_age_bands: string; audience_note: string } | null;
 }) {
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
   const charCount = script.length;
-  const targetWords = duration === "30s" ? "75-80" : "150-160";
+  const targetWords = duration === "15s" ? "35-40" : duration === "30s" ? "75-80" : "150-160";
 
   return (
     <div className="rounded-lg border-l-4 border-l-violet-400 bg-white shadow-sm">
@@ -2464,7 +2517,7 @@ function AiRadioSpotCard({
               Duration
             </label>
             <div className="flex gap-2">
-              {(["30s", "60s"] as const).map((d) => (
+              {(["15s", "30s", "60s"] as const).map((d) => (
                 <button
                   key={d}
                   type="button"
@@ -2475,7 +2528,7 @@ function AiRadioSpotCard({
                       : "border-slate-200 text-midnight-navy hover:border-slate-300"
                   }`}
                 >
-                  {d === "30s" ? "30 seconds" : "60 seconds"}
+                  {d === "15s" ? "15 seconds" : d === "30s" ? "30 seconds" : "60 seconds"}
                 </button>
               ))}
             </div>
@@ -2490,7 +2543,7 @@ function AiRadioSpotCard({
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <Loader2 className="h-4 w-4 animate-spin text-violet-500" />
                 <span className="text-sm text-slate-gray">
-                  Generating {duration === "30s" ? "30-second" : "60-second"} radio script...
+                  Generating {duration === "15s" ? "15-second" : duration === "30s" ? "30-second" : "60-second"} radio script...
                 </span>
               </div>
             ) : (
@@ -2498,7 +2551,7 @@ function AiRadioSpotCard({
                 value={script}
                 onChange={(e) => onScriptChange(e.target.value)}
                 placeholder="Enter your radio spot script here, or wait for AI generation..."
-                rows={duration === "30s" ? 4 : 7}
+                rows={duration === "15s" ? 3 : duration === "30s" ? 4 : 7}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300 resize-none"
               />
             )}
@@ -2506,15 +2559,27 @@ function AiRadioSpotCard({
               <span>
                 {charCount} characters &middot; ~{wordCount} words
               </span>
-              <span>Target: {targetWords} words for {duration === "30s" ? "30s" : "60s"}</span>
+              <span>Target: {targetWords} words for {duration}</span>
             </div>
           </div>
+
+          {/* Audience context */}
+          {audienceContext?.audience_note && (
+            <div className="text-xs text-slate-gray">
+              <span className="font-medium">Audience:</span> {audienceContext.audience_note}
+            </div>
+          )}
 
           {/* Voice selection */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
               Voice
             </label>
+            {voiceRecommendation && (
+              <div className="mb-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+                Recommended: {voiceRecommendation.gender.charAt(0).toUpperCase() + voiceRecommendation.gender.slice(1)} · {voiceRecommendation.style} — {voiceRecommendation.reason}
+              </div>
+            )}
             {voicesLoading ? (
               <div className="flex items-center gap-2 text-sm text-slate-gray">
                 <Loader2 className="h-4 w-4 animate-spin text-violet-500" />

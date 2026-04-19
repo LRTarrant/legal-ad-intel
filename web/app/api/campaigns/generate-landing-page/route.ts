@@ -37,7 +37,12 @@ interface LandingPageRequest {
   };
 }
 
-const SINGLE_PAGE_SYSTEM_PROMPT = `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
+function buildSinglePageSystemPrompt(audienceNotes: string | null): string {
+  const audienceContext = audienceNotes
+    ? `\nAUDIENCE CONTEXT: ${audienceNotes}. Tailor the tone, language complexity, and emotional appeal to this demographic.`
+    : "";
+
+  return `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
 
 Your landing pages must:
 - Be fully self-contained: all CSS inline in a <style> tag, no external dependencies
@@ -46,6 +51,12 @@ Your landing pages must:
 - Follow legal advertising best practices
 - Include proper HTML5 document structure (<!DOCTYPE html>, <html>, <head>, <body>)
 - Use system font stack for maximum compatibility
+${audienceContext}
+
+VISUAL IMAGERY GUIDANCE:
+- Any image references or visual descriptions should be tort-contextual, NOT generic legal imagery.
+- Do NOT reference or describe: courtrooms, gavels, legal scales, law firm conference rooms, people in business suits, handshakes, or generic "justice" imagery.
+- Instead, reference imagery that matches the specific tort and its affected audience (e.g., outdoor/agricultural scenes for herbicide torts, medical settings for pharmaceutical torts, family/home settings for consumer product torts).
 
 IMPORTANT ABOUT QUALIFICATION FORMS:
 - Do NOT generate any qualification form, screening questions, or multi-step form.
@@ -60,6 +71,7 @@ CRITICAL VISUAL GUIDANCE:
 - For example: Roundup → outdoor/agricultural scenes; Depo-Provera → women's health settings; Hair Relaxer → beauty/personal care settings.
 
 IMPORTANT: Return ONLY valid JSON with exactly two keys: "html" (the complete HTML document as a string) and "title" (a short page title). Do not include markdown, code fences, or any text outside the JSON object.`;
+}
 
 const MULTI_PAGE_SYSTEM_PROMPT = `You are an expert legal marketing web designer who creates high-converting multi-page landing experiences for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
 
@@ -288,6 +300,7 @@ export async function POST(req: NextRequest) {
 
     /* ── Fetch audience profile ──────────────────────────────────── */
     let audienceProfile: AudienceProfile | null = null;
+    let audienceNotes: string | null = null;
     try {
       const { data: profiles } = await (supabase as any)
         .from("tort_audience_profiles")
@@ -300,6 +313,7 @@ export async function POST(req: NextRequest) {
           age_band_weights: (p.age_band_weights as Record<string, number>) ?? undefined,
           notes: (p.notes as string) ?? undefined,
         };
+        audienceNotes = audienceProfile.notes ?? null;
       }
     } catch {
       // Non-critical — continue without audience data
@@ -310,7 +324,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = isMultiPage
       ? MULTI_PAGE_SYSTEM_PROMPT
-      : SINGLE_PAGE_SYSTEM_PROMPT;
+      : buildSinglePageSystemPrompt(audienceNotes);
     const userPrompt = isMultiPage
       ? buildMultiPageUserPrompt(body, audienceProfile)
       : buildSinglePageUserPrompt(body, audienceProfile);
