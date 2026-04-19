@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
 import {
@@ -27,6 +27,9 @@ import {
   RefreshCw,
   Clipboard,
   ClipboardCheck,
+  Plus,
+  ImageIcon,
+  Palette,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
@@ -34,6 +37,7 @@ import {
   getQualificationCriteriaByName,
   type TortQualificationCriteria,
   type ScreeningQuestion,
+  type QuestionType,
 } from "@/lib/data/tort-qualification-criteria";
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
@@ -168,6 +172,21 @@ interface AiInsights {
   historical_playbook: string;
 }
 
+/* ── Custom Question & Brand Types ──────────────────────────────────────── */
+
+interface CustomQuestion {
+  id: string;
+  question: string;
+  type: QuestionType;
+  options?: string[];
+}
+
+interface BrandColors {
+  primary: string | null;
+  secondary: string | null;
+  accent: string | null;
+}
+
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function fmtCurrency(val: number | null): string {
@@ -251,11 +270,36 @@ export function CampaignBuilderClient() {
   // Qualification flow state
   const [qualificationStyle, setQualificationStyle] = useState<"multi-step" | "single-page" | null>(null);
 
+  // Feature 1: Selectable + custom criteria questions
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set());
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
+
+  // Feature 2: Brand scraping
+  const [brandColors, setBrandColors] = useState<BrandColors>({ primary: null, secondary: null, accent: null });
+  const [brandScraping, setBrandScraping] = useState(false);
+  const [brandScraped, setBrandScraped] = useState(false);
+  const brandScrapeAbort = useRef<AbortController | null>(null);
+
+  // Feature 3: AI creative images
+  const [aiCreativeEnabled, setAiCreativeEnabled] = useState(false);
+  const [creativeImages, setCreativeImages] = useState<(string | null)[]>([null, null, null]);
+  const [creativeLoading, setCreativeLoading] = useState<boolean[]>([false, false, false]);
+
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
     () => (selectedTort ? getQualificationCriteriaByName(selectedTort) : undefined),
     [selectedTort],
   );
+
+  // Initialize selected question IDs when matched criteria changes
+  useEffect(() => {
+    if (matchedCriteria) {
+      setSelectedQuestionIds(new Set(matchedCriteria.screeningQuestions.map((q) => q.id)));
+    } else {
+      setSelectedQuestionIds(new Set());
+    }
+    setCustomQuestions([]);
+  }, [matchedCriteria]);
 
   // Fetch tort names on mount
   useEffect(() => {
@@ -334,6 +378,154 @@ export function CampaignBuilderClient() {
     );
   }
 
+  // Feature 1: Question selection helpers
+  function toggleQuestion(id: string) {
+    setSelectedQuestionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function addCustomQuestion() {
+    const id = `custom-${crypto.randomUUID()}`;
+    setCustomQuestions((prev) => [
+      ...prev,
+      { id, question: "", type: "yes_no" as QuestionType },
+    ]);
+    setSelectedQuestionIds((prev) => new Set([...prev, id]));
+  }
+
+  function updateCustomQuestion(id: string, updates: Partial<CustomQuestion>) {
+    setCustomQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, ...updates } : q)),
+    );
+  }
+
+  function removeCustomQuestion(id: string) {
+    setCustomQuestions((prev) => prev.filter((q) => q.id !== id));
+    setSelectedQuestionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  // Build the final selected screening questions for landing page generation
+  const selectedScreeningQuestions: ScreeningQuestion[] = useMemo(() => {
+    const standard = (matchedCriteria?.screeningQuestions ?? []).filter(
+      (q) => selectedQuestionIds.has(q.id),
+    );
+    const custom: ScreeningQuestion[] = customQuestions
+      .filter((q) => selectedQuestionIds.has(q.id) && q.question.trim())
+      .map((q) => ({
+        id: q.id,
+        question: q.question,
+        type: q.type,
+        options: q.options,
+      }));
+    return [...standard, ...custom];
+  }, [matchedCriteria, selectedQuestionIds, customQuestions]);
+
+  const totalSelectedQuestions = selectedScreeningQuestions.length;
+
+  // Feature 2: Brand scraping
+  const scrapeBrand = useCallback(
+    async (url: string) => {
+      if (!url || !isValidUrl(url)) return;
+      brandScrapeAbort.current?.abort();
+      const controller = new AbortController();
+      brandScrapeAbort.current = controller;
+
+      setBrandScraping(true);
+      setBrandScraped(false);
+      try {
+        const res = await fetch("/api/campaigns/scrape-brand", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (controller.signal.aborted) return;
+
+        if (data.logoUrl && !logoUrl) {
+          setLogoUrl(data.logoUrl);
+        }
+        setBrandColors({
+          primary: data.primaryColor ?? null,
+          secondary: data.secondaryColor ?? null,
+          accent: data.accentColor ?? null,
+        });
+        setBrandScraped(true);
+      } catch {
+        // Silently fail — brand scraping is best-effort
+      } finally {
+        if (!controller.signal.aborted) {
+          setBrandScraping(false);
+        }
+      }
+    },
+    [logoUrl],
+  );
+
+  // Feature 3: AI creative image generation
+  async function generateCreativeImage(variantIndex: number) {
+    if (!aiInsights || !plan) return;
+    setCreativeLoading((prev) => {
+      const next = [...prev];
+      next[variantIndex] = true;
+      return next;
+    });
+
+    try {
+      const res = await fetch("/api/campaigns/generate-creative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tortName: selectedTort,
+          firmName: firmName.trim() || undefined,
+          audienceDemo: plan.audience_targeting?.meta_targeting.demographics,
+          messaging: aiInsights.ad_copy.meta.headlines[variantIndex] ?? aiInsights.strategic_brief,
+          brandColors: {
+            primary: brandColors.primary,
+            secondary: brandColors.secondary,
+            accent: brandColors.accent,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setCreativeImages((prev) => {
+        const next = [...prev];
+        next[variantIndex] = data.imageUrl;
+        return next;
+      });
+    } catch {
+      // Keep null — gradient fallback will show
+    } finally {
+      setCreativeLoading((prev) => {
+        const next = [...prev];
+        next[variantIndex] = false;
+        return next;
+      });
+    }
+  }
+
+  async function generateAllCreativeImages() {
+    if (!aiInsights || !plan) return;
+    const results = await Promise.allSettled(
+      [0, 1, 2].map((i) => generateCreativeImage(i)),
+    );
+    // Results handled by individual calls
+  }
+
   async function generatePlan() {
     if (!selectedTort || selectedStates.length === 0) return;
     setLoading(true);
@@ -348,6 +540,9 @@ export function CampaignBuilderClient() {
     setLandingPageTitle(null);
     setLandingPageError(null);
     setQualificationStyle(null);
+    setAiCreativeEnabled(false);
+    setCreativeImages([null, null, null]);
+    setCreativeLoading([false, false, false]);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -412,9 +607,10 @@ export function CampaignBuilderClient() {
             : undefined,
           logo_url: logoUrl ?? undefined,
           qualification_style: qualificationStyle ?? undefined,
-          screening_questions: matchedCriteria?.screeningQuestions ?? undefined,
+          screening_questions: selectedScreeningQuestions.length > 0 ? selectedScreeningQuestions : undefined,
           disqualify_message: matchedCriteria?.disqualifyMessage ?? undefined,
           qualify_message: matchedCriteria?.qualifyMessage ?? undefined,
+          brand_colors: (brandColors.primary || brandColors.secondary || brandColors.accent) ? brandColors : undefined,
         }),
       });
 
@@ -498,24 +694,38 @@ export function CampaignBuilderClient() {
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
               Website URL (optional)
             </label>
-            <input
-              type="url"
-              value={firmUrl}
-              onChange={(e) => {
-                setFirmUrl(e.target.value);
-                if (e.target.value && !isValidUrl(e.target.value)) {
-                  setFirmUrlError("Enter a valid URL (e.g., https://www.smithlaw.com)");
-                } else {
-                  setFirmUrlError(null);
-                }
-              }}
-              placeholder="e.g., https://www.smithlaw.com"
-              className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm text-midnight-navy focus:outline-none focus:ring-1 ${
-                firmUrlError
-                  ? "border-alert focus:border-alert focus:ring-alert"
-                  : "border-slate-200 focus:border-intelligence-teal focus:ring-intelligence-teal"
-              }`}
-            />
+            <div className="relative">
+              <input
+                type="url"
+                value={firmUrl}
+                onChange={(e) => {
+                  setFirmUrl(e.target.value);
+                  if (e.target.value && !isValidUrl(e.target.value)) {
+                    setFirmUrlError("Enter a valid URL (e.g., https://www.smithlaw.com)");
+                  } else {
+                    setFirmUrlError(null);
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value.trim();
+                  if (val && isValidUrl(val) && !brandScraped) {
+                    scrapeBrand(val);
+                  }
+                }}
+                placeholder="e.g., https://www.smithlaw.com"
+                className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm text-midnight-navy focus:outline-none focus:ring-1 ${
+                  firmUrlError
+                    ? "border-alert focus:border-alert focus:ring-alert"
+                    : "border-slate-200 focus:border-intelligence-teal focus:ring-intelligence-teal"
+                }`}
+              />
+              {brandScraping && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-intelligence-teal" />
+                  <span className="text-[10px] text-intelligence-teal font-medium">Detecting brand...</span>
+                </div>
+              )}
+            </div>
             {firmUrlError && (
               <p className="mt-1 text-xs text-alert">{firmUrlError}</p>
             )}
@@ -665,9 +875,47 @@ export function CampaignBuilderClient() {
           </div>
         </div>
 
-        {/* Logo Upload */}
+        {/* Logo Upload + Brand Colors */}
         <div className="mt-4 border-t border-slate-100 pt-4">
-          <LogoUpload logoUrl={logoUrl} onLogoChange={setLogoUrl} accentColor={accentColor} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <LogoUpload logoUrl={logoUrl} onLogoChange={setLogoUrl} accentColor={accentColor} />
+
+            {/* Brand Colors (from scrape or manual) */}
+            {brandScraped && (brandColors.primary || brandColors.secondary || brandColors.accent) && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Palette className="h-3.5 w-3.5" />
+                    Detected Brand Colors
+                  </span>
+                </label>
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                  {[
+                    { label: "Primary", color: brandColors.primary },
+                    { label: "Secondary", color: brandColors.secondary },
+                    { label: "Accent", color: brandColors.accent },
+                  ]
+                    .filter((c) => c.color)
+                    .map((c) => (
+                      <div key={c.label} className="flex items-center gap-2">
+                        <div
+                          className="h-8 w-8 rounded-md border border-slate-200 shadow-sm"
+                          style={{ backgroundColor: c.color! }}
+                          title={`${c.label}: ${c.color}`}
+                        />
+                        <div>
+                          <p className="text-[10px] text-slate-gray uppercase tracking-wider">{c.label}</p>
+                          <p className="text-xs font-mono text-midnight-navy">{c.color}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                <p className="text-[10px] text-slate-gray">
+                  Colors will be used in landing page design and ad creatives
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -754,7 +1002,58 @@ export function CampaignBuilderClient() {
           {aiInsights && !aiLoading && (
             <div className="space-y-6">
               <AiStrategicBriefCard insights={aiInsights} />
-              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} logoUrl={logoUrl} firmName={firmName.trim()} firmUrl={firmUrl.trim()} />
+
+              {/* AI Creative Images Toggle */}
+              <div className="rounded-lg bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-violet-500" />
+                    <h3 className="font-heading text-base font-semibold text-midnight-navy">
+                      Generate AI Creative Images?
+                    </h3>
+                    <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-600">
+                      Beta
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={aiCreativeEnabled}
+                    onClick={() => {
+                      const next = !aiCreativeEnabled;
+                      setAiCreativeEnabled(next);
+                      if (next && creativeImages.every((img) => img === null)) {
+                        generateAllCreativeImages();
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                      aiCreativeEnabled ? "bg-violet-500" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                        aiCreativeEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-slate-gray">
+                  Uses DALL-E 3 to generate background images for ad creatives (~$0.12 for 3 images). Gradient mockups are used as fallback.
+                </p>
+              </div>
+
+              <AiAdCopyCard
+                adCopy={aiInsights.ad_copy}
+                tortName={selectedTort}
+                logoUrl={logoUrl}
+                firmName={firmName.trim()}
+                firmUrl={firmUrl.trim()}
+                brandColors={brandColors}
+                aiCreativeEnabled={aiCreativeEnabled}
+                creativeImages={creativeImages}
+                creativeLoading={creativeLoading}
+                onRegenerateImage={generateCreativeImage}
+              />
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
           )}
@@ -769,6 +1068,13 @@ export function CampaignBuilderClient() {
               qualificationStyle={qualificationStyle}
               setQualificationStyle={setQualificationStyle}
               matchedCriteria={matchedCriteria}
+              selectedQuestionIds={selectedQuestionIds}
+              customQuestions={customQuestions}
+              totalSelectedQuestions={totalSelectedQuestions}
+              onToggleQuestion={toggleQuestion}
+              onAddCustomQuestion={addCustomQuestion}
+              onUpdateCustomQuestion={updateCustomQuestion}
+              onRemoveCustomQuestion={removeCustomQuestion}
               landingPageHtml={landingPageHtml}
               landingPageTitle={landingPageTitle}
               landingPageLoading={landingPageLoading}
@@ -1391,62 +1697,127 @@ function AdCreativeMockup({
   variantIndex,
   logoUrl,
   firmName,
+  aiImageUrl,
+  isLoading,
+  onRegenerate,
+  brandColors,
 }: {
   headline: string;
   tortName: string;
   variantIndex: number;
   logoUrl?: string | null;
   firmName?: string;
+  aiImageUrl?: string | null;
+  isLoading?: boolean;
+  onRegenerate?: () => void;
+  brandColors?: BrandColors;
 }) {
-  const theme = AD_CREATIVE_THEMES[variantIndex % AD_CREATIVE_THEMES.length];
+  const defaultTheme = AD_CREATIVE_THEMES[variantIndex % AD_CREATIVE_THEMES.length];
+  // Use brand colors if available, otherwise default theme
+  const theme = brandColors?.primary
+    ? {
+        from: brandColors.primary,
+        to: brandColors.secondary ?? defaultTheme.to,
+        accent: brandColors.accent ?? defaultTheme.accent,
+      }
+    : defaultTheme;
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="relative h-44 flex flex-col items-center justify-center overflow-hidden bg-slate-100">
+        <div className="animate-pulse flex flex-col items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
+          <p className="text-xs text-slate-gray">Generating image...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative h-44 flex flex-col items-center justify-center overflow-hidden px-5"
-      style={{
-        background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
-      }}
+      style={
+        aiImageUrl
+          ? { backgroundImage: `url(${aiImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+          : { background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)` }
+      }
     >
-      {/* Subtle pattern overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-      />
+      {/* Dark overlay for AI images to ensure text readability */}
+      {aiImageUrl && (
+        <div className="absolute inset-0 bg-black/40" />
+      )}
+
+      {/* Subtle pattern overlay (gradient only) */}
+      {!aiImageUrl && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+      )}
 
       {/* Decorative accent line */}
       <div
-        className="absolute top-0 left-0 h-1 w-full"
+        className="absolute top-0 left-0 h-1 w-full z-10"
         style={{ background: `linear-gradient(90deg, ${theme.accent}, transparent)` }}
       />
 
-      {/* Scales of justice icon */}
-      <div className="absolute bottom-3 right-3 opacity-10">
-        <svg
-          width="64"
-          height="64"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="white"
-          strokeWidth="1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {/* Regenerate button */}
+      {onRegenerate && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRegenerate();
+          }}
+          className="absolute top-2 right-2 z-20 rounded-md bg-black/40 p-1 text-white/70 hover:text-white hover:bg-black/60 transition-colors"
+          title="Regenerate image"
         >
-          <path d="M12 3v19" />
-          <path d="M5 7l7-4 7 4" />
-          <circle cx="5" cy="7" r="0.5" fill="white" />
-          <circle cx="19" cy="7" r="0.5" fill="white" />
-          <path d="M2 14c0-1.7 1.3-3 3-3s3 1.3 3 3H2z" />
-          <path d="M16 14c0-1.7 1.3-3 3-3s3 1.3 3 3h-6z" />
-          <rect x="10" y="2" width="4" height="2" rx="1" fill="white" opacity="0.3" />
-        </svg>
-      </div>
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      {/* Scales of justice icon (gradient only) */}
+      {!aiImageUrl && (
+        <div className="absolute bottom-3 right-3 opacity-10">
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 3v19" />
+            <path d="M5 7l7-4 7 4" />
+            <circle cx="5" cy="7" r="0.5" fill="white" />
+            <circle cx="19" cy="7" r="0.5" fill="white" />
+            <path d="M2 14c0-1.7 1.3-3 3-3s3 1.3 3 3H2z" />
+            <path d="M16 14c0-1.7 1.3-3 3-3s3 1.3 3 3h-6z" />
+            <rect x="10" y="2" width="4" height="2" rx="1" fill="white" opacity="0.3" />
+          </svg>
+        </div>
+      )}
 
       {/* Brand logo overlay */}
-      {logoUrl && (
+      {logoUrl && !onRegenerate && (
         <div className="absolute top-3 right-3 z-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt="Brand logo"
+            className="h-8 w-auto max-w-[72px] object-contain drop-shadow-md"
+          />
+        </div>
+      )}
+      {logoUrl && onRegenerate && (
+        <div className="absolute top-2 right-10 z-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoUrl}
@@ -1458,7 +1829,7 @@ function AdCreativeMockup({
 
       {/* Tort type badge */}
       {tortName && (
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 z-10">
           <span
             className="inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90"
             style={{ backgroundColor: `${theme.accent}99` }}
@@ -1482,7 +1853,7 @@ function AdCreativeMockup({
 
       {/* Decorative bottom accent */}
       <div
-        className="absolute bottom-0 left-0 h-0.5 w-full opacity-40"
+        className="absolute bottom-0 left-0 h-0.5 w-full opacity-40 z-10"
         style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }}
       />
     </div>
@@ -1495,12 +1866,22 @@ function AiAdCopyCard({
   logoUrl,
   firmName,
   firmUrl,
+  brandColors,
+  aiCreativeEnabled,
+  creativeImages,
+  creativeLoading,
+  onRegenerateImage,
 }: {
   adCopy: AiInsights["ad_copy"];
   tortName: string;
   logoUrl?: string | null;
   firmName?: string;
   firmUrl?: string;
+  brandColors?: BrandColors;
+  aiCreativeEnabled?: boolean;
+  creativeImages?: (string | null)[];
+  creativeLoading?: boolean[];
+  onRegenerateImage?: (index: number) => void;
 }) {
   const displayUrl = firmUrl
     ? firmUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
@@ -1535,6 +1916,10 @@ function AiAdCopyCard({
                   variantIndex={i}
                   logoUrl={logoUrl}
                   firmName={firmName}
+                  brandColors={brandColors}
+                  aiImageUrl={aiCreativeEnabled ? creativeImages?.[i] : null}
+                  isLoading={aiCreativeEnabled && (creativeLoading?.[i] ?? false)}
+                  onRegenerate={aiCreativeEnabled && onRegenerateImage ? () => onRegenerateImage(i) : undefined}
                 />
                 <div className="p-3 space-y-2">
                   <p className="text-sm font-semibold text-midnight-navy leading-tight">
@@ -1742,6 +2127,13 @@ function LandingPageSteps({
   qualificationStyle,
   setQualificationStyle,
   matchedCriteria,
+  selectedQuestionIds,
+  customQuestions,
+  totalSelectedQuestions,
+  onToggleQuestion,
+  onAddCustomQuestion,
+  onUpdateCustomQuestion,
+  onRemoveCustomQuestion,
   landingPageHtml,
   landingPageTitle,
   landingPageLoading,
@@ -1759,6 +2151,13 @@ function LandingPageSteps({
   qualificationStyle: "multi-step" | "single-page" | null;
   setQualificationStyle: (v: "multi-step" | "single-page" | null) => void;
   matchedCriteria: TortQualificationCriteria | undefined;
+  selectedQuestionIds: Set<string>;
+  customQuestions: CustomQuestion[];
+  totalSelectedQuestions: number;
+  onToggleQuestion: (id: string) => void;
+  onAddCustomQuestion: () => void;
+  onUpdateCustomQuestion: (id: string, updates: Partial<CustomQuestion>) => void;
+  onRemoveCustomQuestion: (id: string) => void;
   landingPageHtml: string | null;
   landingPageTitle: string | null;
   landingPageLoading: boolean;
@@ -1885,58 +2284,175 @@ function LandingPageSteps({
         </div>
       )}
 
-      {/* Step C: Screening Questions Preview */}
+      {/* Step C: Interactive Screening Questions Selection */}
       {wantsLandingPage === true && matchedCriteria && (
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="h-5 w-5" style={{ color: accentColor }} />
-            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
-              Qualification Screening Questions
-            </h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5" style={{ color: accentColor }} />
+              <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+                Qualification Screening Questions
+              </h3>
+            </div>
+            <span className="text-xs text-slate-gray">
+              {totalSelectedQuestions} selected
+              {totalSelectedQuestions === 0 && (
+                <span className="ml-1 text-alert font-medium">(min 1 required)</span>
+              )}
+            </span>
           </div>
           <p className="text-sm text-slate-gray mb-4">
-            These questions will be included in your landing page to pre-qualify
-            leads for <span className="font-medium text-midnight-navy">{matchedCriteria.tortName}</span>.
-            They are ordered by highest disqualification rate first.
+            Select which questions to include on your landing page. Uncheck any you don&apos;t want.
+            You can also add custom questions below.
           </p>
+
+          {/* Prepopulated questions with checkboxes */}
           <div className="space-y-2">
-            {matchedCriteria.screeningQuestions.map((q, i) => (
-              <div
-                key={q.id}
-                className="flex items-start gap-3 rounded-md border border-slate-100 bg-cloud/50 p-3"
-              >
-                <span
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: accentColor }}
+            {matchedCriteria.screeningQuestions.map((q, i) => {
+              const isChecked = selectedQuestionIds.has(q.id);
+              return (
+                <div
+                  key={q.id}
+                  className={`flex items-start gap-3 rounded-md border p-3 transition-colors cursor-pointer ${
+                    isChecked
+                      ? "border-slate-200 bg-cloud/50"
+                      : "border-slate-100 bg-white opacity-60"
+                  }`}
+                  onClick={() => onToggleQuestion(q.id)}
                 >
-                  {i + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-midnight-navy">
-                    {q.question}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-gray uppercase tracking-wider">
-                      {questionTypeLabel(q.type)}
-                    </span>
-                    {q.disqualifyOn && q.disqualifyOn.length > 0 && (
-                      <span className="rounded bg-alert/10 px-1.5 py-0.5 text-[10px] font-medium text-alert uppercase tracking-wider">
-                        Disqualifies on: {q.disqualifyOn.join(", ")}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleQuestion(q.id);
+                    }}
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs transition-colors ${
+                      isChecked
+                        ? "border-intelligence-teal bg-intelligence-teal text-white"
+                        : "border-slate-300 bg-white"
+                    }`}
+                  >
+                    {isChecked && <Check className="h-3 w-3" />}
+                  </button>
+                  <span
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ backgroundColor: isChecked ? accentColor : "#94a3b8" }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-midnight-navy">
+                      {q.question}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-gray uppercase tracking-wider">
+                        {questionTypeLabel(q.type)}
                       </span>
+                      {q.disqualifyOn && q.disqualifyOn.length > 0 && (
+                        <span className="rounded bg-alert/10 px-1.5 py-0.5 text-[10px] font-medium text-alert uppercase tracking-wider">
+                          Disqualifies on: {q.disqualifyOn.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                    {q.helpText && (
+                      <p className="mt-1 text-xs text-slate-gray">{q.helpText}</p>
                     )}
                   </div>
-                  {q.helpText && (
-                    <p className="mt-1 text-xs text-slate-gray">{q.helpText}</p>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Custom questions */}
+          {customQuestions.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                Custom Questions
+              </p>
+              {customQuestions.map((q) => {
+                const isChecked = selectedQuestionIds.has(q.id);
+                return (
+                  <div
+                    key={q.id}
+                    className={`flex items-start gap-3 rounded-md border p-3 transition-all ${
+                      isChecked
+                        ? "border-violet-200 bg-violet-50/30"
+                        : "border-slate-100 bg-white opacity-60"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onToggleQuestion(q.id)}
+                      className={`mt-2 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs transition-colors ${
+                        isChecked
+                          ? "border-intelligence-teal bg-intelligence-teal text-white"
+                          : "border-slate-300 bg-white"
+                      }`}
+                    >
+                      {isChecked && <Check className="h-3 w-3" />}
+                    </button>
+                    <span className="mt-2 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-600 uppercase tracking-wider shrink-0">
+                      Custom
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={q.question}
+                        onChange={(e) => onUpdateCustomQuestion(q.id, { question: e.target.value })}
+                        placeholder="Enter your question..."
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+                      />
+                      <select
+                        value={q.type}
+                        onChange={(e) => onUpdateCustomQuestion(q.id, { type: e.target.value as QuestionType })}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-midnight-navy focus:border-intelligence-teal focus:outline-none"
+                      >
+                        <option value="yes_no">Yes / No</option>
+                        <option value="select">Multiple Choice</option>
+                        <option value="text">Free Text</option>
+                      </select>
+                      {q.type === "select" && (
+                        <input
+                          type="text"
+                          value={q.options?.join(", ") ?? ""}
+                          onChange={(e) =>
+                            onUpdateCustomQuestion(q.id, {
+                              options: e.target.value.split(",").map((o) => o.trim()).filter(Boolean),
+                            })
+                          }
+                          placeholder="Options (comma-separated): e.g., Option A, Option B, Option C"
+                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+                        />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveCustomQuestion(q.id)}
+                      className="mt-2 shrink-0 rounded p-1 text-slate-gray/50 hover:text-alert hover:bg-alert/10 transition-colors"
+                      title="Remove question"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add custom question button */}
+          <button
+            type="button"
+            onClick={onAddCustomQuestion}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-gray hover:border-intelligence-teal hover:text-intelligence-teal transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Custom Question
+          </button>
         </div>
       )}
 
       {/* Step D: Qualification Flow Style */}
-      {wantsLandingPage === true && matchedCriteria && (
+      {wantsLandingPage === true && matchedCriteria && totalSelectedQuestions > 0 && (
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="h-5 w-5" style={{ color: accentColor }} />
@@ -1945,7 +2461,7 @@ function LandingPageSteps({
             </h3>
           </div>
           <p className="text-sm text-slate-gray mb-4">
-            Choose how qualification questions are presented on the landing page.
+            Choose how your {totalSelectedQuestions} selected question{totalSelectedQuestions !== 1 ? "s are" : " is"} presented on the landing page.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             <button
