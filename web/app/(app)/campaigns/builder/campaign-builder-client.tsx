@@ -280,6 +280,9 @@ export function CampaignBuilderClient() {
   const [wantsLandingPage, setWantsLandingPage] = useState<boolean | null>(null);
   const [landingPageHtml, setLandingPageHtml] = useState<string | null>(null);
   const [landingPageTitle, setLandingPageTitle] = useState<string | null>(null);
+  const [landingPages, setLandingPages] = useState<{ slug: string; html: string; title: string }[] | null>(null);
+  const [landingPagesTitle, setLandingPagesTitle] = useState<string | null>(null);
+  const [activePageTab, setActivePageTab] = useState<string>("landing");
   const [landingPageLoading, setLandingPageLoading] = useState(false);
   const [landingPageError, setLandingPageError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -767,6 +770,9 @@ export function CampaignBuilderClient() {
     setLandingPageError(null);
     setLandingPageHtml(null);
     setLandingPageTitle(null);
+    setLandingPages(null);
+    setLandingPagesTitle(null);
+    setActivePageTab("landing");
 
     try {
       const res = await fetch("/api/campaigns/generate-landing-page", {
@@ -813,9 +819,17 @@ export function CampaignBuilderClient() {
         throw new Error(body.error ?? `Request failed (${res.status})`);
       }
 
-      const data: { html: string; title: string } = await res.json();
-      setLandingPageHtml(data.html);
-      setLandingPageTitle(data.title);
+      const data = await res.json();
+
+      if (data.pages) {
+        // Multi-page response
+        setLandingPages(data.pages);
+        setLandingPagesTitle(data.title);
+      } else {
+        // Single-page response (backward compatible)
+        setLandingPageHtml(data.html);
+        setLandingPageTitle(data.title);
+      }
     } catch (err) {
       setLandingPageError(
         err instanceof Error ? err.message : "Failed to generate landing page",
@@ -825,22 +839,44 @@ export function CampaignBuilderClient() {
     }
   }
 
-  function downloadLandingPage() {
-    if (!landingPageHtml) return;
-    const blob = new Blob([landingPageHtml], { type: "text/html" });
+  function downloadHtmlFile(html: string, title: string) {
+    const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${landingPageTitle?.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase() ?? "landing-page"}.html`;
+    a.download = `${title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase() || "landing-page"}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
+  function downloadLandingPage() {
+    if (landingPages) {
+      // Download all pages
+      for (const page of landingPages) {
+        downloadHtmlFile(page.html, page.title);
+      }
+    } else if (landingPageHtml) {
+      downloadHtmlFile(landingPageHtml, landingPageTitle ?? "landing-page");
+    }
+  }
+
+  function downloadCurrentPage() {
+    if (landingPages) {
+      const current = landingPages.find((p) => p.slug === activePageTab);
+      if (current) downloadHtmlFile(current.html, current.title);
+    } else if (landingPageHtml) {
+      downloadHtmlFile(landingPageHtml, landingPageTitle ?? "landing-page");
+    }
+  }
+
   async function copyLandingPageHtml() {
-    if (!landingPageHtml) return;
-    await navigator.clipboard.writeText(landingPageHtml);
+    const html = landingPages
+      ? landingPages.find((p) => p.slug === activePageTab)?.html
+      : landingPageHtml;
+    if (!html) return;
+    await navigator.clipboard.writeText(html);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -1358,11 +1394,16 @@ export function CampaignBuilderClient() {
               onRemoveCustomQuestion={removeCustomQuestion}
               landingPageHtml={landingPageHtml}
               landingPageTitle={landingPageTitle}
+              landingPages={landingPages}
+              landingPagesTitle={landingPagesTitle}
+              activePageTab={activePageTab}
+              setActivePageTab={setActivePageTab}
               landingPageLoading={landingPageLoading}
               landingPageError={landingPageError}
               copied={copied}
               onGenerate={generateLandingPage}
               onDownload={downloadLandingPage}
+              onDownloadCurrent={downloadCurrentPage}
               onCopy={copyLandingPageHtml}
               accentColor={accentColor}
             />
@@ -2655,11 +2696,16 @@ function LandingPageSteps({
   onRemoveCustomQuestion,
   landingPageHtml,
   landingPageTitle,
+  landingPages,
+  landingPagesTitle,
+  activePageTab,
+  setActivePageTab,
   landingPageLoading,
   landingPageError,
   copied,
   onGenerate,
   onDownload,
+  onDownloadCurrent,
   onCopy,
   accentColor,
 }: {
@@ -2679,11 +2725,16 @@ function LandingPageSteps({
   onRemoveCustomQuestion: (id: string) => void;
   landingPageHtml: string | null;
   landingPageTitle: string | null;
+  landingPages: { slug: string; html: string; title: string }[] | null;
+  landingPagesTitle: string | null;
+  activePageTab: string;
+  setActivePageTab: (v: string) => void;
   landingPageLoading: boolean;
   landingPageError: string | null;
   copied: boolean;
   onGenerate: () => void;
   onDownload: () => void;
+  onDownloadCurrent: () => void;
   onCopy: () => void;
   accentColor: string;
 }) {
@@ -2987,7 +3038,7 @@ function LandingPageSteps({
               type="button"
               onClick={() => {
                 setQualificationStyle("multi-step");
-                if (!landingPageHtml && !landingPageLoading) {
+                if (!landingPageHtml && !landingPages && !landingPageLoading) {
                   onGenerate();
                 }
               }}
@@ -3015,7 +3066,7 @@ function LandingPageSteps({
               type="button"
               onClick={() => {
                 setQualificationStyle("single-page");
-                if (!landingPageHtml && !landingPageLoading) {
+                if (!landingPageHtml && !landingPages && !landingPageLoading) {
                   onGenerate();
                 }
               }}
@@ -3041,7 +3092,7 @@ function LandingPageSteps({
       )}
 
       {/* Step D-alt: no matching criteria — generate directly */}
-      {wantsLandingPage === true && !matchedCriteria && !landingPageHtml && !landingPageLoading && (
+      {wantsLandingPage === true && !matchedCriteria && !landingPageHtml && !landingPages && !landingPageLoading && (
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-5 w-5 text-warning" />
@@ -3096,8 +3147,100 @@ function LandingPageSteps({
         </div>
       )}
 
-      {/* Preview + Download UI */}
-      {landingPageHtml && !landingPageLoading && (
+      {/* Preview + Download UI — Multi-page */}
+      {landingPages && !landingPageLoading && (
+        <div className="rounded-lg bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5" style={{ color: accentColor }} />
+              <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+                {landingPagesTitle ?? "Generated Landing Pages"}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onGenerate}
+                disabled={landingPageLoading}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-midnight-navy hover:bg-cloud transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Regenerate
+              </button>
+              <button
+                onClick={onCopy}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-midnight-navy hover:bg-cloud transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <ClipboardCheck className="h-3.5 w-3.5 text-success" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Clipboard className="h-3.5 w-3.5" />
+                    Copy HTML
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onDownloadCurrent}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-midnight-navy hover:bg-cloud transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download Current
+              </button>
+              <button
+                onClick={onDownload}
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download All Pages
+              </button>
+            </div>
+          </div>
+
+          {/* Tab navigation */}
+          <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+            {landingPages.map((page) => {
+              const tabLabels: Record<string, string> = {
+                landing: "Landing Page",
+                qualify: "Qualification",
+                "thank-you": "Thank You",
+              };
+              const isActive = activePageTab === page.slug;
+              return (
+                <button
+                  key={page.slug}
+                  onClick={() => setActivePageTab(page.slug)}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-white text-midnight-navy shadow-sm"
+                      : "text-slate-gray hover:text-midnight-navy"
+                  }`}
+                  style={isActive ? { borderBottom: `2px solid ${accentColor}` } : undefined}
+                >
+                  {tabLabels[page.slug] ?? page.slug}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Iframe Preview */}
+          <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <iframe
+              srcDoc={landingPages.find((p) => p.slug === activePageTab)?.html ?? ""}
+              title={landingPages.find((p) => p.slug === activePageTab)?.title ?? "Page Preview"}
+              className="w-full border-0"
+              style={{ height: "600px" }}
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Preview + Download UI — Single-page */}
+      {landingPageHtml && !landingPages && !landingPageLoading && (
         <div className="rounded-lg bg-white p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
