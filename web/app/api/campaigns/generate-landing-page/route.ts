@@ -30,6 +30,11 @@ interface LandingPageRequest {
   screening_questions?: ScreeningQuestion[];
   disqualify_message?: string;
   qualify_message?: string;
+  brand_colors?: {
+    primary: string | null;
+    secondary: string | null;
+    accent: string | null;
+  };
 }
 
 const SYSTEM_PROMPT = `You are an expert legal marketing web designer who creates high-converting landing pages for mass tort litigation campaigns. You produce complete, self-contained HTML files with inline CSS.
@@ -55,7 +60,7 @@ function hasQualificationForm(req: LandingPageRequest): boolean {
 }
 
 function buildUserPrompt(req: LandingPageRequest): string {
-  const { tort_name, states, firm_name, firm_url, messaging, audience, budget_info, logo_url } = req;
+  const { tort_name, states, firm_name, firm_url, messaging, audience, budget_info, logo_url, brand_colors } = req;
   const useFormTemplate = hasQualificationForm(req);
 
   const firmSection = firm_name
@@ -99,7 +104,7 @@ ${useFormTemplate ? "4. Do NOT include any contact form — the qualification fo
 5. Trust signals section: "Free Consultation", "No Fee Unless We Win", "Experienced Legal Team", "Confidential Case Review"
 6. A professional footer with required legal disclaimer: "This is a paid advertisement. The information on this page does not constitute legal advice. Past results do not guarantee future outcomes. Each case is different. You may be contacted by a licensed attorney."
 7. Mobile-responsive design (looks great on phones, tablets, and desktops)
-8. Color scheme: Navy (#0B1D3A) primary, Teal (#1A8C96) accent, white backgrounds, light gray (#F8FAFC) section alternation
+${brand_colors?.primary ? `8. Color scheme: Use the firm's brand colors — Primary: ${brand_colors.primary}${brand_colors.secondary ? `, Secondary: ${brand_colors.secondary}` : ""}${brand_colors.accent ? `, Accent: ${brand_colors.accent}` : ""}. Apply the primary color for headers and key CTAs, secondary for supporting elements, accent for highlights. Use white backgrounds and light gray (#F8FAFC) for section alternation.` : "8. Color scheme: Navy (#0B1D3A) primary, Teal (#1A8C96) accent, white backgrounds, light gray (#F8FAFC) section alternation"}
 9. Clean typography with proper hierarchy
 10. A sticky/fixed header with phone CTA on mobile
 
