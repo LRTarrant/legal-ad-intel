@@ -1256,7 +1256,7 @@ export function CampaignBuilderClient() {
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-slate-gray">
-                  Uses DALL-E 3 to generate background images for ad creatives (~$0.12 for 3 images). Gradient mockups are used as fallback.
+                  Uses AI to generate background images for ad creatives. Gradient mockups are used as fallback.
                 </p>
               </div>
 
