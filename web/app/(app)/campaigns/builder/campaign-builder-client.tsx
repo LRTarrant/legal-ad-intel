@@ -29,6 +29,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
+import { LogoUpload } from "./logo-upload";
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
@@ -205,6 +206,7 @@ export function CampaignBuilderClient() {
   const [monthlyBudget, setMonthlyBudget] = useState("");
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // Results
   const [plan, setPlan] = useState<CampaignPlan | null>(null);
@@ -377,6 +379,7 @@ export function CampaignBuilderClient() {
                 avg_cpl: plan.budget_projection.avg_cpl,
               }
             : undefined,
+          logo_url: logoUrl ?? undefined,
         }),
       });
 
@@ -584,6 +587,11 @@ export function CampaignBuilderClient() {
             </button>
           </div>
         </div>
+
+        {/* Logo Upload */}
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <LogoUpload logoUrl={logoUrl} onLogoChange={setLogoUrl} accentColor={accentColor} />
+        </div>
       </div>
 
       {/* Error */}
@@ -669,7 +677,7 @@ export function CampaignBuilderClient() {
           {aiInsights && !aiLoading && (
             <div className="space-y-6">
               <AiStrategicBriefCard insights={aiInsights} />
-              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} />
+              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} logoUrl={logoUrl} />
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
           )}
@@ -1301,10 +1309,12 @@ function AdCreativeMockup({
   headline,
   tortName,
   variantIndex,
+  logoUrl,
 }: {
   headline: string;
   tortName: string;
   variantIndex: number;
+  logoUrl?: string | null;
 }) {
   const theme = AD_CREATIVE_THEMES[variantIndex % AD_CREATIVE_THEMES.length];
   return (
@@ -1352,6 +1362,18 @@ function AdCreativeMockup({
         </svg>
       </div>
 
+      {/* Brand logo overlay */}
+      {logoUrl && (
+        <div className="absolute top-3 right-3 z-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt="Brand logo"
+            className="h-8 w-auto max-w-[72px] object-contain drop-shadow-md"
+          />
+        </div>
+      )}
+
       {/* Tort type badge */}
       {tortName && (
         <div className="absolute top-3 left-3">
@@ -1381,9 +1403,11 @@ function AdCreativeMockup({
 function AiAdCopyCard({
   adCopy,
   tortName,
+  logoUrl,
 }: {
   adCopy: AiInsights["ad_copy"];
   tortName: string;
+  logoUrl?: string | null;
 }) {
   return (
     <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
@@ -1413,6 +1437,7 @@ function AiAdCopyCard({
                   headline={headline}
                   tortName={tortName}
                   variantIndex={i}
+                  logoUrl={logoUrl}
                 />
                 <div className="p-3 space-y-2">
                   <p className="text-sm font-semibold text-midnight-navy leading-tight">

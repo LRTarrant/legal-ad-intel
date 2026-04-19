@@ -51,9 +51,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      console.error("Alert insert error:", error.message, error.code);
+      const status = error.code === "42501" ? 403 : 500;
       return NextResponse.json(
-        { error: "Failed to create alert" },
-        { status: 500 },
+        { error: status === 403 ? "Permission denied — check RLS policies" : "Failed to create alert" },
+        { status },
       );
     }
 
