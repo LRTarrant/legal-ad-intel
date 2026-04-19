@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 interface LandingPageRequest {
   tort_name: string;
   states: string[];
+  firm_name?: string;
+  firm_url?: string;
   messaging?: {
     strategic_brief?: string;
     headlines?: string[];
@@ -34,12 +36,21 @@ Your landing pages must:
 IMPORTANT: Return ONLY valid JSON with exactly two keys: "html" (the complete HTML document as a string) and "title" (a short page title). Do not include markdown, code fences, or any text outside the JSON object.`;
 
 function buildUserPrompt(req: LandingPageRequest): string {
-  const { tort_name, states, messaging, audience, budget_info, logo_url } = req;
+  const { tort_name, states, firm_name, firm_url, messaging, audience, budget_info, logo_url } = req;
+
+  const firmSection = firm_name
+    ? `\nFIRM/COMPANY NAME: ${firm_name}${firm_url ? `\nFIRM WEBSITE: ${firm_url}` : ""}
+IMPORTANT: Use "${firm_name}" throughout the landing page:
+- Display the firm name in the header/nav area${firm_url ? ` and link it to ${firm_url}` : ""}
+- Use "${firm_name}" in the footer
+- Use "Contact ${firm_name} Today" style CTAs instead of generic ones
+- Reference the firm name naturally in headings and trust signals (e.g., "Why Choose ${firm_name}?")`
+    : "";
 
   return `Create a complete, self-contained HTML landing page for a mass tort legal advertising campaign with these details:
 
 TORT TYPE: ${tort_name}
-TARGET GEOGRAPHY: ${states.join(", ")}
+TARGET GEOGRAPHY: ${states.join(", ")}${firmSection}
 ${messaging?.strategic_brief ? `\nCAMPAIGN BRIEF: ${messaging.strategic_brief}` : ""}
 ${messaging?.headlines?.length ? `\nHEADLINES TO USE: ${messaging.headlines.join(" | ")}` : ""}
 ${messaging?.body_options?.length ? `\nMESSAGING: ${messaging.body_options.join(" ")}` : ""}

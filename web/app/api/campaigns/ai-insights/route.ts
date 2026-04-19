@@ -5,6 +5,8 @@ interface AiInsightsRequest {
   tort_name: string;
   states: string[];
   monthly_budget?: number;
+  firm_name?: string;
+  firm_url?: string;
   plan_data: {
     tort_overview: {
       lifecycle_phase: string;
@@ -69,12 +71,16 @@ You will be given structured campaign planning data including real cost benchmar
 IMPORTANT: Always respond with valid JSON matching the exact schema provided. Do not include markdown, code fences, or any text outside the JSON object.`;
 
 function buildUserPrompt(req: AiInsightsRequest): string {
-  const { tort_name, states, monthly_budget, plan_data } = req;
+  const { tort_name, states, monthly_budget, firm_name, firm_url, plan_data } = req;
   const { tort_overview, geo_recommendations, channel_mix, budget_projection } = plan_data;
 
   const topStates = geo_recommendations
     .filter((g) => g.opportunity_level === "high" || g.opportunity_level === "moderate")
     .slice(0, 5);
+
+  const firmSection = firm_name
+    ? `\nFIRM/COMPANY: ${firm_name}${firm_url ? ` (${firm_url})` : ""}\nIMPORTANT: Naturally incorporate the firm name "${firm_name}" into ad copy. For Meta ads, weave the firm name into headlines (e.g., "${firm_name} — Fighting for [Tort] Victims"). For Google RSA, include the firm name in at least 2 headlines.${firm_url ? ` Use "${firm_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}" as the display URL reference in Google ad descriptions where appropriate.` : ""}`
+    : "";
 
   return `Generate a comprehensive campaign strategy for the following mass tort:
 
@@ -82,7 +88,7 @@ TORT: ${tort_name}
 LIFECYCLE PHASE: ${tort_overview.lifecycle_phase}
 TREND: ${tort_overview.trend_direction} (search interest)
 TARGET STATES: ${states.join(", ")}
-${monthly_budget ? `MONTHLY BUDGET: $${monthly_budget.toLocaleString()}` : "BUDGET: Not specified"}
+${monthly_budget ? `MONTHLY BUDGET: $${monthly_budget.toLocaleString()}` : "BUDGET: Not specified"}${firmSection}
 
 COST BENCHMARKS:
 - CPL Range: $${tort_overview.cpl_range.low ?? "N/A"} - $${tort_overview.cpl_range.high ?? "N/A"}
@@ -105,12 +111,12 @@ Respond with a JSON object with these exact keys:
   "market_context": "External intelligence beyond the data — FDA actions, recent verdicts, regulatory changes, settlements, industry trends affecting this tort",
   "ad_copy": {
     "meta": {
-      "headlines": ["3 Facebook/Instagram ad headlines, 40 chars max each"],
+      "headlines": ["3 Facebook/Instagram ad headlines, 40 chars max each${firm_name ? ` — reference '${firm_name}' naturally in at least one headline` : ""}"],
       "body_options": ["2 ad body text options, 125 chars max each"],
       "ctas": ["2 CTA button texts"]
     },
     "google_search": {
-      "headlines": ["5 Google RSA headlines, 30 chars max each"],
+      "headlines": ["5 Google RSA headlines, 30 chars max each${firm_name ? ` — include '${firm_name}' in at least 2 headlines` : ""}"],
       "descriptions": ["3 Google RSA descriptions, 90 chars max each"]
     }
   },

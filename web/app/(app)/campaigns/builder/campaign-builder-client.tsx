@@ -193,6 +193,15 @@ function channelLabel(ch: string): string {
     .replace("Tv ", "TV ");
 }
 
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /* ── Component ──────────────────────────────────────────────────────────── */
 
 export function CampaignBuilderClient() {
@@ -204,6 +213,9 @@ export function CampaignBuilderClient() {
   const [selectedTort, setSelectedTort] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [monthlyBudget, setMonthlyBudget] = useState("");
+  const [firmName, setFirmName] = useState("");
+  const [firmUrl, setFirmUrl] = useState("");
+  const [firmUrlError, setFirmUrlError] = useState<string | null>(null);
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -272,6 +284,8 @@ export function CampaignBuilderClient() {
         tort_name: selectedTort,
         states: selectedStates,
         monthly_budget: monthlyBudget ? Number(monthlyBudget) : undefined,
+        firm_name: firmName.trim() || undefined,
+        firm_url: firmUrl.trim() || undefined,
         plan_data: {
           tort_overview: plan.tort_overview,
           geo_recommendations: plan.geo_recommendations,
@@ -359,6 +373,8 @@ export function CampaignBuilderClient() {
         body: JSON.stringify({
           tort_name: selectedTort,
           states: selectedStates,
+          firm_name: firmName.trim() || undefined,
+          firm_url: firmUrl.trim() || undefined,
           messaging: aiInsights
             ? {
                 strategic_brief: aiInsights.strategic_brief,
@@ -420,7 +436,7 @@ export function CampaignBuilderClient() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const canGenerate = selectedTort && selectedStates.length > 0 && !loading;
+  const canGenerate = selectedTort && selectedStates.length > 0 && firmName.trim() !== "" && !firmUrlError && !loading;
   const canExport = plan && aiInsights && !exporting;
 
   async function handleExport() {
@@ -443,11 +459,53 @@ export function CampaignBuilderClient() {
         <h2 className="font-heading text-lg font-semibold text-midnight-navy mb-4">
           Configure Your Campaign
         </h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Firm/Company Name */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+              Firm / Company Name <span className="text-alert">*</span>
+            </label>
+            <input
+              type="text"
+              value={firmName}
+              onChange={(e) => setFirmName(e.target.value)}
+              placeholder="e.g., Smith & Associates"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+            />
+          </div>
+
+          {/* Website URL */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
+              Website URL (optional)
+            </label>
+            <input
+              type="url"
+              value={firmUrl}
+              onChange={(e) => {
+                setFirmUrl(e.target.value);
+                if (e.target.value && !isValidUrl(e.target.value)) {
+                  setFirmUrlError("Enter a valid URL (e.g., https://www.smithlaw.com)");
+                } else {
+                  setFirmUrlError(null);
+                }
+              }}
+              placeholder="e.g., https://www.smithlaw.com"
+              className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm text-midnight-navy focus:outline-none focus:ring-1 ${
+                firmUrlError
+                  ? "border-alert focus:border-alert focus:ring-alert"
+                  : "border-slate-200 focus:border-intelligence-teal focus:ring-intelligence-teal"
+              }`}
+            />
+            {firmUrlError && (
+              <p className="mt-1 text-xs text-alert">{firmUrlError}</p>
+            )}
+          </div>
+
           {/* Tort Dropdown */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1.5">
-              Tort
+              Tort <span className="text-alert">*</span>
             </label>
             <select
               value={selectedTort}
@@ -677,7 +735,7 @@ export function CampaignBuilderClient() {
           {aiInsights && !aiLoading && (
             <div className="space-y-6">
               <AiStrategicBriefCard insights={aiInsights} />
-              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} logoUrl={logoUrl} />
+              <AiAdCopyCard adCopy={aiInsights.ad_copy} tortName={selectedTort} logoUrl={logoUrl} firmName={firmName.trim()} firmUrl={firmUrl.trim()} />
               <AiIntelligenceComplianceCard insights={aiInsights} />
             </div>
           )}
@@ -1310,11 +1368,13 @@ function AdCreativeMockup({
   tortName,
   variantIndex,
   logoUrl,
+  firmName,
 }: {
   headline: string;
   tortName: string;
   variantIndex: number;
   logoUrl?: string | null;
+  firmName?: string;
 }) {
   const theme = AD_CREATIVE_THEMES[variantIndex % AD_CREATIVE_THEMES.length];
   return (
@@ -1391,6 +1451,13 @@ function AdCreativeMockup({
         {headline}
       </p>
 
+      {/* Firm name byline */}
+      {firmName && (
+        <p className="absolute bottom-2.5 left-3 z-10 text-[10px] text-white/60 tracking-wide">
+          {firmName}
+        </p>
+      )}
+
       {/* Decorative bottom accent */}
       <div
         className="absolute bottom-0 left-0 h-0.5 w-full opacity-40"
@@ -1404,11 +1471,18 @@ function AiAdCopyCard({
   adCopy,
   tortName,
   logoUrl,
+  firmName,
+  firmUrl,
 }: {
   adCopy: AiInsights["ad_copy"];
   tortName: string;
   logoUrl?: string | null;
+  firmName?: string;
+  firmUrl?: string;
 }) {
+  const displayUrl = firmUrl
+    ? firmUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : "www.example.com/legal";
   return (
     <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -1438,6 +1512,7 @@ function AiAdCopyCard({
                   tortName={tortName}
                   variantIndex={i}
                   logoUrl={logoUrl}
+                  firmName={firmName}
                 />
                 <div className="p-3 space-y-2">
                   <p className="text-sm font-semibold text-midnight-navy leading-tight">
@@ -1473,7 +1548,7 @@ function AiAdCopyCard({
                   {adCopy.google_search.headlines.slice(0, 3).join(" | ")}
                 </p>
                 <p className="text-xs text-green-700 mt-1">
-                  www.example.com/legal
+                  {displayUrl}
                 </p>
               </div>
               {adCopy.google_search.descriptions[0] && (
