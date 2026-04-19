@@ -189,6 +189,14 @@ interface BrandColors {
   accent: string | null;
 }
 
+interface RecommendedMarket {
+  state: string;
+  state_name: string;
+  score: number;
+  signals: string[];
+  primary_signal: string;
+}
+
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function fmtCurrency(val: number | null): string {
@@ -245,6 +253,10 @@ export function CampaignBuilderClient() {
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // Recommended markets
+  const [recommendedMarkets, setRecommendedMarkets] = useState<RecommendedMarket[]>([]);
+  const [marketsLoading, setMarketsLoading] = useState(false);
 
   // Results
   const [plan, setPlan] = useState<CampaignPlan | null>(null);
@@ -332,6 +344,24 @@ export function CampaignBuilderClient() {
     }
     fetchTorts();
   }, []);
+
+  // Fetch recommended markets when tort changes
+  useEffect(() => {
+    if (!selectedTort) {
+      setRecommendedMarkets([]);
+      return;
+    }
+    setMarketsLoading(true);
+    fetch("/api/campaigns/recommended-markets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tort_name: selectedTort }),
+    })
+      .then((res) => res.json())
+      .then((data) => setRecommendedMarkets(data.recommended_markets ?? []))
+      .catch(() => setRecommendedMarkets([]))
+      .finally(() => setMarketsLoading(false));
+  }, [selectedTort]);
 
   // Check ElevenLabs availability on mount
   useEffect(() => {
@@ -879,6 +909,44 @@ export function CampaignBuilderClient() {
               ))}
             </select>
           </div>
+
+          {/* Recommended Markets */}
+          {(marketsLoading || recommendedMarkets.length > 0) && (
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                Recommended Markets
+              </label>
+              {marketsLoading ? (
+                <div className="flex items-center gap-2 py-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-intelligence-teal" />
+                  <span className="text-xs text-intelligence-teal font-medium">Analyzing markets...</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {recommendedMarkets.map((m) => {
+                    const isSelected = selectedStates.includes(m.state);
+                    return (
+                      <button
+                        key={m.state}
+                        type="button"
+                        onClick={() => toggleState(m.state)}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
+                          isSelected
+                            ? "bg-intelligence-teal/20 border-intelligence-teal"
+                            : "border-intelligence-teal/30 bg-intelligence-teal/5 hover:bg-intelligence-teal/15"
+                        }`}
+                      >
+                        <span className="font-semibold text-midnight-navy">{m.state}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-slate-gray ml-1">
+                          {m.primary_signal}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* State Multi-select */}
           <div className="relative">
