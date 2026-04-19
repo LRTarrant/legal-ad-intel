@@ -30,6 +30,8 @@ import {
   Plus,
   ImageIcon,
   Palette,
+  Mic,
+  ChevronUp,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
@@ -285,6 +287,21 @@ export function CampaignBuilderClient() {
   const [creativeImages, setCreativeImages] = useState<(string | null)[]>([null, null, null]);
   const [creativeLoading, setCreativeLoading] = useState<boolean[]>([false, false, false]);
 
+  // Feature 4: AI Radio Spot
+  const [radioSpotAvailable, setRadioSpotAvailable] = useState<boolean | null>(null);
+  const [radioExpanded, setRadioExpanded] = useState(false);
+  const [radioDuration, setRadioDuration] = useState<"30s" | "60s">("30s");
+  const [radioScript, setRadioScript] = useState("");
+  const [radioScriptLoading, setRadioScriptLoading] = useState(false);
+  const [radioScriptGenerated, setRadioScriptGenerated] = useState(false);
+  const [radioVoices, setRadioVoices] = useState<{ id: string; name: string; description: string; category: string; previewUrl: string }[]>([]);
+  const [radioVoicesLoading, setRadioVoicesLoading] = useState(false);
+  const [radioSelectedVoice, setRadioSelectedVoice] = useState("");
+  const [radioGenerating, setRadioGenerating] = useState(false);
+  const [radioAudioUrl, setRadioAudioUrl] = useState<string | null>(null);
+  const [radioError, setRadioError] = useState<string | null>(null);
+  const [radioCooldown, setRadioCooldown] = useState(false);
+
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
     () => (selectedTort ? getQualificationCriteriaByName(selectedTort) : undefined),
@@ -314,6 +331,14 @@ export function CampaignBuilderClient() {
       }
     }
     fetchTorts();
+  }, []);
+
+  // Check ElevenLabs availability on mount
+  useEffect(() => {
+    fetch("/api/campaigns/voices/check")
+      .then((res) => res.json())
+      .then((data: { available: boolean }) => setRadioSpotAvailable(data.available))
+      .catch(() => setRadioSpotAvailable(false));
   }, []);
 
   const filteredStates = useMemo(() => {
@@ -526,6 +551,106 @@ export function CampaignBuilderClient() {
     // Results handled by individual calls
   }
 
+  // Feature 4: Radio spot functions
+  async function fetchRadioVoices() {
+    if (radioVoices.length > 0) return;
+    setRadioVoicesLoading(true);
+    try {
+      const res = await fetch("/api/campaigns/voices");
+      if (!res.ok) throw new Error("Failed to fetch voices");
+      const data = await res.json();
+      setRadioVoices(data.voices);
+      // Default to a strong male voice if available
+      const defaultVoice = data.voices.find(
+        (v: { name: string; description: string }) =>
+          v.name.toLowerCase().includes("adam") ||
+          v.description.toLowerCase().includes("deep"),
+      );
+      if (defaultVoice && !radioSelectedVoice) {
+        setRadioSelectedVoice(defaultVoice.id);
+      } else if (data.voices.length > 0 && !radioSelectedVoice) {
+        setRadioSelectedVoice(data.voices[0].id);
+      }
+    } catch {
+      // Voices will remain empty — user can retry
+    } finally {
+      setRadioVoicesLoading(false);
+    }
+  }
+
+  async function generateRadioScript(duration: "30s" | "60s") {
+    if (!plan || !selectedTort) return;
+    setRadioScriptLoading(true);
+    setRadioError(null);
+    try {
+      const res = await fetch("/api/campaigns/generate-radio-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration,
+          tort_name: selectedTort,
+          firm_name: firmName.trim() || undefined,
+          firm_url: firmUrl.trim() || undefined,
+          states: selectedStates.length > 0 ? selectedStates : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Script generation failed");
+      const data = await res.json();
+      if (data.script) {
+        setRadioScript(data.script);
+        setRadioScriptGenerated(true);
+      }
+    } catch {
+      setRadioError("Failed to generate script. You can write your own below.");
+    } finally {
+      setRadioScriptLoading(false);
+    }
+  }
+
+  async function generateRadioSpot() {
+    if (!radioScript.trim() || !radioSelectedVoice) return;
+    setRadioGenerating(true);
+    setRadioError(null);
+    setRadioCooldown(true);
+
+    try {
+      const res = await fetch("/api/campaigns/generate-radio-spot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script: radioScript,
+          voiceId: radioSelectedVoice,
+          duration: radioDuration,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error ?? "Generation failed");
+      }
+      const data = await res.json();
+      setRadioAudioUrl(data.audioUrl);
+    } catch (err) {
+      setRadioError(err instanceof Error ? err.message : "Audio generation failed. Please try again.");
+    } finally {
+      setRadioGenerating(false);
+      // 3-second cooldown
+      setTimeout(() => setRadioCooldown(false), 3000);
+    }
+  }
+
+  function handleRadioExpand() {
+    if (!radioExpanded) {
+      setRadioExpanded(true);
+      // Fetch voices and generate script on first expand
+      fetchRadioVoices();
+      if (!radioScriptGenerated && !radioScript) {
+        generateRadioScript(radioDuration);
+      }
+    } else {
+      setRadioExpanded(false);
+    }
+  }
+
   async function generatePlan() {
     if (!selectedTort || selectedStates.length === 0) return;
     setLoading(true);
@@ -543,6 +668,11 @@ export function CampaignBuilderClient() {
     setAiCreativeEnabled(false);
     setCreativeImages([null, null, null]);
     setCreativeLoading([false, false, false]);
+    setRadioExpanded(false);
+    setRadioScript("");
+    setRadioScriptGenerated(false);
+    setRadioAudioUrl(null);
+    setRadioError(null);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -1055,6 +1185,40 @@ export function CampaignBuilderClient() {
                 onRegenerateImage={generateCreativeImage}
               />
               <AiIntelligenceComplianceCard insights={aiInsights} />
+
+              {/* AI Radio Spot — only shown when ElevenLabs is configured */}
+              {radioSpotAvailable && (
+                <AiRadioSpotCard
+                  expanded={radioExpanded}
+                  onToggleExpand={handleRadioExpand}
+                  duration={radioDuration}
+                  onDurationChange={(d) => {
+                    setRadioDuration(d);
+                    if (radioScriptGenerated) {
+                      setRadioScript("");
+                      setRadioScriptGenerated(false);
+                      setRadioAudioUrl(null);
+                      generateRadioScript(d);
+                    }
+                  }}
+                  script={radioScript}
+                  onScriptChange={setRadioScript}
+                  scriptLoading={radioScriptLoading}
+                  voices={radioVoices}
+                  voicesLoading={radioVoicesLoading}
+                  selectedVoice={radioSelectedVoice}
+                  onVoiceChange={setRadioSelectedVoice}
+                  generating={radioGenerating}
+                  audioUrl={radioAudioUrl}
+                  error={radioError}
+                  cooldown={radioCooldown}
+                  onGenerate={generateRadioSpot}
+                  onRegenerate={() => {
+                    setRadioAudioUrl(null);
+                    generateRadioSpot();
+                  }}
+                />
+              )}
             </div>
           )}
 
@@ -2113,6 +2277,228 @@ function AiIntelligenceComplianceCard({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── AI Radio Spot Card ────────────────────────────────────────────────── */
+
+function AiRadioSpotCard({
+  expanded,
+  onToggleExpand,
+  duration,
+  onDurationChange,
+  script,
+  onScriptChange,
+  scriptLoading,
+  voices,
+  voicesLoading,
+  selectedVoice,
+  onVoiceChange,
+  generating,
+  audioUrl,
+  error,
+  cooldown,
+  onGenerate,
+  onRegenerate,
+}: {
+  expanded: boolean;
+  onToggleExpand: () => void;
+  duration: "30s" | "60s";
+  onDurationChange: (d: "30s" | "60s") => void;
+  script: string;
+  onScriptChange: (s: string) => void;
+  scriptLoading: boolean;
+  voices: { id: string; name: string; description: string; category: string; previewUrl: string }[];
+  voicesLoading: boolean;
+  selectedVoice: string;
+  onVoiceChange: (id: string) => void;
+  generating: boolean;
+  audioUrl: string | null;
+  error: string | null;
+  cooldown: boolean;
+  onGenerate: () => void;
+  onRegenerate: () => void;
+}) {
+  const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
+  const charCount = script.length;
+  const targetWords = duration === "30s" ? "75-80" : "150-160";
+
+  return (
+    <div className="rounded-lg border-l-4 border-l-violet-400 bg-white shadow-sm">
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={onToggleExpand}
+        className="flex w-full items-center justify-between p-6"
+      >
+        <div className="flex items-center gap-2">
+          <Mic className="h-5 w-5 text-violet-500" />
+          <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+            AI Radio Spot
+          </h3>
+          <AiBadge />
+        </div>
+        {expanded ? (
+          <ChevronUp className="h-5 w-5 text-slate-gray" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-slate-gray" />
+        )}
+      </button>
+
+      {/* Expandable content */}
+      {expanded && (
+        <div className="border-t border-slate-100 px-6 pb-6 space-y-5">
+          {/* Duration toggle */}
+          <div className="pt-4">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Duration
+            </label>
+            <div className="flex gap-2">
+              {(["30s", "60s"] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => onDurationChange(d)}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                    duration === d
+                      ? "border-violet-500 bg-violet-500 text-white"
+                      : "border-slate-200 text-midnight-navy hover:border-slate-300"
+                  }`}
+                >
+                  {d === "30s" ? "30 seconds" : "60 seconds"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Script textarea */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Script
+            </label>
+            {scriptLoading ? (
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <Loader2 className="h-4 w-4 animate-spin text-violet-500" />
+                <span className="text-sm text-slate-gray">
+                  Generating {duration === "30s" ? "30-second" : "60-second"} radio script...
+                </span>
+              </div>
+            ) : (
+              <textarea
+                value={script}
+                onChange={(e) => onScriptChange(e.target.value)}
+                placeholder="Enter your radio spot script here, or wait for AI generation..."
+                rows={duration === "30s" ? 4 : 7}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300 resize-none"
+              />
+            )}
+            <div className="mt-1 flex items-center justify-between text-xs text-slate-gray">
+              <span>
+                {charCount} characters &middot; ~{wordCount} words
+              </span>
+              <span>Target: {targetWords} words for {duration === "30s" ? "30s" : "60s"}</span>
+            </div>
+          </div>
+
+          {/* Voice selection */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Voice
+            </label>
+            {voicesLoading ? (
+              <div className="flex items-center gap-2 text-sm text-slate-gray">
+                <Loader2 className="h-4 w-4 animate-spin text-violet-500" />
+                Loading voices...
+              </div>
+            ) : voices.length > 0 ? (
+              <select
+                value={selectedVoice}
+                onChange={(e) => onVoiceChange(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300"
+              >
+                {voices.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} — {v.description}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-slate-gray">
+                No voices available. Please try again later.
+              </p>
+            )}
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Generate button */}
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={!script.trim() || !selectedVoice || generating || cooldown}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white transition-colors ${
+              !script.trim() || !selectedVoice || generating || cooldown
+                ? "bg-slate-300 cursor-not-allowed"
+                : "bg-violet-500 hover:bg-violet-600 shadow-sm"
+            }`}
+          >
+            {generating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating Radio Spot...
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                Generate Radio Spot
+              </>
+            )}
+          </button>
+
+          {/* Audio player */}
+          {audioUrl && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <audio
+                  src={audioUrl}
+                  controls
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <a
+                  href={audioUrl}
+                  download={`radio-spot-${duration}.mp3`}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-midnight-navy hover:bg-slate-50 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  Download MP3
+                </a>
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  disabled={generating || cooldown}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                    generating || cooldown
+                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "border-violet-200 bg-violet-50 text-violet-600 hover:bg-violet-100"
+                  }`}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
