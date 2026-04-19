@@ -30,6 +30,7 @@ import {
   Plus,
   ImageIcon,
   Palette,
+  Mic,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
@@ -285,6 +286,17 @@ export function CampaignBuilderClient() {
   const [creativeImages, setCreativeImages] = useState<(string | null)[]>([null, null, null]);
   const [creativeLoading, setCreativeLoading] = useState<boolean[]>([false, false, false]);
 
+  // Radio spot state
+  const [radioSpotDuration, setRadioSpotDuration] = useState<"15s" | "30s" | "60s">("30s");
+  const [radioScript, setRadioScript] = useState<{
+    script: string;
+    duration: string;
+    word_count: number;
+    direction_notes: string;
+  } | null>(null);
+  const [radioLoading, setRadioLoading] = useState(false);
+  const [radioError, setRadioError] = useState<string | null>(null);
+
   // Derive matched criteria from selected tort name
   const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
     () => (selectedTort ? getQualificationCriteriaByName(selectedTort) : undefined),
@@ -526,6 +538,39 @@ export function CampaignBuilderClient() {
     // Results handled by individual calls
   }
 
+  async function generateRadioScript(duration: "15s" | "30s" | "60s") {
+    if (!selectedTort || selectedStates.length === 0) return;
+    setRadioLoading(true);
+    setRadioError(null);
+    setRadioScript(null);
+
+    try {
+      const res = await fetch("/api/campaigns/generate-radio-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tort_name: selectedTort,
+          states: selectedStates,
+          firm_name: firmName.trim() || undefined,
+          firm_url: firmUrl.trim() || undefined,
+          duration,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      setRadioScript(data);
+    } catch (err) {
+      setRadioError(err instanceof Error ? err.message : "Failed to generate radio script");
+    } finally {
+      setRadioLoading(false);
+    }
+  }
+
   async function generatePlan() {
     if (!selectedTort || selectedStates.length === 0) return;
     setLoading(true);
@@ -543,6 +588,8 @@ export function CampaignBuilderClient() {
     setAiCreativeEnabled(false);
     setCreativeImages([null, null, null]);
     setCreativeLoading([false, false, false]);
+    setRadioScript(null);
+    setRadioError(null);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -1055,6 +1102,100 @@ export function CampaignBuilderClient() {
                 onRegenerateImage={generateCreativeImage}
               />
               <AiIntelligenceComplianceCard insights={aiInsights} />
+
+              {/* Radio Spot Generator */}
+              <div className="rounded-lg border-l-4 border-l-violet-400 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Mic className="h-5 w-5 text-violet-500" />
+                    <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+                      Radio Spot Generator
+                    </h3>
+                  </div>
+                  <AiBadge />
+                </div>
+
+                {/* Duration Toggle */}
+                <div className="mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+                    Spot Duration
+                  </p>
+                  <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+                    {(["15s", "30s", "60s"] as const).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setRadioSpotDuration(d)}
+                        className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                          radioSpotDuration === d
+                            ? "bg-violet-500 text-white shadow-sm"
+                            : "text-midnight-navy hover:bg-cloud"
+                        }`}
+                      >
+                        {d === "15s" ? "15 sec" : d === "30s" ? "30 sec" : "60 sec"}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-xs text-slate-gray">
+                    {radioSpotDuration === "15s"
+                      ? "Quick hook — 35-40 words, punchy CTA"
+                      : radioSpotDuration === "30s"
+                        ? "Standard spot — 75-85 words, hook + background + CTA"
+                        : "Full narrative — 150-170 words, complete story arc"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => generateRadioScript(radioSpotDuration)}
+                  disabled={radioLoading}
+                  className="inline-flex items-center gap-2 rounded-md bg-violet-500 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {radioLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4" />
+                      Generate Radio Script
+                    </>
+                  )}
+                </button>
+
+                {radioError && (
+                  <div className="mt-4 rounded-md border border-alert/20 bg-alert/5 p-3 text-sm text-alert">
+                    {radioError}
+                  </div>
+                )}
+
+                {radioScript && !radioLoading && (
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-md bg-cloud p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                          Script ({radioScript.word_count} words)
+                        </p>
+                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-600 uppercase">
+                          {radioScript.duration}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-midnight-navy whitespace-pre-line">
+                        {radioScript.script}
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-violet-50/50 border border-violet-100 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 mb-1">
+                        Production Notes
+                      </p>
+                      <p className="text-xs text-midnight-navy leading-relaxed">
+                        {radioScript.direction_notes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
