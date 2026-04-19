@@ -3,6 +3,7 @@ import Image from "next/image";
 import { headers } from "next/headers";
 import { login } from "./actions";
 import { resolveTenant } from "@/lib/tenant";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 export const metadata = {
   title: "Log In | Legal Marketing Intelligence",
@@ -84,12 +85,20 @@ export default async function LoginPage({
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-white/70"
-            >
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-white/70"
+              >
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-intelligence-teal transition hover:text-light-teal"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               name="password"
@@ -108,6 +117,14 @@ export default async function LoginPage({
             Log In
           </button>
         </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="text-xs text-white/40">or</span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <GoogleSignInButton />
 
         {(!branding || branding.slug === "lmi") && (
           <p className="text-center text-sm text-white/40">
