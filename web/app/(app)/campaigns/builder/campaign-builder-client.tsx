@@ -30,6 +30,11 @@ import {
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
+import {
+  getQualificationCriteriaByName,
+  type TortQualificationCriteria,
+  type ScreeningQuestion,
+} from "@/lib/data/tort-qualification-criteria";
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
@@ -243,6 +248,15 @@ export function CampaignBuilderClient() {
   const [landingPageError, setLandingPageError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Qualification flow state
+  const [qualificationStyle, setQualificationStyle] = useState<"multi-step" | "single-page" | null>(null);
+
+  // Derive matched criteria from selected tort name
+  const matchedCriteria: TortQualificationCriteria | undefined = useMemo(
+    () => (selectedTort ? getQualificationCriteriaByName(selectedTort) : undefined),
+    [selectedTort],
+  );
+
   // Fetch tort names on mount
   useEffect(() => {
     async function fetchTorts() {
@@ -333,6 +347,7 @@ export function CampaignBuilderClient() {
     setLandingPageHtml(null);
     setLandingPageTitle(null);
     setLandingPageError(null);
+    setQualificationStyle(null);
 
     try {
       const res = await fetch("/api/campaigns/plan", {
@@ -396,6 +411,10 @@ export function CampaignBuilderClient() {
               }
             : undefined,
           logo_url: logoUrl ?? undefined,
+          qualification_style: qualificationStyle ?? undefined,
+          screening_questions: matchedCriteria?.screeningQuestions ?? undefined,
+          disqualify_message: matchedCriteria?.disqualifyMessage ?? undefined,
+          qualify_message: matchedCriteria?.qualifyMessage ?? undefined,
         }),
       });
 
@@ -747,6 +766,9 @@ export function CampaignBuilderClient() {
               setHasLandingPage={setHasLandingPage}
               wantsLandingPage={wantsLandingPage}
               setWantsLandingPage={setWantsLandingPage}
+              qualificationStyle={qualificationStyle}
+              setQualificationStyle={setQualificationStyle}
+              matchedCriteria={matchedCriteria}
               landingPageHtml={landingPageHtml}
               landingPageTitle={landingPageTitle}
               landingPageLoading={landingPageLoading}
@@ -1717,6 +1739,9 @@ function LandingPageSteps({
   setHasLandingPage,
   wantsLandingPage,
   setWantsLandingPage,
+  qualificationStyle,
+  setQualificationStyle,
+  matchedCriteria,
   landingPageHtml,
   landingPageTitle,
   landingPageLoading,
@@ -1731,6 +1756,9 @@ function LandingPageSteps({
   setHasLandingPage: (v: boolean | null) => void;
   wantsLandingPage: boolean | null;
   setWantsLandingPage: (v: boolean | null) => void;
+  qualificationStyle: "multi-step" | "single-page" | null;
+  setQualificationStyle: (v: "multi-step" | "single-page" | null) => void;
+  matchedCriteria: TortQualificationCriteria | undefined;
   landingPageHtml: string | null;
   landingPageTitle: string | null;
   landingPageLoading: boolean;
@@ -1741,6 +1769,15 @@ function LandingPageSteps({
   onCopy: () => void;
   accentColor: string;
 }) {
+  const questionTypeLabel = (type: ScreeningQuestion["type"]) => {
+    switch (type) {
+      case "yes_no": return "Yes / No";
+      case "select": return "Multiple choice";
+      case "text": return "Free text";
+      case "date": return "Date";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Step A: Do you have a landing page? */}
@@ -1760,6 +1797,7 @@ function LandingPageSteps({
             onClick={() => {
               setHasLandingPage(true);
               setWantsLandingPage(null);
+              setQualificationStyle(null);
             }}
             className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
               hasLandingPage === true
@@ -1779,6 +1817,7 @@ function LandingPageSteps({
             onClick={() => {
               setHasLandingPage(false);
               setWantsLandingPage(null);
+              setQualificationStyle(null);
             }}
             className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
               hasLandingPage === false
@@ -1812,12 +1851,7 @@ function LandingPageSteps({
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => {
-                setWantsLandingPage(true);
-                if (!landingPageHtml && !landingPageLoading) {
-                  onGenerate();
-                }
-              }}
+              onClick={() => setWantsLandingPage(true)}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
                 wantsLandingPage === true
                   ? "text-white"
@@ -1848,6 +1882,150 @@ function LandingPageSteps({
               No thanks, skip this
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Step C: Screening Questions Preview */}
+      {wantsLandingPage === true && matchedCriteria && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="h-5 w-5" style={{ color: accentColor }} />
+            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+              Qualification Screening Questions
+            </h3>
+          </div>
+          <p className="text-sm text-slate-gray mb-4">
+            These questions will be included in your landing page to pre-qualify
+            leads for <span className="font-medium text-midnight-navy">{matchedCriteria.tortName}</span>.
+            They are ordered by highest disqualification rate first.
+          </p>
+          <div className="space-y-2">
+            {matchedCriteria.screeningQuestions.map((q, i) => (
+              <div
+                key={q.id}
+                className="flex items-start gap-3 rounded-md border border-slate-100 bg-cloud/50 p-3"
+              >
+                <span
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-midnight-navy">
+                    {q.question}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-gray uppercase tracking-wider">
+                      {questionTypeLabel(q.type)}
+                    </span>
+                    {q.disqualifyOn && q.disqualifyOn.length > 0 && (
+                      <span className="rounded bg-alert/10 px-1.5 py-0.5 text-[10px] font-medium text-alert uppercase tracking-wider">
+                        Disqualifies on: {q.disqualifyOn.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                  {q.helpText && (
+                    <p className="mt-1 text-xs text-slate-gray">{q.helpText}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step D: Qualification Flow Style */}
+      {wantsLandingPage === true && matchedCriteria && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5" style={{ color: accentColor }} />
+            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+              Qualification Flow Style
+            </h3>
+          </div>
+          <p className="text-sm text-slate-gray mb-4">
+            Choose how qualification questions are presented on the landing page.
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => {
+                setQualificationStyle("multi-step");
+                if (!landingPageHtml && !landingPageLoading) {
+                  onGenerate();
+                }
+              }}
+              className={`rounded-lg border-2 p-4 text-left transition-colors ${
+                qualificationStyle === "multi-step"
+                  ? "text-white"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+              style={
+                qualificationStyle === "multi-step"
+                  ? { borderColor: accentColor, backgroundColor: accentColor }
+                  : undefined
+              }
+            >
+              <p className="text-sm font-semibold">
+                Multi-step form (Recommended)
+              </p>
+              <p className={`mt-1 text-xs ${qualificationStyle === "multi-step" ? "text-white/80" : "text-slate-gray"}`}>
+                Progressive qualification with branching logic, 1-2 questions
+                per screen, progress bar. Industry data shows 743% conversion
+                lift vs single-page.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQualificationStyle("single-page");
+                if (!landingPageHtml && !landingPageLoading) {
+                  onGenerate();
+                }
+              }}
+              className={`rounded-lg border-2 p-4 text-left transition-colors ${
+                qualificationStyle === "single-page"
+                  ? "text-white"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+              style={
+                qualificationStyle === "single-page"
+                  ? { borderColor: accentColor, backgroundColor: accentColor }
+                  : undefined
+              }
+            >
+              <p className="text-sm font-semibold">Single-page checklist</p>
+              <p className={`mt-1 text-xs ${qualificationStyle === "single-page" ? "text-white/80" : "text-slate-gray"}`}>
+                All qualification questions on one page as a checklist/form.
+                Simpler but lower conversion rates.
+              </p>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step D-alt: no matching criteria — generate directly */}
+      {wantsLandingPage === true && !matchedCriteria && !landingPageHtml && !landingPageLoading && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+              No Screening Questions Available
+            </h3>
+          </div>
+          <p className="text-sm text-slate-gray mb-4">
+            We don&apos;t have pre-built qualification criteria for this tort yet.
+            The landing page will be generated without a qualification form.
+          </p>
+          <button
+            type="button"
+            onClick={onGenerate}
+            className="rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+            style={{ backgroundColor: accentColor }}
+          >
+            Generate Landing Page
+          </button>
         </div>
       )}
 
