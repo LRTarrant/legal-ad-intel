@@ -203,12 +203,123 @@ function lawStatusBadge(status: string | null) {
 /* ------------------------------------------------------------------ */
 
 const QUALIFICATION_CRITERIA = [
-  { criterion: "Claimant Age", detail: "Must have been a minor (under 18, or under 21 in some filings) when addiction began" },
-  { criterion: "Platform Usage", detail: "Must demonstrate habitual/compulsive use of named defendant platforms (Instagram, Facebook, TikTok, Snapchat, YouTube)" },
-  { criterion: "Mental Health Diagnosis", detail: "Documented diagnosis: depression, anxiety, PTSD, eating disorder, self-harm, suicidal ideation, or related conditions" },
-  { criterion: "Causation Link", detail: "Medical/psychological records linking social media use to mental health decline" },
-  { criterion: "Time Period", detail: "Usage primarily during 2012\u2013present (when addictive design features became prevalent)" },
-  { criterion: "Excluded", detail: "Adult-onset claims without minor-age exposure; claims against platforms not named as defendants" },
+  {
+    criterion: "Claimant Age",
+    standard: "Under 18 (or under 21 in some filings) when addiction/harm began",
+    notes: "Statute of limitations tolled for minors until they turn 18",
+  },
+  {
+    criterion: "Platform Usage",
+    standard: "Regular use of named defendant platforms (3+ hours daily or compulsive engagement patterns)",
+    notes: "Instagram, Facebook, TikTok, Snapchat, YouTube, Discord",
+  },
+  {
+    criterion: "Mental Health Diagnosis",
+    standard: "Clinically documented diagnosis linked to platform use",
+    notes: "Depression, anxiety, eating disorders, body dysmorphia, self-harm, suicidal ideation, PTSD",
+  },
+  {
+    criterion: "Treatment Records",
+    standard: "Evidence of medical, psychiatric, or psychological treatment",
+    notes: "Hospitalization, residential treatment, or long-term medication management strengthens claims",
+  },
+  {
+    criterion: "Causation Link",
+    standard: "Medical/psychological records linking social media use to mental health decline",
+    notes: "Timeline showing behavioral changes coinciding with platform use",
+  },
+  {
+    criterion: "Evidence Availability",
+    standard: "Screen time data, account information, usage logs, notification history",
+    notes: "Device usage data + medical records form the evidentiary foundation",
+  },
+  {
+    criterion: "Time Period",
+    standard: "Usage primarily during 2012\u2013present",
+    notes: "When algorithmic recommendation and addictive design features became prevalent",
+  },
+  {
+    criterion: "Existing Representation",
+    standard: "Not currently represented by another attorney",
+    notes: "Standard disqualifier",
+  },
+  {
+    criterion: "Excluded Claims",
+    standard: "Adult-onset without minor-age exposure; platforms not named as defendants",
+    notes: "School district claims (economic harm) are a separate track",
+  },
+];
+
+const SCREENING_QUESTIONS = [
+  "Did your child regularly use Instagram, TikTok, Snapchat, YouTube, or Facebook before age 18?",
+  "How many hours per day did your child typically spend on social media? (Minimum 3 hours)",
+  "At what age did your child begin using social media?",
+  "Has your child been diagnosed with depression, anxiety, an eating disorder, body dysmorphia, or PTSD?",
+  "Has your child engaged in self-harm or experienced suicidal thoughts?",
+  "Did your child receive medical, psychiatric, or psychological treatment for mental health conditions?",
+  "Was your child hospitalized or enrolled in residential treatment for mental health issues?",
+  "Did the mental health issues begin or worsen during the period of heavy social media use?",
+  "Does your child currently have an attorney for this claim?",
+];
+
+const DISQUALIFIERS = [
+  "Child was 18 or older when social media use began",
+  "No documented mental health diagnosis or treatment",
+  "Mental health conditions pre-dated social media use with no worsening",
+  "Already represented by another attorney for this claim",
+  "Usage was limited/casual (not compulsive or habitual)",
+  "Platform used is not a named defendant in MDL 3047",
+];
+
+const SETTLEMENT_TIERS = [
+  {
+    tier: "Tier 1",
+    range: "$10,000 \u2013 $50,000",
+    criteria: "Lesser injuries, minimal social media usage, mild emotional distress, minor disruptions to daily life",
+    notes: "Limited exposure, shorter usage period, less severe documented harm",
+  },
+  {
+    tier: "Tier 2",
+    range: "$50,000 \u2013 $100,000",
+    criteria: "More severe injuries, increased usage especially at younger age, moderate to severe emotional distress, developmental issues",
+    notes: "Earlier onset of use amplifies harm; requires solid clinical documentation",
+  },
+  {
+    tier: "Tier 3",
+    range: "$100,000 \u2013 $200,000+",
+    criteria: "Most serious injuries \u2014 hospitalization, residential treatment, severe eating disorders, self-harm, suicide attempts",
+    notes: "Heavy prolonged usage from young age; extensive treatment history; ongoing care needed",
+  },
+];
+
+const SCREENING_TIERS = [
+  {
+    label: "Tier 1 \u2014 Basic",
+    questions: "2\u20133 questions",
+    cpl: "Lowest CPL",
+    quality: "High volume, lower qualification rate",
+    description: "Age + platform + basic diagnosis check",
+    color: "border-success/30 bg-emerald-50",
+    tagColor: "bg-success/10 text-success",
+  },
+  {
+    label: "Tier 2 \u2014 Qualified",
+    questions: "4\u20136 questions",
+    cpl: "Mid CPL",
+    quality: "Balanced volume and quality",
+    description: "Adds treatment history, usage intensity, timing correlation",
+    color: "border-warning/30 bg-amber-50",
+    tagColor: "bg-warning/10 text-warning",
+  },
+  {
+    label: "Tier 3 \u2014 Retainer-Ready",
+    questions: "Full intake (8\u201310 questions)",
+    cpl: "Highest CPA, lowest fallout",
+    quality: "Case-ready leads",
+    description: "Full documentation check, hospitalization, existing representation filter",
+    color: "border-alert/30 bg-red-50",
+    tagColor: "bg-alert/10 text-alert",
+  },
 ];
 
 const LITIGATION_TIMELINE = [
@@ -344,7 +455,13 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
           <p>
             <span className="font-semibold text-midnight-navy">MDL 3047</span> &mdash;{" "}
             <em>In Re: Social Media Adolescent Addiction/Personal Injury Products Liability Litigation</em>.
-            Consolidated in N.D. Cal. before Judge Yvonne Gonzalez Rogers. Also JCCP 5255 in L.A. Superior Court (Judge Carolyn B. Kuhl).
+            Consolidated in the Northern District of California before{" "}
+            <span className="font-semibold text-midnight-navy">Judge Yvonne Gonzalez Rogers</span>.
+            Also <span className="font-semibold text-midnight-navy">JCCP 5255</span> in California state court
+            (L.A. Superior Court, Judge Carolyn B. Kuhl). Over{" "}
+            <span className="font-semibold text-midnight-navy">10,000+ individual cases</span> and{" "}
+            <span className="font-semibold text-midnight-navy">~800 school district claims</span> pending.{" "}
+            <span className="font-semibold text-midnight-navy">41+ state attorneys general</span> have taken legal action.
           </p>
           <p>
             Plaintiffs allege defendants deliberately engineered platforms with addictive design features &mdash;
@@ -354,6 +471,15 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
             and First Amendment defenses, finding these claims target product design rather than speech.
           </p>
           <p>
+            <span className="font-semibold text-midnight-navy">Key Verdicts:</span>{" "}
+            <span className="font-semibold text-midnight-navy">KGM v. Meta &amp; YouTube</span> bellwether
+            trial resulted in a <span className="font-semibold text-midnight-navy">$6M verdict</span> (March 2026)
+            &mdash; Meta held liable for 70% ($4.2M), YouTube for 30% ($1.8M). TikTok and Snapchat settled the KGM
+            case pre-trial (January 2026, confidential terms).{" "}
+            <span className="font-semibold text-midnight-navy">New Mexico</span>: Meta ordered to pay{" "}
+            <span className="font-semibold text-midnight-navy">$375M</span> (March 2026).
+          </p>
+          <p>
             <span className="font-semibold text-midnight-navy">Eligible Claimants:</span>{" "}
             Individuals who became addicted to social media before age 21 and suffered mental health injuries
             (depression, anxiety, eating disorders, self-harm, suicidal ideation, or death). Statute of limitations
@@ -361,9 +487,10 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
           </p>
           <p>
             <span className="font-semibold text-midnight-navy">Settlement Landscape:</span>{" "}
-            No global settlement. TikTok and Snapchat reached confidential settlements in KGM case. The $6M KGM
+            No global settlement yet. TikTok and Snapchat reached confidential settlements in KGM case. The $6M KGM
             verdict and $375M New Mexico verdict are early indicators but non-binding on other cases. Federal
-            bellwether outcomes in summer 2026 will heavily influence future settlement posture.
+            bellwether outcomes in summer 2026 will heavily influence future settlement posture. Estimated individual
+            settlements range from <span className="font-semibold text-midnight-navy">$10K&ndash;$200K+</span> depending on severity.
           </p>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -429,17 +556,16 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
         </div>
       </div>
 
-      {/* ── 5. Research & Criteria ──────────────────────────────────────── */}
+      {/* ── 5. Qualification Criteria ──────────────────────────────────── */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-4.5 h-4.5 text-intelligence-teal" />
           <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Research &amp; Qualification Criteria
+            Qualification Criteria
           </h2>
         </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          What firms should know before advertising
-        </p>
+
+        {/* Core Criteria Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -447,8 +573,11 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
                 <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
                   Criterion
                 </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Standard
+                </th>
                 <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Detail
+                  Notes
                 </th>
               </tr>
             </thead>
@@ -461,8 +590,11 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
                   <td className="py-3 pr-4 font-medium text-midnight-navy whitespace-nowrap">
                     {c.criterion}
                   </td>
-                  <td className="py-3 pl-3 text-midnight-navy/80">
-                    {c.detail}
+                  <td className="py-3 px-3 text-midnight-navy/80">
+                    {c.standard}
+                  </td>
+                  <td className="py-3 pl-3 text-midnight-navy/60 text-xs">
+                    {c.notes}
                   </td>
                 </tr>
               ))}
@@ -470,26 +602,191 @@ export function SocialMediaClient({ data }: { data: SocialMediaPageData }) {
           </table>
         </div>
 
+        {/* Screening Tiers */}
+        <h3 className="mt-6 mb-3 text-sm font-semibold text-midnight-navy">
+          Screening Depth Tiers
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {SCREENING_TIERS.map((tier) => (
+            <div
+              key={tier.label}
+              className={`rounded-lg border p-4 ${tier.color}`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-midnight-navy">
+                  {tier.label}
+                </p>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tier.tagColor}`}
+                >
+                  {tier.cpl}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-midnight-navy/70 mb-2">
+                {tier.description}
+              </p>
+              <div className="flex items-center justify-between text-[10px] text-midnight-navy/50">
+                <span>{tier.questions}</span>
+                <span>{tier.quality}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Common Screening Questions */}
+        <h3 className="mt-6 mb-3 text-sm font-semibold text-midnight-navy">
+          Common Screening Questions
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          {SCREENING_QUESTIONS.map((q, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-intelligence-teal/10 text-[10px] font-bold text-intelligence-teal">
+                {i + 1}
+              </span>
+              <p className="text-xs text-midnight-navy/80">{q}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Disqualifiers */}
+        <h3 className="mt-6 mb-3 text-sm font-semibold text-midnight-navy">
+          Disqualifiers
+        </h3>
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          {DISQUALIFIERS.map((d) => (
+            <div
+              key={d}
+              className="flex items-center gap-2 rounded-md bg-red-50/60 px-3 py-2"
+            >
+              <XCircle className="w-3.5 h-3.5 shrink-0 text-alert/70" />
+              <p className="text-xs text-midnight-navy/80">{d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 5b. Settlement Projections ─────────────────────────────────── */}
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <DollarSign className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Settlement Projections
+          </h2>
+        </div>
+        <p className="mb-4 text-xs text-slate-gray">
+          Projections based on KGM bellwether verdict ($6M, March 2026), New Mexico
+          verdict ($375M), and litigation trajectory. No global settlement yet.
+          Estimated individual settlements: $10K&ndash;$200K+ depending on severity.
+        </p>
+
+        {/* Settlement Tiers */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Tier
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Range
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Criteria
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Notes
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {SETTLEMENT_TIERS.map((t) => (
+                <tr
+                  key={t.tier}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-3 pr-4 font-medium text-midnight-navy whitespace-nowrap">
+                    {t.tier}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono font-semibold text-midnight-navy whitespace-nowrap">
+                    {t.range}
+                  </td>
+                  <td className="py-3 px-3 text-midnight-navy/80 text-xs">
+                    {t.criteria}
+                  </td>
+                  <td className="py-3 pl-3 text-midnight-navy/60 text-xs">
+                    {t.notes}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Factors */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 px-4 py-3">
-            <p className="text-xs font-semibold text-intelligence-teal mb-1.5">
-              Volume Opportunity
+          <div className="rounded-md bg-emerald-50/60 px-4 py-3">
+            <p className="text-xs font-semibold text-success mb-1.5">
+              Factors Increasing Value
             </p>
-            <p className="text-xs leading-relaxed text-midnight-navy/70">
-              Massive claimant pool &mdash; 95% of teens use social media, ~20% have diagnosed mental health conditions.
-              Statute of limitations tolled for minors; many potential claimants haven&apos;t aged out yet.
-            </p>
+            <ul className="space-y-1">
+              {[
+                "Younger age at onset of use",
+                "Hospitalization or residential treatment",
+                "Suicide attempt or severe self-harm",
+                "Extensive treatment history",
+                "Strong screen time documentation",
+                "Multiple diagnosed conditions",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-1.5 text-xs text-midnight-navy/70">
+                  <span className="mt-1 h-1 w-1 rounded-full bg-success shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="rounded-md bg-amber-50 border border-warning/20 px-4 py-3">
-            <p className="text-xs font-semibold text-warning mb-1.5">
-              Documentation Challenge
+          <div className="rounded-md bg-red-50/60 px-4 py-3">
+            <p className="text-xs font-semibold text-alert mb-1.5">
+              Factors Decreasing Value
             </p>
-            <p className="text-xs leading-relaxed text-midnight-navy/70">
-              Requires both platform usage evidence AND clinical mental health records &mdash;
-              a higher documentation bar than many torts. School district track is a separate
-              opportunity (economic harm, not individual PI).
-            </p>
+            <ul className="space-y-1">
+              {[
+                "Older age at onset (closer to 18)",
+                "Mild or undiagnosed conditions",
+                "Limited treatment records",
+                "No screen time data available",
+                "Pre-existing mental health conditions",
+                "Casual or infrequent usage",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-1.5 text-xs text-midnight-navy/70">
+                  <span className="mt-1 h-1 w-1 rounded-full bg-alert shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 px-4 py-3">
+          <p className="text-xs font-semibold text-intelligence-teal mb-1.5">
+            Volume Opportunity
+          </p>
+          <p className="text-xs leading-relaxed text-midnight-navy/70">
+            Massive claimant pool &mdash; 95% of teens use social media, ~20% have diagnosed mental health conditions.
+            Statute of limitations tolled for minors; many potential claimants haven&apos;t aged out yet.
+          </p>
+        </div>
+        <div className="mt-3 rounded-md bg-amber-50 border border-warning/20 px-4 py-3">
+          <p className="text-xs font-semibold text-warning mb-1.5">
+            Documentation Challenge
+          </p>
+          <p className="text-xs leading-relaxed text-midnight-navy/70">
+            Requires both platform usage evidence AND clinical mental health records &mdash;
+            a higher documentation bar than many torts. School district track is a separate
+            opportunity (economic harm, not individual PI).
+          </p>
         </div>
       </div>
 
