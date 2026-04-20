@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: apiKey,
       },
       body: JSON.stringify({
         title: body.title ?? "Legal Campaign Video",
