@@ -46,8 +46,12 @@ export default function AdminUsersPage() {
   const [inviteRole, setInviteRole] = useState<"member" | "tenant_admin">("member");
   const [inviteTrialDays, setInviteTrialDays] = useState<number | null>(14);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<UserRow | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -92,6 +96,8 @@ export default function AdminUsersPage() {
           .select("role")
           .eq("id", user.id)
           .single();
+        setCurrentUserId(user.id);
+        if (profile) setCurrentUserRole(profile.role);
         if (profile?.role === "super_admin") setIsSuperAdmin(true);
       } catch {
         // ignore
@@ -152,6 +158,40 @@ export default function AdminUsersPage() {
     }
   }
 
+  function canRemoveUser(u: UserRow): boolean {
+    if (!currentUserId || !currentUserRole) return false;
+    if (u.id === currentUserId) return false;
+    if (u.role === "super_admin") return false;
+    if (!["super_admin", "tenant_admin"].includes(currentUserRole)) return false;
+    if (currentUserRole === "tenant_admin" && u.role !== "member") return false;
+    return true;
+  }
+
+  async function handleRemoveUser() {
+    if (!removeTarget) return;
+    setRemoving(true);
+
+    try {
+      const res = await fetch(`/api/admin/users/${removeTarget.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast("error", data.error ?? "Failed to remove user");
+        return;
+      }
+
+      showToast("success", "User removed successfully");
+      fetchData();
+    } catch {
+      showToast("error", "Failed to remove user");
+    } finally {
+      setRemoving(false);
+      setRemoveTarget(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -207,12 +247,13 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Role</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Last Seen</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Joined</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">
                     No users found
                   </td>
                 </tr>
@@ -240,6 +281,17 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
                       {formatDate(u.created_at)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      {canRemoveUser(u) && (
+                        <button
+                          onClick={() => setRemoveTarget(u)}
+                          className="text-red-500 transition hover:text-red-700"
+                          title="Remove user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -405,6 +457,49 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove User Confirmation Modal */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-charcoal">Remove User</h3>
+              <button
+                onClick={() => setRemoveTarget(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600">
+              Are you sure you want to remove{" "}
+              <span className="font-medium text-charcoal">
+                {removeTarget.full_name || removeTarget.email}
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRemoveTarget(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRemoveUser}
+                disabled={removing}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {removing ? "Removing…" : "Remove"}
+              </button>
+            </div>
           </div>
         </div>
       )}
