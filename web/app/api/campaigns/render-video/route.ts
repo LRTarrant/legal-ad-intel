@@ -101,7 +101,9 @@ async function renderSceneImage(
       const scale = Math.max(width / img.width, height / img.height);
       const sw = img.width * scale;
       const sh = img.height * scale;
-      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
+      const dx = (width - sw) / 2;
+      const dy = (height - sh) * 0.25; // favor top of image — subjects tend to be in upper portion
+      ctx.drawImage(img, dx, dy, sw, sh);
       // Dark overlay
       ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
       ctx.fillRect(0, 0, width, height);
