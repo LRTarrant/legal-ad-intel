@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Film,
   Sparkles,
@@ -83,7 +83,6 @@ export function VideoCompositionCard({
   const [renderProgress, setRenderProgress] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
-  const ffmpegRef = useRef<any>(null);
 
   /* ── Script generation ─────────────────────────────────────────────── */
 
@@ -182,25 +181,7 @@ export function VideoCompositionCard({
     return results.map((r) => (r.status === "fulfilled" ? r.value : null));
   }
 
-  /* ── FFmpeg.wasm rendering ─────────────────────────────────────────── */
-
-  async function loadFFmpeg() {
-    if (ffmpegRef.current) return ffmpegRef.current;
-
-    const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-    const { toBlobURL } = await import("@ffmpeg/util");
-
-    const ffmpeg = new FFmpeg();
-
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  }
+  /* ── Server-side video rendering ───────────────────────────────────── */
 
   async function renderVideo() {
     if (scenes.length === 0) return;
@@ -209,150 +190,54 @@ export function VideoCompositionCard({
     setVideoUrl(null);
 
     try {
-      const res = PLATFORM_RESOLUTIONS[platform];
+      const resolution = PLATFORM_RESOLUTIONS[platform];
 
       // Step 1: Generate images for scenes that need them
       setRenderProgress("Generating scene images...");
       const imageUrls = await generateSceneImages();
 
       // Update scenes with generated URLs
-      setScenes((prev) =>
-        prev.map((s, i) => ({
-          ...s,
-          imageUrl: imageUrls[i] ?? s.imageUrl,
-        })),
-      );
+      const updatedScenes = scenes.map((s, i) => ({
+        ...s,
+        imageUrl: imageUrls[i] ?? s.imageUrl,
+      }));
+      setScenes(updatedScenes);
 
-      // Step 2: Load FFmpeg
-      setRenderProgress("Loading video engine...");
-      const ffmpeg = await loadFFmpeg();
+      // Step 2: Send to server for rendering
+      setRenderProgress("Rendering video... this may take 30–60 seconds");
+      const res = await fetch("/api/campaigns/render-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenes: updatedScenes.map((s) => ({
+            headline: s.headline,
+            subheadline: s.subheadline,
+            imageUrl: s.imageUrl,
+            durationSeconds: s.durationSeconds,
+          })),
+          cta,
+          platform,
+          resolution,
+        }),
+      });
 
-      // Step 3: Download images and write to virtual filesystem
-      setRenderProgress("Preparing scene assets...");
-      const sceneFiles: string[] = [];
-
-      for (let i = 0; i < scenes.length; i++) {
-        const imgUrl = imageUrls[i];
-        if (imgUrl) {
-          try {
-            const imgRes = await fetch(imgUrl);
-            const imgBlob = await imgRes.blob();
-            const imgBuf = new Uint8Array(await imgBlob.arrayBuffer());
-            const fname = `scene_${i}.jpg`;
-            await ffmpeg.writeFile(fname, imgBuf);
-            sceneFiles.push(fname);
-          } catch {
-            // Create a solid color fallback
-            sceneFiles.push(null as any);
-          }
-        } else {
-          sceneFiles.push(null as any);
-        }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(err.error || "Rendering failed");
       }
 
-      // Step 4: Build each scene clip and concat
-      setRenderProgress("Rendering video scenes...");
-      const clipFiles: string[] = [];
-
-      for (let i = 0; i < scenes.length; i++) {
-        const scene = scenes[i];
-        const dur = scene.durationSeconds;
-        const clipName = `clip_${i}.mp4`;
-
-        // Escape text for ffmpeg drawtext
-        const headline = scene.headline.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-        const subheadline = scene.subheadline.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-
-        if (sceneFiles[i]) {
-          // Scene with image background
-          await ffmpeg.exec([
-            "-loop", "1",
-            "-i", sceneFiles[i],
-            "-t", String(dur),
-            "-vf", [
-              `scale=${res.w}:${res.h}:force_original_aspect_ratio=increase`,
-              `crop=${res.w}:${res.h}`,
-              `drawbox=x=0:y=0:w=${res.w}:h=${res.h}:color=black@0.50:t=fill`,
-              `drawtext=text='${headline}':fontsize=${Math.round(res.w / 16)}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-${Math.round(res.h / 20)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-              `drawtext=text='${subheadline}':fontsize=${Math.round(res.w / 28)}:fontcolor=#FFD700:x=(w-text_w)/2:y=(h+text_h)/2+${Math.round(res.h / 30)}:shadowcolor=black@0.8:shadowx=1:shadowy=1`,
-            ].join(","),
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast",
-            "-y", clipName,
-          ]);
-        } else {
-          // Solid dark background fallback
-          await ffmpeg.exec([
-            "-f", "lavfi",
-            "-i", `color=c=#0f172a:s=${res.w}x${res.h}:d=${dur}`,
-            "-vf", [
-              `drawtext=text='${headline}':fontsize=${Math.round(res.w / 16)}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-${Math.round(res.h / 20)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-              `drawtext=text='${subheadline}':fontsize=${Math.round(res.w / 28)}:fontcolor=#FFD700:x=(w-text_w)/2:y=(h+text_h)/2+${Math.round(res.h / 30)}:shadowcolor=black@0.8:shadowx=1:shadowy=1`,
-            ].join(","),
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast",
-            "-y", clipName,
-          ]);
-        }
-        clipFiles.push(clipName);
-      }
-
-      // Step 5: CTA scene
-      setRenderProgress("Adding CTA scene...");
-      const ctaDur = 5;
-      const ctaHeadline = cta.headline.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-      const ctaPhone = cta.phone.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-      const ctaSubline = cta.subline.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-      const ctaDisclaimer = cta.disclaimer.replace(/'/g, "\u2019").replace(/:/g, "\\:");
-
-      await ffmpeg.exec([
-        "-f", "lavfi",
-        "-i", `color=c=#0a0a0a:s=${res.w}x${res.h}:d=${ctaDur}`,
-        "-vf", [
-          `drawtext=text='${ctaHeadline}':fontsize=${Math.round(res.w / 12)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(res.h * 0.25)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-          `drawtext=text='${ctaPhone}':fontsize=${Math.round(res.w / 10)}:fontcolor=#FFD700:x=(w-text_w)/2:y=${Math.round(res.h * 0.4)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-          `drawtext=text='${ctaSubline}':fontsize=${Math.round(res.w / 30)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(res.h * 0.58)}`,
-          `drawtext=text='${ctaDisclaimer}':fontsize=${Math.round(res.w / 50)}:fontcolor=#888888:x=(w-text_w)/2:y=${Math.round(res.h * 0.88)}`,
-        ].join(","),
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-preset", "ultrafast",
-        "-y", "cta.mp4",
-      ]);
-      clipFiles.push("cta.mp4");
-
-      // Step 6: Concat all clips
-      setRenderProgress("Combining scenes...");
-      const concatList = clipFiles.map((f) => `file '${f}'`).join("\n");
-      await ffmpeg.writeFile("concat.txt", new TextEncoder().encode(concatList));
-
-      await ffmpeg.exec([
-        "-f", "concat",
-        "-safe", "0",
-        "-i", "concat.txt",
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-preset", "ultrafast",
-        "-movflags", "+faststart",
-        "-y", "output.mp4",
-      ]);
-
-      // Step 7: Read output and create blob URL
+      // Step 3: Create blob URL from response
       setRenderProgress("Finalizing video...");
-      const outputData = await ffmpeg.readFile("output.mp4");
-      const blob = new Blob([outputData], { type: "video/mp4" });
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       setVideoUrl(url);
-
-      // Cleanup virtual filesystem
-      for (const f of [...clipFiles, "concat.txt", "output.mp4", ...sceneFiles.filter(Boolean)]) {
-        try { await ffmpeg.deleteFile(f); } catch { /* ignore */ }
-      }
     } catch (err) {
       console.error("Video render error:", err);
-      setRenderError("Video rendering failed. Try reducing scene count or refreshing the page.");
+      setRenderError(
+        err instanceof Error
+          ? `Video rendering failed: ${err.message}`
+          : "Video rendering failed. Try reducing scene count or refreshing the page.",
+      );
     } finally {
       setRendering(false);
       setRenderProgress("");
