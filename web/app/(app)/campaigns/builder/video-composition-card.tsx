@@ -144,11 +144,21 @@ export function VideoCompositionCard({
 
   /* ── Generate voiceover script from scenes ─────────────────────────── */
 
+  function stripMarkdown(text: string): string {
+    return text
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
+      .replace(/__/g, "")
+      .replace(/_/g, " ")
+      .replace(/#{1,6}\s/g, "")
+      .trim();
+  }
+
   function generateVoiceoverScript(): string {
     const parts: string[] = [];
     for (const scene of scenes) {
       if (scene.headline) {
-        const headline = scene.headline
+        const headline = stripMarkdown(scene.headline)
           .replace(/\?$/g, "?")
           .replace(/^([A-Z\s]+)$/, (match) =>
             match.charAt(0) + match.slice(1).toLowerCase(),
@@ -156,7 +166,7 @@ export function VideoCompositionCard({
         parts.push(headline);
       }
       if (scene.subheadline) {
-        parts.push(scene.subheadline);
+        parts.push(stripMarkdown(scene.subheadline));
       }
     }
     if (parts.length === 0) return "";

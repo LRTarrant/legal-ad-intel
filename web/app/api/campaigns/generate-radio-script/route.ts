@@ -37,6 +37,7 @@ Rules:
 - Include a disclaimer: "You may be entitled to compensation"
 - Format as a single block of script text, ready for voice talent to read
 - Do NOT include stage directions, speaker labels, or formatting markers
+- CRITICAL: Only reference the specific injury/disease provided in the tort context. Do NOT guess or add other medical conditions.
 
 Respond with ONLY the script text — no JSON, no markdown, no explanation.`;
 
@@ -57,6 +58,7 @@ Rules:
 - Format as a single block of script text, ready for a podcast host to read
 - Do NOT include stage directions, speaker labels, or formatting markers
 - Sound like a real person talking, not a commercial — use contractions, natural phrasing
+- CRITICAL: Only reference the specific injury/disease provided in the tort context. Do NOT guess or add other medical conditions.
 
 Respond with ONLY the script text — no JSON, no markdown, no explanation.`;
 
@@ -120,7 +122,11 @@ function formatAgeBands(ageBandWeights: Record<string, number> | null): string {
   return sorted.map(([band, weight]) => `${band} (${Math.round(weight * 100)}%)`).join(", ");
 }
 
-function buildUserPrompt(req: RadioScriptRequest, audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null): string {
+function buildUserPrompt(
+  req: RadioScriptRequest,
+  audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null,
+  matchedTort: { name?: string; disease_or_injury?: string; product_or_exposure?: string; status?: string; notes?: string } | null,
+): string {
   const isPodcast = req.format === "podcast";
   const durationMap: Record<string, string> = isPodcast
     ? {
@@ -168,12 +174,23 @@ The script MUST speak directly to this audience. Use language, references, and e
 3. Solution — how the firm can help
 4. CTA — clear call to action with firm name`;
 
+  let tortContextSection = "";
+  if (matchedTort) {
+    tortContextSection = `
+
+TORT MEDICAL/LEGAL CONTEXT:
+- Product/Exposure: ${matchedTort.product_or_exposure ?? "N/A"}
+- Injury/Disease: ${matchedTort.disease_or_injury ?? "N/A"}
+- CRITICAL: Only reference the injury/disease listed above. Do NOT mention other side effects or medical conditions not listed here.`;
+  }
+
   return `Write a ${durationLabel} ${formatLabel} script ${firmRef} regarding ${req.tort_name} litigation.
 
 ${statesRef}
 
 ${formatStructure}
 ${audienceSection}
+${tortContextSection}
 
 Remember: output ONLY the script text, nothing else.`;
 }
@@ -204,15 +221,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch audience profile for this tort
+    // Fetch audience profile and tort medical context in parallel
     const db = supabase as any;
-    const { data: allProfiles } = await db.from("tort_audience_profiles").select("*");
-
     const tortLower = body.tort_name.toLowerCase();
+
+    const [profileResult, tortResult] = await Promise.allSettled([
+      db.from("tort_audience_profiles").select("*"),
+      db.from("mass_torts").select("name, disease_or_injury, product_or_exposure, status, notes"),
+    ]);
+
+    const allProfiles = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+    const tortData = tortResult.status === "fulfilled" ? tortResult.value.data : null;
+
     const audienceProfile = (allProfiles ?? []).find((p: any) => {
       const tid = (p.tort_id ?? "").toLowerCase();
       const notes = (p.notes ?? "").toLowerCase();
       return tid.includes(tortLower) || tortLower.includes(tid.replace(/_/g, " ")) || notes.includes(tortLower);
+    }) ?? null;
+
+    const matchedTort = (tortData ?? []).find((t: any) => {
+      const tname = (t.name ?? "").toLowerCase();
+      return tname.includes(tortLower) || tortLower.includes(tname);
     }) ?? null;
 
     // Derive voice recommendation and audience context
@@ -248,7 +277,7 @@ export async function POST(req: NextRequest) {
             max_tokens: 500,
             messages: [
               { role: "system", content: systemPrompt },
-              { role: "user", content: buildUserPrompt(body, audienceProfile) },
+              { role: "user", content: buildUserPrompt(body, audienceProfile, matchedTort) },
             ],
           }),
           signal: controller.signal,

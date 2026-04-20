@@ -68,9 +68,13 @@ const SYSTEM_PROMPT = `You are a senior legal advertising strategist with 15+ ye
 
 You will be given structured campaign planning data including real cost benchmarks, geographic opportunity scores, saturation metrics, and channel recommendations. Use this data to generate strategic insights, ad copy, and compliance guidance.
 
-IMPORTANT: Always respond with valid JSON matching the exact schema provided. Do not include markdown, code fences, or any text outside the JSON object.`;
+IMPORTANT: Always respond with valid JSON matching the exact schema provided. Do not include markdown, code fences, or any text outside the JSON object.
+CRITICAL: Only reference the specific injury/disease provided in the tort context. Do NOT guess or add other medical conditions.`;
 
-function buildUserPrompt(req: AiInsightsRequest): string {
+function buildUserPrompt(
+  req: AiInsightsRequest,
+  matchedTort: { name?: string; disease_or_injury?: string; product_or_exposure?: string; status?: string; notes?: string } | null,
+): string {
   const { tort_name, states, monthly_budget, firm_name, firm_url, plan_data } = req;
   const { tort_overview, geo_recommendations, channel_mix, budget_projection } = plan_data;
 
@@ -82,6 +86,16 @@ function buildUserPrompt(req: AiInsightsRequest): string {
     ? `\nFIRM/COMPANY: ${firm_name}${firm_url ? ` (${firm_url})` : ""}\nIMPORTANT: Naturally incorporate the firm name "${firm_name}" into ad copy. For Meta ads, weave the firm name into headlines (e.g., "${firm_name} — Fighting for [Tort] Victims"). For Google RSA, include the firm name in at least 2 headlines.${firm_url ? ` Use "${firm_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}" as the display URL reference in Google ad descriptions where appropriate.` : ""}`
     : "";
 
+  let tortContextSection = "";
+  if (matchedTort) {
+    tortContextSection = `
+
+TORT MEDICAL/LEGAL CONTEXT:
+- Product/Exposure: ${matchedTort.product_or_exposure ?? "N/A"}
+- Injury/Disease: ${matchedTort.disease_or_injury ?? "N/A"}
+- CRITICAL: Only reference the injury/disease listed above in all ad copy and strategic recommendations. Do NOT mention other side effects or medical conditions not listed here.`;
+  }
+
   return `Generate a comprehensive campaign strategy for the following mass tort:
 
 TORT: ${tort_name}
@@ -89,6 +103,7 @@ LIFECYCLE PHASE: ${tort_overview.lifecycle_phase}
 TREND: ${tort_overview.trend_direction} (search interest)
 TARGET STATES: ${states.join(", ")}
 ${monthly_budget ? `MONTHLY BUDGET: $${monthly_budget.toLocaleString()}` : "BUDGET: Not specified"}${firmSection}
+${tortContextSection}
 
 COST BENCHMARKS:
 - CPL Range: $${tort_overview.cpl_range.low ?? "N/A"} - $${tort_overview.cpl_range.high ?? "N/A"}
@@ -154,6 +169,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch tort medical context for grounding
+    const db = supabase as any;
+    const tortLower = body.tort_name.toLowerCase();
+
+    const [tortResult] = await Promise.allSettled([
+      db.from("mass_torts").select("name, disease_or_injury, product_or_exposure, status, notes"),
+    ]);
+
+    const tortData = tortResult.status === "fulfilled" ? tortResult.value.data : null;
+    const matchedTort = (tortData ?? []).find((t: any) => {
+      const tname = (t.name ?? "").toLowerCase();
+      return tname.includes(tortLower) || tortLower.includes(tname);
+    }) ?? null;
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
@@ -173,7 +202,7 @@ export async function POST(req: NextRequest) {
             response_format: { type: "json_object" },
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: buildUserPrompt(body) },
+              { role: "user", content: buildUserPrompt(body, matchedTort) },
             ],
           }),
           signal: controller.signal,
