@@ -11,6 +11,8 @@ import {
   Users,
   LayoutDashboard,
   Settings,
+  Sparkles,
+  Bell,
 } from "lucide-react";
 import { MobileNav } from "./home-nav";
 
@@ -50,6 +52,8 @@ const COMPARISON_ROWS = [
   { feature: "State-level market intel", lmi: true, mediaradar: false, semrush: false, ispot: false },
   { feature: "Channel planning tool", lmi: true, mediaradar: false, semrush: false, ispot: false },
   { feature: "Built for plaintiff firms", lmi: true, mediaradar: false, semrush: false, ispot: false },
+  { feature: "AI campaign builder", lmi: true, mediaradar: false, semrush: false, ispot: false },
+  { feature: "Real-time alerts", lmi: true, mediaradar: false, semrush: false, ispot: false },
 ] as const;
 
 export default async function HomePage() {
@@ -278,7 +282,7 @@ export default async function HomePage() {
           <StatItem value="14" label="Active MDLs Tracked" />
           <StatItem value="41" label="Live Litigation Developments" />
           <StatItem value="30+" label="Competitor Firms Monitored" />
-          <StatItem value="3" label="State Markets with Deep Intel" />
+          <StatItem value="4" label="State Markets with Deep Intel" />
         </div>
       </section>
 
@@ -340,6 +344,7 @@ export default async function HomePage() {
               visual={
                 <div className="space-y-3">
                   <MiniStat label="Alabama" detail="1,075 fatalities · 6 PI competitors · Low saturation" />
+                  <MiniStat label="Arizona" detail="~1,200 fatalities · 5 PI competitors · Moderate saturation" />
                   <MiniStat label="Florida" detail="3,521 fatalities · 12 PI competitors · High saturation" />
                   <MiniStat label="California" detail="4,407 fatalities · 9 PI competitors · Moderate saturation" />
                 </div>
@@ -350,7 +355,7 @@ export default async function HomePage() {
             <FeatureRow
               label="MASS TORT PROFILES"
               title="Every tort, researched and monitored."
-              description="Case summaries, MDL status, buying criteria, audience analysis, and real-time litigation developments from live RSS feeds. 11 active tort profiles with more added as you need them."
+              description="Case summaries, MDL status, buying criteria, audience analysis, and real-time litigation developments from live RSS feeds. 13 active tort profiles with more added as you need them."
               reverse
               visual={
                 <div className="space-y-3">
@@ -390,7 +395,56 @@ export default async function HomePage() {
               }
             />
 
-            {/* Row 5: MDL Monitoring */}
+            {/* Row 5: Campaign Builder */}
+            <FeatureRow
+              label="CAMPAIGN BUILDER"
+              title="AI-powered campaigns, ready to launch."
+              description="Generate complete campaign packages in minutes — audience-aware ad copy, creative images, radio spots, video creative, and multi-page landing pages. Export ready-to-upload CSV files for Google Ads and Meta."
+              visual={
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-5 w-5 text-intelligence-teal" />
+                    <p className="text-sm font-semibold text-white">Campaign Package</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-intelligence-teal">DEPO-PROVERA</p>
+                    <p className="mt-1 text-xs text-white/50">Smith &amp; Associates</p>
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <span className="text-intelligence-teal">&#10003;</span> Ad Copy
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <span className="text-intelligence-teal">&#10003;</span> Images
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <span className="text-intelligence-teal">&#10003;</span> Radio
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <span className="text-intelligence-teal">&#10003;</span> Video
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <span className="text-intelligence-teal">&#10003;</span> Landing Page
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <span className="inline-block rounded-full border border-intelligence-teal/30 bg-intelligence-teal/10 px-3 py-1 text-xs font-medium text-intelligence-teal">
+                        Download CSV
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">AI Ad Copy (Meta + Google)</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">Creative Images</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">Radio &amp; Podcast Spots</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">Video Creative</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">Landing Pages</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">CSV Export</span>
+                  </div>
+                </div>
+              }
+            />
+
+            {/* Row 6: MDL Monitoring */}
             <FeatureRow
               label="LITIGATION MONITORING"
               title="Live docket intelligence, automatically updated."
@@ -407,6 +461,43 @@ export default async function HomePage() {
                       $375M Verdict
                     </span>
                   </p>
+                </div>
+              }
+            />
+
+            {/* Row 7: Alerts & Monitoring */}
+            <FeatureRow
+              label="REAL-TIME ALERTS"
+              title="Know the moment something changes."
+              description="Configure alerts for tort developments, competitor activity, and broadcast advertising. Get notified when new legal ads hit TV and radio in your markets."
+              reverse
+              visual={
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bell className="h-5 w-5 text-intelligence-teal" />
+                    <p className="text-sm font-semibold text-white">Active Alerts</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#2563EB]" />
+                    <div>
+                      <p className="text-xs font-medium text-white/50">Litigation Alerts</p>
+                      <p className="text-sm text-white">New filings, verdicts, settlements</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#D97706]" />
+                    <div>
+                      <p className="text-xs font-medium text-white/50">Broadcast Intel</p>
+                      <p className="text-sm text-white">TV and radio ad monitoring across markets</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#16A34A]" />
+                    <div>
+                      <p className="text-xs font-medium text-white/50">Competitor Alerts</p>
+                      <p className="text-sm text-white">New spend detected, market entry</p>
+                    </div>
+                  </div>
                 </div>
               }
             />
