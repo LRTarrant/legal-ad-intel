@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Film,
   Sparkles,
@@ -11,6 +11,10 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  Volume2,
+  Music,
+  Play,
+  Square,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -30,6 +34,23 @@ interface CtaSettings {
   subline: string;
   disclaimer: string;
 }
+
+interface VoiceOption {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  previewUrl: string;
+}
+
+type BackgroundMusic = "dramatic" | "urgent" | "somber" | "corporate";
+
+const MUSIC_OPTIONS: { value: BackgroundMusic; label: string; description: string }[] = [
+  { value: "dramatic", label: "Dramatic", description: "Tense, serious tone" },
+  { value: "urgent", label: "Urgent", description: "Fast-paced, action-oriented" },
+  { value: "somber", label: "Somber", description: "Empathetic, emotional" },
+  { value: "corporate", label: "Corporate", description: "Professional, neutral" },
+];
 
 type Platform = "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed";
 type Duration = "15s" | "30s" | "60s";
@@ -84,6 +105,115 @@ export function VideoCompositionCard({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
 
+  // Voiceover state
+  const [voiceoverEnabled, setVoiceoverEnabled] = useState(false);
+  const [voices, setVoices] = useState<VoiceOption[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+  const [voiceoverScript, setVoiceoverScript] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
+  // Background music state
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<BackgroundMusic>("dramatic");
+
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const voicesFetchedRef = useRef(false);
+
+  /* ── Fetch voices ──────────────────────────────────────────────────── */
+
+  async function fetchVoices() {
+    if (voicesFetchedRef.current) return;
+    voicesFetchedRef.current = true;
+    setVoicesLoading(true);
+    try {
+      const res = await fetch("/api/campaigns/voices");
+      if (!res.ok) throw new Error("Failed to fetch voices");
+      const data = await res.json();
+      setVoices(data.voices ?? []);
+      if (data.voices?.length > 0) {
+        setSelectedVoiceId(data.voices[0].id);
+      }
+    } catch {
+      voicesFetchedRef.current = false;
+    } finally {
+      setVoicesLoading(false);
+    }
+  }
+
+  /* ── Generate voiceover script from scenes ─────────────────────────── */
+
+  function generateVoiceoverScript(): string {
+    const parts: string[] = [];
+    for (const scene of scenes) {
+      if (scene.headline) {
+        const headline = scene.headline
+          .replace(/\?$/g, "?")
+          .replace(/^([A-Z\s]+)$/, (match) =>
+            match.charAt(0) + match.slice(1).toLowerCase(),
+          );
+        parts.push(headline);
+      }
+      if (scene.subheadline) {
+        parts.push(scene.subheadline);
+      }
+    }
+    if (parts.length === 0) return "";
+    return parts.join(". ").replace(/\.\./g, ".").replace(/\?\./g, "? ") + ".";
+  }
+
+  /* ── Voice preview ─────────────────────────────────────────────────── */
+
+  function stopPreview() {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setIsPreviewPlaying(false);
+  }
+
+  async function previewVoice() {
+    if (!selectedVoiceId || !voiceoverScript) return;
+
+    if (isPreviewPlaying) {
+      stopPreview();
+      return;
+    }
+
+    setPreviewLoading(true);
+    try {
+      // Use first sentence only for preview
+      const firstSentence = voiceoverScript.split(/[.!?]/)[0]?.trim();
+      if (!firstSentence) return;
+
+      const res = await fetch("/api/campaigns/generate-voiceover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: firstSentence + ".", voiceId: selectedVoiceId }),
+      });
+
+      if (!res.ok) throw new Error("Preview generation failed");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      audio.onended = () => {
+        setIsPreviewPlaying(false);
+        previewAudioRef.current = null;
+      };
+
+      previewAudioRef.current = audio;
+      await audio.play();
+      setIsPreviewPlaying(true);
+    } catch {
+      // Silently fail
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
   /* ── Script generation ─────────────────────────────────────────────── */
 
   async function generateScript() {
@@ -91,6 +221,7 @@ export function VideoCompositionCard({
     setScriptLoading(true);
     setScriptError(null);
     setVideoUrl(null);
+    setVoiceoverScript("");
 
     try {
       const res = await fetch("/api/campaigns/generate-video-script", {
@@ -188,6 +319,7 @@ export function VideoCompositionCard({
     setRendering(true);
     setRenderError(null);
     setVideoUrl(null);
+    stopPreview();
 
     try {
       const resolution = PLATFORM_RESOLUTIONS[platform];
@@ -203,7 +335,34 @@ export function VideoCompositionCard({
       }));
       setScenes(updatedScenes);
 
-      // Step 2: Send to server for rendering
+      // Step 2: Generate voiceover audio if enabled
+      let voiceoverBase64: string | undefined;
+      if (voiceoverEnabled && selectedVoiceId && voiceoverScript) {
+        setRenderProgress("Generating voiceover...");
+        const voRes = await fetch("/api/campaigns/generate-voiceover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: voiceoverScript,
+            voiceId: selectedVoiceId,
+          }),
+        });
+
+        if (voRes.ok) {
+          const audioBlob = await voRes.blob();
+          voiceoverBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              // Strip the data URL prefix to get raw base64
+              const dataUrl = reader.result as string;
+              resolve(dataUrl.split(",")[1] ?? "");
+            };
+            reader.readAsDataURL(audioBlob);
+          });
+        }
+      }
+
+      // Step 3: Send to server for rendering
       setRenderProgress("Rendering video... this may take 30–60 seconds");
       const res = await fetch("/api/campaigns/render-video", {
         method: "POST",
@@ -218,6 +377,8 @@ export function VideoCompositionCard({
           cta,
           platform,
           resolution,
+          voiceoverBase64,
+          backgroundMusic: musicEnabled ? selectedMusic : null,
         }),
       });
 
@@ -226,7 +387,7 @@ export function VideoCompositionCard({
         throw new Error(err.error || "Rendering failed");
       }
 
-      // Step 3: Create blob URL from response
+      // Step 4: Create blob URL from response
       setRenderProgress("Finalizing video...");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -318,6 +479,7 @@ export function VideoCompositionCard({
                     if (scenes.length > 0) {
                       setScenes([]);
                       setVideoUrl(null);
+                      setVoiceoverScript("");
                     }
                   }}
                   className={`rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors ${
@@ -541,6 +703,183 @@ export function VideoCompositionCard({
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── Voiceover section ───────────────────────────────────── */}
+          {scenes.length > 0 && (
+            <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  const enabling = !voiceoverEnabled;
+                  setVoiceoverEnabled(enabling);
+                  if (enabling) {
+                    fetchVoices();
+                    if (!voiceoverScript && scenes.length > 0) {
+                      setVoiceoverScript(generateVoiceoverScript());
+                    }
+                  }
+                }}
+                className="flex w-full items-center justify-between px-4 py-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-midnight-navy">
+                    Add Voiceover
+                  </span>
+                </div>
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    voiceoverEnabled ? "bg-blue-500" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                      voiceoverEnabled ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {voiceoverEnabled && (
+                <div className="border-t border-slate-100 px-4 pb-4 space-y-3">
+                  {/* Voice selector */}
+                  <div className="pt-3">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1 block">
+                      Voice
+                    </label>
+                    {voicesLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-slate-gray py-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Loading voices...
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedVoiceId}
+                        onChange={(e) => {
+                          setSelectedVoiceId(e.target.value);
+                          stopPreview();
+                        }}
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                      >
+                        {voices.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} — {v.description}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Voiceover script */}
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1 block">
+                      Voiceover Script
+                    </label>
+                    <textarea
+                      value={voiceoverScript}
+                      onChange={(e) => setVoiceoverScript(e.target.value)}
+                      placeholder="Enter the voiceover narration..."
+                      rows={4}
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300 resize-none"
+                    />
+                    <p className="mt-1 text-[11px] text-slate-gray">
+                      Auto-populated from scene text. Edit to customize the narration.
+                    </p>
+                  </div>
+
+                  {/* Preview voice button */}
+                  <button
+                    type="button"
+                    onClick={previewVoice}
+                    disabled={previewLoading || !selectedVoiceId || !voiceoverScript}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                      previewLoading || !selectedVoiceId || !voiceoverScript
+                        ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                        : isPreviewPlaying
+                          ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                          : "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    }`}
+                  >
+                    {previewLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isPreviewPlaying ? (
+                      <Square className="h-3.5 w-3.5" />
+                    ) : (
+                      <Play className="h-3.5 w-3.5" />
+                    )}
+                    {previewLoading
+                      ? "Generating..."
+                      : isPreviewPlaying
+                        ? "Stop Preview"
+                        : "Preview Voice"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Background Music section ─────────────────────────────── */}
+          {scenes.length > 0 && (
+            <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setMusicEnabled(!musicEnabled)}
+                className="flex w-full items-center justify-between px-4 py-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Music className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-midnight-navy">
+                    Add Background Music
+                  </span>
+                </div>
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    musicEnabled ? "bg-blue-500" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                      musicEnabled ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {musicEnabled && (
+                <div className="border-t border-slate-100 px-4 pb-4 pt-3">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+                    Mood
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MUSIC_OPTIONS.map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => setSelectedMusic(m.value)}
+                        className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                          selectedMusic === m.value
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <span className={`text-sm font-semibold ${
+                          selectedMusic === m.value ? "text-blue-600" : "text-midnight-navy"
+                        }`}>
+                          {m.label}
+                        </span>
+                        <p className="text-[11px] text-slate-gray mt-0.5">
+                          {m.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] text-slate-gray">
+                    Generated ambient tone. Real music tracks coming soon.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
