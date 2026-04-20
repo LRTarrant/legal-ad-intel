@@ -45,7 +45,7 @@ export async function GET() {
 
     const response = await fetch("https://api.synthesia.io/v2/avatars", {
       headers: {
-        Authorization: apiKey,
+        Authorization: `Bearer ${apiKey}`,
       },
     });
 
