@@ -7,6 +7,7 @@ interface RadioScriptRequest {
   firm_name?: string;
   firm_url?: string;
   states?: string[];
+  format?: "radio" | "podcast";
 }
 
 interface VoiceRecommendation {
@@ -20,7 +21,7 @@ interface AudienceContext {
   audience_note: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert direct-response radio advertising copywriter for legal services.
+const RADIO_SYSTEM_PROMPT = `You are an expert direct-response radio advertising copywriter for legal services.
 You write compelling, broadcast-ready radio scripts that drive immediate action.
 
 Rules:
@@ -36,6 +37,26 @@ Rules:
 - Include a disclaimer: "You may be entitled to compensation"
 - Format as a single block of script text, ready for voice talent to read
 - Do NOT include stage directions, speaker labels, or formatting markers
+
+Respond with ONLY the script text — no JSON, no markdown, no explanation.`;
+
+const PODCAST_SYSTEM_PROMPT = `You are an expert podcast advertising copywriter for legal services.
+You write natural, conversational host-read ad scripts that feel like part of the show.
+
+Rules:
+- 15-second spots: exactly 35-40 words
+- 30-second spots: exactly 85-95 words
+- 60-second spots: exactly 170-190 words
+- Start with a conversational lead-in, as if the host is sharing something important with listeners
+- Clearly state the legal issue and who qualifies, but in a natural, storytelling way
+- Include the firm name naturally 2-3 times
+- End with a natural call-to-action (visit [website] or call...) — not a hard sell
+- Tone: conversational, trustworthy, informative — like a host genuinely recommending something
+- Do NOT use the word "lawsuit" — use "legal rights" or "compensation" instead
+- Include a disclaimer: "You may be entitled to compensation"
+- Format as a single block of script text, ready for a podcast host to read
+- Do NOT include stage directions, speaker labels, or formatting markers
+- Sound like a real person talking, not a commercial — use contractions, natural phrasing
 
 Respond with ONLY the script text — no JSON, no markdown, no explanation.`;
 
@@ -100,11 +121,18 @@ function formatAgeBands(ageBandWeights: Record<string, number> | null): string {
 }
 
 function buildUserPrompt(req: RadioScriptRequest, audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null): string {
-  const durationMap: Record<string, string> = {
-    "15s": "15-second (35-40 words)",
-    "30s": "30-second (75-80 words)",
-    "60s": "60-second (150-160 words)",
-  };
+  const isPodcast = req.format === "podcast";
+  const durationMap: Record<string, string> = isPodcast
+    ? {
+        "15s": "15-second (35-40 words)",
+        "30s": "30-second (85-95 words)",
+        "60s": "60-second (170-190 words)",
+      }
+    : {
+        "15s": "15-second (35-40 words)",
+        "30s": "30-second (75-80 words)",
+        "60s": "60-second (150-160 words)",
+      };
   const durationLabel = durationMap[req.duration];
   const firmRef = req.firm_name
     ? `for ${req.firm_name}${req.firm_url ? ` (website: ${req.firm_url.replace(/^https?:\/\//, "").replace(/\/$/, "")})` : ""}`
@@ -127,15 +155,24 @@ ${ageBands ? `- Primary age bands: ${ageBands}` : ""}
 The script MUST speak directly to this audience. Use language, references, and emotional hooks that resonate with this specific demographic. The opening hook should address the listener as if they are in this demographic.`;
   }
 
-  return `Write a ${durationLabel} radio spot script ${firmRef} regarding ${req.tort_name} litigation.
-
-${statesRef}
-
-The script should follow the direct-response radio ad format:
+  const formatLabel = isPodcast ? "podcast ad read" : "radio spot";
+  const formatStructure = isPodcast
+    ? `The script should follow a natural podcast host-read ad format:
+1. Lead-in — conversational opener, as if the host is sharing something with listeners
+2. Problem — describe the issue and who is affected, in a storytelling way
+3. Solution — how the firm can help, framed as a genuine recommendation
+4. CTA — natural call to action (visit website or call) with firm name`
+    : `The script should follow the direct-response radio ad format:
 1. Hook — attention-grabbing question or statement
 2. Problem — describe the issue and who is affected
 3. Solution — how the firm can help
-4. CTA — clear call to action with firm name
+4. CTA — clear call to action with firm name`;
+
+  return `Write a ${durationLabel} ${formatLabel} script ${firmRef} regarding ${req.tort_name} litigation.
+
+${statesRef}
+
+${formatStructure}
 ${audienceSection}
 
 Remember: output ONLY the script text, nothing else.`;
@@ -191,6 +228,8 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    const systemPrompt = body.format === "podcast" ? PODCAST_SYSTEM_PROMPT : RADIO_SYSTEM_PROMPT;
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
@@ -208,7 +247,7 @@ export async function POST(req: NextRequest) {
             temperature: 0.7,
             max_tokens: 500,
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: systemPrompt },
               { role: "user", content: buildUserPrompt(body, audienceProfile) },
             ],
           }),

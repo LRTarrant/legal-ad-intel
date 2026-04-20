@@ -290,9 +290,10 @@ export function CampaignBuilderClient() {
   const [creativeImages, setCreativeImages] = useState<(string | null)[]>([null, null, null]);
   const [creativeLoading, setCreativeLoading] = useState<boolean[]>([false, false, false]);
 
-  // Feature 4: AI Radio Spot
+  // Feature 4: AI Radio / Podcast Spot
   const [radioSpotAvailable, setRadioSpotAvailable] = useState<boolean | null>(null);
   const [radioExpanded, setRadioExpanded] = useState(false);
+  const [radioFormat, setRadioFormat] = useState<"radio" | "podcast">("radio");
   const [radioDuration, setRadioDuration] = useState<"15s" | "30s" | "60s">("30s");
   const [radioScript, setRadioScript] = useState("");
   const [radioScriptLoading, setRadioScriptLoading] = useState(false);
@@ -565,7 +566,7 @@ export function CampaignBuilderClient() {
     }
   }
 
-  async function generateRadioScript(duration: "15s" | "30s" | "60s") {
+  async function generateRadioScript(duration: "15s" | "30s" | "60s", format: "radio" | "podcast" = "radio") {
     if (!plan || !selectedTort) return;
     setRadioScriptLoading(true);
     setRadioError(null);
@@ -575,6 +576,7 @@ export function CampaignBuilderClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           duration,
+          format,
           tort_name: selectedTort,
           firm_name: firmName.trim() || undefined,
           states: selectedStates.length > 0 ? selectedStates : undefined,
@@ -648,7 +650,7 @@ export function CampaignBuilderClient() {
       // Fetch voices and generate script on first expand
       fetchRadioVoices();
       if (!radioScriptGenerated && !radioScript) {
-        generateRadioScript(radioDuration);
+        generateRadioScript(radioDuration, radioFormat);
       }
     } else {
       setRadioExpanded(false);
@@ -1190,11 +1192,21 @@ export function CampaignBuilderClient() {
               />
               <AiIntelligenceComplianceCard insights={aiInsights} />
 
-              {/* AI Radio Spot — only shown when ElevenLabs is configured */}
+              {/* AI Radio / Podcast Spot — only shown when ElevenLabs is configured */}
               {radioSpotAvailable && (
                 <AiRadioSpotCard
                   expanded={radioExpanded}
                   onToggleExpand={handleRadioExpand}
+                  format={radioFormat}
+                  onFormatChange={(f) => {
+                    setRadioFormat(f);
+                    if (radioScriptGenerated) {
+                      setRadioScript("");
+                      setRadioScriptGenerated(false);
+                      setRadioAudioUrl(null);
+                      generateRadioScript(radioDuration, f);
+                    }
+                  }}
                   duration={radioDuration}
                   onDurationChange={(d) => {
                     setRadioDuration(d);
@@ -1202,7 +1214,7 @@ export function CampaignBuilderClient() {
                       setRadioScript("");
                       setRadioScriptGenerated(false);
                       setRadioAudioUrl(null);
-                      generateRadioScript(d);
+                      generateRadioScript(d, radioFormat);
                     }
                   }}
                   script={radioScript}
@@ -2297,11 +2309,18 @@ function AiIntelligenceComplianceCard({
   );
 }
 
-/* ── AI Radio Spot Card ────────────────────────────────────────────────── */
+/* ── AI Radio / Podcast Spot Card ─────────────────────────────────────── */
+
+const SPOT_FORMATS = [
+  { value: "radio" as const, label: "Radio" },
+  { value: "podcast" as const, label: "Podcast" },
+];
 
 function AiRadioSpotCard({
   expanded,
   onToggleExpand,
+  format,
+  onFormatChange,
   duration,
   onDurationChange,
   script,
@@ -2322,6 +2341,8 @@ function AiRadioSpotCard({
 }: {
   expanded: boolean;
   onToggleExpand: () => void;
+  format: "radio" | "podcast";
+  onFormatChange: (f: "radio" | "podcast") => void;
   duration: "15s" | "30s" | "60s";
   onDurationChange: (d: "15s" | "30s" | "60s") => void;
   script: string;
@@ -2342,7 +2363,11 @@ function AiRadioSpotCard({
 }) {
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
   const charCount = script.length;
-  const targetWords = duration === "15s" ? "35-40" : duration === "30s" ? "75-80" : "150-160";
+  const targetWords =
+    format === "podcast"
+      ? duration === "15s" ? "35-40" : duration === "30s" ? "85-95" : "170-190"
+      : duration === "15s" ? "35-40" : duration === "30s" ? "75-80" : "150-160";
+  const formatLabel = format === "podcast" ? "Podcast" : "Radio";
 
   return (
     <div className="rounded-lg border-l-4 border-l-violet-400 bg-white shadow-sm">
@@ -2355,7 +2380,7 @@ function AiRadioSpotCard({
         <div className="flex items-center gap-2">
           <Mic className="h-5 w-5 text-violet-500" />
           <h3 className="font-heading text-lg font-semibold text-midnight-navy">
-            AI Radio Spot
+            AI Radio or Podcast Spot
           </h3>
           <AiBadge />
         </div>
@@ -2369,8 +2394,31 @@ function AiRadioSpotCard({
       {/* Expandable content */}
       {expanded && (
         <div className="border-t border-slate-100 px-6 pb-6 space-y-5">
-          {/* Duration toggle */}
+          {/* Format selector */}
           <div className="pt-4">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
+              Format
+            </label>
+            <div className="flex gap-2">
+              {SPOT_FORMATS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => onFormatChange(f.value)}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                    format === f.value
+                      ? "border-violet-500 bg-violet-500 text-white"
+                      : "border-slate-200 text-midnight-navy hover:border-slate-300"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Duration toggle */}
+          <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2 block">
               Duration
             </label>
@@ -2401,14 +2449,14 @@ function AiRadioSpotCard({
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <Loader2 className="h-4 w-4 animate-spin text-violet-500" />
                 <span className="text-sm text-slate-gray">
-                  Generating {duration === "15s" ? "15-second" : duration === "30s" ? "30-second" : "60-second"} radio script...
+                  Generating {duration === "15s" ? "15-second" : duration === "30s" ? "30-second" : "60-second"} {format === "podcast" ? "podcast" : "radio"} script...
                 </span>
               </div>
             ) : (
               <textarea
                 value={script}
                 onChange={(e) => onScriptChange(e.target.value)}
-                placeholder="Enter your radio spot script here, or wait for AI generation..."
+                placeholder={`Enter your ${format === "podcast" ? "podcast ad" : "radio spot"} script here, or wait for AI generation...`}
                 rows={duration === "15s" ? 3 : duration === "30s" ? 4 : 7}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300 resize-none"
               />
@@ -2483,12 +2531,12 @@ function AiRadioSpotCard({
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Generating Radio Spot...
+                Generating {formatLabel} Spot...
               </>
             ) : (
               <>
                 <Mic className="h-4 w-4" />
-                Generate Radio Spot
+                Generate {formatLabel} Spot
               </>
             )}
           </button>
@@ -2507,7 +2555,7 @@ function AiRadioSpotCard({
               <div className="flex gap-2">
                 <a
                   href={audioUrl}
-                  download={`radio-spot-${duration}.mp3`}
+                  download={`${format}-spot-${duration}.mp3`}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-midnight-navy hover:bg-slate-50 transition-colors"
                 >
                   <Download className="h-4 w-4" />

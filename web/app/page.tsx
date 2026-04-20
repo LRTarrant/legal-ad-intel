@@ -399,7 +399,7 @@ export default async function HomePage() {
             <FeatureRow
               label="CAMPAIGN BUILDER"
               title="AI-powered campaigns, ready to launch."
-              description="Generate complete campaign packages in minutes — audience-aware ad copy, creative images, radio spots, video creative, and multi-page landing pages. Export ready-to-upload CSV files for Google Ads and Meta."
+              description="Generate complete campaign packages in minutes — audience-aware ad copy, creative images, radio and podcast spots, video creative, and multi-page landing pages. Export ready-to-upload CSV files for Google Ads and Meta."
               visual={
                 <div>
                   <div className="flex items-center gap-2 mb-4">
