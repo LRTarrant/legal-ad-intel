@@ -33,6 +33,7 @@ import {
   Mic,
   Video,
   ChevronUp,
+  User,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
 import { LogoUpload } from "./logo-upload";
@@ -2264,7 +2265,7 @@ function AdCreativeMockup({
       className="relative h-44 flex flex-col items-center justify-center overflow-hidden px-5"
       style={
         aiImageUrl
-          ? { backgroundImage: `url(${aiImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+          ? { backgroundImage: `url(${aiImageUrl})`, backgroundSize: "cover", backgroundPosition: "center top" }
           : { background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)` }
       }
     >
@@ -3107,9 +3108,24 @@ function AiVideoCard({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-gray">
-                No avatars available. Please check your Synthesia configuration.
-              </p>
+              <div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center rounded-lg border-2 border-dashed border-slate-200 p-1"
+                    >
+                      <div className="flex h-20 w-full items-center justify-center rounded bg-gray-200">
+                        <User className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <div className="mt-1 h-3 w-2/3 rounded bg-gray-200" />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-center text-xs text-slate-gray">
+                  Avatars will appear here once Synthesia is configured
+                </p>
+              </div>
             )}
           </div>
 
