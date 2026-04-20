@@ -5,7 +5,6 @@ import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
-import ffmpegPath from "ffmpeg-static";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -60,19 +59,26 @@ function resolveFontPath(): string | null {
 }
 
 function resolveFFmpegPath(): string {
-  if (ffmpegPath) return ffmpegPath;
-  const fallbacks = ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"];
-  for (const p of fallbacks) {
-    if (existsSync(p)) return p;
-  }
-  throw new Error("ffmpeg binary not found: ffmpeg-static returned null and no system ffmpeg found at /usr/bin/ffmpeg or /usr/local/bin/ffmpeg");
+  // Resolve relative to cwd at runtime (Vercel Labs pattern).
+  // The ffmpeg-static import resolves the path at BUILD time which points to
+  // a non-existent location at RUNTIME on Vercel (/var/task/).
+  const cwdPath = join(process.cwd(), "node_modules", "ffmpeg-static", "ffmpeg");
+  if (existsSync(cwdPath)) return cwdPath;
+
+  // Fallback: system ffmpeg
+  if (existsSync("/usr/local/bin/ffmpeg")) return "/usr/local/bin/ffmpeg";
+  if (existsSync("/usr/bin/ffmpeg")) return "/usr/bin/ffmpeg";
+
+  throw new Error(
+    `FFmpeg binary not found. Tried: ${cwdPath}, /usr/local/bin/ffmpeg, /usr/bin/ffmpeg`
+  );
 }
 
 const FONT_PATH = resolveFontPath();
 const RESOLVED_FFMPEG = resolveFFmpegPath();
 
-console.error(`[render-video] ffmpeg path: ${RESOLVED_FFMPEG} (exists: ${existsSync(RESOLVED_FFMPEG)})`);
-console.error(`[render-video] font path: ${FONT_PATH ?? "none"} (exists: ${FONT_PATH ? existsSync(FONT_PATH) : false})`);
+console.log("[render-video] Using ffmpeg at:", RESOLVED_FFMPEG, "(exists:", existsSync(RESOLVED_FFMPEG), ")");
+console.log("[render-video] font path:", FONT_PATH ?? "none", "(exists:", FONT_PATH ? existsSync(FONT_PATH) : false, ")");
 
 /** Drawtext fontfile fragment — empty string when no font file available */
 const FONTFILE_FRAG = FONT_PATH ? `fontfile='${FONT_PATH}':` : "";
