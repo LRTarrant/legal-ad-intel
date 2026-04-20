@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { createClient } from "@/lib/supabase/client";
 import { UserPlus, X, Trash2 } from "lucide-react";
 
 interface UserRow {
@@ -43,6 +44,8 @@ export default function AdminUsersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"member" | "tenant_admin">("member");
+  const [inviteTrialDays, setInviteTrialDays] = useState<number | null>(14);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -78,6 +81,25 @@ export default function AdminUsersPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    async function checkSuperAdmin() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile?.role === "super_admin") setIsSuperAdmin(true);
+      } catch {
+        // ignore
+      }
+    }
+    checkSuperAdmin();
+  }, []);
+
   async function handleSendInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteSending(true);
@@ -86,7 +108,11 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: inviteRole,
+          trial_days: inviteRole === "tenant_admin" ? null : inviteTrialDays,
+        }),
       });
 
       const data = await res.json();
@@ -100,6 +126,7 @@ export default function AdminUsersPage() {
       setShowInviteModal(false);
       setInviteEmail("");
       setInviteRole("member");
+      setInviteTrialDays(14);
       fetchData();
     } catch {
       showToast("error", "Failed to send invitation");
@@ -325,13 +352,40 @@ export default function AdminUsersPage() {
                 <select
                   id="inviteRole"
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as "member" | "tenant_admin")}
+                  onChange={(e) => {
+                    const role = e.target.value as "member" | "tenant_admin";
+                    setInviteRole(role);
+                    if (role === "tenant_admin") setInviteTrialDays(null);
+                    else setInviteTrialDays(14);
+                  }}
                   className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
                 >
                   <option value="member">Member</option>
                   <option value="tenant_admin">Admin</option>
                 </select>
               </div>
+
+              {inviteRole === "member" && (
+                <div>
+                  <label htmlFor="inviteTrialDays" className="block text-sm font-medium text-slate-700">
+                    Trial Duration
+                  </label>
+                  <select
+                    id="inviteTrialDays"
+                    value={inviteTrialDays ?? "unlimited"}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setInviteTrialDays(v === "unlimited" ? null : Number(v));
+                    }}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+                  >
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30">30 days</option>
+                    {isSuperAdmin && <option value="unlimited">No trial (unlimited)</option>}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
