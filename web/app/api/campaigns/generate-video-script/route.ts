@@ -81,6 +81,7 @@ Rules:
 - Last content scene should set up the CTA
 - Do NOT use the word "lawsuit" — use "legal rights" or "compensation"
 - Tone: {tone_guidance}
+- CRITICAL: Only reference the specific injury/disease provided in the tort context. Do NOT guess or add other medical conditions.
 
 IMAGE PROMPT RULES (CRITICAL):
 - NO courtrooms, NO gavels, NO legal scales, NO suits, NO handshakes
@@ -104,6 +105,7 @@ Respond with ONLY valid JSON matching this exact structure:
 function buildUserPrompt(
   req: VideoScriptRequest,
   audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null,
+  matchedTort: { name?: string; disease_or_injury?: string; product_or_exposure?: string; status?: string; notes?: string } | null,
 ): string {
   const firmRef = req.firm_name ? `for ${req.firm_name}` : "for a legal firm";
   const statesRef = req.states?.length ? `Target geography: ${req.states.join(", ")}.` : "";
@@ -122,12 +124,23 @@ ${ageBands ? `- Primary age bands: ${ageBands}` : ""}
 The scenes MUST visually and textually speak to this audience. Image prompts should depict people matching this demographic in settings relevant to their lives.`;
   }
 
+  let tortContextSection = "";
+  if (matchedTort) {
+    tortContextSection = `
+
+TORT MEDICAL/LEGAL CONTEXT:
+- Product/Exposure: ${matchedTort.product_or_exposure ?? "N/A"}
+- Injury/Disease: ${matchedTort.disease_or_injury ?? "N/A"}
+- CRITICAL: Only reference the injury/disease listed above. Do NOT mention other side effects or medical conditions not listed here.`;
+  }
+
   return `Generate a scene-by-scene video script breakdown ${firmRef} regarding ${req.tort_name} litigation.
 
 Duration: ${req.duration} (${getSceneCount(req.duration)} scenes)
 Platform: ${req.platform.replace(/_/g, " ")}
 ${statesRef}
 ${audienceSection}
+${tortContextSection}
 
 Remember: output ONLY the JSON, nothing else.`;
 }
@@ -158,15 +171,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch audience profile for this tort
+    // Fetch audience profile and tort medical context in parallel
     const db = supabase as any;
-    const { data: allProfiles } = await db.from("tort_audience_profiles").select("*");
+    const [profileResult, tortResult] = await Promise.allSettled([
+      db.from("tort_audience_profiles").select("*"),
+      db.from("mass_torts").select("name, disease_or_injury, product_or_exposure, status, notes"),
+    ]);
+
+    const allProfiles = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+    const tortData = tortResult.status === "fulfilled" ? tortResult.value.data : null;
 
     const tortLower = body.tort_name.toLowerCase();
     const audienceProfile = (allProfiles ?? []).find((p: any) => {
       const tid = (p.tort_id ?? "").toLowerCase();
       const notes = (p.notes ?? "").toLowerCase();
       return tid.includes(tortLower) || tortLower.includes(tid.replace(/_/g, " ")) || notes.includes(tortLower);
+    }) ?? null;
+
+    const matchedTort = (tortData ?? []).find((t: any) => {
+      const tname = (t.name ?? "").toLowerCase();
+      return tname.includes(tortLower) || tortLower.includes(tname);
     }) ?? null;
 
     const toneGuidance = audienceProfile?.notes
@@ -196,7 +220,7 @@ export async function POST(req: NextRequest) {
             max_tokens: 1000,
             messages: [
               { role: "system", content: filledSystemPrompt },
-              { role: "user", content: buildUserPrompt(body, audienceProfile) },
+              { role: "user", content: buildUserPrompt(body, audienceProfile, matchedTort) },
             ],
           }),
           signal: controller.signal,
