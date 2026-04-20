@@ -277,6 +277,7 @@ export function CampaignBuilderClient() {
 
   // Qualification flow state
   const [qualificationStyle, setQualificationStyle] = useState<"multi-step" | "single-page" | null>(null);
+  const [activeFormPageTab, setActiveFormPageTab] = useState(0);
 
   // Feature 1: Selectable + custom criteria questions
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set());
@@ -485,6 +486,36 @@ export function CampaignBuilderClient() {
   }, [matchedCriteria, selectedQuestionIds, customQuestions]);
 
   const totalSelectedQuestions = selectedScreeningQuestions.length;
+
+  // Distribute selected questions across form pages (1-2 per page + CTA page) for multi-step
+  const formPages = useMemo(() => {
+    if (qualificationStyle !== "multi-step" || selectedScreeningQuestions.length === 0) return [];
+    const pages: { label: string; questions: ScreeningQuestion[] }[] = [];
+    const qs = selectedScreeningQuestions;
+    // Distribute: 2 questions per page, except if odd total then last content page gets 1
+    let idx = 0;
+    let pageNum = 1;
+    while (idx < qs.length) {
+      const remaining = qs.length - idx;
+      const take = remaining > 3 ? 2 : remaining > 2 ? 2 : remaining;
+      pages.push({
+        label: `Page ${pageNum}`,
+        questions: qs.slice(idx, idx + take),
+      });
+      idx += take;
+      pageNum++;
+    }
+    // Add final CTA/submit page
+    pages.push({ label: "Submit", questions: [] });
+    return pages;
+  }, [qualificationStyle, selectedScreeningQuestions]);
+
+  // Reset active form page tab when pages change
+  useEffect(() => {
+    if (activeFormPageTab >= formPages.length) {
+      setActiveFormPageTab(0);
+    }
+  }, [formPages.length, activeFormPageTab]);
 
   // Feature 3: AI creative image generation
   async function generateCreativeImage(variantIndex: number) {
@@ -747,6 +778,7 @@ export function CampaignBuilderClient() {
           logo_url: brandAssets.find((a) => a.name.toLowerCase().includes("logo"))?.url ?? undefined,
           qualification_style: qualificationStyle ?? undefined,
           screening_questions: selectedScreeningQuestions.length > 0 ? selectedScreeningQuestions : undefined,
+          form_pages: formPages.length > 0 ? formPages.map((p) => ({ label: p.label, questionIds: p.questions.map((q) => q.id) })) : undefined,
           disqualify_message: matchedCriteria?.disqualifyMessage ?? undefined,
           qualify_message: matchedCriteria?.qualifyMessage ?? undefined,
           brand_colors: (brandColors.primary || brandColors.secondary || brandColors.accent) ? brandColors : undefined,
@@ -1266,6 +1298,9 @@ export function CampaignBuilderClient() {
               onAddCustomQuestion={addCustomQuestion}
               onUpdateCustomQuestion={updateCustomQuestion}
               onRemoveCustomQuestion={removeCustomQuestion}
+              formPages={formPages}
+              activeFormPageTab={activeFormPageTab}
+              setActiveFormPageTab={setActiveFormPageTab}
               landingPageHtml={landingPageHtml}
               landingPageTitle={landingPageTitle}
               landingPages={landingPages}
@@ -2600,6 +2635,9 @@ function LandingPageSteps({
   onAddCustomQuestion,
   onUpdateCustomQuestion,
   onRemoveCustomQuestion,
+  formPages,
+  activeFormPageTab,
+  setActiveFormPageTab,
   landingPageHtml,
   landingPageTitle,
   landingPages,
@@ -2629,6 +2667,9 @@ function LandingPageSteps({
   onAddCustomQuestion: () => void;
   onUpdateCustomQuestion: (id: string, updates: Partial<CustomQuestion>) => void;
   onRemoveCustomQuestion: (id: string) => void;
+  formPages: { label: string; questions: ScreeningQuestion[] }[];
+  activeFormPageTab: number;
+  setActiveFormPageTab: (v: number) => void;
   landingPageHtml: string | null;
   landingPageTitle: string | null;
   landingPages: { slug: string; html: string; title: string }[] | null;
@@ -2994,6 +3035,105 @@ function LandingPageSteps({
               </p>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Step E: Multi-step form page preview with tabs */}
+      {qualificationStyle === "multi-step" && formPages.length > 0 && (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5" style={{ color: accentColor }} />
+            <h3 className="font-heading text-lg font-semibold text-midnight-navy">
+              Form Page Layout
+            </h3>
+          </div>
+          <p className="text-sm text-slate-gray mb-4">
+            Your {totalSelectedQuestions} question{totalSelectedQuestions !== 1 ? "s" : ""} will be
+            distributed across {formPages.length - 1} page{formPages.length - 1 !== 1 ? "s" : ""} plus
+            a final submit page. Click each tab to preview.
+          </p>
+
+          {/* Tab navigation — matches landing page preview tab styling */}
+          <div className="flex gap-1 rounded-lg bg-slate-100 p-1 mb-4">
+            {formPages.map((page, idx) => {
+              const isActive = activeFormPageTab === idx;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveFormPageTab(idx)}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-white text-midnight-navy shadow-sm"
+                      : "text-slate-gray hover:text-midnight-navy"
+                  }`}
+                  style={isActive ? { borderBottom: `2px solid ${accentColor}` } : undefined}
+                >
+                  {page.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab content */}
+          {formPages[activeFormPageTab] && (
+            <div className="rounded-lg border border-slate-200 p-4">
+              {formPages[activeFormPageTab].questions.length > 0 ? (
+                <div className="space-y-3">
+                  {formPages[activeFormPageTab].questions.map((q, qi) => {
+                    // Compute global question index from preceding pages
+                    let globalIdx = 0;
+                    for (let p = 0; p < activeFormPageTab; p++) {
+                      globalIdx += formPages[p].questions.length;
+                    }
+                    globalIdx += qi;
+                    return (
+                      <div
+                        key={q.id}
+                        className="flex items-start gap-3 rounded-md border border-slate-200 bg-cloud/50 p-3"
+                      >
+                        <span
+                          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          {globalIdx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-midnight-navy">
+                            {q.question}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-gray uppercase tracking-wider">
+                              {questionTypeLabel(q.type)}
+                            </span>
+                            {q.disqualifyOn && q.disqualifyOn.length > 0 && (
+                              <span className="rounded bg-alert/10 px-1.5 py-0.5 text-[10px] font-medium text-alert uppercase tracking-wider">
+                                Disqualifies on: {q.disqualifyOn.join(", ")}
+                              </span>
+                            )}
+                          </div>
+                          {q.helpText && (
+                            <p className="mt-1 text-xs text-slate-gray">{q.helpText}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-intelligence-teal/10 mb-2">
+                    <Check className="h-5 w-5 text-intelligence-teal" />
+                  </div>
+                  <p className="text-sm font-medium text-midnight-navy">Submit &amp; Contact Info</p>
+                  <p className="text-xs text-slate-gray mt-1">
+                    Qualified leads see a contact form (name, phone, email).
+                    Disqualified leads see a call-to-action for a free consultation.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

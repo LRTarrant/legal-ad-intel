@@ -28,6 +28,7 @@ interface LandingPageRequest {
   logo_url?: string;
   qualification_style?: "multi-step" | "single-page";
   screening_questions?: ScreeningQuestion[];
+  form_pages?: { label: string; questionIds: string[] }[];
   disqualify_message?: string;
   qualify_message?: string;
   brand_colors?: {
@@ -396,6 +397,7 @@ export async function POST(req: NextRequest) {
             criteria?.qualifyMessage ??
             "Based on your answers, you may qualify. Please provide your contact information for a free case review.",
           style: body.qualification_style!,
+          formPages: body.form_pages,
         });
       }
 
