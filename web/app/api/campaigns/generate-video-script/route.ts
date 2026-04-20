@@ -6,39 +6,24 @@ interface VideoScriptRequest {
   tort_name: string;
   platform: "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed";
   firm_name?: string;
-  firm_url?: string;
   states?: string[];
 }
 
-interface VoiceRecommendation {
-  gender: "male" | "female";
-  style: string;
-  reason: string;
+interface VideoScene {
+  sceneNumber: number;
+  headline: string;
+  subheadline: string;
+  imagePrompt: string;
+  durationSeconds: number;
 }
 
-interface AudienceContext {
-  primary_age_bands: string;
-  audience_note: string;
+interface VideoScriptResponse {
+  scenes: VideoScene[];
+  ctaHeadline: string;
+  ctaPhone: string;
+  ctaSubline: string;
+  disclaimer: string;
 }
-
-const SYSTEM_PROMPT = `You are an expert direct-response video advertising copywriter for legal services.
-You write compelling scripts for AI avatar-presented video ads that drive immediate action.
-
-Rules:
-- {duration} spots: exactly {word count} words
-- The script will be read by an AI avatar speaking directly to camera
-- Start with an attention-grabbing hook IN THE FIRST SENTENCE (critical for social platforms)
-- Clearly state the legal issue and who qualifies
-- Include the firm name naturally 2-3 times
-- End with a strong call-to-action
-- Tone: {derived tone from audience profile}
-- Do NOT use the word "lawsuit" — use "legal rights" or "compensation"
-- Include "You may be entitled to compensation"
-- Write in a conversational, direct-to-camera style — this is NOT a radio voiceover, it's a person speaking TO the viewer
-- Keep sentences short and punchy for avatar delivery
-- For vertical/social formats: front-load the hook, use shorter sentences
-
-Respond with ONLY the script text — no JSON, no markdown, no explanation.`;
 
 function deriveToneGuidance(notes: string): string {
   const notesLower = notes.toLowerCase();
@@ -65,31 +50,6 @@ function deriveToneGuidance(notes: string): string {
   return "Authoritative but empathetic. Balance urgency with trustworthiness.";
 }
 
-function recommendVoice(notes: string): VoiceRecommendation {
-  const notesLower = notes.toLowerCase();
-
-  if (notesLower.includes("women") || notesLower.includes("contraception") || notesLower.includes("uterine") || notesLower.includes("hair relaxer")) {
-    return { gender: "female", style: "warm and empathetic", reason: "This tort primarily affects women" };
-  }
-  if (notesLower.includes("sexual assault") || notesLower.includes("rideshare")) {
-    return { gender: "female", style: "empathetic and validating", reason: "Sensitive topic — empathetic female voice builds trust with survivors" };
-  }
-  if (notesLower.includes("parent")) {
-    return { gender: "female", style: "protective and warm", reason: "Parents of affected minors are the primary audience" };
-  }
-  if (notesLower.includes("veteran") || notesLower.includes("military") || notesLower.includes("firefight")) {
-    return { gender: "male", style: "deep and authoritative", reason: "Military/veteran audience responds to authoritative male voice" };
-  }
-  if (notesLower.includes("older") || notesLower.includes("55+") || notesLower.includes("cancer") || notesLower.includes("chemo")) {
-    return { gender: "male", style: "compassionate and mature", reason: "Older demographic with health concerns" };
-  }
-  if (notesLower.includes("truck") || notesLower.includes("cdl") || notesLower.includes("working")) {
-    return { gender: "male", style: "authoritative and direct", reason: "Working-age male-skewing demographic" };
-  }
-
-  return { gender: "male", style: "authoritative but empathetic", reason: "General legal advertising voice" };
-}
-
 function formatAgeBands(ageBandWeights: Record<string, number> | null): string {
   if (!ageBandWeights || typeof ageBandWeights !== "object") return "";
   const sorted = Object.entries(ageBandWeights)
@@ -100,36 +60,53 @@ function formatAgeBands(ageBandWeights: Record<string, number> | null): string {
   return sorted.map(([band, weight]) => `${band} (${Math.round(weight * 100)}%)`).join(", ");
 }
 
-function getPlatformGuidance(platform: string): string {
-  switch (platform) {
-    case "youtube_ad":
-      return "Professional, informational tone. Avatar presents directly to camera in landscape format. Viewer is watching intentionally.";
-    case "youtube_short":
-    case "tiktok":
-    case "meta_reel":
-      return "Hook in first 3 seconds. Punchy, caption-friendly. Direct address to viewer. Vertical format — energy and immediacy matter.";
-    case "meta_feed":
-      return "Scroll-stopping hook. Square format in a busy feed. Clear, concise, and visually compelling language.";
-    default:
-      return "Professional, informational tone. Avatar presents directly to camera.";
+function getSceneCount(duration: string): string {
+  switch (duration) {
+    case "15s": return "exactly 2";
+    case "30s": return "3-4";
+    case "60s": return "5-6";
+    default: return "3-4";
   }
 }
 
-function buildUserPrompt(req: VideoScriptRequest, audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null): string {
-  const durationMap: Record<string, string> = {
-    "15s": "15-second (35-40 words)",
-    "30s": "30-second (75-80 words)",
-    "60s": "60-second (150-160 words)",
-  };
-  const durationLabel = durationMap[req.duration];
-  const firmRef = req.firm_name
-    ? `for ${req.firm_name}${req.firm_url ? ` (website: ${req.firm_url.replace(/^https?:\/\//, "").replace(/\/$/, "")})` : ""}`
-    : "for a legal firm";
-  const statesRef = req.states?.length
-    ? `Target geography: ${req.states.join(", ")}.`
-    : "";
+const SYSTEM_PROMPT = `You are an expert direct-response video advertising scriptwriter for legal services.
+You generate scene-by-scene breakdowns for multi-scene video compositions.
 
-  const platformGuidance = getPlatformGuidance(req.platform);
+Rules:
+- Generate {scene_count} scenes for a {duration} video
+- Each scene has a HEADLINE (2-5 words, bold, attention-grabbing) and SUBHEADLINE (5-10 words, supporting detail)
+- Each scene has an imagePrompt describing the background image for that scene
+- Scene durations must sum to approximately the total video duration
+- First scene MUST hook the viewer immediately
+- Last content scene should set up the CTA
+- Do NOT use the word "lawsuit" — use "legal rights" or "compensation"
+- Tone: {tone_guidance}
+
+IMAGE PROMPT RULES (CRITICAL):
+- NO courtrooms, NO gavels, NO legal scales, NO suits, NO handshakes
+- NO generic "justice" or "legal" imagery
+- Images must be tort-contextual and demographic-appropriate
+- Describe real people in real settings relevant to the tort
+- NO text, words, letters, or logos in the image description
+- Focus on emotional, relatable scenes that connect with the target audience
+
+Respond with ONLY valid JSON matching this exact structure:
+{
+  "scenes": [
+    { "sceneNumber": 1, "headline": "...", "subheadline": "...", "imagePrompt": "...", "durationSeconds": 8 }
+  ],
+  "ctaHeadline": "CALL NOW",
+  "ctaPhone": "1-800-YOUR-FIRM",
+  "ctaSubline": "24/7 • Free Consultation • No Fee Unless You Win",
+  "disclaimer": "Attorney advertising. Prior results do not guarantee a similar outcome."
+}`;
+
+function buildUserPrompt(
+  req: VideoScriptRequest,
+  audienceProfile: { notes?: string; age_band_weights?: Record<string, number> } | null,
+): string {
+  const firmRef = req.firm_name ? `for ${req.firm_name}` : "for a legal firm";
+  const statesRef = req.states?.length ? `Target geography: ${req.states.join(", ")}.` : "";
 
   let audienceSection = "";
   if (audienceProfile?.notes) {
@@ -142,24 +119,17 @@ AUDIENCE PROFILE:
 ${ageBands ? `- Primary age bands: ${ageBands}` : ""}
 - Tone guidance: ${toneGuidance}
 
-The script MUST speak directly to this audience. Use language, references, and emotional hooks that resonate with this specific demographic. The opening hook should address the viewer as if they are in this demographic.`;
+The scenes MUST visually and textually speak to this audience. Image prompts should depict people matching this demographic in settings relevant to their lives.`;
   }
 
-  return `Write a ${durationLabel} video script ${firmRef} regarding ${req.tort_name} litigation.
+  return `Generate a scene-by-scene video script breakdown ${firmRef} regarding ${req.tort_name} litigation.
 
-Platform: ${req.platform.replace(/_/g, " ")} — ${platformGuidance}
-
+Duration: ${req.duration} (${getSceneCount(req.duration)} scenes)
+Platform: ${req.platform.replace(/_/g, " ")}
 ${statesRef}
-
-The script will be read by an AI avatar speaking directly to camera.
-Format: conversational, direct-to-camera style.
-1. Hook — attention-grabbing first sentence (critical for social platforms)
-2. Problem — describe the issue and who is affected
-3. Solution — how the firm can help
-4. CTA — clear call to action with firm name
 ${audienceSection}
 
-Remember: output ONLY the script text, nothing else.`;
+Remember: output ONLY the JSON, nothing else.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -199,32 +169,14 @@ export async function POST(req: NextRequest) {
       return tid.includes(tortLower) || tortLower.includes(tid.replace(/_/g, " ")) || notes.includes(tortLower);
     }) ?? null;
 
-    // Derive voice recommendation and audience context
-    let voice_recommendation: VoiceRecommendation | null = null;
-    let audience_context: AudienceContext | null = null;
-
-    if (audienceProfile) {
-      voice_recommendation = recommendVoice(audienceProfile.notes ?? "");
-      const ageBands = formatAgeBands(audienceProfile.age_band_weights ?? null);
-      audience_context = {
-        primary_age_bands: ageBands,
-        audience_note: audienceProfile.notes ?? "",
-      };
-    }
-
-    // Build the system prompt with actual values filled in
-    const wordCountMap: Record<string, string> = {
-      "15s": "35-40",
-      "30s": "75-80",
-      "60s": "150-160",
-    };
-    const durationLabel = body.duration === "15s" ? "15-second" : body.duration === "30s" ? "30-second" : "60-second";
-    const toneGuidance = audienceProfile?.notes ? deriveToneGuidance(audienceProfile.notes) : "Authoritative but empathetic. Balance urgency with trustworthiness.";
+    const toneGuidance = audienceProfile?.notes
+      ? deriveToneGuidance(audienceProfile.notes)
+      : "Authoritative but empathetic. Balance urgency with trustworthiness.";
 
     const filledSystemPrompt = SYSTEM_PROMPT
-      .replace("{duration}", durationLabel)
-      .replace("{word count}", wordCountMap[body.duration])
-      .replace("{derived tone from audience profile}", toneGuidance);
+      .replace("{scene_count}", getSceneCount(body.duration))
+      .replace("{duration}", body.duration)
+      .replace("{tone_guidance}", toneGuidance);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -241,7 +193,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: "gpt-4o",
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: 1000,
             messages: [
               { role: "system", content: filledSystemPrompt },
               { role: "user", content: buildUserPrompt(body, audienceProfile) },
@@ -263,16 +215,34 @@ export async function POST(req: NextRequest) {
       }
 
       const data = await response.json();
-      const script = data.choices?.[0]?.message?.content?.trim();
+      const content = data.choices?.[0]?.message?.content?.trim();
 
-      if (!script) {
+      if (!content) {
         return NextResponse.json(
           { error: "Empty AI response" },
           { status: 502 },
         );
       }
 
-      return NextResponse.json({ script, voice_recommendation, audience_context });
+      // Parse the JSON response
+      let parsed: VideoScriptResponse;
+      try {
+        // Strip markdown code fences if present
+        const jsonStr = content.replace(/^```json?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        return NextResponse.json(
+          { error: "Failed to parse AI response" },
+          { status: 502 },
+        );
+      }
+
+      // Fill in firm-specific CTA if firm name provided
+      if (body.firm_name && parsed.ctaPhone === "1-800-YOUR-FIRM") {
+        parsed.ctaPhone = "1-800-555-0100";
+      }
+
+      return NextResponse.json(parsed);
     } catch (err) {
       clearTimeout(timeout);
       if (err instanceof DOMException && err.name === "AbortError") {
