@@ -26,12 +26,25 @@ interface CtaSettings {
   disclaimer: string;
 }
 
+type BackgroundMusic = "dramatic" | "urgent" | "somber" | "corporate";
+
 interface RenderRequest {
   scenes: VideoScene[];
   cta: CtaSettings;
   platform: string;
   resolution: { w: number; h: number };
+  voiceoverBase64?: string;
+  backgroundMusic?: BackgroundMusic | null;
 }
+
+/* ── Audio config ─────────────────────────────────────────────────────── */
+
+const MUSIC_PARAMS: Record<BackgroundMusic, { freq: number; modFreq: number; volume: number }> = {
+  dramatic: { freq: 80, modFreq: 0.3, volume: 0.15 },
+  urgent: { freq: 120, modFreq: 1.2, volume: 0.15 },
+  somber: { freq: 60, modFreq: 0.15, volume: 0.10 },
+  corporate: { freq: 200, modFreq: 0.5, volume: 0.12 },
+};
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
@@ -90,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { scenes, cta, resolution } = body;
+  const { scenes, cta, resolution, voiceoverBase64, backgroundMusic } = body;
 
   if (!scenes?.length || !cta || !resolution?.w || !resolution?.h) {
     return NextResponse.json(
@@ -217,10 +230,113 @@ export async function POST(req: NextRequest) {
         "-pix_fmt", "yuv420p",
         "-preset", "ultrafast",
         "-movflags", "+faststart",
-        "-y", "output.mp4",
+        "-y", "video_only.mp4",
       ],
       workDir,
     );
+
+    // ── Audio mixing ──────────────────────────────────────────────────
+    const hasVoiceover = !!voiceoverBase64;
+    const hasMusic = !!backgroundMusic && backgroundMusic in MUSIC_PARAMS;
+
+    if (hasVoiceover || hasMusic) {
+      // Calculate total video duration from scenes + CTA (5s)
+      const totalDuration =
+        scenes.reduce((sum, s) => sum + s.durationSeconds, 0) + 5;
+
+      // Write voiceover to temp file
+      if (hasVoiceover) {
+        const voiceoverBuf = Buffer.from(voiceoverBase64, "base64");
+        writeFileSync(join(workDir, "voiceover.mp3"), voiceoverBuf);
+      }
+
+      // Generate background music using FFmpeg sine wave
+      if (hasMusic) {
+        const params = MUSIC_PARAMS[backgroundMusic as BackgroundMusic];
+        // Generate a sine wave with amplitude modulation for a drone effect
+        const audioFilter = [
+          `sine=frequency=${params.freq}:duration=${totalDuration}`,
+          `tremolo=f=${params.modFreq}:d=0.6`,
+          `volume=${params.volume}`,
+        ].join(",");
+
+        ffmpeg(
+          [
+            "-f", "lavfi",
+            "-i", audioFilter,
+            "-c:a", "libmp3lame",
+            "-q:a", "4",
+            "-y", "music.mp3",
+          ],
+          workDir,
+        );
+      }
+
+      // Mix audio tracks together
+      if (hasVoiceover && hasMusic) {
+        // Mix voiceover (full volume) + music (already volume-adjusted)
+        ffmpeg(
+          [
+            "-i", "voiceover.mp3",
+            "-i", "music.mp3",
+            "-filter_complex",
+            `[0:a]apad[vo];[vo][1:a]amix=inputs=2:duration=longest:dropout_transition=2[out]`,
+            "-map", "[out]",
+            "-c:a", "libmp3lame",
+            "-q:a", "2",
+            "-y", "mixed_audio.mp3",
+          ],
+          workDir,
+        );
+      } else if (hasVoiceover) {
+        // Voiceover only — pad to video length
+        ffmpeg(
+          [
+            "-i", "voiceover.mp3",
+            "-af", `apad,atrim=0:${totalDuration}`,
+            "-c:a", "libmp3lame",
+            "-q:a", "2",
+            "-y", "mixed_audio.mp3",
+          ],
+          workDir,
+        );
+      } else {
+        // Music only — already the right duration
+        ffmpeg(
+          [
+            "-i", "music.mp3",
+            "-c:a", "copy",
+            "-y", "mixed_audio.mp3",
+          ],
+          workDir,
+        );
+      }
+
+      // Merge audio with video
+      ffmpeg(
+        [
+          "-i", "video_only.mp4",
+          "-i", "mixed_audio.mp3",
+          "-c:v", "copy",
+          "-c:a", "aac",
+          "-b:a", "128k",
+          "-shortest",
+          "-movflags", "+faststart",
+          "-y", "output.mp4",
+        ],
+        workDir,
+      );
+    } else {
+      // No audio — just rename
+      ffmpeg(
+        [
+          "-i", "video_only.mp4",
+          "-c", "copy",
+          "-y", "output.mp4",
+        ],
+        workDir,
+      );
+    }
 
     // ── Return the rendered video ──────────────────────────────────────
     const outputPath = join(workDir, "output.mp4");
