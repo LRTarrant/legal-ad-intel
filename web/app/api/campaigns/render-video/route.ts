@@ -5,6 +5,7 @@ import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -47,15 +48,17 @@ const MUSIC_PARAMS: Record<BackgroundMusic, { freq: number; modFreq: number; vol
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
-function resolveFontPath(): string | null {
-  const candidates = [
-    join(process.cwd(), "public", "fonts", "Montserrat-Bold.ttf"),
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return p;
+// Register Montserrat font for canvas text rendering
+const fontPath = join(process.cwd(), "public", "fonts", "Montserrat-Bold.ttf");
+try {
+  if (existsSync(fontPath)) {
+    GlobalFonts.registerFromPath(fontPath, "Montserrat");
+    console.log("[render-video] Registered Montserrat font from:", fontPath);
+  } else {
+    console.warn("[render-video] Montserrat font not found at:", fontPath);
   }
-  return null;
+} catch {
+  console.warn("[render-video] Could not load Montserrat font, using fallback");
 }
 
 function resolveFFmpegPath(): string {
@@ -74,25 +77,111 @@ function resolveFFmpegPath(): string {
   );
 }
 
-const FONT_PATH = resolveFontPath();
 const RESOLVED_FFMPEG = resolveFFmpegPath();
 
 console.log("[render-video] Using ffmpeg at:", RESOLVED_FFMPEG, "(exists:", existsSync(RESOLVED_FFMPEG), ")");
-console.log("[render-video] font path:", FONT_PATH ?? "none", "(exists:", FONT_PATH ? existsSync(FONT_PATH) : false, ")");
 
-/** Drawtext fontfile fragment — empty string when no font file available */
-const FONTFILE_FRAG = FONT_PATH ? `fontfile='${FONT_PATH}':` : "";
+/** Render a scene frame with background image (or solid color) and text overlay */
+async function renderSceneImage(
+  bgImagePath: string | null,
+  headline: string,
+  subheadline: string,
+  width: number,
+  height: number,
+  outputPath: string,
+): Promise<void> {
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
 
-/** Escape text for ffmpeg drawtext filter */
-function escapeDrawtext(text: string): string {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\u2019")
-    .replace(/:/g, "\\:")
-    .replace(/;/g, "\\;")
-    .replace(/%/g, "%%")
-    .replace(/\[/g, "\\[")
-    .replace(/\]/g, "\\]");
+  // Draw background
+  if (bgImagePath) {
+    try {
+      const img = await loadImage(readFileSync(bgImagePath));
+      // Scale to cover
+      const scale = Math.max(width / img.width, height / img.height);
+      const sw = img.width * scale;
+      const sh = img.height * scale;
+      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
+      // Dark overlay
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillRect(0, 0, width, height);
+    } catch {
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, width, height);
+    }
+  } else {
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  // Draw headline (white, centered)
+  const headlineFontSize = Math.round(width / 16);
+  ctx.font = `bold ${headlineFontSize}px Montserrat, sans-serif`;
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.shadowBlur = 4;
+  ctx.fillText(headline, width / 2, height / 2 - Math.round(height / 20));
+
+  // Draw subheadline (gold, below headline)
+  const subFontSize = Math.round(width / 28);
+  ctx.font = `bold ${subFontSize}px Montserrat, sans-serif`;
+  ctx.fillStyle = "#FFD700";
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+  ctx.fillText(subheadline, width / 2, height / 2 + Math.round(height / 12));
+
+  const buffer = canvas.toBuffer("image/png");
+  writeFileSync(outputPath, buffer);
+}
+
+/** Render the CTA (call-to-action) frame as a PNG */
+async function renderCtaImage(
+  cta: CtaSettings,
+  width: number,
+  height: number,
+  outputPath: string,
+): Promise<void> {
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
+  // Dark background
+  ctx.fillStyle = "#0a0a0a";
+  ctx.fillRect(0, 0, width, height);
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.shadowBlur = 4;
+
+  // CTA headline (white)
+  ctx.font = `bold ${Math.round(width / 12)}px Montserrat, sans-serif`;
+  ctx.fillStyle = "white";
+  ctx.fillText(cta.headline, width / 2, Math.round(height * 0.3));
+
+  // Phone (gold, large)
+  ctx.font = `bold ${Math.round(width / 10)}px Montserrat, sans-serif`;
+  ctx.fillStyle = "#FFD700";
+  ctx.fillText(cta.phone, width / 2, Math.round(height * 0.45));
+
+  // Subline (white, smaller)
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowBlur = 0;
+  ctx.font = `bold ${Math.round(width / 30)}px Montserrat, sans-serif`;
+  ctx.fillStyle = "white";
+  ctx.fillText(cta.subline, width / 2, Math.round(height * 0.6));
+
+  // Disclaimer (gray, tiny)
+  ctx.font = `${Math.round(width / 50)}px Montserrat, sans-serif`;
+  ctx.fillStyle = "#888888";
+  ctx.fillText(cta.disclaimer, width / 2, Math.round(height * 0.88));
+
+  const buffer = canvas.toBuffer("image/png");
+  writeFileSync(outputPath, buffer);
 }
 
 /** Download a URL to a local file path. Returns true on success. */
@@ -166,80 +255,51 @@ export async function POST(req: NextRequest) {
       r.status === "fulfilled" ? r.value : null,
     );
 
-    // ── Render each scene clip ─────────────────────────────────────────
+    // ── Render each scene clip (canvas → PNG → FFmpeg loop) ─────────────
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
       const dur = String(scene.durationSeconds);
       const clipName = `clip_${i}.mp4`;
-      const headline = escapeDrawtext(scene.headline);
-      const subheadline = escapeDrawtext(scene.subheadline);
+      const compositedPng = join(workDir, `scene_${i}_composited.png`);
 
-      const headlineFontSize = Math.round(w / 16);
-      const subFontSize = Math.round(w / 28);
-      const headlineY = `(h-text_h)/2-${Math.round(h / 20)}`;
-      const subY = `(h+text_h)/2+${Math.round(h / 30)}`;
+      // Pre-render text onto the scene image using canvas
+      await renderSceneImage(
+        imagePaths[i] ?? null,
+        scene.headline,
+        scene.subheadline,
+        w,
+        h,
+        compositedPng,
+      );
 
-      const headlineFilter = `drawtext=${FONTFILE_FRAG}text='${headline}':fontsize=${headlineFontSize}:fontcolor=white:x=(w-text_w)/2:y=${headlineY}:shadowcolor=black@0.8:shadowx=2:shadowy=2`;
-      const subFilter = `drawtext=${FONTFILE_FRAG}text='${subheadline}':fontsize=${subFontSize}:fontcolor=#FFD700:x=(w-text_w)/2:y=${subY}:shadowcolor=black@0.8:shadowx=1:shadowy=1`;
-
-      if (imagePaths[i]) {
-        // Image background with dark overlay + text
-        const vf = [
-          `scale=${w}:${h}:force_original_aspect_ratio=increase`,
-          `crop=${w}:${h}`,
-          `drawbox=x=0:y=0:w=${w}:h=${h}:color=black@0.50:t=fill`,
-          headlineFilter,
-          subFilter,
-        ].join(",");
-
-        ffmpeg(
-          [
-            "-loop", "1",
-            "-i", imagePaths[i]!,
-            "-t", dur,
-            "-vf", vf,
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast",
-            "-y", clipName,
-          ],
-          workDir,
-        );
-      } else {
-        // Solid dark background fallback
-        const vf = [headlineFilter, subFilter].join(",");
-
-        ffmpeg(
-          [
-            "-f", "lavfi",
-            "-i", `color=c=#0f172a:s=${w}x${h}:d=${dur}`,
-            "-vf", vf,
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast",
-            "-y", clipName,
-          ],
-          workDir,
-        );
-      }
+      // FFmpeg just loops the composited PNG into a video clip (no filters)
+      ffmpeg(
+        [
+          "-loop", "1",
+          "-i", compositedPng,
+          "-t", dur,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-preset", "ultrafast",
+          "-y", clipName,
+        ],
+        workDir,
+      );
 
       clipFiles.push(clipName);
     }
 
-    // ── CTA scene ──────────────────────────────────────────────────────
+    // ── CTA scene (canvas → PNG → FFmpeg loop) ────────────────────────
     const ctaDur = "5";
-    const ctaVf = [
-      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.headline)}':fontsize=${Math.round(w / 12)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.25)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.phone)}':fontsize=${Math.round(w / 10)}:fontcolor=#FFD700:x=(w-text_w)/2:y=${Math.round(h * 0.4)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.subline)}':fontsize=${Math.round(w / 30)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.58)}`,
-      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.disclaimer)}':fontsize=${Math.round(w / 50)}:fontcolor=#888888:x=(w-text_w)/2:y=${Math.round(h * 0.88)}`,
-    ].join(",");
+    const ctaPng = join(workDir, "cta_composited.png");
+
+    await renderCtaImage(cta, w, h, ctaPng);
 
     ffmpeg(
       [
-        "-f", "lavfi",
-        "-i", `color=c=#0a0a0a:s=${w}x${h}:d=${ctaDur}`,
-        "-vf", ctaVf,
+        "-loop", "1",
+        "-i", ctaPng,
+        "-t", ctaDur,
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-preset", "ultrafast",

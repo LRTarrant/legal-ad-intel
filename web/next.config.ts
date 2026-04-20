@@ -3,11 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  serverExternalPackages: ["@napi-rs/canvas"],
 
   outputFileTracingIncludes: {
     "/api/campaigns/render-video": [
       "./public/fonts/**/*",
       "./node_modules/ffmpeg-static/**/*",
+      "./node_modules/@napi-rs/canvas/**/*",
     ],
   },
 
