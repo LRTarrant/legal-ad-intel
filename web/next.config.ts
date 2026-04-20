@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
+  outputFileTracingIncludes: {
+    "/api/campaigns/render-video": [
+      "./public/fonts/**/*",
+      "./node_modules/ffmpeg-static/**/*",
+    ],
+  },
+
   async redirects() {
     return [
       // IA cleanup: old dashboard → overview

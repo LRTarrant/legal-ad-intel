@@ -5,6 +5,7 @@ import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
+import ffmpegPath from "ffmpeg-static";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -34,12 +35,7 @@ interface RenderRequest {
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
-function getFFmpegPath(): string {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("@ffmpeg-installer/ffmpeg").path;
-}
-
-const FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
+const FONT_PATH = join(process.cwd(), "public", "fonts", "Montserrat-Bold.ttf");
 
 /** Escape text for ffmpeg drawtext filter */
 function escapeDrawtext(text: string): string {
@@ -67,7 +63,7 @@ async function downloadFile(url: string, dest: string): Promise<boolean> {
 }
 
 function ffmpeg(args: string[], workDir: string) {
-  const ffmpegPath = getFFmpegPath();
+  if (!ffmpegPath) throw new Error("ffmpeg-static binary not found");
   execFileSync(ffmpegPath, args, {
     cwd: workDir,
     timeout: 50_000,
