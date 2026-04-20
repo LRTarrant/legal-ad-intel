@@ -48,7 +48,34 @@ const MUSIC_PARAMS: Record<BackgroundMusic, { freq: number; modFreq: number; vol
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
-const FONT_PATH = join(process.cwd(), "public", "fonts", "Montserrat-Bold.ttf");
+function resolveFontPath(): string | null {
+  const candidates = [
+    join(process.cwd(), "public", "fonts", "Montserrat-Bold.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+function resolveFFmpegPath(): string {
+  if (ffmpegPath) return ffmpegPath;
+  const fallbacks = ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"];
+  for (const p of fallbacks) {
+    if (existsSync(p)) return p;
+  }
+  throw new Error("ffmpeg binary not found: ffmpeg-static returned null and no system ffmpeg found at /usr/bin/ffmpeg or /usr/local/bin/ffmpeg");
+}
+
+const FONT_PATH = resolveFontPath();
+const RESOLVED_FFMPEG = resolveFFmpegPath();
+
+console.error(`[render-video] ffmpeg path: ${RESOLVED_FFMPEG} (exists: ${existsSync(RESOLVED_FFMPEG)})`);
+console.error(`[render-video] font path: ${FONT_PATH ?? "none"} (exists: ${FONT_PATH ? existsSync(FONT_PATH) : false})`);
+
+/** Drawtext fontfile fragment — empty string when no font file available */
+const FONTFILE_FRAG = FONT_PATH ? `fontfile='${FONT_PATH}':` : "";
 
 /** Escape text for ffmpeg drawtext filter */
 function escapeDrawtext(text: string): string {
@@ -76,8 +103,7 @@ async function downloadFile(url: string, dest: string): Promise<boolean> {
 }
 
 function ffmpeg(args: string[], workDir: string) {
-  if (!ffmpegPath) throw new Error("ffmpeg-static binary not found");
-  execFileSync(ffmpegPath, args, {
+  execFileSync(RESOLVED_FFMPEG, args, {
     cwd: workDir,
     timeout: 50_000,
     stdio: "pipe",
@@ -147,8 +173,8 @@ export async function POST(req: NextRequest) {
       const headlineY = `(h-text_h)/2-${Math.round(h / 20)}`;
       const subY = `(h+text_h)/2+${Math.round(h / 30)}`;
 
-      const headlineFilter = `drawtext=fontfile='${FONT_PATH}':text='${headline}':fontsize=${headlineFontSize}:fontcolor=white:x=(w-text_w)/2:y=${headlineY}:shadowcolor=black@0.8:shadowx=2:shadowy=2`;
-      const subFilter = `drawtext=fontfile='${FONT_PATH}':text='${subheadline}':fontsize=${subFontSize}:fontcolor=#FFD700:x=(w-text_w)/2:y=${subY}:shadowcolor=black@0.8:shadowx=1:shadowy=1`;
+      const headlineFilter = `drawtext=${FONTFILE_FRAG}text='${headline}':fontsize=${headlineFontSize}:fontcolor=white:x=(w-text_w)/2:y=${headlineY}:shadowcolor=black@0.8:shadowx=2:shadowy=2`;
+      const subFilter = `drawtext=${FONTFILE_FRAG}text='${subheadline}':fontsize=${subFontSize}:fontcolor=#FFD700:x=(w-text_w)/2:y=${subY}:shadowcolor=black@0.8:shadowx=1:shadowy=1`;
 
       if (imagePaths[i]) {
         // Image background with dark overlay + text
@@ -197,10 +223,10 @@ export async function POST(req: NextRequest) {
     // ── CTA scene ──────────────────────────────────────────────────────
     const ctaDur = "5";
     const ctaVf = [
-      `drawtext=fontfile='${FONT_PATH}':text='${escapeDrawtext(cta.headline)}':fontsize=${Math.round(w / 12)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.25)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-      `drawtext=fontfile='${FONT_PATH}':text='${escapeDrawtext(cta.phone)}':fontsize=${Math.round(w / 10)}:fontcolor=#FFD700:x=(w-text_w)/2:y=${Math.round(h * 0.4)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
-      `drawtext=fontfile='${FONT_PATH}':text='${escapeDrawtext(cta.subline)}':fontsize=${Math.round(w / 30)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.58)}`,
-      `drawtext=fontfile='${FONT_PATH}':text='${escapeDrawtext(cta.disclaimer)}':fontsize=${Math.round(w / 50)}:fontcolor=#888888:x=(w-text_w)/2:y=${Math.round(h * 0.88)}`,
+      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.headline)}':fontsize=${Math.round(w / 12)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.25)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
+      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.phone)}':fontsize=${Math.round(w / 10)}:fontcolor=#FFD700:x=(w-text_w)/2:y=${Math.round(h * 0.4)}:shadowcolor=black@0.8:shadowx=2:shadowy=2`,
+      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.subline)}':fontsize=${Math.round(w / 30)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(h * 0.58)}`,
+      `drawtext=${FONTFILE_FRAG}text='${escapeDrawtext(cta.disclaimer)}':fontsize=${Math.round(w / 50)}:fontcolor=#888888:x=(w-text_w)/2:y=${Math.round(h * 0.88)}`,
     ].join(",");
 
     ffmpeg(
@@ -353,7 +379,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Video render error:", err);
     return NextResponse.json(
-      { error: "Video rendering failed" },
+      { error: "Video rendering failed", details: err instanceof Error ? err.message : String(err) },
       { status: 500 },
     );
   } finally {

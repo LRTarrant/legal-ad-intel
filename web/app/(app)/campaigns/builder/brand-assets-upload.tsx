@@ -2,19 +2,19 @@
 
 import { useCallback, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Upload, Trash2, Loader2, AlertTriangle, FileText } from "lucide-react";
+import { Upload, Trash2, Loader2, AlertTriangle } from "lucide-react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_FILES = 5;
-const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
-const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, "application/pdf"];
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/x-icon", "image/webp"];
+const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES];
 const ACCEPT_STRING = ACCEPTED_TYPES.join(",");
 const SUPABASE_PROJECT_ID = "inmktpwhpkiknctznrys";
 
 export interface BrandAsset {
   url: string;
   name: string;
-  type: "image" | "pdf";
+  type: "image";
   mimeType: string;
 }
 
@@ -48,7 +48,7 @@ export function BrandAssetsUpload({ assets, onAssetsChange, accentColor }: Brand
 
       for (const file of toUpload) {
         if (!ACCEPTED_TYPES.includes(file.type)) {
-          setError("Accepted formats: PNG, JPG, SVG, WebP, or PDF.");
+          setError("Accepted formats: PNG, JPG, SVG, ICO, or WebP.");
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -67,7 +67,7 @@ export function BrandAssetsUpload({ assets, onAssetsChange, accentColor }: Brand
             const filePath = `assets/${sessionId.current}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-              .from("brand-assets")
+              .from("tenant-assets")
               .upload(filePath, file, {
                 cacheControl: "3600",
                 upsert: false,
@@ -75,11 +75,11 @@ export function BrandAssetsUpload({ assets, onAssetsChange, accentColor }: Brand
 
             if (uploadError) throw uploadError;
 
-            const publicUrl = `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/brand-assets/${filePath}`;
+            const publicUrl = `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/tenant-assets/${filePath}`;
             return {
               url: publicUrl,
               name: file.name,
-              type: (ACCEPTED_IMAGE_TYPES.includes(file.type) ? "image" : "pdf") as "image" | "pdf",
+              type: "image" as const,
               mimeType: file.type,
             };
           }),
@@ -150,20 +150,14 @@ export function BrandAssetsUpload({ assets, onAssetsChange, accentColor }: Brand
               key={asset.url}
               className="relative group flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2"
             >
-              {asset.type === "image" ? (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-cloud overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={asset.url}
-                    alt={asset.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-red-50">
-                  <FileText className="h-6 w-6 text-red-400" />
-                </div>
-              )}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-cloud overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={asset.url}
+                  alt={asset.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <p className="min-w-0 flex-1 truncate text-xs text-midnight-navy">{asset.name}</p>
               <button
                 type="button"
@@ -205,7 +199,7 @@ export function BrandAssetsUpload({ assets, onAssetsChange, accentColor }: Brand
                 Drop files here or click to browse
               </p>
               <p className="mt-0.5 text-[10px] text-slate-gray">
-                PNG, JPG, SVG, WebP, or PDF &middot; Max 5MB each &middot; {MAX_FILES - assets.length} remaining
+                PNG, JPG, SVG, ICO, or WebP &middot; Max 5MB each &middot; {MAX_FILES - assets.length} remaining
               </p>
             </>
           )}
