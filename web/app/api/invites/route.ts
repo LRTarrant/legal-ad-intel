@@ -42,6 +42,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const email = body.email?.trim().toLowerCase();
     const role = body.role === "tenant_admin" ? "tenant_admin" : "member";
+    const trialDays =
+      role === "tenant_admin"
+        ? null
+        : body.trial_days != null
+          ? Number(body.trial_days) || null
+          : 14;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -75,6 +81,7 @@ export async function POST(req: NextRequest) {
         email,
         role,
         invited_by: auth.user.id,
+        trial_days: trialDays,
       })
       .select("id, email, role, token, expires_at")
       .single();

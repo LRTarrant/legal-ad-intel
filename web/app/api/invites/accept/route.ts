@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Validate the token
     const { data: invitation } = await serviceClient
       .from("invitations")
-      .select("id, email, role, tenant_id, expires_at, accepted_at")
+      .select("id, email, role, tenant_id, expires_at, accepted_at, trial_days")
       .eq("token", token)
       .maybeSingle();
 
@@ -86,9 +86,18 @@ export async function POST(req: NextRequest) {
 
     // Update the profile's role to match the invitation's role
     // (the handle_new_user trigger may default to 'member')
+    // Set trial_expires_at for member roles only — admins get unlimited access
+    const profileUpdate: Record<string, unknown> = { role: invitation.role };
+
+    if (invitation.role === "member" && invitation.trial_days != null) {
+      const trialExpiresAt = new Date();
+      trialExpiresAt.setDate(trialExpiresAt.getDate() + invitation.trial_days);
+      profileUpdate.trial_expires_at = trialExpiresAt.toISOString();
+    }
+
     await serviceClient
       .from("profiles")
-      .update({ role: invitation.role })
+      .update(profileUpdate)
       .eq("id", authData.user.id);
 
     // Mark invitation as accepted
