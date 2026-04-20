@@ -3092,8 +3092,10 @@ function AiVideoCard({
                         className="h-20 w-full rounded object-cover"
                       />
                     ) : (
-                      <div className="flex h-20 w-full items-center justify-center rounded bg-slate-100">
-                        <Video className="h-6 w-6 text-slate-400" />
+                      <div className="flex h-20 w-full items-center justify-center rounded bg-teal-600">
+                        <span className="text-2xl font-bold text-white">
+                          {a.name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
                     )}
                     <p className="mt-1 truncate text-xs font-medium text-midnight-navy">

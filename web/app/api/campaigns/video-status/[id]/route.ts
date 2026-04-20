@@ -26,7 +26,7 @@ export async function GET(
 
     const response = await fetch(`https://api.synthesia.io/v2/videos/${id}`, {
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: apiKey,
       },
     });
 
