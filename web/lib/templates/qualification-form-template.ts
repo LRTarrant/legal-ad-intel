@@ -18,6 +18,7 @@ export interface QualificationFormOptions {
   disqualifyMessage: string;
   qualifyMessage: string;
   style: "multi-step" | "single-page";
+  formPages?: { label: string; questionIds: string[] }[];
 }
 
 /* ── US states for contact form dropdown ─────────────────────────────── */
@@ -49,8 +50,24 @@ export function buildQualificationFormHtml(
  * ════════════════════════════════════════════════════════════════════════ */
 
 function buildMultiStep(opts: QualificationFormOptions): string {
-  const { screeningQuestions, firmName, firmUrl, tortName, disqualifyMessage, qualifyMessage } = opts;
-  const totalSteps = screeningQuestions.length;
+  const { screeningQuestions, firmName, firmUrl, tortName, disqualifyMessage, qualifyMessage, formPages } = opts;
+
+  // Determine if we use page-grouped layout
+  const usePages = formPages && formPages.length > 0;
+
+  // Build page groups: map questionIds to actual questions preserving order
+  const pageGroups: { label: string; questions: typeof screeningQuestions }[] = usePages
+    ? formPages
+        .filter((p) => p.questionIds.length > 0) // skip the Submit page
+        .map((p) => ({
+          label: p.label,
+          questions: p.questionIds
+            .map((id) => screeningQuestions.find((q) => q.id === id))
+            .filter((q): q is (typeof screeningQuestions)[number] => !!q),
+        }))
+    : screeningQuestions.map((q, i) => ({ label: `Step ${i + 1}`, questions: [q] }));
+
+  const totalSteps = pageGroups.length;
 
   const stateOptions = US_STATES.map(
     (s) => `<option value="${s}">${s}</option>`,
@@ -67,40 +84,65 @@ function buildMultiStep(opts: QualificationFormOptions): string {
     })),
   );
 
-  /* Build step HTML for each screening question */
-  const stepsHtml = screeningQuestions
-    .map((q, i) => {
-      let answersHtml = "";
+  // Build a flat question-index mapping so JS can reference by global index
+  let globalIdx = 0;
+  const pageGroupsJson = JSON.stringify(
+    pageGroups.map((pg) => {
+      const indices = pg.questions.map(() => globalIdx++);
+      return { label: pg.label, questionIndices: indices };
+    }),
+  );
 
-      if (q.type === "yes_no") {
-        answersHtml = `
-            <div class="qf-btn-row">
-              <button type="button" class="qf-answer-btn" data-step="${i}" data-value="Yes">Yes</button>
-              <button type="button" class="qf-answer-btn" data-step="${i}" data-value="No">No</button>
-            </div>`;
-      } else if (q.type === "select") {
-        answersHtml = `
-            <div class="qf-btn-stack">
-              ${(q.options ?? []).map((o) => `<button type="button" class="qf-answer-btn" data-step="${i}" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join("\n              ")}
-            </div>`;
-      } else {
-        // text or date
-        const inputType = q.type === "date" ? "date" : "text";
-        answersHtml = `
-            <div class="qf-input-row">
-              <input type="${inputType}" class="qf-text-input" id="qf-input-${i}" placeholder="${q.type === "date" ? "" : "Type your answer..."}" />
-              <button type="button" class="qf-next-btn" data-step="${i}">Next &rarr;</button>
-            </div>`;
-      }
+  /* Build step HTML for each page group */
+  let qIdx = 0; // global question index counter
+  const stepsHtml = pageGroups
+    .map((pg, pageIdx) => {
+      const questionsHtml = pg.questions
+        .map((q) => {
+          const i = qIdx++;
+          let answersHtml = "";
+
+          if (q.type === "yes_no") {
+            answersHtml = `
+              <div class="qf-btn-row">
+                <button type="button" class="qf-answer-btn" data-step="${i}" data-value="Yes">Yes</button>
+                <button type="button" class="qf-answer-btn" data-step="${i}" data-value="No">No</button>
+              </div>`;
+          } else if (q.type === "select") {
+            answersHtml = `
+              <div class="qf-btn-stack">
+                ${(q.options ?? []).map((o) => `<button type="button" class="qf-answer-btn" data-step="${i}" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join("\n                ")}
+              </div>`;
+          } else {
+            const inputType = q.type === "date" ? "date" : "text";
+            answersHtml = `
+              <div class="qf-input-row">
+                <input type="${inputType}" class="qf-text-input" id="qf-input-${i}" placeholder="${q.type === "date" ? "" : "Type your answer..."}" />
+              </div>`;
+          }
+
+          return `
+              <div class="qf-page-question" data-q-index="${i}">
+                <h3 class="qf-question">${escapeHtml(q.question)}</h3>
+                ${q.helpText ? `<p class="qf-help">${escapeHtml(q.helpText)}</p>` : ""}
+                ${answersHtml}
+              </div>`;
+        })
+        .join("\n");
+
+      const hasMultipleQuestions = pg.questions.length > 1 || pg.questions.some((q) => q.type === "text" || q.type === "date");
+      // For pages with multiple questions or text inputs, show an explicit "Next" button
+      const showNextBtn = hasMultipleQuestions || pg.questions.length > 0;
 
       return `
-          <!-- Step ${i + 1} -->
-          <div class="qf-step" data-step-index="${i}">
-            <p class="qf-step-counter">Step ${i + 1} of ${totalSteps}</p>
-            <h3 class="qf-question">${escapeHtml(q.question)}</h3>
-            ${q.helpText ? `<p class="qf-help">${escapeHtml(q.helpText)}</p>` : ""}
-            ${answersHtml}
-            ${i > 0 ? `<button type="button" class="qf-back-btn" data-back-step="${i}">&larr; Back</button>` : ""}
+          <!-- Page ${pageIdx + 1}: ${escapeHtml(pg.label)} -->
+          <div class="qf-step" data-step-index="${pageIdx}">
+            <p class="qf-step-counter">${escapeHtml(pg.label)} — Step ${pageIdx + 1} of ${totalSteps}</p>
+            ${questionsHtml}
+            <div class="qf-page-nav">
+              ${pageIdx > 0 ? `<button type="button" class="qf-back-btn" data-back-step="${pageIdx}">&larr; Back</button>` : '<span></span>'}
+              ${showNextBtn ? `<button type="button" class="qf-page-next-btn" data-page="${pageIdx}">Next &rarr;</button>` : ''}
+            </div>
           </div>`;
     })
     .join("\n");
@@ -113,7 +155,7 @@ function buildMultiStep(opts: QualificationFormOptions): string {
   <div class="qf-container">
     <!-- Progress bar -->
     <div class="qf-progress">
-      ${screeningQuestions.map((_, i) => `<div class="qf-progress-segment" data-seg="${i}"></div>`).join("\n      ")}
+      ${pageGroups.map((_, i) => `<div class="qf-progress-segment" data-seg="${i}"></div>`).join("\n      ")}
     </div>
 
     <div class="qf-card">
@@ -204,7 +246,7 @@ function buildMultiStep(opts: QualificationFormOptions): string {
     </div>
   </div>
 
-  <script>${multiStepJs(questionsJson, firmName)}</script>
+  <script>${multiStepJs(questionsJson, pageGroupsJson, firmName)}</script>
 </section>`;
 }
 
@@ -722,6 +764,48 @@ function multiStepCss(totalSteps: number): string {
       line-height: 1.5;
     }
 
+    /* ── Page-grouped questions ── */
+    .qf-page-question {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--qf-gray-100);
+    }
+    .qf-page-question:last-child {
+      border-bottom: none;
+      margin-bottom: 8px;
+      padding-bottom: 0;
+    }
+    .qf-page-question.qf-unanswered {
+      border: 2px solid var(--qf-red);
+      border-radius: var(--qf-radius-sm);
+      padding: 12px;
+      background: var(--qf-red-light);
+    }
+    .qf-page-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--qf-gray-100);
+    }
+    .qf-page-next-btn {
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--qf-font);
+      color: var(--qf-white);
+      background: var(--qf-teal);
+      border: none;
+      border-radius: var(--qf-radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .qf-page-next-btn:hover { background: var(--qf-teal-dark); }
+    .qf-text-input.qf-invalid {
+      border-color: var(--qf-red);
+    }
+
     /* ── Mobile ── */
     @media (max-width: 600px) {
       .qf-container { padding: 16px 12px; }
@@ -731,6 +815,8 @@ function multiStepCss(totalSteps: number): string {
       .qf-btn-row { grid-template-columns: 1fr; }
       .qf-answer-btn { padding: 16px 20px; font-size: 15px; min-height: 52px; }
       .qf-btn-primary { min-width: unset; width: 100%; }
+      .qf-page-next-btn { padding: 12px 24px; font-size: 14px; width: 100%; }
+      .qf-page-nav { flex-direction: column-reverse; gap: 10px; }
     }
   `;
 }
@@ -1061,13 +1147,14 @@ function singlePageCss(): string {
  *  JS — MULTI-STEP
  * ════════════════════════════════════════════════════════════════════════ */
 
-function multiStepJs(questionsJson: string, firmName: string): string {
+function multiStepJs(questionsJson: string, pageGroupsJson: string, firmName: string): string {
   return `
 (function() {
   'use strict';
 
   var questions = ${questionsJson};
-  var totalSteps = questions.length;
+  var pageGroups = ${pageGroupsJson};
+  var totalSteps = pageGroups.length;
   var currentStep = 0;
   var answers = {};
   var isDisqualified = false;
@@ -1080,7 +1167,7 @@ function multiStepJs(questionsJson: string, firmName: string): string {
   var formError = document.getElementById('qf-form-error');
   var dqBackBtn = document.getElementById('qf-dq-back');
 
-  /* Show a specific step */
+  /* Show a specific page step */
   function showStep(idx) {
     currentStep = idx;
     var steps = stepsWrapper.querySelectorAll('.qf-step');
@@ -1090,7 +1177,6 @@ function multiStepJs(questionsJson: string, firmName: string): string {
     }
     if (idx < totalSteps) {
       steps[idx].style.display = 'block';
-      /* Small delay for CSS transition */
       requestAnimationFrame(function() {
         requestAnimationFrame(function() {
           steps[idx].classList.add('active');
@@ -1117,23 +1203,24 @@ function multiStepJs(questionsJson: string, firmName: string): string {
     qualifyScreen.style.display = 'none';
     thankyouScreen.style.display = 'none';
     screen.style.display = 'block';
-    /* Complete all progress segments */
     var segs = document.querySelectorAll('.qf-progress-segment');
     for (var i = 0; i < segs.length; i++) segs[i].classList.add('completed');
   }
 
-  /* Handle answer click (yes_no / select) */
-  function handleAnswer(stepIdx, value) {
-    var q = questions[stepIdx];
+  /* Handle answer click (yes_no / select) — records answer, highlights, checks DQ */
+  function handleAnswer(qIdx, value) {
+    var q = questions[qIdx];
     answers[q.id] = value;
 
     /* Highlight selected button */
-    var step = stepsWrapper.querySelectorAll('.qf-step')[stepIdx];
-    var btns = step.querySelectorAll('.qf-answer-btn');
-    for (var b = 0; b < btns.length; b++) {
-      btns[b].classList.remove('selected');
-      if (btns[b].getAttribute('data-value') === value) {
-        btns[b].classList.add('selected');
+    var qEl = stepsWrapper.querySelector('[data-q-index="' + qIdx + '"]');
+    if (qEl) {
+      var btns = qEl.querySelectorAll('.qf-answer-btn');
+      for (var b = 0; b < btns.length; b++) {
+        btns[b].classList.remove('selected');
+        if (btns[b].getAttribute('data-value') === value) {
+          btns[b].classList.add('selected');
+        }
       }
     }
 
@@ -1144,24 +1231,54 @@ function multiStepJs(questionsJson: string, firmName: string): string {
       return;
     }
 
-    /* Advance */
-    if (stepIdx < totalSteps - 1) {
-      setTimeout(function() { showStep(stepIdx + 1); }, 250);
-    } else {
-      /* All questions answered — show qualify screen */
-      setTimeout(function() { showScreen(qualifyScreen); }, 250);
+    /* For single-question pages, auto-advance after selection */
+    var page = pageGroups[currentStep];
+    if (page && page.questionIndices.length === 1) {
+      if (currentStep < totalSteps - 1) {
+        setTimeout(function() { showStep(currentStep + 1); }, 250);
+      } else {
+        setTimeout(function() { showScreen(qualifyScreen); }, 250);
+      }
     }
   }
 
-  /* Handle text/date next */
-  function handleTextNext(stepIdx) {
-    var input = document.getElementById('qf-input-' + stepIdx);
-    if (!input) return;
-    var val = input.value.trim();
-    if (!val) { input.focus(); return; }
-    answers[questions[stepIdx].id] = val;
-    if (stepIdx < totalSteps - 1) {
-      showStep(stepIdx + 1);
+  /* Validate all questions on the current page are answered */
+  function validatePage(pageIdx) {
+    var page = pageGroups[pageIdx];
+    if (!page) return true;
+    for (var i = 0; i < page.questionIndices.length; i++) {
+      var qi = page.questionIndices[i];
+      var q = questions[qi];
+      if (q.type === 'text' || q.type === 'date') {
+        var input = document.getElementById('qf-input-' + qi);
+        if (input && !input.value.trim()) {
+          input.focus();
+          input.classList.add('qf-invalid');
+          return false;
+        }
+        if (input) {
+          input.classList.remove('qf-invalid');
+          answers[q.id] = input.value.trim();
+        }
+      } else {
+        if (!answers[q.id]) {
+          /* Highlight unanswered question */
+          var qEl = stepsWrapper.querySelector('[data-q-index="' + qi + '"]');
+          if (qEl) qEl.classList.add('qf-unanswered');
+          return false;
+        }
+        var qEl2 = stepsWrapper.querySelector('[data-q-index="' + qi + '"]');
+        if (qEl2) qEl2.classList.remove('qf-unanswered');
+      }
+    }
+    return true;
+  }
+
+  /* Handle page-level Next button */
+  function handlePageNext(pageIdx) {
+    if (!validatePage(pageIdx)) return;
+    if (pageIdx < totalSteps - 1) {
+      showStep(pageIdx + 1);
     } else {
       showScreen(qualifyScreen);
     }
@@ -1172,7 +1289,7 @@ function multiStepJs(questionsJson: string, firmName: string): string {
     if (stepIdx > 0) showStep(stepIdx - 1);
   }
 
-  /* Event delegation for answer buttons */
+  /* Event delegation */
   stepsWrapper.addEventListener('click', function(e) {
     var btn = e.target.closest('.qf-answer-btn');
     if (btn) {
@@ -1181,10 +1298,10 @@ function multiStepJs(questionsJson: string, firmName: string): string {
       handleAnswer(step, value);
       return;
     }
-    var nextBtn = e.target.closest('.qf-next-btn');
-    if (nextBtn) {
-      var stepN = parseInt(nextBtn.getAttribute('data-step'), 10);
-      handleTextNext(stepN);
+    var pageNextBtn = e.target.closest('.qf-page-next-btn');
+    if (pageNextBtn) {
+      var pageIdx = parseInt(pageNextBtn.getAttribute('data-page'), 10);
+      handlePageNext(pageIdx);
       return;
     }
     var backBtn = e.target.closest('.qf-back-btn');
@@ -1194,14 +1311,14 @@ function multiStepJs(questionsJson: string, firmName: string): string {
     }
   });
 
-  /* Enter key on text inputs */
+  /* Enter key on text inputs triggers page next */
   stepsWrapper.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       var input = e.target.closest('.qf-text-input');
       if (input) {
         e.preventDefault();
-        var nextBtn = input.parentElement.querySelector('.qf-next-btn');
-        if (nextBtn) nextBtn.click();
+        var pageNextBtn = input.closest('.qf-step').querySelector('.qf-page-next-btn');
+        if (pageNextBtn) pageNextBtn.click();
       }
     }
   });
