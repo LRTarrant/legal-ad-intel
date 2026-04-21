@@ -81,12 +81,14 @@ export function VideoCompositionCard({
   tortName,
   firmName,
   states,
+  language = "en",
 }: {
   expanded: boolean;
   onToggleExpand: () => void;
   tortName: string;
   firmName: string;
   states: string[];
+  language?: "en" | "es";
 }) {
   const [platform, setPlatform] = useState<Platform>("youtube_ad");
   const [duration, setDuration] = useState<Duration>("30s");
@@ -243,6 +245,7 @@ export function VideoCompositionCard({
           tort_name: tortName,
           firm_name: firmName || undefined,
           states: states.length > 0 ? states : undefined,
+          language: language !== "en" ? language : undefined,
         }),
       });
       if (!res.ok) throw new Error("Script generation failed");
