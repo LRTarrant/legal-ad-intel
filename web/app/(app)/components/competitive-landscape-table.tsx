@@ -47,6 +47,10 @@ interface AggregatedRow {
   practiceArea: string;
   instances: number;
   nationalMarkets: number;
+  googleAds?: boolean;
+  youtube?: boolean;
+  meta?: boolean;
+  tiktok?: boolean;
 }
 
 function aggregateAcrossMarkets(
@@ -66,6 +70,10 @@ function aggregateAcrossMarkets(
       const existing = map.get(key);
       if (existing) {
         existing.instances += entry.instances;
+        existing.googleAds = existing.googleAds || entry.googleAds;
+        existing.youtube = existing.youtube || entry.youtube;
+        existing.meta = existing.meta || entry.meta;
+        existing.tiktok = existing.tiktok || entry.tiktok;
       } else {
         map.set(key, {
           advertiser: entry.advertiser,
@@ -73,6 +81,10 @@ function aggregateAcrossMarkets(
           practiceArea: entry.practiceArea,
           instances: entry.instances,
           nationalMarkets: entry.nationalMarkets,
+          googleAds: entry.googleAds,
+          youtube: entry.youtube,
+          meta: entry.meta,
+          tiktok: entry.tiktok,
         });
       }
     }
@@ -94,6 +106,10 @@ function filterByMarket(
     practiceArea: e.practiceArea,
     instances: e.instances,
     nationalMarkets: e.nationalMarkets,
+    googleAds: e.googleAds,
+    youtube: e.youtube,
+    meta: e.meta,
+    tiktok: e.tiktok,
   }));
 }
 
@@ -198,6 +214,18 @@ export function CompetitiveLandscapeTable({
                 <th className="py-3 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
                   Practice Area
                 </th>
+                <th className="py-3 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-gray w-16">
+                  Google
+                </th>
+                <th className="py-3 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-gray w-16">
+                  YouTube
+                </th>
+                <th className="py-3 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-gray w-16">
+                  Meta
+                </th>
+                <th className="py-3 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-gray w-16">
+                  TikTok
+                </th>
                 <th className="py-3 px-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
                   Markets
                 </th>
@@ -227,6 +255,46 @@ export function CompetitiveLandscapeTable({
                       <span className="inline-block rounded-full bg-intelligence-teal/10 px-2 py-0.5 text-[10px] font-bold text-intelligence-teal whitespace-nowrap">
                         {row.practiceArea}
                       </span>
+                    </td>
+                    <td className="py-2.5 px-2 text-center">
+                      {row.googleAds ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span className="text-[10px] text-emerald-700">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">&mdash;</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-2 text-center">
+                      {row.youtube ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span className="text-[10px] text-emerald-700">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">&mdash;</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-2 text-center">
+                      {row.meta ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span className="text-[10px] text-emerald-700">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">&mdash;</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-2 text-center">
+                      {row.tiktok ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span className="text-[10px] text-emerald-700">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">&mdash;</span>
+                      )}
                     </td>
                     <td className="py-2.5 px-2 text-right text-midnight-navy/80">
                       {row.nationalMarkets}
