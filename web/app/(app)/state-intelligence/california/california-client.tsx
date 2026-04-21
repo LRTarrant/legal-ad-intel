@@ -40,6 +40,8 @@ import {
   buildPIAdSummary,
   type PIAdvertisingData,
 } from "../../components/pi-advertising-section";
+import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
+import { californiaCompetitiveData } from "@/lib/data/competitive-landscape/california";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -1656,7 +1658,12 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
       <PIAdvertisingSection stateAbbr="CA" onDataLoaded={handlePIAdDataLoaded} />
 
       {/* ============================================================ */}
-      {/* 11. CROSS-SIGNAL INSIGHT CARDS                               */}
+      {/* 11. COMPETITIVE LANDSCAPE                                    */}
+      {/* ============================================================ */}
+      <CompetitiveLandscapeTable data={californiaCompetitiveData} />
+
+      {/* ============================================================ */}
+      {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
       {/* ============================================================ */}
       <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
