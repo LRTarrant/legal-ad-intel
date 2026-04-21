@@ -31,7 +31,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 25,
         "tvOutlets": 6,
         "radioOutlets": 12,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Alexander Shunnarah Trial Attorneys",
@@ -41,7 +45,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 12,
         "tvOutlets": 5,
         "radioOutlets": 4,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mike Slocumb Law Firm",
@@ -51,7 +59,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -61,7 +73,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Wettermark Keith",
@@ -71,7 +87,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Morris Bart",
@@ -81,7 +101,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Blue Sky Legal",
@@ -91,7 +115,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 29
+        "nationalMarkets": 29,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mezrano Law Firm",
@@ -101,7 +129,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Hollis Wright & Clay",
@@ -111,7 +143,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Farris Riley & Pitt",
@@ -121,7 +157,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 3,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
