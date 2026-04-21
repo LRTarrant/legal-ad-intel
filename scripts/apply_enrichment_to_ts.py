@@ -20,6 +20,7 @@ STATE_FILES = {
     "alabama": "alabama.ts",
     "arizona": "arizona.ts",
     "california": "california.ts",
+    "florida": "florida.ts",
 }
 
 
