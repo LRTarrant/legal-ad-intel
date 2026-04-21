@@ -26,7 +26,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 42,
         "tvOutlets": 11,
         "radioOutlets": 24,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rafi Law Group",
@@ -36,7 +40,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 20,
         "tvOutlets": 4,
         "radioOutlets": 16,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Morgan & Morgan",
@@ -46,7 +54,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 29,
         "tvOutlets": 10,
         "radioOutlets": 18,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sweet James",
@@ -56,7 +68,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 22,
         "tvOutlets": 9,
         "radioOutlets": 10,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Husband & Wife Law Team",
@@ -66,7 +82,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 23,
         "tvOutlets": 8,
         "radioOutlets": 5,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -76,7 +96,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 0,
         "radioOutlets": 8,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Hastings & Hastings",
@@ -86,7 +110,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 15,
         "tvOutlets": 9,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Lloyd Baker Injury Attorneys",
@@ -96,7 +124,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 8,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": true
       },
       {
         "advertiser": "Alcock & Associates",
@@ -106,7 +138,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 3,
         "radioOutlets": 1,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Michael Cordova",
@@ -116,7 +152,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 3,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Goldberg & Osborne",
