@@ -1,0 +1,3349 @@
+[
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:15:01.112815+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:15:06.275767+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Los+Defensores",
+      "website": "https://www.losdefensores.com",
+      "googleAds": "https://www.losdefensores.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Los+Defensores",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Los+Defensores"
+    },
+    "checkedAt": "2026-04-21T15:15:09.750769+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:15:12.613727+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:15:16.857359+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:15:20.184094+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:15:24.015613+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:15:28.894358+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:15:34.722622+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:15:45.030752+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:15:55.134347+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:16:00.959348+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Gerson & Schwartz",
+    "parent": "Gerson & Schwartz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Gerson+%26+Schwartz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Gerson+%26+Schwartz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Gerson+%26+Schwartz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Gerson+%26+Schwartz"
+    },
+    "checkedAt": "2026-04-21T15:16:05.024548+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:16:10.863693+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Aronfeld Trial Lawyers",
+    "parent": "Aronfeld Trial Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Aronfeld+Trial+Lawyers",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Aronfeld+Trial+Lawyers",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Aronfeld+Trial+Lawyers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Aronfeld+Trial+Lawyers"
+    },
+    "checkedAt": "2026-04-21T15:16:15.169158+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Schlesinger Law Offices",
+    "parent": "Schlesinger Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Schlesinger+Law+Offices",
+      "website": "https://www.schlesingerlawoffices.com",
+      "googleAds": "https://www.schlesingerlawoffices.com",
+      "meta": "https://www.schlesingerlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Schlesinger+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:16:21.018732+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:16:24.682043+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:16:30.947509+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:16:35.770388+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=La+Liga+Defensora",
+      "website": "https://www.laligadefensora.com",
+      "googleAds": "https://www.laligadefensora.com",
+      "meta": "https://www.laligadefensora.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=La+Liga+Defensora"
+    },
+    "checkedAt": "2026-04-21T15:16:38.687198+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:16:42.141138+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:16:44.913593+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:16:48.448039+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:16:53.412610+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:16:57.046815+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:17:01.358006+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:17:11.458870+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Abrahamson & Uiterwyk",
+    "parent": "Abrahamson & Uiterwyk",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Abrahamson+%26+Uiterwyk",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Abrahamson+%26+Uiterwyk",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Abrahamson+%26+Uiterwyk",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Abrahamson+%26+Uiterwyk"
+    },
+    "checkedAt": "2026-04-21T15:17:21.338134+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Catania & Catania",
+    "parent": "Catania & Catania PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Catania+%26+Catania",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Catania+%26+Catania",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Catania+%26+Catania",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Catania+%26+Catania"
+    },
+    "checkedAt": "2026-04-21T15:17:27.372348+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:17:33.102014+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:17:43.132074+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Kemp Ruge & Green",
+    "parent": "Kemp Ruge & Green Law Group",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Kemp+Ruge+%26+Green",
+      "website": "https://www.kemprugegreen.com",
+      "googleAds": "https://www.kemprugegreen.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Kemp+Ruge+%26+Green",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Kemp+Ruge+%26+Green"
+    },
+    "checkedAt": "2026-04-21T15:17:48.918345+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:17:52.815063+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Los+Defensores",
+      "website": "https://www.losdefensores.com",
+      "googleAds": "https://www.losdefensores.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Los+Defensores",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Los+Defensores"
+    },
+    "checkedAt": "2026-04-21T15:17:55.711796+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:17:58.460298+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:18:04.153472+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:18:08.884345+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:18:14.664686+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Heintz & Becker",
+    "parent": "Heintz & Becker",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Heintz+%26+Becker",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Heintz+%26+Becker",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Heintz+%26+Becker",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Heintz+%26+Becker"
+    },
+    "checkedAt": "2026-04-21T15:18:20.866265+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:18:26.675018+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:18:30.098127+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:18:32.872352+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:18:36.358975+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:18:40.973085+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:18:45.086391+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:18:48.508213+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:18:58.582003+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:19:08.529280+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:19:11.409449+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Los+Defensores",
+      "website": "https://www.losdefensores.com",
+      "googleAds": "https://www.losdefensores.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Los+Defensores",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Los+Defensores"
+    },
+    "checkedAt": "2026-04-21T15:19:17.024248+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:19:20.009047+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:19:29.948462+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:19:35.904131+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:19:39.335887+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:19:45.263840+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:19:50.167103+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:19:56.081786+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Michael T Gibson PA",
+    "parent": "Michael T Gibson PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Michael+T+Gibson+PA",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Michael+T+Gibson+PA",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Michael+T+Gibson+PA",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Michael+T+Gibson+PA"
+    },
+    "checkedAt": "2026-04-21T15:20:00.344193+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:20:06.209361+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=La+Liga+Defensora",
+      "website": "https://www.laligadefensora.com",
+      "googleAds": "https://www.laligadefensora.com",
+      "meta": "https://www.laligadefensora.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=La+Liga+Defensora"
+    },
+    "checkedAt": "2026-04-21T15:20:10.531491+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:20:13.515035+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:20:16.416410+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:20:20.013623+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:20:24.135320+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:20:29.834147+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:20:34.415113+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:20:37.991505+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:20:40.922223+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:20:44.319599+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:20:54.400457+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Los+Defensores",
+      "website": "https://www.losdefensores.com",
+      "googleAds": "https://www.losdefensores.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Los+Defensores",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Los+Defensores"
+    },
+    "checkedAt": "2026-04-21T15:21:04.409903+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:21:07.403856+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:21:13.032747+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Aronfeld Trial Lawyers",
+    "parent": "Aronfeld Trial Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Aronfeld+Trial+Lawyers",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Aronfeld+Trial+Lawyers",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Aronfeld+Trial+Lawyers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Aronfeld+Trial+Lawyers"
+    },
+    "checkedAt": "2026-04-21T15:21:22.947305+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:21:28.787756+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Schlesinger Law Offices",
+    "parent": "Schlesinger Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Schlesinger+Law+Offices",
+      "website": "https://www.schlesingerlawoffices.com",
+      "googleAds": "https://www.schlesingerlawoffices.com",
+      "meta": "https://www.schlesingerlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Schlesinger+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:21:34.860032+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:21:38.438666+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:21:43.586429+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Gerson & Schwartz",
+    "parent": "Gerson & Schwartz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Gerson+%26+Schwartz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Gerson+%26+Schwartz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Gerson+%26+Schwartz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Gerson+%26+Schwartz"
+    },
+    "checkedAt": "2026-04-21T15:21:47.662687+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=La+Liga+Defensora",
+      "website": "https://www.laligadefensora.com",
+      "googleAds": "https://www.laligadefensora.com",
+      "meta": "https://www.laligadefensora.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=La+Liga+Defensora"
+    },
+    "checkedAt": "2026-04-21T15:21:53.381990+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:21:56.328510+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:21:59.149690+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:22:02.764962+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:22:07.240968+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:22:13.102839+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:22:16.538655+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:22:20.538961+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:22:30.503832+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:22:40.482614+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:22:43.278612+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:22:48.927614+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:22:58.823182+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:23:04.551979+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:23:10.734352+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:23:15.566650+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Mike+Slocumb+Law+Firm",
+      "website": "https://www.slocumblaw.com",
+      "googleAds": "https://www.slocumblaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Mike+Slocumb+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Mike+Slocumb+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:23:18.962608+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Harrell+%26+Harrell",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Harrell+%26+Harrell",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Harrell+%26+Harrell",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Harrell+%26+Harrell"
+    },
+    "checkedAt": "2026-04-21T15:23:21.806980+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Edwards & Ragatz",
+    "parent": "Edwards & Ragatz PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Edwards+%26+Ragatz",
+      "website": "https://www.edwardsragatz.com",
+      "googleAds": "https://www.edwardsragatz.com",
+      "meta": "https://www.edwardsragatz.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Edwards+%26+Ragatz"
+    },
+    "checkedAt": "2026-04-21T15:23:27.609096+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:23:30.958507+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:23:34.982119+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:23:38.144578+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:23:40.980164+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:23:44.350427+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:23:49.054212+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:23:53.137411+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:23:56.473099+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:24:06.426462+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:24:16.418230+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:24:22.064656+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:24:32.016667+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:24:34.966031+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:24:38.471861+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Kemp Ruge & Green",
+    "parent": "Kemp Ruge & Green Law Group",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Kemp+Ruge+%26+Green",
+      "website": "https://www.kemprugegreen.com",
+      "googleAds": "https://www.kemprugegreen.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Kemp+Ruge+%26+Green",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Kemp+Ruge+%26+Green"
+    },
+    "checkedAt": "2026-04-21T15:24:44.141471+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:24:47.944326+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:24:53.974697+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Heintz & Becker",
+    "parent": "Heintz & Becker",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Heintz+%26+Becker",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Heintz+%26+Becker",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Heintz+%26+Becker",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Heintz+%26+Becker"
+    },
+    "checkedAt": "2026-04-21T15:24:59.097327+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:25:04.898412+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Los+Defensores",
+      "website": "https://www.losdefensores.com",
+      "googleAds": "https://www.losdefensores.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Los+Defensores",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Los+Defensores"
+    },
+    "checkedAt": "2026-04-21T15:25:08.828228+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:25:11.836228+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:25:17.549127+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:25:20.381483+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:25:24.029744+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:25:27.618967+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:25:37.687774+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:25:47.830689+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Mike+Slocumb+Law+Firm",
+      "website": "https://www.slocumblaw.com",
+      "googleAds": "https://www.slocumblaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Mike+Slocumb+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Mike+Slocumb+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:25:52.421710+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:25:55.267352+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:25:58.405981+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:26:04.509159+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:26:09.100419+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:26:13.369924+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:26:18.950385+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:26:24.759388+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:26:28.207732+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Brooks+Law+Group",
+      "website": "https://www.brookslawgroup.com",
+      "googleAds": "https://www.brookslawgroup.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Brooks+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Brooks+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:26:32.069131+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:26:35.479453+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:26:38.620923+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:26:48.534313+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:26:54.184112+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:26:56.862858+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:27:00.445928+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:27:03.898328+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:27:08.539068+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:27:18.621650+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:27:28.763444+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:27:32.863746+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:27:35.852150+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:27:41.968124+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:27:46.670849+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:27:52.425389+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:28:02.295466+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:28:05.672400+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Harrell+%26+Harrell",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Harrell+%26+Harrell",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Harrell+%26+Harrell",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Harrell+%26+Harrell"
+    },
+    "checkedAt": "2026-04-21T15:28:11.388304+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:28:17.169824+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:28:22.778071+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Brooks+Law+Group",
+      "website": "https://www.brookslawgroup.com",
+      "googleAds": "https://www.brookslawgroup.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Brooks+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Brooks+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:28:26.775731+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:28:30.258370+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Mike+Slocumb+Law+Firm",
+      "website": "https://www.slocumblaw.com",
+      "googleAds": "https://www.slocumblaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Mike+Slocumb+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Mike+Slocumb+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:28:33.237105+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Morgan+%26+Morgan",
+      "website": "https://www.forthepeople.com",
+      "googleAds": "https://www.forthepeople.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Morgan+%26+Morgan",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Morgan+%26+Morgan"
+    },
+    "checkedAt": "2026-04-21T15:28:36.089315+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": true,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=TopDog+Law",
+      "website": "https://www.topdoglaw.com",
+      "googleAds": "https://www.topdoglaw.com",
+      "tiktok": "https://www.topdoglaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=TopDog+Law"
+    },
+    "checkedAt": "2026-04-21T15:28:38.754625+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Fasig+Brooks",
+      "website": "https://www.fasigbrooks.com",
+      "googleAds": "https://www.fasigbrooks.com",
+      "meta": "https://www.fasigbrooks.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Fasig+Brooks"
+    },
+    "checkedAt": "2026-04-21T15:28:42.428720+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Ask+Gary",
+      "website": "https://www.askgary.com",
+      "googleAds": "https://www.askgary.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Ask+Gary",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Ask+Gary"
+    },
+    "checkedAt": "2026-04-21T15:28:45.894462+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:28:50.442634+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Action+Matters",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Action+Matters",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Action+Matters",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Action+Matters"
+    },
+    "checkedAt": "2026-04-21T15:29:00.349012+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Mike+Slocumb+Law+Firm",
+      "website": "https://www.slocumblaw.com",
+      "googleAds": "https://www.slocumblaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Mike+Slocumb+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Mike+Slocumb+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:29:10.377075+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Steinger+Iscoe+%26+Greene",
+      "website": "https://steingeriscoegreene.com",
+      "googleAds": "https://steingeriscoegreene.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Steinger+Iscoe+%26+Greene",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Steinger+Iscoe+%26+Greene"
+    },
+    "checkedAt": "2026-04-21T15:29:13.155396+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Consumer+Law+Group",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Consumer+Law+Group",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Consumer+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Consumer+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:29:17.188728+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Anidjar+%26+Levine",
+      "website": "https://www.anidjarlevine.com",
+      "googleAds": "https://www.anidjarlevine.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Anidjar+%26+Levine",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Anidjar+%26+Levine"
+    },
+    "checkedAt": "2026-04-21T15:29:23.186139+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Goldstein+Buckley+Cechman+Rice+%26+Purtz"
+    },
+    "checkedAt": "2026-04-21T15:29:25.948718+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": true,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Grossman+Law+Offices",
+      "website": "https://www.grossmanlawoffices.com",
+      "googleAds": "https://www.grossmanlawoffices.com",
+      "meta": "https://www.grossmanlawoffices.com",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Grossman+Law+Offices"
+    },
+    "checkedAt": "2026-04-21T15:29:31.691266+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Law+Tigers",
+      "website": "https://www.lawtigers.com",
+      "googleAds": "https://www.lawtigers.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Law+Tigers",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Law+Tigers"
+    },
+    "checkedAt": "2026-04-21T15:29:34.993863+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Searcy+Denney+Scarola+Barnhart+%26+Shipley"
+    },
+    "checkedAt": "2026-04-21T15:29:39.657351+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Sibley+Dolman+Gipe",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Sibley+Dolman+Gipe",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Sibley+Dolman+Gipe",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Sibley+Dolman+Gipe"
+    },
+    "checkedAt": "2026-04-21T15:29:45.274105+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Brooks+Law+Group",
+      "website": "https://www.brookslawgroup.com",
+      "googleAds": "https://www.brookslawgroup.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Brooks+Law+Group",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Brooks+Law+Group"
+    },
+    "checkedAt": "2026-04-21T15:29:55.149956+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Lyfe+Law",
+      "website": "https://www.lyfelaw.com",
+      "googleAds": "https://www.lyfelaw.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Lyfe+Law",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Lyfe+Law"
+    },
+    "checkedAt": "2026-04-21T15:29:58.579560+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:30:02.701841+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Pajcic+%26+Pajcic",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Pajcic+%26+Pajcic",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Pajcic+%26+Pajcic",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Pajcic+%26+Pajcic"
+    },
+    "checkedAt": "2026-04-21T15:30:05.646448+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Harrell+%26+Harrell",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Harrell+%26+Harrell",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Harrell+%26+Harrell",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Harrell+%26+Harrell"
+    },
+    "checkedAt": "2026-04-21T15:30:11.389484+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General",
+    "googleAds": true,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Haggard+Law+Firm",
+      "website": "https://www.haggardlawfirm.com",
+      "googleAds": "https://www.haggardlawfirm.com",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Haggard+Law+Firm",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Haggard+Law+Firm"
+    },
+    "checkedAt": "2026-04-21T15:30:17.291877+00:00"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General",
+    "googleAds": false,
+    "youtube": true,
+    "meta": false,
+    "tiktok": false,
+    "evidenceUrls": {
+      "youtube": "https://www.youtube.com/results?search_query=Harrell+%26+Harrell",
+      "googleAds": "https://adstransparency.google.com/?region=US&q=Harrell+%26+Harrell",
+      "meta": "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=US&search_type=keyword_unordered&q=Harrell+%26+Harrell",
+      "tiktok": "https://library.tiktok.com/ads?region=US&q=Harrell+%26+Harrell"
+    },
+    "checkedAt": "2026-04-21T15:30:20.226931+00:00"
+  }
+]

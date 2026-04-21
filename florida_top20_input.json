@@ -1,0 +1,1262 @@
+[
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Gerson & Schwartz",
+    "parent": "Gerson & Schwartz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Aronfeld Trial Lawyers",
+    "parent": "Aronfeld Trial Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Schlesinger Law Offices",
+    "parent": "Schlesinger Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Miami-Fort Lauderdale",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Abrahamson & Uiterwyk",
+    "parent": "Abrahamson & Uiterwyk",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Catania & Catania",
+    "parent": "Catania & Catania PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Kemp Ruge & Green",
+    "parent": "Kemp Ruge & Green Law Group",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Heintz & Becker",
+    "parent": "Heintz & Becker",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tampa-St. Petersburg-Sarasota",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Michael T Gibson PA",
+    "parent": "Michael T Gibson PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Orlando-Daytona Beach-Melbourne",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Aronfeld Trial Lawyers",
+    "parent": "Aronfeld Trial Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Schlesinger Law Offices",
+    "parent": "Schlesinger Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "Gerson & Schwartz",
+    "parent": "Gerson & Schwartz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "West Palm Beach-Fort Pierce",
+    "advertiser": "La Liga Defensora",
+    "parent": "The United Firm-La Liga Defensora APC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Edwards & Ragatz",
+    "parent": "Edwards & Ragatz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Jacksonville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Kemp Ruge & Green",
+    "parent": "Kemp Ruge & Green Law Group",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Heintz & Becker",
+    "parent": "Heintz & Becker",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Los Defensores",
+    "parent": "Los Defensores",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Gainesville",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Morgan & Morgan",
+    "parent": "Morgan & Morgan PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "TopDog Law",
+    "parent": "Helm Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Fasig Brooks",
+    "parent": "Fasig Brooks Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Ask Gary",
+    "parent": "GDH Legal Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Depo-Provera-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Depo-Provera"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Rideshare Sexual Assault-Action Matters",
+    "parent": "Action Matters",
+    "practiceArea": "Rideshare Assault"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Mike Slocumb Law Firm",
+    "parent": "Mike Slocumb Law Firm",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Steinger Iscoe & Greene",
+    "parent": "Steinger Iscoe & Greene PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Consumer Law Group",
+    "parent": "Consumer Law Group LLC",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Anidjar & Levine",
+    "parent": "Anidjar & Levine PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Goldstein Buckley Cechman Rice & Purtz",
+    "parent": "Goldstein Buckley Cechman Rice & Purtz PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Grossman Law Offices",
+    "parent": "Grossman Law Offices PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Law Tigers",
+    "parent": "American Association Of Motorcycle Injury Lawyers",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Searcy Denney Scarola Barnhart & Shipley",
+    "parent": "Searcy Denney Scarola Barnhart & Shipley PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Sibley Dolman Gipe",
+    "parent": "Sibley Dolman Gipe Accident Injury Lawyers PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Brooks Law Group",
+    "parent": "Brooks Law Group PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Lyfe Law",
+    "parent": "Lyfe Law PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Pajcic & Pajcic",
+    "parent": "Pajcic & Pajcic PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Panama City",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Fort Myers-Naples",
+    "advertiser": "Haggard Law Firm",
+    "parent": "Haggard Law Firm PA",
+    "practiceArea": "PI / General"
+  },
+  {
+    "state": "florida",
+    "dma": "Tallahassee-Thomasville",
+    "advertiser": "Harrell & Harrell",
+    "parent": "Harrell & Harrell PA",
+    "practiceArea": "PI / General"
+  }
+]
