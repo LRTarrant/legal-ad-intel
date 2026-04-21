@@ -1,6 +1,7 @@
 export interface CompetitiveAdvertiser {
   advertiser: string;
   parent: string;
+  /** Reclassified at render time by classifyAdvertiser() from practice-area-mapping.ts */
   practiceArea: string;
   instances: number;
   outlets: number;
