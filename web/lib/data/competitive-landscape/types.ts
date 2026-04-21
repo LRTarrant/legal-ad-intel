@@ -7,6 +7,10 @@ export interface CompetitiveAdvertiser {
   tvOutlets: number;
   radioOutlets: number;
   nationalMarkets: number;
+  googleAds?: boolean;
+  youtube?: boolean;
+  meta?: boolean;
+  tiktok?: boolean;
 }
 
 export interface CompetitiveLandscapeData {
