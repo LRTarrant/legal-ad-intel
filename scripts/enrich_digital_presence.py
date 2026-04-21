@@ -274,7 +274,9 @@ def enrich_firm(client: httpx.Client, firm: dict) -> dict:
     """
     names = _search_names(firm)
     now = datetime.now(timezone.utc).isoformat()
-    result = {
+    # Preserve all input fields (state, dma, practiceArea, etc.) via pass-through
+    result = {k: v for k, v in firm.items()}
+    result.update({
         "advertiser": firm["advertiser"],
         "parent": firm.get("parent", ""),
         "googleAds": False,
@@ -283,7 +285,7 @@ def enrich_firm(client: httpx.Client, firm: dict) -> dict:
         "tiktok": False,
         "evidenceUrls": {},
         "checkedAt": now,
-    }
+    })
 
     # --- YouTube: search-based detection ---
     for name in names:
@@ -362,7 +364,8 @@ def run_pipeline(input_path: Path, output_path: Path) -> list[dict]:
                 results.append(enriched)
             except Exception as exc:
                 log.error("FAILED to enrich %s: %s", advertiser, exc)
-                results.append({
+                error_result = {k: v for k, v in firm.items()}
+                error_result.update({
                     "advertiser": advertiser,
                     "parent": firm.get("parent", ""),
                     "googleAds": False,
@@ -373,6 +376,7 @@ def run_pipeline(input_path: Path, output_path: Path) -> list[dict]:
                     "checkedAt": datetime.now(timezone.utc).isoformat(),
                     "error": str(exc),
                 })
+                results.append(error_result)
 
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)

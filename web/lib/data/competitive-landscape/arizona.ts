@@ -166,7 +166,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 20,
         "tvOutlets": 3,
         "radioOutlets": 12,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Phillips Law Group",
@@ -176,7 +180,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 12,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Cook Law Office",
@@ -186,7 +194,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sargon Law Group",
@@ -196,7 +208,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Oswalt Law Group",
@@ -206,7 +222,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "ALG Accident Law Group",
@@ -216,7 +236,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 7,
         "radioOutlets": 3,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Cordell & Cordell",
@@ -226,7 +250,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 59
+        "nationalMarkets": 59,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Law Tigers",
@@ -236,7 +264,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 3,
         "radioOutlets": 3,
-        "nationalMarkets": 28
+        "nationalMarkets": 28,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Joel W Black",
@@ -246,7 +278,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -256,7 +292,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Cruz & Associates Attorneys",
@@ -798,7 +838,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 30,
         "tvOutlets": 8,
         "radioOutlets": 14,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -808,7 +852,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Rafi Law Group",
@@ -818,7 +866,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 3,
         "radioOutlets": 1,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Husband & Wife Law Team",
@@ -828,7 +880,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 11,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Zanes Law",
@@ -838,7 +894,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Grabb & Durando",
@@ -848,7 +908,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -858,7 +922,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 9,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Asbestos Cancer-Sokolove",
@@ -868,7 +936,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 87
+        "nationalMarkets": 87,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Thrush Law Group",
@@ -878,7 +950,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Goldberg & Osborne",
@@ -888,7 +964,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 1,
         "radioOutlets": 6,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Law Tigers",
@@ -898,7 +978,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 28
+        "nationalMarkets": 28,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Karnas Law Firm",
@@ -908,7 +992,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Consumer Law Group",
@@ -918,7 +1006,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 1,
-        "nationalMarkets": 34
+        "nationalMarkets": 34,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Henry",
@@ -928,7 +1020,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 29
+        "nationalMarkets": 29,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "RP Legal Group",
@@ -938,7 +1034,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 9
+        "nationalMarkets": 9,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Spinal Cord Injuries-Davis",
@@ -948,7 +1048,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "CJB Office Of Law",
@@ -958,7 +1062,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -968,7 +1076,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mendoza Law Firm",
@@ -978,7 +1090,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 17
+        "nationalMarkets": 17,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Monge & Associates",
@@ -988,7 +1104,11 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "AZ Injury Attorneys",
@@ -1282,7 +1402,7 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
       },
       {
         "advertiser": "Jorge Rivera Immigration Group",
-        "parent": "Abogados de Inmigraci\u00f3n Jorge Rivera",
+        "parent": "Abogados de Inmigración Jorge Rivera",
         "practiceArea": "PI / General",
         "instances": 2,
         "outlets": 1,
