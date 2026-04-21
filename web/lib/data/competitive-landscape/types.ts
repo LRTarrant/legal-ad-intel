@@ -20,5 +20,6 @@ export interface CompetitiveLandscapeData {
   practiceAreas: string[];
   data: Record<string, CompetitiveAdvertiser[]>;
   dataMonth: string;
+  digitalPresenceCheckedAt?: string;
   totalAdvertisers: Record<string, number>;
 }

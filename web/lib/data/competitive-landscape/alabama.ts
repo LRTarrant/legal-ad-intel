@@ -1350,6 +1350,7 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
     ]
   },
   "dataMonth": "March 2025",
+  "digitalPresenceCheckedAt": "April 21, 2026",
   "totalAdvertisers": {
     "Birmingham": 64,
     "Huntsville": 41,

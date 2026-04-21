@@ -164,8 +164,11 @@ export function CompetitiveLandscapeTable({
           Competitive Landscape
         </h2>
       </div>
-      <p className="mb-5 text-sm text-slate-gray">
-        Advertiser activity across {data.state} markets &mdash; {data.dataMonth}
+      <p className="mb-1 text-sm text-slate-gray">
+        Digital presence checked: {data.digitalPresenceCheckedAt ?? data.dataMonth}
+      </p>
+      <p className="mb-5 text-[10px] text-slate-gray/70">
+        Advertiser list sourced from licensed media monitoring data.
       </p>
 
       {/* Filters */}

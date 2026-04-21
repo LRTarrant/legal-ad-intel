@@ -1303,6 +1303,7 @@ export const arizonaCompetitiveData: CompetitiveLandscapeData =
     ]
   },
   "dataMonth": "March 2025",
+  "digitalPresenceCheckedAt": "April 21, 2026",
   "totalAdvertisers": {
     "Phoenix": 73,
     "Tucson": 51

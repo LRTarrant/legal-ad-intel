@@ -5149,6 +5149,7 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
     ]
   },
   "dataMonth": "March 2025",
+  "digitalPresenceCheckedAt": "April 21, 2026",
   "totalAdvertisers": {
     "Bakersfield": 28,
     "Fresno": 62,
