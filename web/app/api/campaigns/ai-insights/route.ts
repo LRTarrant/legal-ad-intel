@@ -7,6 +7,7 @@ interface AiInsightsRequest {
   monthly_budget?: number;
   firm_name?: string;
   firm_url?: string;
+  language?: "en" | "es";
   plan_data: {
     tort_overview: {
       lifecycle_phase: string;
@@ -75,7 +76,7 @@ function buildUserPrompt(
   req: AiInsightsRequest,
   matchedTort: { name?: string; disease_or_injury?: string; product_or_exposure?: string; status?: string; notes?: string } | null,
 ): string {
-  const { tort_name, states, monthly_budget, firm_name, firm_url, plan_data } = req;
+  const { tort_name, states, monthly_budget, firm_name, firm_url, language, plan_data } = req;
   const { tort_overview, geo_recommendations, channel_mix, budget_projection } = plan_data;
 
   const topStates = geo_recommendations
@@ -119,7 +120,7 @@ Primary channels: ${channel_mix.primary.map((c) => `${c.channel} (${c.allocation
 Secondary channels: ${channel_mix.secondary.map((c) => `${c.channel} (${c.allocation_pct}%)`).join(", ")}
 
 ${budget_projection ? `BUDGET PROJECTION: $${budget_projection.monthly_budget.toLocaleString()}/mo → ~${budget_projection.expected_leads_per_month} leads → ~${budget_projection.expected_retainers_per_month} retainers at $${budget_projection.avg_cpl} avg CPL` : ""}
-
+${language === "es" ? `\nLANGUAGE: Spanish (Español)\nIMPORTANT: Generate ALL ad copy (headlines, body_options, ctas, descriptions), strategic_brief, market_context, competitive_insights, and historical_playbook in natural, culturally appropriate Spanish — not a direct translation from English. Compliance notes, risk factors, and opportunities should also be in Spanish. The JSON keys must remain in English.` : ""}
 Respond with a JSON object with these exact keys:
 {
   "strategic_brief": "2-3 paragraphs of strategic narrative covering timing, positioning, and overall recommendation",

@@ -8,6 +8,7 @@ interface RadioScriptRequest {
   firm_url?: string;
   states?: string[];
   format?: "radio" | "podcast";
+  language?: "en" | "es";
 }
 
 interface VoiceRecommendation {
@@ -184,13 +185,17 @@ TORT MEDICAL/LEGAL CONTEXT:
 - CRITICAL: Only reference the injury/disease listed above. Do NOT mention other side effects or medical conditions not listed here.`;
   }
 
+  const languageInstruction = req.language === "es"
+    ? `\n\nLANGUAGE: Spanish (Español)\nIMPORTANT: Write the entire script in natural, culturally appropriate Spanish — not a direct translation from English. The script should sound native to a Spanish-speaking audience. Use the firm name as-is (do not translate it).`
+    : "";
+
   return `Write a ${durationLabel} ${formatLabel} script ${firmRef} regarding ${req.tort_name} litigation.
 
 ${statesRef}
 
 ${formatStructure}
 ${audienceSection}
-${tortContextSection}
+${tortContextSection}${languageInstruction}
 
 Remember: output ONLY the script text, nothing else.`;
 }

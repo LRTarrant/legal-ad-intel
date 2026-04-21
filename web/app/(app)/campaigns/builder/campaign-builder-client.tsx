@@ -244,6 +244,7 @@ export function CampaignBuilderClient() {
   const [stateSearch, setStateSearch] = useState("");
   const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([]);
   const [tortPageData, setTortPageData] = useState<{ url: string; title: string; headings: string[]; snippet: string }[]>([]);
+  const [language, setLanguage] = useState<"en" | "es">("en");
 
   // Recommended markets
   const [recommendedMarkets, setRecommendedMarkets] = useState<RecommendedMarket[]>([]);
@@ -396,6 +397,7 @@ export function CampaignBuilderClient() {
         states: selectedStates,
         monthly_budget: monthlyBudget ? Number(monthlyBudget) : undefined,
         firm_name: firmName.trim() || undefined,
+        language: language !== "en" ? language : undefined,
         plan_data: {
           tort_overview: plan.tort_overview,
           geo_recommendations: plan.geo_recommendations,
@@ -611,6 +613,7 @@ export function CampaignBuilderClient() {
           tort_name: selectedTort,
           firm_name: firmName.trim() || undefined,
           states: selectedStates.length > 0 ? selectedStates : undefined,
+          language: language !== "en" ? language : undefined,
         }),
       });
       if (!res.ok) throw new Error("Script generation failed");
@@ -755,6 +758,7 @@ export function CampaignBuilderClient() {
           tort_name: selectedTort,
           states: selectedStates,
           firm_name: firmName.trim() || undefined,
+          language: language !== "en" ? language : undefined,
           messaging: aiInsights
             ? {
                 strategic_brief: aiInsights.strategic_brief,
@@ -1085,6 +1089,29 @@ export function CampaignBuilderClient() {
               Found {tortPageData.length} existing {selectedTort} page{tortPageData.length !== 1 ? "s" : ""} on firm website
             </div>
           )}
+
+          {/* Language toggle */}
+          <div className="mt-3 flex items-center gap-3">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Creative Language
+            </label>
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+              {([{ value: "en", label: "English" }, { value: "es", label: "Español" }] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setLanguage(opt.value)}
+                  className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                    language === opt.value
+                      ? "bg-intelligence-teal text-white"
+                      : "text-slate-gray hover:text-midnight-navy"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1277,6 +1304,7 @@ export function CampaignBuilderClient() {
                 tortName={selectedTort}
                 firmName={firmName.trim()}
                 states={selectedStates}
+                language={language}
               />
             </div>
           )}

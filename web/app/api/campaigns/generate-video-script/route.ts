@@ -7,6 +7,7 @@ interface VideoScriptRequest {
   platform: "youtube_ad" | "youtube_short" | "tiktok" | "meta_reel" | "meta_feed";
   firm_name?: string;
   states?: string[];
+  language?: "en" | "es";
 }
 
 interface VideoScene {
@@ -134,13 +135,17 @@ TORT MEDICAL/LEGAL CONTEXT:
 - CRITICAL: Only reference the injury/disease listed above. Do NOT mention other side effects or medical conditions not listed here.`;
   }
 
+  const languageInstruction = req.language === "es"
+    ? `\n\nLANGUAGE: Spanish (Español)\nIMPORTANT: Generate all scene headlines, subheadlines, ctaHeadline, ctaSubline, and disclaimer text in natural, culturally appropriate Spanish — not a direct translation from English. Image prompts should remain in English (they are used for image generation). The JSON keys must remain in English. Keep the firm name as-is (do not translate it).`
+    : "";
+
   return `Generate a scene-by-scene video script breakdown ${firmRef} regarding ${req.tort_name} litigation.
 
 Duration: ${req.duration} (${getSceneCount(req.duration)} scenes)
 Platform: ${req.platform.replace(/_/g, " ")}
 ${statesRef}
 ${audienceSection}
-${tortContextSection}
+${tortContextSection}${languageInstruction}
 
 Remember: output ONLY the JSON, nothing else.`;
 }

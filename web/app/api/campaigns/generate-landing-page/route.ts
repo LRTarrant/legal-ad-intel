@@ -11,6 +11,7 @@ interface LandingPageRequest {
   states: string[];
   firm_name?: string;
   firm_url?: string;
+  language?: "en" | "es";
   messaging?: {
     strategic_brief?: string;
     headlines?: string[];
@@ -214,9 +215,13 @@ QUALIFICATION FORM PLACEHOLDER:
 - Only generate marketing content: hero, messaging, trust signals, and footer.`
     : "";
 
+  const languageInstruction = req.language === "es"
+    ? `\n\nLANGUAGE: Spanish (Español)\nIMPORTANT: Generate ALL visible text on the landing page in natural, culturally appropriate Spanish — not a direct translation from English. This includes: headlines, sub-headlines, body text, CTA button text, trust signals, form labels, footer text, disclaimers, and screening questions. Keep the firm name as-is (do not translate it). Set the HTML lang attribute to "es". If screening questions are provided in English, translate them naturally into Spanish as part of the page content.`
+    : "";
+
   return `Create a complete, self-contained HTML landing page for a mass tort legal advertising campaign with these details:
 
-${buildSharedPromptSections(req)}${audienceSection}${qualificationPlaceholder}
+${buildSharedPromptSections(req)}${audienceSection}${qualificationPlaceholder}${languageInstruction}
 
 The HTML landing page must include:
 1. A compelling hero section with a tort-specific headline and sub-headline
@@ -238,9 +243,13 @@ function buildMultiPageUserPrompt(
 ): string {
   const audienceSection = buildAudienceSection(req, audienceProfile);
 
+  const languageInstruction = req.language === "es"
+    ? `\n\nLANGUAGE: Spanish (Español)\nIMPORTANT: Generate ALL visible text on ALL pages in natural, culturally appropriate Spanish — not a direct translation from English. This includes: headlines, sub-headlines, body text, CTA button text, trust signals, form labels, footer text, disclaimers, confirmation messages, and next steps. Keep the firm name as-is (do not translate it). Set the HTML lang attribute to "es" on all pages. If screening questions are provided in English, translate them naturally into Spanish as part of the page content.`
+    : "";
+
   return `Create a 3-page landing page funnel for a mass tort legal advertising campaign with these details:
 
-${buildSharedPromptSections(req)}${audienceSection}
+${buildSharedPromptSections(req)}${audienceSection}${languageInstruction}
 
 Requirements for all pages:
 - Mobile-responsive design
