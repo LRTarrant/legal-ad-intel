@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "../home-nav";
+import { PricingViewTracker } from "./pricing-view-tracker";
 
 export const metadata = {
   title: "Pricing — Legal Marketing Intelligence",
@@ -11,6 +12,7 @@ export const metadata = {
 export default function PricingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-midnight-navy">
+      <PricingViewTracker />
       {/* ── Sticky Navigation ───────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-midnight-navy">
         <div className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

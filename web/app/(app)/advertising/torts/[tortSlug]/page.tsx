@@ -17,6 +17,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
+import { TortViewTracker } from "./tort-view-tracker";
 
 
 export const dynamic = "force-dynamic";
@@ -144,6 +145,7 @@ export default async function TortAdvertisingPage({
 
   return (
     <div className="space-y-8">
+      <TortViewTracker slug={tortSlug} name={tort.label} />
       {/* Header */}
       <div>
         <Link
