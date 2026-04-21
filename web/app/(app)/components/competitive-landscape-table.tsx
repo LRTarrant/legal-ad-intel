@@ -6,6 +6,10 @@ import type {
   CompetitiveLandscapeData,
   CompetitiveAdvertiser,
 } from "@/lib/data/competitive-landscape/types";
+import {
+  getAllPracticeAreas,
+  classifyAdvertiser,
+} from "@/lib/data/competitive-landscape/practice-area-mapping";
 
 interface CompetitiveLandscapeTableProps {
   data: CompetitiveLandscapeData;
@@ -61,12 +65,13 @@ function aggregateAcrossMarkets(
   for (const market of data.markets) {
     const entries = data.data[market] ?? [];
     for (const entry of entries) {
+      const classified = classifyAdvertiser(entry.advertiser);
       if (
         practiceAreaFilter !== "All Practice Areas" &&
-        entry.practiceArea !== practiceAreaFilter
+        classified !== practiceAreaFilter
       )
         continue;
-      const key = `${entry.advertiser}|${entry.practiceArea}`;
+      const key = `${entry.advertiser}|${classified}`;
       const existing = map.get(key);
       if (existing) {
         existing.instances += entry.instances;
@@ -78,7 +83,7 @@ function aggregateAcrossMarkets(
         map.set(key, {
           advertiser: entry.advertiser,
           parent: entry.parent,
-          practiceArea: entry.practiceArea,
+          practiceArea: classified,
           instances: entry.instances,
           nationalMarkets: entry.nationalMarkets,
           googleAds: entry.googleAds,
@@ -96,21 +101,23 @@ function filterByMarket(
   entries: CompetitiveAdvertiser[],
   practiceAreaFilter: string
 ): AggregatedRow[] {
-  let filtered = entries;
-  if (practiceAreaFilter !== "All Practice Areas") {
-    filtered = filtered.filter((e) => e.practiceArea === practiceAreaFilter);
-  }
-  return filtered.map((e) => ({
-    advertiser: e.advertiser,
-    parent: e.parent,
-    practiceArea: e.practiceArea,
-    instances: e.instances,
-    nationalMarkets: e.nationalMarkets,
-    googleAds: e.googleAds,
-    youtube: e.youtube,
-    meta: e.meta,
-    tiktok: e.tiktok,
-  }));
+  return entries
+    .map((e) => ({
+      advertiser: e.advertiser,
+      parent: e.parent,
+      practiceArea: classifyAdvertiser(e.advertiser),
+      instances: e.instances,
+      nationalMarkets: e.nationalMarkets,
+      googleAds: e.googleAds,
+      youtube: e.youtube,
+      meta: e.meta,
+      tiktok: e.tiktok,
+    }))
+    .filter(
+      (e) =>
+        practiceAreaFilter === "All Practice Areas" ||
+        e.practiceArea === practiceAreaFilter
+    );
 }
 
 const MAX_ROWS = 20;
@@ -134,13 +141,17 @@ export function CompetitiveLandscapeTable({
     return result.slice(0, MAX_ROWS);
   }, [data, marketFilter, practiceAreaFilter]);
 
+  const allPracticeAreas = useMemo(() => getAllPracticeAreas(), []);
+
   const totalCount = useMemo(() => {
     if (marketFilter === "All Markets") {
       return aggregateAcrossMarkets(data, practiceAreaFilter).length;
     }
     const entries = data.data[marketFilter] ?? [];
     if (practiceAreaFilter !== "All Practice Areas") {
-      return entries.filter((e) => e.practiceArea === practiceAreaFilter).length;
+      return entries.filter(
+        (e) => classifyAdvertiser(e.advertiser) === practiceAreaFilter
+      ).length;
     }
     return entries.length;
   }, [data, marketFilter, practiceAreaFilter]);
@@ -182,7 +193,7 @@ export function CompetitiveLandscapeTable({
             className="appearance-none rounded-md border border-cloud bg-cloud/40 px-3 py-1.5 pr-8 text-sm text-midnight-navy focus:outline-none focus:ring-1 focus:ring-intelligence-teal cursor-pointer"
           >
             <option>All Practice Areas</option>
-            {data.practiceAreas.map((pa) => (
+            {allPracticeAreas.map((pa) => (
               <option key={pa} value={pa}>
                 {pa}
               </option>
@@ -325,7 +336,11 @@ export function CompetitiveLandscapeTable({
         <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
           <BarChart3 className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
           <p className="text-sm font-medium text-midnight-navy/60">
-            No advertisers match the selected filters
+            {practiceAreaFilter !== "All Practice Areas"
+              ? `No advertisers found for ${practiceAreaFilter} in ${
+                  marketFilter === "All Markets" ? data.state : marketFilter
+                }`
+              : "No advertisers match the selected filters"}
           </p>
         </div>
       )}
