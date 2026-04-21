@@ -36,6 +36,30 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
+  metadataBase: new URL("https://www.legalmarketingintelligence.com"),
+  openGraph: {
+    title: "Legal Marketing Intelligence",
+    description:
+      "The intelligence platform for legal advertising. Know where plaintiff firms are competing.",
+    url: "https://www.legalmarketingintelligence.com",
+    siteName: "Legal Marketing Intelligence",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Legal Marketing Intelligence — the intelligence platform for legal advertising",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Legal Marketing Intelligence",
+    description:
+      "The intelligence platform for legal advertising. Know where plaintiff firms are competing.",
+    images: ["/og-image.png"],
+  },
 };
 
 /** Fonts that are already loaded via next/font and don't need a Google Fonts link */
