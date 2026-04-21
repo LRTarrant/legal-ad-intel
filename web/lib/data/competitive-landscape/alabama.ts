@@ -171,7 +171,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "LawyerUp LLC",
@@ -181,7 +185,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Action Matters",
@@ -191,7 +199,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 78
+        "nationalMarkets": 78,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Ingram Law",
@@ -201,7 +213,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "John Foy & Associates",
@@ -211,7 +227,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 12
+        "nationalMarkets": 12,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -221,7 +241,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Bond & Botes",
@@ -231,7 +255,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Birmingham Men's Law Firm",
@@ -241,7 +269,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Pitts & Zanaty",
@@ -251,7 +283,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Greene & Phillips",
@@ -261,7 +297,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Henry",
@@ -713,7 +753,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 15,
         "tvOutlets": 5,
         "radioOutlets": 9,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Alexander Shunnarah Trial Attorneys",
@@ -723,7 +767,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Tyler Mann Injury Law",
@@ -733,7 +781,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 5,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Wettermark Keith",
@@ -743,7 +795,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Lackey Law Firm",
@@ -753,7 +809,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 27,
         "tvOutlets": 5,
         "radioOutlets": 11,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Lackey Law Firm Alabama",
@@ -763,7 +823,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 15,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Blue Sky Legal",
@@ -773,7 +837,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 29
+        "nationalMarkets": 29,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -783,7 +851,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Bond & Botes",
@@ -793,7 +865,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rocket City Law Group",
@@ -803,7 +879,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Pitts & Zanaty",
@@ -813,7 +893,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Action Matters",
@@ -823,7 +907,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 78
+        "nationalMarkets": 78,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Wolfe Jones Wolfe Hancock Daniel & South",
@@ -833,7 +921,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Hernia Mesh-Saiontz",
@@ -843,7 +935,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Conchin Cole Jordan & Sherrod",
@@ -853,7 +949,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "John Foy & Associates",
@@ -863,7 +963,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 12
+        "nationalMarkets": 12,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Harlan D Mitchell Attorney At Law",
@@ -873,7 +977,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Asbestos Cancer-Keahey",
@@ -883,7 +991,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Chad T Wilson Law Firm",
@@ -893,7 +1005,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 20
+        "nationalMarkets": 20,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Talcum Powder-Driscoll",
@@ -903,7 +1019,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 67
+        "nationalMarkets": 67,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Legal Tax Defense",
@@ -1125,7 +1245,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 12,
         "tvOutlets": 0,
         "radioOutlets": 12,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -1135,7 +1259,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Watson Firm PLLC",
@@ -1145,7 +1273,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -1155,7 +1287,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 0,
         "radioOutlets": 9,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Action Matters",
@@ -1165,7 +1301,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 78
+        "nationalMarkets": 78,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Damrich & Allen",
@@ -1175,7 +1315,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Gardberg & Kemmerly",
@@ -1185,7 +1329,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Greene & Phillips",
@@ -1195,7 +1343,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Taylor Martino Rowan",
@@ -1205,7 +1357,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Diabetes & Weight Loss Drugs-Tort Defenders",
@@ -1215,7 +1371,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 48
+        "nationalMarkets": 48,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Hedge Copeland",
@@ -1225,7 +1385,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Camp Lejeune Victims-Sentinel",
@@ -1235,7 +1399,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Tobias & Comer Law",
@@ -1245,7 +1413,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Chad T Wilson Law Firm",
@@ -1255,7 +1427,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 20
+        "nationalMarkets": 20,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Legal Tax Defense",
@@ -1265,7 +1441,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 75
+        "nationalMarkets": 75,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Birth Injuries-Morgan",
@@ -1275,7 +1455,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 33
+        "nationalMarkets": 33,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dean Waite & Associates",
@@ -1285,7 +1469,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Asbestos Cancer-Morgan",
@@ -1295,7 +1483,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 36
+        "nationalMarkets": 36,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Airbag Failure-Morgan",
@@ -1305,7 +1497,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 30
+        "nationalMarkets": 30,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mullins Lobbyist Firm",
@@ -1315,7 +1511,11 @@ export const alabamaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Lowe Law Group",

@@ -38,7 +38,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -48,7 +52,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Morgan & Morgan",
@@ -58,7 +66,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -68,7 +80,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -78,7 +94,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -88,7 +108,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Action Matters",
@@ -98,7 +122,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 78
+        "nationalMarkets": 78,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rodriguez & Associates",
@@ -108,7 +136,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Vincent Quigg & Associates",
@@ -118,7 +150,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dominguez Firm",
@@ -128,7 +164,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Sexual Abuse-Justice Confidential",
@@ -138,7 +178,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Chain-Cohn-Clark",
@@ -148,7 +192,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Alex Galvez",
@@ -158,7 +206,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Ellis Law Corporation",
@@ -168,17 +220,25 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Chavez Law Group",
-        "parent": "Ch\u00e1vez Law Group",
+        "parent": "Chávez Law Group",
         "practiceArea": "PI / General",
         "instances": 105,
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sylvia Lopez",
@@ -188,7 +248,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Consumer Law Group",
@@ -198,7 +262,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 34
+        "nationalMarkets": 34,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Esmeralda Alfaro",
@@ -208,7 +276,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Accident Guys",
@@ -218,7 +290,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Nancy D Mendez Law",
@@ -228,7 +304,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "California Wildfire-Morgan",
@@ -320,7 +400,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Brothers",
@@ -330,7 +414,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 5,
         "radioOutlets": 1,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -340,7 +428,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 1,
         "radioOutlets": 3,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Jacoby & Meyers",
@@ -350,7 +442,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 8,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -360,7 +456,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 2,
         "radioOutlets": 4,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "B&D Law Group",
@@ -370,7 +470,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 2,
         "radioOutlets": 6,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sweet James",
@@ -380,7 +484,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Curtis Legal Group",
@@ -390,7 +498,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -400,7 +512,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Berg Injury Lawyers",
@@ -410,7 +526,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dominguez Firm",
@@ -420,7 +540,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 2,
         "radioOutlets": 2,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -430,7 +554,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 2,
         "radioOutlets": 4,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Alexandra Lozano Immigration Law",
@@ -440,7 +568,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Grossman Law Offices",
@@ -450,7 +582,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 2,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Dunnion Law",
@@ -460,7 +596,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Sergio J Siderman",
@@ -470,7 +610,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Torem & Associates",
@@ -480,7 +624,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -490,7 +638,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "RP Legal Group",
@@ -500,17 +652,25 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 9
+        "nationalMarkets": 9,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
-        "advertiser": "Hern\u00e1ndez Law Offices",
-        "parent": "Hern\u00e1ndez Law Offices",
+        "advertiser": "Hernández Law Offices",
+        "parent": "Hernández Law Offices",
         "practiceArea": "PI / General",
         "instances": 167,
         "outlets": 10,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Perez Williams Medina & Rodriguez",
@@ -533,8 +693,8 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "nationalMarkets": 34
       },
       {
-        "advertiser": "Pe\u00f1a & Bromberg",
-        "parent": "Pe\u00f1a & Bromberg PLC",
+        "advertiser": "Peña & Bromberg",
+        "parent": "Peña & Bromberg PLC",
         "practiceArea": "PI / General",
         "instances": 129,
         "outlets": 4,
@@ -1082,7 +1242,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 4
+        "nationalMarkets": 4,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -1092,7 +1256,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 1,
         "radioOutlets": 6,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Eaton Fire-Edelson",
@@ -1102,7 +1270,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 13,
         "tvOutlets": 4,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Angeles Wildfires-Zimmerman",
@@ -1112,7 +1284,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dr Barry Brock Sexual Abuse-McGrath",
@@ -1122,7 +1298,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 18,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dominguez Firm",
@@ -1132,7 +1312,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 6,
         "radioOutlets": 2,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -1142,7 +1326,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 1,
         "radioOutlets": 4,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Sergio J Siderman",
@@ -1152,7 +1340,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 1,
         "radioOutlets": 4,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mesriani Law Group",
@@ -1162,7 +1354,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 17,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Dr Bill LaTour",
@@ -1172,7 +1368,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Univ Of CA OB/GYN Sexual Abuse-McGrath",
@@ -1825,8 +2025,8 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "nationalMarkets": 78
       },
       {
-        "advertiser": "Law Offices Of Claudia Rodr\u00edguez",
-        "parent": "Law Offices Of Claudia Rodr\u00edguez",
+        "advertiser": "Law Offices Of Claudia Rodríguez",
+        "parent": "Law Offices Of Claudia Rodríguez",
         "practiceArea": "PI / General",
         "instances": 62,
         "outlets": 1,
@@ -2364,7 +2564,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Brothers",
@@ -2374,7 +2578,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 3,
         "radioOutlets": 1,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -2384,7 +2592,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -2394,7 +2606,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 1,
         "radioOutlets": 3,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "B&D Law Group",
@@ -2404,7 +2620,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -2414,7 +2634,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 85
+        "nationalMarkets": 85,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Focil Law Firm",
@@ -2424,7 +2648,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -2434,7 +2662,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sexual Abuse-Justice Confidential",
@@ -2444,7 +2676,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "RP Legal Group",
@@ -2454,7 +2690,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 9
+        "nationalMarkets": 9,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Jose Luis Sandoval",
@@ -2464,17 +2704,25 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Chavez Law Group",
-        "parent": "Ch\u00e1vez Law Group",
+        "parent": "Chávez Law Group",
         "practiceArea": "PI / General",
         "instances": 101,
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Alexandra Lozano Immigration Law",
@@ -2484,7 +2732,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rideshare Sexual Assault-Action Matters",
@@ -2494,7 +2746,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 78
+        "nationalMarkets": 78,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Nursing Home Abuse-Pintas",
@@ -2504,7 +2760,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 89
+        "nationalMarkets": 89,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Nancy D Mendez Law",
@@ -2514,17 +2774,25 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
-        "advertiser": "Jos\u00e9 A Vel\u00e1squez Lawyer",
-        "parent": "Jos\u00e9 A Vel\u00e1squez Lawyer",
+        "advertiser": "José A Velásquez Lawyer",
+        "parent": "José A Velásquez Lawyer",
         "practiceArea": "PI / General",
         "instances": 70,
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Diana Guzman Legal Offices",
@@ -2534,7 +2802,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Consumer Law Group",
@@ -2544,7 +2816,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 34
+        "nationalMarkets": 34,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Antacid-Driscoll",
@@ -2554,7 +2830,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 68
+        "nationalMarkets": 68,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Law Office Of John Klopfenstein",
@@ -2687,8 +2967,8 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "nationalMarkets": 29
       },
       {
-        "advertiser": "Ayuda M\u00e9dica Legal",
-        "parent": "Ayuda M\u00e9dica Legal",
+        "advertiser": "Ayuda Médica Legal",
+        "parent": "Ayuda Médica Legal",
         "practiceArea": "PI / General",
         "instances": 3,
         "outlets": 1,
@@ -2756,7 +3036,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 14,
         "tvOutlets": 7,
         "radioOutlets": 6,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "BD&J",
@@ -2766,7 +3050,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 12,
         "tvOutlets": 6,
         "radioOutlets": 2,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Curtis Legal Group",
@@ -2776,7 +3064,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 14,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sweet James",
@@ -2786,7 +3078,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -2796,7 +3092,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Berg Injury Lawyers",
@@ -2806,7 +3106,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Scranton Law Firm",
@@ -2816,7 +3120,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -2826,7 +3134,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 2,
         "radioOutlets": 3,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Jacoby & Meyers",
@@ -2836,7 +3148,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Singleton Schreiber",
@@ -2846,7 +3162,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 2,
         "radioOutlets": 3,
-        "nationalMarkets": 4
+        "nationalMarkets": 4,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": true
       },
       {
         "advertiser": "Downtown LA Law Group",
@@ -2856,7 +3176,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Ashton & Price",
@@ -2866,7 +3190,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 3,
         "radioOutlets": 2,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "B&D Law Group",
@@ -2876,7 +3204,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of JG Winter",
@@ -2886,7 +3218,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Silicosis-Brayton",
@@ -2896,7 +3232,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -2906,7 +3246,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 2,
         "radioOutlets": 3,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Moskowitz",
@@ -2916,7 +3260,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sexual Abuse-Justice Confidential",
@@ -2926,7 +3274,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Del Rio & Caraway",
@@ -2936,7 +3288,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -2946,7 +3302,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Torem & Associates",
@@ -3219,8 +3579,8 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "nationalMarkets": 96
       },
       {
-        "advertiser": "Ranca\u00f1o & Ranca\u00f1o",
-        "parent": "Ranca\u00f1o & Ranca\u00f1o APLC",
+        "advertiser": "Rancaño & Rancaño",
+        "parent": "Rancaño & Rancaño APLC",
         "practiceArea": "PI / General",
         "instances": 47,
         "outlets": 3,
@@ -3279,8 +3639,8 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "nationalMarkets": 2
       },
       {
-        "advertiser": "L\u00f3pez Law Firm",
-        "parent": "L\u00f3pez Law Firm PC",
+        "advertiser": "López Law Firm",
+        "parent": "López Law Firm PC",
         "practiceArea": "PI / General",
         "instances": 27,
         "outlets": 1,
@@ -3518,7 +3878,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 23,
         "tvOutlets": 4,
         "radioOutlets": 5,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": true
       },
       {
         "advertiser": "King Aminpour & Associates",
@@ -3528,7 +3892,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Jurewitz Law Group Injury & Accident Lawyers",
@@ -3538,7 +3906,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Brothers",
@@ -3548,7 +3920,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "BD&J",
@@ -3558,7 +3934,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 5,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -3568,7 +3948,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Morgan & Morgan",
@@ -3578,7 +3962,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 1,
         "radioOutlets": 6,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -3588,7 +3976,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Singleton Schreiber",
@@ -3598,7 +3990,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 18,
         "tvOutlets": 3,
         "radioOutlets": 3,
-        "nationalMarkets": 4
+        "nationalMarkets": 4,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": true
       },
       {
         "advertiser": "Dominguez Firm",
@@ -3608,7 +4004,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Injury Help Center",
@@ -3618,7 +4018,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 14,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 32
+        "nationalMarkets": 32,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "B&D Law Group",
@@ -3628,7 +4032,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -3638,7 +4046,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Rudolph Baker & Associates",
@@ -3648,7 +4060,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Sergio J Siderman",
@@ -3658,7 +4074,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Weitz & Luxenberg",
@@ -3668,7 +4088,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Asbestos Cancer-Sokolove",
@@ -3678,7 +4102,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 13,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 87
+        "nationalMarkets": 87,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Jurewitz Law Group",
@@ -3688,7 +4116,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Tigers",
@@ -3698,7 +4130,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 28
+        "nationalMarkets": 28,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Minella Law Group",
@@ -3708,7 +4144,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Cordell & Cordell",
@@ -4080,7 +4520,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "BD&J",
@@ -4090,7 +4534,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Barnes Firm",
@@ -4100,7 +4548,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": true
       },
       {
         "advertiser": "TopDog Law",
@@ -4110,7 +4562,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 0,
         "radioOutlets": 5,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Arash Law",
@@ -4120,7 +4576,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 2,
         "radioOutlets": 3,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sweet James",
@@ -4130,7 +4590,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 4,
         "radioOutlets": 3,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Jacoby & Meyers",
@@ -4140,7 +4604,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 9,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Berg Injury Lawyers",
@@ -4150,7 +4618,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 6,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Habbas & Associates",
@@ -4160,7 +4632,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 8,
         "tvOutlets": 0,
         "radioOutlets": 8,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -4170,7 +4646,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 3,
         "radioOutlets": 3,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Dolan Law Firm",
@@ -4180,7 +4660,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 10,
         "tvOutlets": 0,
         "radioOutlets": 10,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Moskowitz",
@@ -4190,7 +4674,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 6,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Weitz & Luxenberg",
@@ -4200,7 +4688,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of J Chrisp",
@@ -4210,7 +4702,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Venardi Zurada",
@@ -4220,7 +4716,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 7,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Accident Guys",
@@ -4230,7 +4730,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 0,
         "radioOutlets": 4,
-        "nationalMarkets": 5
+        "nationalMarkets": 5,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Walkup Melodia Kelly & Schoenberger",
@@ -4240,7 +4744,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 3,
         "radioOutlets": 0,
-        "nationalMarkets": 4
+        "nationalMarkets": 4,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -4250,7 +4758,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 2,
         "radioOutlets": 3,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Phoong Law",
@@ -4260,7 +4772,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Kenneth Klein",
@@ -4270,7 +4786,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 3,
-        "nationalMarkets": 3
+        "nationalMarkets": 3,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Action Matters",
@@ -4682,7 +5202,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 0,
         "radioOutlets": 2,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Arash Law",
@@ -4692,7 +5216,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 8
+        "nationalMarkets": 8,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -4702,7 +5230,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "B&D Law Group",
@@ -4712,7 +5244,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 6
+        "nationalMarkets": 6,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "TopDog Law",
@@ -4722,7 +5258,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 56
+        "nationalMarkets": 56,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": true
       },
       {
         "advertiser": "Los Defensores",
@@ -4732,7 +5272,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Morgan & Morgan",
@@ -4742,7 +5286,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 96
+        "nationalMarkets": 96,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Bhatnagar Law Office",
@@ -4752,7 +5300,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Sweet James",
@@ -4762,7 +5314,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "CR Wannamaker Law",
@@ -4772,7 +5328,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 4
+        "nationalMarkets": 4,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Resolve Law Firm",
@@ -4782,7 +5342,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Consumer Law Group",
@@ -4792,7 +5356,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 34
+        "nationalMarkets": 34,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Office Of Alex Galvez",
@@ -4802,7 +5370,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Staker Johnson Law Corporation",
@@ -4812,7 +5384,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Lowe Law Group",
@@ -4822,7 +5398,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 1,
-        "nationalMarkets": 52
+        "nationalMarkets": 52,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       }
     ],
     "Santa Barbara, CA": [
@@ -4834,7 +5414,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Brothers",
@@ -4844,7 +5428,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 7
+        "nationalMarkets": 7,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Monica Miranda Robles",
@@ -4854,7 +5442,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Morales Law",
@@ -4864,7 +5456,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Huerta Law Firm",
@@ -4874,7 +5470,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Meirowitz & Wasserberg",
@@ -4884,7 +5484,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 17
+        "nationalMarkets": 17,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Nursing Home Abuse-Pintas",
@@ -4894,7 +5498,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 89
+        "nationalMarkets": 89,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Michael B Clayton & Associates",
@@ -4904,7 +5512,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 4,
         "tvOutlets": 4,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Focil Law Firm",
@@ -4914,7 +5526,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 2
+        "nationalMarkets": 2,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Kirtland & Packard",
@@ -4924,7 +5540,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Asbestos Cancer-Meirowitz",
@@ -4934,7 +5554,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 21
+        "nationalMarkets": 21,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "United Firm-La Liga Defensora",
@@ -4944,7 +5568,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 15
+        "nationalMarkets": 15,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Tigers",
@@ -4954,7 +5582,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 28
+        "nationalMarkets": 28,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Mario Juarez Attorney At Law",
@@ -4964,7 +5596,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Driscoll",
@@ -4974,7 +5610,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 5,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 61
+        "nationalMarkets": 61,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Talcum Powder-Driscoll",
@@ -4984,7 +5624,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 67
+        "nationalMarkets": 67,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Los Defensores",
@@ -4994,7 +5638,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 3,
         "tvOutlets": 2,
         "radioOutlets": 0,
-        "nationalMarkets": 41
+        "nationalMarkets": 41,
+        "googleAds": true,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Antacid-Driscoll",
@@ -5004,7 +5652,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 6,
         "tvOutlets": 0,
         "radioOutlets": 0,
-        "nationalMarkets": 68
+        "nationalMarkets": 68,
+        "googleAds": true,
+        "youtube": true,
+        "meta": true,
+        "tiktok": false
       },
       {
         "advertiser": "Wolff-Walker Law Firm",
@@ -5014,7 +5666,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 1,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 1
+        "nationalMarkets": 1,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Depo-Provera-Henry",
@@ -5024,7 +5680,11 @@ export const californiaCompetitiveData: CompetitiveLandscapeData =
         "outlets": 2,
         "tvOutlets": 1,
         "radioOutlets": 0,
-        "nationalMarkets": 29
+        "nationalMarkets": 29,
+        "googleAds": false,
+        "youtube": true,
+        "meta": false,
+        "tiktok": false
       },
       {
         "advertiser": "Law Offices Of Juan J Huerta",
