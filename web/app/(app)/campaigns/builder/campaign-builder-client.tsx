@@ -34,6 +34,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { downloadCampaignZip } from "@/lib/campaign-export";
+import { trackCampaignBuilderOpened, trackCampaignBuilt } from "@/lib/analytics";
 import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import { VideoCompositionCard } from "./video-composition-card";
 import {
@@ -368,6 +369,11 @@ export function CampaignBuilderClient() {
       .then((res) => res.json())
       .then((data: { available: boolean }) => setRadioSpotAvailable(data.available))
       .catch(() => setRadioSpotAvailable(false));
+  }, []);
+
+  // GA4: track campaign builder opened
+  useEffect(() => {
+    trackCampaignBuilderOpened();
   }, []);
 
   const filteredStates = useMemo(() => {
@@ -733,6 +739,11 @@ export function CampaignBuilderClient() {
 
       const data: CampaignPlan = await res.json();
       setPlan(data);
+      trackCampaignBuilt({
+        tort_slug: selectedTort,
+        state_code: selectedStates.join(","),
+        budget_range: monthlyBudget || undefined,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
     } finally {

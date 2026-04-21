@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -34,6 +34,7 @@ import {
 } from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { trackStateViewed } from "@/lib/analytics";
 import {
   PIAdvertisingSection,
   buildPIAdSummary,
@@ -265,6 +266,10 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
   const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
+
+  useEffect(() => {
+    trackStateViewed({ state_code: "AZ", state_name: "Arizona" });
+  }, []);
 
   /* -- Sorted / filtered accident table data -- */
   const filteredAccidentData = useMemo(() => {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageSquare, X, Sparkles, Send, Loader2 } from "lucide-react";
+import { trackAiQuery } from "@/lib/analytics";
 
 interface TortContext {
   tortName: string;
@@ -141,6 +142,11 @@ export function AskAIPanel({ tortContext, pageContext }: AskAIPanelProps) {
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
+
+    trackAiQuery({
+      query_text: content,
+      context: tortContext ? "tort_page" : "page",
+    });
 
     setMessages([...newMessages, { role: "assistant", content: "" }]);
 
