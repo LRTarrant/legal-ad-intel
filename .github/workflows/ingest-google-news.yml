@@ -1,0 +1,54 @@
+name: Ingest Google News Legal
+
+on:
+  schedule:
+    - cron: "30 11 * * *"   # daily 11:30 UTC (6:30 AM CDT)
+    - cron: "0 5 * * 1"     # Mondays 05:00 UTC (Sunday 11:00 PM CDT) — tort_backfill
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: 'Which bucket to run'
+        required: false
+        default: 'general'
+        type: choice
+        options:
+          - general
+          - tort_backfill
+          - all
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Determine bucket
+        id: bucket
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.bucket }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "0 5 * * 1" ]; then
+            echo "value=tort_backfill" >> $GITHUB_OUTPUT
+          else
+            echo "value=general" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run pipeline
+        env:
+          SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/ingest_google_news_legal.py --bucket ${{ steps.bucket.outputs.value }}
