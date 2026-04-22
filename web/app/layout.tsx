@@ -6,6 +6,7 @@ import { resolveTenant, DEFAULT_LMI_BRANDING } from "@/lib/tenant";
 import { TenantProvider } from "@/contexts/TenantContext";
 import AnalyticsProvider from "@/app/(app)/components/analytics-provider";
 import AnalyticsIdentityBinder from "@/lib/use-analytics-identity";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -151,6 +152,7 @@ export default async function RootLayout({
         <TenantProvider branding={branding}>
           {children}
         </TenantProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
