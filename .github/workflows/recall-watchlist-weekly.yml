@@ -21,6 +21,11 @@ on:
         required: false
         default: ''
         type: string
+      mfr_ids:
+        description: 'Comma-separated manufacturer UUIDs (smoke-test)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   courtlistener-search:
@@ -55,6 +60,9 @@ jobs:
           fi
           if [ -n "${{ inputs.mfr }}" ]; then
             ARGS="$ARGS --mfr \"${{ inputs.mfr }}\""
+          fi
+          if [ -n "${{ inputs.mfr_ids }}" ]; then
+            ARGS="$ARGS --mfr-ids ${{ inputs.mfr_ids }}"
           fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "Running in DRY-RUN mode"

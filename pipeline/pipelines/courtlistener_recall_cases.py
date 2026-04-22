@@ -181,12 +181,20 @@ def _match_specialty_firm(plaintiff_firm: str | None, specialty_rows: list[dict]
 # Manufacturer loading
 # ---------------------------------------------------------------------------
 
-def _load_manufacturers(mfr_filter: str | None, limit: int | None) -> list[dict]:
+def _load_manufacturers(
+    mfr_filter: str | None,
+    limit: int | None,
+    mfr_ids: list[str] | None = None,
+) -> list[dict]:
     params = {
         "select": "id,canonical_name,aliases",
         "order": "canonical_name.asc",
     }
-    if mfr_filter:
+    if mfr_ids:
+        # Explicit UUID subset wins (smoke-test friendly)
+        ids_csv = ",".join(mfr_ids)
+        params["id"] = f"in.({ids_csv})"
+    elif mfr_filter:
         # simple substring match
         params["canonical_name"] = f"ilike.*{mfr_filter}*"
     if limit:
@@ -308,6 +316,8 @@ def main() -> int:
                     help="Only process first N manufacturers (by name).")
     ap.add_argument("--mfr", type=str, default=None,
                     help="Only process manufacturers with name containing this substring.")
+    ap.add_argument("--mfr-ids", type=str, default=None,
+                    help="Comma-separated manufacturer UUIDs (overrides --mfr).")
     ap.add_argument("--since", type=str, default=None,
                     help="ISO date; only search cases filed after this date.")
     ap.add_argument("--max-pages", type=int, default=3,
@@ -337,7 +347,12 @@ def main() -> int:
 
     with PipelineRun("courtlistener_recall_cases", trigger="manual") as run:
         with run.step("fetch_raw") as step:
-            mfrs = _load_manufacturers(args.mfr, args.limit_mfrs)
+            mfr_ids_list = (
+                [s.strip() for s in args.mfr_ids.split(",") if s.strip()]
+                if args.mfr_ids
+                else None
+            )
+            mfrs = _load_manufacturers(args.mfr, args.limit_mfrs, mfr_ids_list)
             specialty_firms = _load_specialty_firms()
             logger.info("Loaded %d manufacturers, %d specialty firms", len(mfrs), len(specialty_firms))
 
