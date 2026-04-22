@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { OlympusScopesClient, type OlympusScopesPageData } from "./olympus-scopes-client";
+import type { OlympusScopesPageData } from "./olympus-scopes-client";
+
+const OlympusScopesClient = nextDynamic(() => import("./olympus-scopes-client").then((m) => m.OlympusScopesClient));
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import {
   getSegmentSummary,

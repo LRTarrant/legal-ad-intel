@@ -1,5 +1,3 @@
-"use client";
-
 type QueryItem = {
   query_type: string;
   position: number | null;

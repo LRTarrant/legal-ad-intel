@@ -1,5 +1,3 @@
-"use client";
-
 import type { ConstructionStatePriority } from "@/lib/queries";
 
 type StatePriorityTableProps = {

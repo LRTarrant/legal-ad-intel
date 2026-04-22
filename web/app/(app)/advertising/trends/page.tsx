@@ -1,8 +1,11 @@
+import nextDynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
-import { TrendLineChart } from "./_components/TrendLineChart";
-import { RegionalMap } from "./_components/RegionalMap";
 import { RelatedQueries } from "./_components/RelatedQueries";
 import { TortSelector } from "./_components/TortSelector";
+
+const TrendLineChart = nextDynamic(() => import("./_components/TrendLineChart").then((m) => m.TrendLineChart));
+
+const RegionalMap = nextDynamic(() => import("./_components/RegionalMap").then((m) => m.RegionalMap));
 
 export const dynamic = "force-dynamic";
 
