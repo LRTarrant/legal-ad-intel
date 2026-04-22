@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Thermometer,
   AlertTriangle,
@@ -521,9 +522,18 @@ export function RecallWatchlistClient({
                           </div>
                         </td>
                         <td className="py-2 px-3">
-                          <div className="font-medium text-midnight-navy">
-                            {m.canonical_name}
-                          </div>
+                          {m.slug ? (
+                            <Link
+                              href={`/advertising/recall-watchlist/${m.slug}`}
+                              className="font-medium text-midnight-navy hover:text-intelligence-teal hover:underline"
+                            >
+                              {m.canonical_name}
+                            </Link>
+                          ) : (
+                            <div className="font-medium text-midnight-navy">
+                              {m.canonical_name}
+                            </div>
+                          )}
                           <div className="text-[11px] text-slate-gray">
                             {m.parent_name && m.parent_name !== m.canonical_name
                               ? `${m.parent_name} · `
