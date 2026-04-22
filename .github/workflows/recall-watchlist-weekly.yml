@@ -74,7 +74,9 @@ jobs:
   parties-enrichment:
     name: CourtListener /parties/ enrichment
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Bumped from 60m after an early run cancelled at 730/1000 dockets.
+    # With stream-writes, a partial run now persists progress safely.
+    timeout-minutes: 240
     needs: courtlistener-search
     # Skip on manual dry-run
     if: ${{ always() && (github.event_name == 'schedule' || inputs.dry_run != 'true') }}
