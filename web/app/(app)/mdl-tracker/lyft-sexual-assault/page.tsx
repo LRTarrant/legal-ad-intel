@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { LyftSexualAssaultClient, type LyftSexualAssaultPageData } from "./lyft-sexual-assault-client";
+import type { LyftSexualAssaultPageData } from "./lyft-sexual-assault-client";
+
+const LyftSexualAssaultClient = nextDynamic(() => import("./lyft-sexual-assault-client").then((m) => m.LyftSexualAssaultClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,

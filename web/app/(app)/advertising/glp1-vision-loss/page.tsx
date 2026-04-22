@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { GLP1VisionLossClient, type GLP1VisionLossPageData } from "./glp1-vision-loss-client";
+import type { GLP1VisionLossPageData } from "./glp1-vision-loss-client";
+
+const GLP1VisionLossClient = nextDynamic(() => import("./glp1-vision-loss-client").then((m) => m.GLP1VisionLossClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,

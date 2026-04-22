@@ -1,5 +1,3 @@
-"use client";
-
 const PLATFORM_STYLE: Record<string, { label: string; bg: string; text: string }> = {
   google_ads: {
     label: "Google Ads",

@@ -11,12 +11,14 @@ import type {
   ConstructionStatePriorityV2,
   ConstructionDemographic,
 } from "@/lib/queries";
+import nextDynamic from "next/dynamic";
 import { ConstructionFilterBar } from "./construction-filter-bar";
 import { IndustryDetailTable } from "./_components/industry-detail-table";
 import { StatePriorityTableV2 } from "./_components/state-priority-table-v2";
 import { ConstructionChartsPanel } from "./_components/construction-charts-panel";
-import { DemographicChartsSection } from "./_components/demographic-charts";
 import { HardHat, TrendingDown, TrendingUp } from "lucide-react";
+
+const DemographicChartsSection = nextDynamic(() => import("./_components/demographic-charts").then((m) => m.DemographicChartsSection));
 
 export const metadata = {
   title: "Construction Fatalities | Legal Marketing Intelligence",

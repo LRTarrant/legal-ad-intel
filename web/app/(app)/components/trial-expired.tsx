@@ -1,5 +1,3 @@
-"use client";
-
 import { Clock, Mail, Calendar } from "lucide-react";
 
 const FEATURES = [

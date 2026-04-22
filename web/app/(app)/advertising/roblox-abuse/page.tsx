@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { RobloxClient, type RobloxPageData } from "./roblox-client";
+import type { RobloxPageData } from "./roblox-client";
+
+const RobloxClient = nextDynamic(() => import("./roblox-client").then((m) => m.RobloxClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,

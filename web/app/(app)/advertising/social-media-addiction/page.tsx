@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { SocialMediaClient, type SocialMediaPageData } from "./social-media-client";
+import type { SocialMediaPageData } from "./social-media-client";
+
+const SocialMediaClient = nextDynamic(() => import("./social-media-client").then((m) => m.SocialMediaClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,

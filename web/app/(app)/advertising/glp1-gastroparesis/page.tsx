@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { GLP1GastroparesisClient, type GLP1GastroparesisPageData } from "./glp1-gastroparesis-client";
+import type { GLP1GastroparesisPageData } from "./glp1-gastroparesis-client";
+
+const GLP1GastroparesisClient = nextDynamic(() => import("./glp1-gastroparesis-client").then((m) => m.GLP1GastroparesisClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,

@@ -1,6 +1,9 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { ArizonaClient, type ArizonaPageData } from "./arizona-client";
+import type { ArizonaPageData } from "./arizona-client";
 import { getJudicialProfiles, type JudicialProfileRow } from "@/lib/queries/judicial";
+
+const ArizonaClient = nextDynamic(() => import("./arizona-client").then((m) => m.ArizonaClient));
 
 export const dynamic = "force-dynamic";
 

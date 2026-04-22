@@ -1,5 +1,8 @@
+import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import { BardPowerPortClient, type BardPowerPortPageData } from "./bard-powerport-client";
+import type { BardPowerPortPageData } from "./bard-powerport-client";
+
+const BardPowerPortClient = nextDynamic(() => import("./bard-powerport-client").then((m) => m.BardPowerPortClient));
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import {
   getSegmentSummary,
