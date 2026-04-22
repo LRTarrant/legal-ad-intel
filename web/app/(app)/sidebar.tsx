@@ -45,6 +45,8 @@ import {
   Activity,
   Newspaper,
   LogOut,
+  Stethoscope,
+  Thermometer,
 } from "lucide-react";
 
 const navItems = [
@@ -139,6 +141,13 @@ const dataModules: NavGroup[] = [
           { label: "Bard PowerPort", href: "/advertising/torts/bard-powerport", Icon: Activity },
           { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
           { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
+        ],
+      },
+      {
+        heading: "Emerging Torts",
+        items: [
+          { label: "Recall Watchlist", href: "/advertising/recall-watchlist", Icon: Thermometer },
+          { label: "Olympus Scopes (Pre-MDL)", href: "/advertising/torts/olympus-scopes", Icon: Stethoscope },
         ],
       },
     ],
