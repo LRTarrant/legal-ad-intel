@@ -72,6 +72,8 @@ SERP_SEARCH_TERMS: dict[str, list[str]] = {
     "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
     "bard-powerport":         ["bard powerport lawsuit", "port catheter recall", "bard powerport complications"],
     "lyft-sexual-assault":    ["lyft sexual assault lawsuit", "lyft ride assault lawyer"],
+    "cpap":                   ["philips cpap lawsuit", "philips respironics recall", "cpap cancer lawsuit", "dreamstation recall lawsuit", "cpap foam lawsuit"],
+    "3m_earplugs":            ["3m earplugs lawsuit", "3m combat arms lawsuit", "3m military earplug settlement", "3m earplug hearing loss lawsuit"],
 }
 
 
