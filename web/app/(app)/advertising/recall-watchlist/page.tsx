@@ -1,12 +1,15 @@
-import Link from "next/link";
-import {
-  Thermometer,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  FileSearch,
-  LineChart,
-} from "lucide-react";
+import nextDynamic from "next/dynamic";
+import { getSupabase } from "@/lib/supabase";
+import type {
+  RecallWatchlistPageData,
+  ManufacturerRow,
+  RecentEscalation,
+  StageCounts,
+} from "./recall-watchlist-client";
+
+const RecallWatchlistClient = nextDynamic(() =>
+  import("./recall-watchlist-client").then((m) => m.RecallWatchlistClient)
+);
 
 export const dynamic = "force-dynamic";
 
@@ -18,172 +21,331 @@ export function generateMetadata() {
   };
 }
 
-export default function RecallWatchlistComingSoonPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-      <div className="mx-auto max-w-5xl px-6 py-16">
-        {/* Header */}
-        <div className="mb-10 flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-            <Thermometer className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              Coming soon · Ships in ~2 days
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-              Recall Watchlist
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-slate-600 dark:text-slate-400">
-              A pre-MDL early-warning board that turns FDA device recalls into
-              qualified tort leads — before the mass-tort community catches on.
-            </p>
-          </div>
-        </div>
+/* ------------------------------------------------------------------ */
+/*  Types (internal)                                                    */
+/* ------------------------------------------------------------------ */
 
-        {/* Status card */}
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            <LineChart className="h-4 w-4 text-emerald-600" />
-            Build status
-          </div>
-          <div className="space-y-3">
-            <StatusRow
-              done
-              label="Day 1 — Data plumbing"
-              detail="3,929 FDA Class I/II device recalls loaded (5-year window, 874 manufacturers). Supabase schema + ingestion pipeline live."
-            />
-            <StatusRow
-              label="Day 2 — Scoring engine"
-              detail="CourtListener party-search hook, weekly cron, and Five-Stage Thermometer (Cold → Boiling) scoring logic."
-            />
-            <StatusRow
-              label="Day 3 — This page"
-              detail="Heat-map board, manufacturer-level drilldowns, and sort-by-heat filtering land here."
-            />
-            <StatusRow
-              label="Day 4 — Reporting"
-              detail="Timeline drilldown, white-label PDF export, and ad-spend profile badges."
-            />
-            <StatusRow
-              label="Day 5 — Alerts"
-              detail="Resend email alerts, Google Chat webhooks, and a Monday-morning weekly digest."
-            />
-          </div>
-        </div>
+interface RecallRaw {
+  id: string;
+  manufacturer_id: string | null;
+  product_description: string | null;
+  product_code: string | null;
+  recall_class: string | null;
+  reason_for_recall: string | null;
+  event_date_initiated: string | null;
+  event_date_posted: string | null;
+  status: string | null;
+  stage: number | null;
+  stage_label: string | null;
+  case_count: number | null;
+  state_count: number | null;
+  specialty_firm_count: number | null;
+  mdl_petition_filed: boolean | null;
+  mdl_formed: boolean | null;
+  first_case_filed_at: string | null;
+  last_case_filed_at: string | null;
+  last_scored_at: string | null;
+}
 
-        {/* What's coming */}
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <FeatureCard
-            icon={<FileSearch className="h-5 w-5" />}
-            title="Recall Board"
-            text="Every Class I/II device recall in one sortable table, with manufacturer, device family, and linked tort."
-          />
-          <FeatureCard
-            icon={<Thermometer className="h-5 w-5" />}
-            title="Five-Stage Thermometer"
-            text="Cold · Warming · Warm · Hot · Boiling — scored from case count, state spread, specialty-firm activity, and MDL signals."
-          />
-          <FeatureCard
-            icon={<Bell className="h-5 w-5" />}
-            title="Early-Warning Alerts"
-            text="Get notified the moment a recall jumps a heat tier or a specialty plaintiff firm files its first complaint."
-          />
-        </div>
+interface ManufacturerRaw {
+  id: string;
+  canonical_name: string;
+  slug: string | null;
+  domicile_state: string | null;
+  country: string | null;
+  parent_name: string | null;
+}
 
-        {/* CTA row */}
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/advertising/torts/olympus-scopes"
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-white"
-          >
-            Preview Olympus Scopes (Pre-MDL)
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/advertising"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            Back to Advertising
-          </Link>
-        </div>
-
-        {/* Disclaimer */}
-        <div className="mt-10 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <div>
-            <strong className="font-semibold">Preview build.</strong> Data is
-            being ingested and scored. Thermometer scores, spend-profile badges,
-            and docket overlays appear once Days 2–4 ship. Questions? Ping the
-            team.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface StageHistoryRaw {
+  id: string;
+  recall_id: string;
+  from_stage: number | null;
+  to_stage: number | null;
+  from_label: string | null;
+  to_label: string | null;
+  case_count_at_transition: number | null;
+  trigger_reason: string | null;
+  transitioned_at: string | null;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Helpers                                                             */
+/*  Data fetchers                                                       */
 /* ------------------------------------------------------------------ */
 
-function StatusRow({
-  done,
-  label,
-  detail,
-}: {
-  done?: boolean;
-  label: string;
-  detail: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div
-        className={`mt-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-          done
-            ? "bg-emerald-600 text-white"
-            : "border-2 border-slate-300 text-slate-400 dark:border-slate-600"
-        }`}
-      >
-        {done ? "✓" : ""}
-      </div>
-      <div className="flex-1">
-        <div
-          className={`text-sm font-medium ${
-            done
-              ? "text-slate-900 dark:text-slate-100"
-              : "text-slate-700 dark:text-slate-300"
-          }`}
-        >
-          {label}
-        </div>
-        <div className="text-sm text-slate-500 dark:text-slate-400">
-          {detail}
-        </div>
-      </div>
-    </div>
-  );
+async function fetchAllRecalls(): Promise<RecallRaw[]> {
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  // Use paginated range to bypass the default 1000-row PostgREST cap.
+  const pageSize = 1000;
+  const all: RecallRaw[] = [];
+  let from = 0;
+  // Safety cap: 20k rows (current prod ~3.9k).
+  while (from < 20000) {
+    const { data, error } = await sb
+      .from("recalls")
+      .select(
+        "id,manufacturer_id,product_description,product_code,recall_class,reason_for_recall,event_date_initiated,event_date_posted,status,stage,stage_label,case_count,state_count,specialty_firm_count,mdl_petition_filed,mdl_formed,first_case_filed_at,last_case_filed_at,last_scored_at"
+      )
+      .order("event_date_initiated", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const batch = (data ?? []) as unknown as RecallRaw[];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
 }
 
-function FeatureCard({
-  icon,
-  title,
-  text,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-        {icon}
-      </div>
-      <div className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-        {title}
-      </div>
-      <div className="text-sm text-slate-500 dark:text-slate-400">{text}</div>
-    </div>
+async function fetchManufacturers(ids: string[]): Promise<ManufacturerRaw[]> {
+  if (ids.length === 0) return [];
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  // Chunk to avoid URL length issues on .in()
+  const chunkSize = 200;
+  const all: ManufacturerRaw[] = [];
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const { data, error } = await sb
+      .from("recall_manufacturers")
+      .select("id,canonical_name,slug,domicile_state,country,parent_name")
+      .in("id", chunk);
+    if (error) throw error;
+    all.push(...((data ?? []) as unknown as ManufacturerRaw[]));
+  }
+  return all;
+}
+
+async function fetchRecentStageHistory(limit = 25): Promise<StageHistoryRaw[]> {
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  const { data, error } = await sb
+    .from("recall_stage_history")
+    .select(
+      "id,recall_id,from_stage,to_stage,from_label,to_label,case_count_at_transition,trigger_reason,transitioned_at"
+    )
+    .order("transitioned_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as StageHistoryRaw[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Aggregation                                                         */
+/* ------------------------------------------------------------------ */
+
+function buildPageData(
+  recalls: RecallRaw[],
+  mfrs: ManufacturerRaw[],
+  history: StageHistoryRaw[]
+): RecallWatchlistPageData {
+  const mfrById = new Map(mfrs.map((m) => [m.id, m]));
+  const recallById = new Map(recalls.map((r) => [r.id, r]));
+
+  // Group recalls by manufacturer
+  const byMfr = new Map<string, RecallRaw[]>();
+  for (const r of recalls) {
+    if (!r.manufacturer_id) continue;
+    const list = byMfr.get(r.manufacturer_id) ?? [];
+    list.push(r);
+    byMfr.set(r.manufacturer_id, list);
+  }
+
+  const manufacturers: ManufacturerRow[] = [];
+  let cold = 0;
+  let warming = 0;
+  let warm = 0;
+  let hot = 0;
+  let boiling = 0;
+
+  for (const [mfrId, list] of byMfr.entries()) {
+    const mfr = mfrById.get(mfrId);
+    if (!mfr) continue;
+
+    let maxStage = 1;
+    let maxStageLabel = "Cold";
+    let totalCases = 0;
+    let maxStateCount = 0;
+    let maxSpecialty = 0;
+    let mdlPetition = false;
+    let mdlFormed = false;
+    let classI = 0;
+    let firstCase: string | null = null;
+    let lastCase: string | null = null;
+    let lastScored: string | null = null;
+
+    for (const r of list) {
+      const s = r.stage ?? 1;
+      if (s > maxStage) {
+        maxStage = s;
+        maxStageLabel = r.stage_label ?? labelForStage(s);
+      }
+      totalCases += r.case_count ?? 0;
+      if ((r.state_count ?? 0) > maxStateCount) maxStateCount = r.state_count ?? 0;
+      if ((r.specialty_firm_count ?? 0) > maxSpecialty)
+        maxSpecialty = r.specialty_firm_count ?? 0;
+      if (r.mdl_petition_filed) mdlPetition = true;
+      if (r.mdl_formed) mdlFormed = true;
+      if (r.recall_class === "Class I") classI += 1;
+      if (r.first_case_filed_at) {
+        if (!firstCase || r.first_case_filed_at < firstCase)
+          firstCase = r.first_case_filed_at;
+      }
+      if (r.last_case_filed_at) {
+        if (!lastCase || r.last_case_filed_at > lastCase)
+          lastCase = r.last_case_filed_at;
+      }
+      if (r.last_scored_at) {
+        if (!lastScored || r.last_scored_at > lastScored)
+          lastScored = r.last_scored_at;
+      }
+    }
+
+    switch (maxStage) {
+      case 5:
+        boiling += 1;
+        break;
+      case 4:
+        hot += 1;
+        break;
+      case 3:
+        warm += 1;
+        break;
+      case 2:
+        warming += 1;
+        break;
+      default:
+        cold += 1;
+    }
+
+    manufacturers.push({
+      id: mfr.id,
+      canonical_name: mfr.canonical_name,
+      slug: mfr.slug,
+      domicile_state: mfr.domicile_state,
+      parent_name: mfr.parent_name,
+      max_stage: maxStage,
+      max_stage_label: maxStageLabel,
+      recall_count: list.length,
+      class_i_recall_count: classI,
+      total_cases: totalCases,
+      state_count: maxStateCount,
+      specialty_firm_count: maxSpecialty,
+      mdl_petition_filed: mdlPetition,
+      mdl_formed: mdlFormed,
+      first_case_filed_at: firstCase,
+      last_case_filed_at: lastCase,
+      last_scored_at: lastScored,
+      recalls: list
+        .slice()
+        .sort((a, b) => {
+          const aStage = a.stage ?? 1;
+          const bStage = b.stage ?? 1;
+          if (aStage !== bStage) return bStage - aStage;
+          const aDate = a.event_date_initiated ?? "";
+          const bDate = b.event_date_initiated ?? "";
+          return bDate.localeCompare(aDate);
+        })
+        .slice(0, 50)
+        .map((r) => ({
+          id: r.id,
+          product_description: r.product_description ?? "",
+          product_code: r.product_code,
+          recall_class: r.recall_class,
+          reason_for_recall: r.reason_for_recall,
+          event_date_initiated: r.event_date_initiated,
+          status: r.status,
+          stage: r.stage ?? 1,
+          stage_label: r.stage_label ?? labelForStage(r.stage ?? 1),
+          case_count: r.case_count ?? 0,
+          state_count: r.state_count ?? 0,
+          specialty_firm_count: r.specialty_firm_count ?? 0,
+          mdl_petition_filed: r.mdl_petition_filed ?? false,
+          mdl_formed: r.mdl_formed ?? false,
+        })),
+    });
+  }
+
+  // Sort manufacturers: stage desc, cases desc, recall count desc, name asc
+  manufacturers.sort((a, b) => {
+    if (b.max_stage !== a.max_stage) return b.max_stage - a.max_stage;
+    if (b.total_cases !== a.total_cases) return b.total_cases - a.total_cases;
+    if (b.recall_count !== a.recall_count) return b.recall_count - a.recall_count;
+    return a.canonical_name.localeCompare(b.canonical_name);
+  });
+
+  const stageCounts: StageCounts = {
+    total: manufacturers.length,
+    cold,
+    warming,
+    warm,
+    hot,
+    boiling,
+  };
+
+  const recentEscalations: RecentEscalation[] = history
+    .filter(
+      (h) =>
+        h.to_stage !== null &&
+        h.from_stage !== null &&
+        h.to_stage > h.from_stage
+    )
+    .map((h) => {
+      const recall = recallById.get(h.recall_id);
+      const mfr = recall?.manufacturer_id
+        ? mfrById.get(recall.manufacturer_id)
+        : null;
+      return {
+        id: h.id,
+        recall_id: h.recall_id,
+        manufacturer_id: recall?.manufacturer_id ?? null,
+        manufacturer_name: mfr?.canonical_name ?? "Unknown manufacturer",
+        product_description: recall?.product_description ?? "",
+        recall_class: recall?.recall_class ?? null,
+        from_stage: h.from_stage ?? 1,
+        to_stage: h.to_stage ?? 1,
+        to_label: h.to_label ?? labelForStage(h.to_stage ?? 1),
+        case_count_at_transition: h.case_count_at_transition ?? 0,
+        trigger_reason: h.trigger_reason,
+        transitioned_at: h.transitioned_at,
+      };
+    });
+
+  return {
+    stageCounts,
+    manufacturers,
+    recentEscalations,
+    totalRecalls: recalls.length,
+    classIRecalls: recalls.filter((r) => r.recall_class === "Class I").length,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+function labelForStage(s: number): string {
+  return ["Cold", "Cold", "Warming", "Warm", "Hot", "Boiling"][s] ?? "Cold";
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                                */
+/* ------------------------------------------------------------------ */
+
+export default async function RecallWatchlistPage() {
+  const recalls = await fetchAllRecalls();
+  const mfrIds = Array.from(
+    new Set(recalls.map((r) => r.manufacturer_id).filter((v): v is string => !!v))
   );
+  const [mfrs, history] = await Promise.all([
+    fetchManufacturers(mfrIds),
+    fetchRecentStageHistory(25),
+  ]);
+
+  const data = buildPageData(recalls, mfrs, history);
+
+  return <RecallWatchlistClient data={data} />;
 }
