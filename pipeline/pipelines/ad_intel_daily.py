@@ -93,6 +93,7 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
     "bard-powerport":         ["bard powerport lawsuit", "port catheter recall", "bard powerport attorney"],
     "lyft-sexual-assault":    ["lyft sexual assault lawyer", "lyft lawsuit", "lyft ride assault attorney", "rideshare sexual assault lyft"],
+    "olympus_scopes":         ["olympus scope lawsuit", "duodenoscope infection lawsuit", "olympus endoscope recall", "ercp infection lawyer", "scope superbug lawsuit"],
 }
 
 
