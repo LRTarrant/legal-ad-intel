@@ -210,84 +210,80 @@ def main() -> int:
         logger.error("SUPABASE_URL / SUPABASE_SERVICE_KEY not set")
         return 1
 
-    run = PipelineRun("recall_thermometer")
-
-    try:
-        # 1) Load all recalls (or a single one) with current scoring inputs
-        recall_params: dict[str, str] = {
-            "select": "id,stage,stage_label,case_count,state_count,specialty_firm_count,"
-                      "mdl_petition_filed,mdl_formed,first_case_filed_at,last_case_filed_at",
-        }
-        if args.recall_id:
-            recall_params["id"] = f"eq.{args.recall_id}"
-        recalls = _fetch_all("recalls", recall_params)
-        logger.info("Scoring %d recalls", len(recalls))
-
-        # 2) Aggregate cases by recall
-        agg = _aggregate_cases_by_recall()
-
+    with PipelineRun("recall_thermometer", trigger="manual") as run:
         history_rows: list[dict] = []
         changed = 0
-        now_iso = datetime.now(timezone.utc).isoformat()
 
-        for r in recalls:
-            rid = r["id"]
-            a = agg.get(rid, {
-                "case_count": 0,
-                "states": set(),
-                "specialty_count": 0,
-                "first_case_filed": None,
-                "last_case_filed": None,
-            })
-            new_cc = a["case_count"]
-            new_sc = len(a["states"])
-            new_spc = a["specialty_count"]
-            mdl_pet = bool(r.get("mdl_petition_filed"))
-            mdl_frm = bool(r.get("mdl_formed"))
-
-            new_stage = compute_stage(new_cc, new_sc, new_spc, mdl_pet, mdl_frm)
-            new_label = STAGE_LABELS[new_stage]
-            prev_stage = int(r.get("stage") or 1)
-            prev_label = r.get("stage_label") or STAGE_LABELS[prev_stage]
-
-            patch = {
-                "case_count": new_cc,
-                "state_count": new_sc,
-                "specialty_firm_count": new_spc,
-                "stage": new_stage,
-                "stage_label": new_label,
-                "first_case_filed_at": a["first_case_filed"],
-                "last_case_filed_at": a["last_case_filed"],
-                "last_scored_at": now_iso,
+        with run.step("score") as step:
+            recall_params: dict[str, str] = {
+                "select": ("id,stage,stage_label,case_count,state_count,"
+                           "specialty_firm_count,mdl_petition_filed,mdl_formed,"
+                           "first_case_filed_at,last_case_filed_at"),
             }
-            _patch_recall(rid, patch)
+            if args.recall_id:
+                recall_params["id"] = f"eq.{args.recall_id}"
+            recalls = _fetch_all("recalls", recall_params)
+            logger.info("Scoring %d recalls", len(recalls))
 
-            if new_stage != prev_stage:
-                changed += 1
-                history_rows.append({
-                    "recall_id": rid,
-                    "from_stage": prev_stage,
-                    "to_stage": new_stage,
-                    "from_label": prev_label,
-                    "to_label": new_label,
-                    "trigger_reason": reason_for_change(
-                        prev_stage, new_stage,
-                        int(r.get("case_count") or 0), new_cc,
-                        int(r.get("specialty_firm_count") or 0), new_spc,
-                        mdl_pet, mdl_frm,
-                    ),
+            agg = _aggregate_cases_by_recall()
+            now_iso = datetime.now(timezone.utc).isoformat()
+
+            for r in recalls:
+                rid = r["id"]
+                a = agg.get(rid, {
+                    "case_count": 0,
+                    "states": set(),
+                    "specialty_count": 0,
+                    "first_case_filed": None,
+                    "last_case_filed": None,
                 })
+                new_cc = a["case_count"]
+                new_sc = len(a["states"])
+                new_spc = a["specialty_count"]
+                mdl_pet = bool(r.get("mdl_petition_filed"))
+                mdl_frm = bool(r.get("mdl_formed"))
 
-        inserted = _insert_stage_history(history_rows)
-        run.log(f"Recalls scored: {len(recalls)}")
-        run.log(f"Stage changes: {changed} (history rows inserted: {inserted})")
+                new_stage = compute_stage(new_cc, new_sc, new_spc, mdl_pet, mdl_frm)
+                new_label = STAGE_LABELS[new_stage]
+                prev_stage = int(r.get("stage") or 1)
+                prev_label = r.get("stage_label") or STAGE_LABELS[prev_stage]
 
-        run.finish(status="ok", rows_written=changed)
-        return 0
-    except Exception as e:
-        logger.exception("Thermometer failed")
-        run.finish(status="error", error_message=str(e))
-        return 1
+                patch = {
+                    "case_count": new_cc,
+                    "state_count": new_sc,
+                    "specialty_firm_count": new_spc,
+                    "stage": new_stage,
+                    "stage_label": new_label,
+                    "first_case_filed_at": a["first_case_filed"],
+                    "last_case_filed_at": a["last_case_filed"],
+                    "last_scored_at": now_iso,
+                }
+                _patch_recall(rid, patch)
+
+                if new_stage != prev_stage:
+                    changed += 1
+                    history_rows.append({
+                        "recall_id": rid,
+                        "from_stage": prev_stage,
+                        "to_stage": new_stage,
+                        "from_label": prev_label,
+                        "to_label": new_label,
+                        "trigger_reason": reason_for_change(
+                            prev_stage, new_stage,
+                            int(r.get("case_count") or 0), new_cc,
+                            int(r.get("specialty_firm_count") or 0), new_spc,
+                            mdl_pet, mdl_frm,
+                        ),
+                    })
+
+            step.set_counts(rows_in=len(recalls), rows_out=len(recalls))
+            step.set_metadata({"stage_changes": changed})
+
+        with run.step("publish") as step:
+            inserted = _insert_stage_history(history_rows)
+            step.set_counts(rows_in=len(history_rows), rows_out=inserted)
+
+    return 0
 
 
 if __name__ == "__main__":

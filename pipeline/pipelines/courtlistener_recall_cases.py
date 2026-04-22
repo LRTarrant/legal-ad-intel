@@ -324,57 +324,58 @@ def main() -> int:
         else (datetime.now(timezone.utc).date() - timedelta(days=365 * DEFAULT_SINCE_YEARS))
     )
 
-    run = PipelineRun("courtlistener_recall_cases")
+    with PipelineRun("courtlistener_recall_cases", trigger="manual") as run:
+        with run.step("fetch_raw") as step:
+            mfrs = _load_manufacturers(args.mfr, args.limit_mfrs)
+            specialty_firms = _load_specialty_firms()
+            logger.info("Loaded %d manufacturers, %d specialty firms", len(mfrs), len(specialty_firms))
 
-    try:
-        mfrs = _load_manufacturers(args.mfr, args.limit_mfrs)
-        specialty_firms = _load_specialty_firms()
-        logger.info("Loaded %d manufacturers, %d specialty firms", len(mfrs), len(specialty_firms))
+            all_hits: list[tuple[dict, str]] = []  # (hit, recall_id)
+            mfr_with_hits = 0
 
-        all_rows: list[dict] = []
-        mfr_with_hits = 0
-        total_hits = 0
+            for idx, mfr in enumerate(mfrs, 1):
+                name = mfr["canonical_name"]
+                aliases = mfr.get("aliases") or []
+                query = _build_party_query(name, aliases)
+                logger.info("[%d/%d] %s — q=%s", idx, len(mfrs), name, query)
 
-        for idx, mfr in enumerate(mfrs, 1):
-            name = mfr["canonical_name"]
-            aliases = mfr.get("aliases") or []
-            query = _build_party_query(name, aliases)
-            logger.info("[%d/%d] %s — q=%s", idx, len(mfrs), name, query)
+                hits = _search_cl_for_mfr(query, since, max_pages=args.max_pages)
+                if not hits:
+                    continue
 
-            hits = _search_cl_for_mfr(query, since, max_pages=args.max_pages)
-            if not hits:
-                continue
+                recall_id = _most_recent_open_recall(mfr["id"])
+                if not recall_id:
+                    logger.info("  no recall to link for %s; skipping %d hits", name, len(hits))
+                    continue
 
-            recall_id = _most_recent_open_recall(mfr["id"])
-            if not recall_id:
-                logger.info("  no recall to link for %s; skipping %d hits", name, len(hits))
-                continue
+                mfr_with_hits += 1
+                for h in hits:
+                    all_hits.append((h, recall_id))
 
-            mfr_with_hits += 1
-            total_hits += len(hits)
-            for h in hits:
+            step.set_counts(rows_in=len(mfrs), rows_out=len(all_hits))
+            step.set_metadata({
+                "manufacturers_queried": len(mfrs),
+                "manufacturers_with_hits": mfr_with_hits,
+            })
+
+        with run.step("normalize") as step:
+            rows: list[dict] = []
+            for h, recall_id in all_hits:
                 row = _hit_to_row(h, recall_id, specialty_firms)
                 if row:
-                    all_rows.append(row)
+                    rows.append(row)
+            step.set_counts(rows_in=len(all_hits), rows_out=len(rows))
 
-        logger.info("Gathered %d case rows from %d manufacturers (of %d)",
-                    len(all_rows), mfr_with_hits, len(mfrs))
+        with run.step("publish") as step:
+            inserted = _bulk_insert(
+                "recall_cases",
+                rows,
+                on_conflict="source,external_id",
+                resolution="merge-duplicates",
+            )
+            step.set_counts(rows_in=len(rows), rows_out=inserted)
 
-        inserted = _bulk_insert(
-            "recall_cases",
-            all_rows,
-            on_conflict="source,external_id",
-            resolution="merge-duplicates",
-        )
-        run.log(f"Upserted {inserted} recall_cases rows")
-        run.log(f"Manufacturers queried: {len(mfrs)}; with hits: {mfr_with_hits}; total hits: {total_hits}")
-
-        run.finish(status="ok", rows_written=inserted)
-        return 0
-    except Exception as e:
-        logger.exception("Pipeline failed")
-        run.finish(status="error", error_message=str(e))
-        return 1
+    return 0
 
 
 if __name__ == "__main__":
