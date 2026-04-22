@@ -47,6 +47,7 @@ import {
   LogOut,
   Stethoscope,
   Thermometer,
+  ShieldAlert,
 } from "lucide-react";
 
 const navItems = [
@@ -148,6 +149,7 @@ const dataModules: NavGroup[] = [
         items: [
           { label: "Recall Watchlist", href: "/advertising/recall-watchlist", Icon: Thermometer },
           { label: "Olympus Scopes (Pre-MDL)", href: "/advertising/torts/olympus-scopes", Icon: Stethoscope },
+          { label: "AI Suicide / Self-Harm (Pre-MDL)", href: "/advertising/torts/ai-suicide", Icon: ShieldAlert },
         ],
       },
     ],
