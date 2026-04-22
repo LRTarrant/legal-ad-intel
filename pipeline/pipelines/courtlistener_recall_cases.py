@@ -267,8 +267,19 @@ def _hit_to_row(
                 filed_date = None
     plaintiff_firm = _extract_plaintiff_firm(hit)
     is_specialty = _match_specialty_firm(plaintiff_firm, specialty_firms)
-    docket_abs = hit.get("absolute_url") or ""
+    docket_abs = hit.get("docket_absolute_url") or hit.get("absolute_url") or ""
     docket_url = f"https://www.courtlistener.com{docket_abs}" if docket_abs else None
+    # Keep raw_payload small — store key identifiers only, not the whole CL
+    # response (which can include large nested recap_documents arrays).
+    slim_payload = {
+        "docket_id": hit.get("docket_id"),
+        "docket_number": hit.get("docketNumber"),
+        "case_name_full": hit.get("case_name_full"),
+        "pacer_case_id": hit.get("pacer_case_id"),
+        "party": hit.get("party") or [],
+        "court": hit.get("court"),
+        "assigned_to": hit.get("assignedTo"),
+    }
     return {
         "recall_id": recall_id,
         "source": "courtlistener",
@@ -278,11 +289,11 @@ def _hit_to_row(
         "court_name": court_name if isinstance(court_name, str) else None,
         "state_code": _extract_state_from_court(court_id if isinstance(court_id, str) else None),
         "case_filed_date": filed_date.isoformat() if filed_date else None,
-        "defendants": [],  # filled later when we pull full docket
+        "defendants": hit.get("party") or [],
         "plaintiff_firm_name": plaintiff_firm,
         "is_specialty_firm": is_specialty,
         "docket_url": docket_url,
-        "raw_payload": hit,
+        "raw_payload": slim_payload,
     }
 
 
@@ -360,10 +371,18 @@ def main() -> int:
 
         with run.step("normalize") as step:
             rows: list[dict] = []
+            seen_external_ids: set[str] = set()
             for h, recall_id in all_hits:
                 row = _hit_to_row(h, recall_id, specialty_firms)
-                if row:
-                    rows.append(row)
+                if not row:
+                    continue
+                # Dedupe within batch; Postgres upsert can't handle duplicate
+                # conflict-target keys in the same statement.
+                key = f"{row['source']}::{row['external_id']}"
+                if key in seen_external_ids:
+                    continue
+                seen_external_ids.add(key)
+                rows.append(row)
             step.set_counts(rows_in=len(all_hits), rows_out=len(rows))
 
         with run.step("publish") as step:
