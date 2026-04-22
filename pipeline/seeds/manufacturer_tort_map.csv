@@ -1,0 +1,9 @@
+manufacturer_id,manufacturer_name,tort_id,tort_slug,tort_name,confidence,notes
+da7458bc-57e3-4e81-ab69-0fe27a24689d,3M,339d1caa-b628-484d-acc8-132051788de9,3m-earplugs,3M Earplugs,high,Combat Arms Earplugs CAEv2 — MDL 2885 (NDFL)
+da7458bc-57e3-4e81-ab69-0fe27a24689d,3M,4add9b84-91b3-41d5-a30d-4651c2f8212a,afff-firefighting-foam,AFFF Firefighting Foam,high,3M primary AFFF defendant — MDL 2873 (DSC)
+991ab479-56a3-4138-8fbe-42d1595cbcc9,Philips,bbd6a128-525a-468b-97b6-3395537e4772,cpap,CPAP,high,Parent company of Philips Respironics (DreamStation recall 2021)
+51542a77-548d-4c0a-9505-840c03f83a64,Philips Respironics,bbd6a128-525a-468b-97b6-3395537e4772,cpap,CPAP,high,DreamStation / SystemOne / DreamStation Go recall — MDL 3014 (WDPA)
+9ce8f0b5-88cf-40f4-9485-cbfbcd3003b7,C R Bard,ad268e63-447c-404a-b0f9-3840f275ac87,hernia-mesh,Hernia Mesh,high,Bard hernia mesh (Kugel / Ventralex / 3DMax) — MDL 2846 (SDOH)
+79a3027b-0552-4ac4-b6b6-f0682178c0f3,Bard Peripheral Vascular,ad268e63-447c-404a-b0f9-3840f275ac87,hernia-mesh,Hernia Mesh,medium,PV division sells vascular mesh; primary hernia-mesh litigation is under C R Bard
+abb3be28-9ab3-4920-a1cc-c41c596b980e,Medtronic,ad268e63-447c-404a-b0f9-3840f275ac87,hernia-mesh,Hernia Mesh,low,Some Covidien/Parietex mesh products via Medtronic acquisition
+c7ef4323-d545-4480-8f76-a5f94196fd58,DePuy Mitek (J&J),51297c21-c801-4480-bf85-452b9d4e5eda,talcum-powder,Talcum Powder,low,J&J subsidiary; talc litigation is primarily under J&J Consumer / LTL Management
