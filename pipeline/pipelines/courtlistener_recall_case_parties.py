@@ -234,11 +234,15 @@ def main() -> int:
             )
             step.set_counts(rows_in=len(cases), rows_out=len(cases))
 
-        with run.step("normalize") as step:
+        # Stream-write each enriched row to Supabase as soon as it’s extracted,
+        # so a cancelled / timed-out job still persists partial progress.
+        with run.step("normalize_and_publish") as step:
             enriched_rows: list[dict] = []
             fetch_failed = 0
-            no_plaintiff = 0
             no_firm = 0
+            updated = 0
+            update_failed = 0
+            specialty_matches = 0
 
             for idx, case in enumerate(cases, 1):
                 external_id = case.get("external_id") or ""
@@ -255,7 +259,7 @@ def main() -> int:
                 firm = _extract_plaintiff_firm_from_docket(cl_docket_id)
                 if firm is None:
                     # Could be no plaintiff found OR no firm extractable — we
-                    # don't differentiate here. The pipeline is idempotent so
+                    # don’t differentiate here. The pipeline is idempotent so
                     # re-runs with --all will retry.
                     no_firm += 1
                     logger.info(
@@ -272,35 +276,40 @@ def main() -> int:
                         "is_specialty_firm": is_specialty,
                     }
                 )
-                logger.info(
-                    "[%d/%d] docket=%s firm=%r specialty=%s",
-                    idx, len(cases), cl_docket_id, firm, is_specialty,
-                )
+                if is_specialty:
+                    specialty_matches += 1
 
-            step.set_counts(rows_in=len(cases), rows_out=len(enriched_rows))
+                # Stream-write: PATCH to Supabase inline so we don’t lose work
+                # if the job is cancelled before finishing all cases.
+                if dry_run:
+                    logger.info(
+                        "[%d/%d] docket=%s firm=%r specialty=%s  DRY-RUN",
+                        idx, len(cases), cl_docket_id, firm, is_specialty,
+                    )
+                    updated += 1
+                else:
+                    ok = _update_case(case["id"], firm, is_specialty)
+                    if ok:
+                        updated += 1
+                        logger.info(
+                            "[%d/%d] docket=%s firm=%r specialty=%s  OK",
+                            idx, len(cases), cl_docket_id, firm, is_specialty,
+                        )
+                    else:
+                        update_failed += 1
+                        logger.warning(
+                            "[%d/%d] docket=%s firm=%r specialty=%s  UPDATE_FAILED",
+                            idx, len(cases), cl_docket_id, firm, is_specialty,
+                        )
+
+            step.set_counts(rows_in=len(cases), rows_out=updated)
             step.set_metadata({
                 "fetch_failed": fetch_failed,
                 "no_plaintiff_firm": no_firm,
-                "specialty_matches": sum(
-                    1 for r in enriched_rows if r["is_specialty_firm"]
-                ),
+                "specialty_matches": specialty_matches,
+                "update_failed": update_failed,
+                "enriched_total": len(enriched_rows),
             })
-
-        with run.step("publish") as step:
-            updated = 0
-            if dry_run:
-                logger.info("DRY RUN — would update %d recall_cases rows", len(enriched_rows))
-                updated = len(enriched_rows)
-            else:
-                for row in enriched_rows:
-                    ok = _update_case(
-                        row["id"],
-                        row["plaintiff_firm_name"],
-                        row["is_specialty_firm"],
-                    )
-                    if ok:
-                        updated += 1
-            step.set_counts(rows_in=len(enriched_rows), rows_out=updated)
 
     return 0
 
