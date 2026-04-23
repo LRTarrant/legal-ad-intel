@@ -94,6 +94,8 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "bard-powerport":         ["bard powerport lawsuit", "port catheter recall", "bard powerport attorney"],
     "lyft-sexual-assault":    ["lyft sexual assault lawyer", "lyft lawsuit", "lyft ride assault attorney", "rideshare sexual assault lyft"],
     "olympus_scopes":         ["olympus scope lawsuit", "duodenoscope infection lawsuit", "olympus endoscope recall", "ercp infection lawyer", "scope superbug lawsuit"],
+    "ai_suicide":             ["AI chatbot lawsuit", "Character.AI lawsuit", "AI suicide lawsuit", "chatbot self-harm", "AI companion lawsuit"],
+    "pfas_contamination":     ["PFAS lawsuit", "forever chemicals lawsuit", "PFOA lawsuit", "PFOS contamination lawsuit", "firefighter PFAS exposure"],
 }
 
 
@@ -483,6 +485,17 @@ def _fetch_raw_seed_data(step, advertisers: list[dict], torts: list[dict], geos:
     return rows
 
 
+def _validate_tort_search_coverage(torts: list[dict]) -> None:
+    """Warn when a tort exists in DB but has no search terms configured."""
+    for tort in torts:
+        slug = tort["slug"]
+        if slug not in TORT_SEARCH_TERMS:
+            logger.warning(
+                "  ⚠ Tort '%s' (%s) exists in DB but has no search terms in TORT_SEARCH_TERMS",
+                slug, tort.get("label", "?"),
+            )
+
+
 def step_fetch_raw(step) -> list[dict]:
     """
     Fetch ad observations into ad_observations_raw.
@@ -497,6 +510,8 @@ def step_fetch_raw(step) -> list[dict]:
 
     if not advertisers or not torts or not geos:
         raise ValueError(f"Missing dimension data: advertisers={len(advertisers)}, torts={len(torts)}, geos={len(geos)}")
+
+    _validate_tort_search_coverage(torts)
 
     if APIFY_TOKEN:
         print("  Using Apify multi-source ads fetcher (token present)")

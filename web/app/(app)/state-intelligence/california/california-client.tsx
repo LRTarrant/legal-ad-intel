@@ -42,6 +42,7 @@ import {
   type PIAdvertisingData,
 } from "../../components/pi-advertising-section";
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
+import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { californiaCompetitiveData } from "@/lib/data/competitive-landscape/california";
 
 /* ------------------------------------------------------------------ */
@@ -1666,6 +1667,11 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
       {/* 11. COMPETITIVE LANDSCAPE                                    */}
       {/* ============================================================ */}
       <CompetitiveLandscapeTable data={californiaCompetitiveData} />
+
+      {/* ============================================================ */}
+      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
+      {/* ============================================================ */}
+      <StateAdvertisingSection stateAbbr="CA" stateName="California" />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}

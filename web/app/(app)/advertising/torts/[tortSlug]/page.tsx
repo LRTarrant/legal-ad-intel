@@ -5,7 +5,11 @@ import {
   getAdvertiserPlatforms,
   getAdSaturationWindowed,
   getTortCostBenchmarks,
+  getSerpVisibilityWindowed,
+  getSerpTopResults,
+  getSampleAds,
 } from "@/lib/queries";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -18,7 +22,14 @@ import {
 } from "lucide-react";
 import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
 import { TortViewTracker } from "./tort-view-tracker";
+import type { TortAdvertisingData } from "../../../components/tort-advertising-section";
 
+const TortAdvertisingSection = nextDynamic(
+  () =>
+    import("../../../components/tort-advertising-section").then(
+      (m) => m.TortAdvertisingSection
+    ),
+);
 
 export const dynamic = "force-dynamic";
 
@@ -91,14 +102,17 @@ export default async function TortAdvertisingPage({
   windowStartDate.setDate(windowStartDate.getDate() - 90);
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
-  // Parallel data fetch — fetch ALL benchmarks so we can fuzzy-match
-  const [segments, topAdvertisers, platforms, saturation, benchmarks] =
+  // Parallel data fetch — includes SERP + sample ads for shared component
+  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds] =
     await Promise.all([
       getSegmentSummary(tortSlug),
       getTopAdvertisersBySegment(tortSlug, 25),
       getAdvertiserPlatforms(tortSlug),
       getAdSaturationWindowed(windowStart, windowEnd, tortSlug),
       getTortCostBenchmarks(),
+      getSerpVisibilityWindowed(windowStart, windowEnd, tortSlug),
+      getSerpTopResults(tortSlug, 5),
+      getSampleAds(tortSlug, 12),
     ]);
 
   // Build platform lookup by advertiser
@@ -123,25 +137,39 @@ export default async function TortAdvertisingPage({
   // Get saturation markets (top by saturation score)
   const topMarkets = [...saturation]
     .sort((a, b) => (b.saturation_score ?? 0) - (a.saturation_score ?? 0))
-    .slice(0, 10);
+    .slice(0, 15);
 
-  // Find best matching benchmark — fuzzy match on tort label vs benchmark tort_name
-  // We try multiple strategies: exact match, substring in either direction,
-  // and first-word overlap to handle cases like "Roundup / Glyphosate" vs "Roundup"
+  // Find best matching benchmark
   const tortLabelLower = tort.label.toLowerCase();
   const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
   const benchmark = benchmarks
     .sort((a, b) => b.observed_date.localeCompare(a.observed_date))
     .find((b) => {
       const bName = b.tort_name.toLowerCase();
-      // Exact match
       if (bName === tortLabelLower) return true;
-      // Benchmark name contains the full label or vice versa
       if (bName.includes(tortLabelLower) || tortLabelLower.includes(bName)) return true;
-      // Any significant word from the tort label appears in the benchmark name
-      // (skip short words like "of", "the", etc.)
       return tortLabelWords.some((w) => w.length > 3 && bName.includes(w));
     }) ?? null;
+
+  const hasLiveData = totalAdvertisers > 0 || totalSpend > 0 || totalCreatives > 0;
+
+  // Build data for the shared advertising section
+  const advertisingData: TortAdvertisingData = {
+    tortSlug,
+    segments,
+    topAdvertisers,
+    platformMap: Object.fromEntries(platformMap),
+    totalAdvertisers,
+    totalSpend,
+    totalCreatives,
+    allPlatforms: Array.from(allPlatforms).sort(),
+    topMarkets,
+    benchmark,
+    hasLiveData,
+    serpVisibility,
+    serpResults,
+    sampleAds,
+  };
 
   return (
     <div className="space-y-8">
@@ -265,154 +293,8 @@ export default async function TortAdvertisingPage({
         </div>
       )}
 
-      {/* Top Advertisers Table */}
-      {topAdvertisers.length > 0 && (
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-              Top Advertisers
-            </h2>
-            <Link
-              href={`/advertising/saturation/${tortSlug}`}
-              className="flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
-            >
-              Full saturation view <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-cloud">
-                  <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                    Advertiser
-                  </th>
-                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                    Segment
-                  </th>
-                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                    Platforms
-                  </th>
-                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                    Est. Spend
-                  </th>
-                  <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                    Creatives
-                  </th>
-                  <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                    Markets
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {topAdvertisers.map((adv, i) => {
-                  const meta = segMeta(adv.segment);
-                  const advPlatforms = platformMap.get(adv.advertiser_name) ?? [];
-                  return (
-                    <tr
-                      key={`${adv.advertiser_name}-${i}`}
-                      className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                    >
-                      <td className="py-3 pr-4 font-medium text-midnight-navy">
-                        {adv.advertiser_name}
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span
-                          className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={{ backgroundColor: meta.bg, color: meta.color }}
-                        >
-                          {meta.label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex flex-wrap justify-center gap-1">
-                          {advPlatforms.length > 0 ? (
-                            advPlatforms.map((p) => (
-                              <span
-                                key={p}
-                                className="rounded-full px-1.5 py-0.5 text-[10px] font-medium text-white"
-                                style={{ backgroundColor: PLATFORM_COLORS[p] ?? "#6B7280" }}
-                              >
-                                {p}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-gray">—</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono text-sm text-midnight-navy">
-                        {fmtCur(adv.total_spend)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-sm text-midnight-navy">
-                        {fmtNum(adv.total_creatives)}
-                      </td>
-                      <td className="py-3 pl-3 text-right text-sm text-midnight-navy">
-                        {fmtNum(adv.market_count)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Top Markets by Saturation */}
-      {topMarkets.length > 0 && (
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy mb-4">
-            Top Markets by Saturation
-          </h2>
-          <div className="space-y-2">
-            {topMarkets.map((m, i) => {
-              const score = m.saturation_score ?? 0;
-              const scoreColor =
-                score >= 75 ? "#EF4444" :
-                score >= 50 ? "#F59E0B" :
-                score >= 25 ? "#F59E0B" :
-                "#10B981";
-              return (
-                <div
-                  key={`${m.geo_name}-${i}`}
-                  className="flex items-center gap-4 rounded-md bg-cloud/60 px-4 py-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-midnight-navy truncate">
-                      {m.geo_name}
-                      {m.state_abbr && (
-                        <span className="ml-1.5 text-xs text-slate-gray">
-                          {m.state_abbr}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-slate-gray">
-                      {fmtNum(m.total_advertisers)} advertisers · {fmtCur(m.estimated_spend)} spend
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-24 h-2 rounded-full bg-white">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(score, 100)}%`,
-                          backgroundColor: scoreColor,
-                        }}
-                      />
-                    </div>
-                    <span
-                      className="text-sm font-bold w-10 text-right"
-                      style={{ color: scoreColor }}
-                    >
-                      {score.toFixed(0)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* ── Unified Advertising Section (5 modules) ── */}
+      <TortAdvertisingSection data={advertisingData} />
 
       {/* Cross-links */}
       <div className="flex flex-wrap gap-3">
