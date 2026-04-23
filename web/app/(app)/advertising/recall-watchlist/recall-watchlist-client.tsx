@@ -13,6 +13,9 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
   Clock,
   TrendingUp,
   MapPin,
@@ -202,9 +205,44 @@ type SortKey =
   | "stage"
   | "cases"
   | "recalls"
+  | "class_i"
   | "states"
   | "specialty"
+  | "mdl"
+  | "scored"
   | "name";
+
+type SortDir = "asc" | "desc";
+
+/**
+ * Default sort direction for each column: numeric/stage columns start high→low,
+ * name starts A→Z.
+ */
+const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
+  stage: "desc",
+  cases: "desc",
+  recalls: "desc",
+  class_i: "desc",
+  states: "desc",
+  specialty: "desc",
+  mdl: "desc",
+  scored: "desc",
+  name: "asc",
+};
+
+/** Map a manufacturer's MDL status to a sortable rank: formed > petition > none. */
+function mdlRank(m: ManufacturerRow): number {
+  if (m.mdl_formed) return 2;
+  if (m.mdl_petition_filed) return 1;
+  return 0;
+}
+
+/** Milliseconds since epoch for a date string, or 0 if null/invalid. */
+function dateMs(s: string | null): number {
+  if (!s) return 0;
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Main component                                                      */
@@ -219,7 +257,19 @@ export function RecallWatchlistClient({
   const [includeCold, setIncludeCold] = useState(false);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("stage");
+  const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR.stage);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Click a column header: toggle direction if same key, else switch key and
+  // reset to that column's default direction.
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(DEFAULT_SORT_DIR[key]);
+    }
+  };
 
   const filtered = useMemo(() => {
     let rows = data.manufacturers;
@@ -242,38 +292,50 @@ export function RecallWatchlistClient({
       });
     }
     const sorted = rows.slice();
+    const dirMul = sortDir === "asc" ? 1 : -1;
     sorted.sort((a, b) => {
+      // Compute primary delta based on the active sort key. Positive means
+      // "a greater than b" in natural/ascending terms; we apply dirMul at the
+      // end so descending is a single negation.
+      let primary = 0;
       switch (sortKey) {
         case "cases":
-          if (b.total_cases !== a.total_cases)
-            return b.total_cases - a.total_cases;
+          primary = a.total_cases - b.total_cases;
           break;
         case "recalls":
-          if (b.recall_count !== a.recall_count)
-            return b.recall_count - a.recall_count;
+          primary = a.recall_count - b.recall_count;
+          break;
+        case "class_i":
+          primary = a.class_i_recall_count - b.class_i_recall_count;
           break;
         case "states":
-          if (b.state_count !== a.state_count)
-            return b.state_count - a.state_count;
+          primary = a.state_count - b.state_count;
           break;
         case "specialty":
-          if (b.specialty_firm_count !== a.specialty_firm_count)
-            return b.specialty_firm_count - a.specialty_firm_count;
+          primary = a.specialty_firm_count - b.specialty_firm_count;
+          break;
+        case "mdl":
+          primary = mdlRank(a) - mdlRank(b);
+          break;
+        case "scored":
+          primary = dateMs(a.last_scored_at) - dateMs(b.last_scored_at);
           break;
         case "name":
-          return a.canonical_name.localeCompare(b.canonical_name);
+          primary = a.canonical_name.localeCompare(b.canonical_name);
+          break;
         case "stage":
         default:
-          if (b.max_stage !== a.max_stage) return b.max_stage - a.max_stage;
+          primary = a.max_stage - b.max_stage;
           break;
       }
-      // tiebreaker: stage desc, then cases desc
+      if (primary !== 0) return primary * dirMul;
+      // Stable tiebreaker (always): stage desc, cases desc, name asc.
       if (b.max_stage !== a.max_stage) return b.max_stage - a.max_stage;
       if (b.total_cases !== a.total_cases) return b.total_cases - a.total_cases;
       return a.canonical_name.localeCompare(b.canonical_name);
     });
     return sorted;
-  }, [data.manufacturers, stageFilter, includeCold, search, sortKey]);
+  }, [data.manufacturers, stageFilter, includeCold, search, sortKey, sortDir]);
 
   const toggleExpanded = (id: string) => {
     setExpanded((prev) => {
@@ -437,14 +499,21 @@ export function RecallWatchlistClient({
             </div>
             <select
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              onChange={(e) => {
+                const key = e.target.value as SortKey;
+                setSortKey(key);
+                setSortDir(DEFAULT_SORT_DIR[key]);
+              }}
               className="rounded-md border border-slate-200 bg-white py-1.5 pl-2 pr-8 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
             >
               <option value="stage">Sort: Stage (hottest first)</option>
               <option value="cases">Sort: Case count</option>
               <option value="recalls">Sort: Recall count</option>
+              <option value="class_i">Sort: Class I recalls</option>
               <option value="states">Sort: States filed</option>
               <option value="specialty">Sort: Specialty firms</option>
+              <option value="mdl">Sort: MDL status</option>
+              <option value="scored">Sort: Last scored</option>
               <option value="name">Sort: Manufacturer name</option>
             </select>
           </div>
@@ -481,15 +550,78 @@ export function RecallWatchlistClient({
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-gray">
                   <th className="py-2 px-3 text-left font-semibold w-10"></th>
-                  <th className="py-2 px-3 text-left font-semibold">Stage</th>
-                  <th className="py-2 px-3 text-left font-semibold">Manufacturer</th>
-                  <th className="py-2 px-3 text-right font-semibold">Recalls</th>
-                  <th className="py-2 px-3 text-right font-semibold">Class I</th>
-                  <th className="py-2 px-3 text-right font-semibold">Cases</th>
-                  <th className="py-2 px-3 text-right font-semibold">States</th>
-                  <th className="py-2 px-3 text-right font-semibold">Specialty</th>
-                  <th className="py-2 px-3 text-left font-semibold">MDL</th>
-                  <th className="py-2 px-3 text-left font-semibold">Last scored</th>
+                  <SortHeader
+                    label="Stage"
+                    sortKey="stage"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="left"
+                  />
+                  <SortHeader
+                    label="Manufacturer"
+                    sortKey="name"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="left"
+                  />
+                  <SortHeader
+                    label="Recalls"
+                    sortKey="recalls"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortHeader
+                    label="Class I"
+                    sortKey="class_i"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortHeader
+                    label="Cases"
+                    sortKey="cases"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortHeader
+                    label="States"
+                    sortKey="states"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortHeader
+                    label="Specialty"
+                    sortKey="specialty"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortHeader
+                    label="MDL"
+                    sortKey="mdl"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="left"
+                  />
+                  <SortHeader
+                    label="Last scored"
+                    sortKey="scored"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                    align="left"
+                  />
                 </tr>
               </thead>
               <tbody>
@@ -652,6 +784,66 @@ const STAGE_COPY: Record<number, string> = {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                      */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Clickable column header. Shows a neutral up/down icon when inactive, and a
+ * directional arrow (plus a teal tint) when this column drives the current
+ * sort. Click toggles direction; clicking a different column switches the key.
+ */
+function SortHeader({
+  label,
+  sortKey,
+  activeKey,
+  dir,
+  onSort,
+  align,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  dir: SortDir;
+  onSort: (key: SortKey) => void;
+  align: "left" | "right";
+}) {
+  const isActive = activeKey === sortKey;
+  const alignCls = align === "right" ? "text-right" : "text-left";
+  const justifyCls =
+    align === "right" ? "justify-end" : "justify-start";
+  const ariaSort = isActive
+    ? dir === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
+  const Icon = isActive
+    ? dir === "asc"
+      ? ArrowUp
+      : ArrowDown
+    : ChevronsUpDown;
+  return (
+    <th
+      scope="col"
+      aria-sort={ariaSort}
+      className={`py-2 px-3 font-semibold ${alignCls}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={`inline-flex items-center gap-1 ${justifyCls} w-full select-none rounded-sm transition-colors hover:text-midnight-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal ${
+          isActive ? "text-intelligence-teal" : ""
+        }`}
+        title={`Sort by ${label}${
+          isActive ? (dir === "asc" ? " (ascending)" : " (descending)") : ""
+        }`}
+      >
+        <span>{label}</span>
+        <Icon
+          className={`h-3 w-3 ${isActive ? "opacity-100" : "opacity-40"}`}
+          aria-hidden="true"
+        />
+      </button>
+    </th>
+  );
+}
 
 function KpiCard({
   label,
