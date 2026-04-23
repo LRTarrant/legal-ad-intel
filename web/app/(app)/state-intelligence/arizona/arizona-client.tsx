@@ -41,6 +41,7 @@ import {
   type PIAdvertisingData,
 } from "../../components/pi-advertising-section";
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
+import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { arizonaCompetitiveData } from "@/lib/data/competitive-landscape/arizona";
 
 /* ------------------------------------------------------------------ */
@@ -1625,6 +1626,11 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
       {/* 11. COMPETITIVE LANDSCAPE                                    */}
       {/* ============================================================ */}
       <CompetitiveLandscapeTable data={arizonaCompetitiveData} />
+
+      {/* ============================================================ */}
+      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
+      {/* ============================================================ */}
+      <StateAdvertisingSection stateAbbr="AZ" stateName="Arizona" />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}

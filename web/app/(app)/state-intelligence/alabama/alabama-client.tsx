@@ -41,6 +41,7 @@ import {
   type PIAdvertisingData,
 } from "../../components/pi-advertising-section";
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
+import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { alabamaCompetitiveData } from "@/lib/data/competitive-landscape/alabama";
 
 /* ------------------------------------------------------------------ */
@@ -1601,6 +1602,11 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       {/* 11. COMPETITIVE LANDSCAPE                                    */}
       {/* ============================================================ */}
       <CompetitiveLandscapeTable data={alabamaCompetitiveData} />
+
+      {/* ============================================================ */}
+      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
+      {/* ============================================================ */}
+      <StateAdvertisingSection stateAbbr="AL" stateName="Alabama" />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
