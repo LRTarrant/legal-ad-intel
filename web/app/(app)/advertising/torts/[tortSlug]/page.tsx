@@ -8,6 +8,7 @@ import {
   getSerpVisibilityWindowed,
   getSerpTopResults,
   getSampleAds,
+  getTortAdvertisingHeatmap,
 } from "@/lib/queries";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
@@ -28,6 +29,13 @@ const TortAdvertisingSection = nextDynamic(
   () =>
     import("../../../components/tort-advertising-section").then(
       (m) => m.TortAdvertisingSection
+    ),
+);
+
+const TortAdvertisingHeatmap = nextDynamic(
+  () =>
+    import("../../../components/tort-advertising-heatmap").then(
+      (m) => m.TortAdvertisingHeatmap
     ),
 );
 
@@ -103,7 +111,7 @@ export default async function TortAdvertisingPage({
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
   // Parallel data fetch — includes SERP + sample ads for shared component
-  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds] =
+  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds, heatmapData] =
     await Promise.all([
       getSegmentSummary(tortSlug),
       getTopAdvertisersBySegment(tortSlug, 25),
@@ -113,6 +121,7 @@ export default async function TortAdvertisingPage({
       getSerpVisibilityWindowed(windowStart, windowEnd, tortSlug),
       getSerpTopResults(tortSlug, 5),
       getSampleAds(tortSlug, 12),
+      getTortAdvertisingHeatmap(tortSlug, "state", 90),
     ]);
 
   // Build platform lookup by advertiser
@@ -295,6 +304,9 @@ export default async function TortAdvertisingPage({
 
       {/* ── Unified Advertising Section (5 modules) ── */}
       <TortAdvertisingSection data={advertisingData} />
+
+      {/* ── Advertising Heatmap by Geography ── */}
+      <TortAdvertisingHeatmap tortSlug={tortSlug} initialStateData={heatmapData} />
 
       {/* Cross-links */}
       <div className="flex flex-wrap gap-3">

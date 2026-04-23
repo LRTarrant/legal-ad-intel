@@ -288,3 +288,31 @@ export async function getAdSaturationWindowed(
   }
   return (data ?? []) as AdSaturationWindowedRow[];
 }
+
+// --- Tort Advertising Heatmap ---
+
+export type TortHeatmapRow = {
+  geo_code: string;
+  geo_name: string;
+  advertiser_count: number;
+  observation_count: number;
+};
+
+export async function getTortAdvertisingHeatmap(
+  tortSlug: string,
+  geoLevel: "state" | "dma" = "state",
+  windowDays = 90
+): Promise<TortHeatmapRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.rpc("get_tort_advertising_heatmap", {
+    p_tort_slug: tortSlug,
+    p_geo_level: geoLevel,
+    p_window_days: windowDays,
+  });
+  if (error) {
+    console.error("Failed to fetch tort advertising heatmap:", error.message);
+    return [];
+  }
+  return (data ?? []) as TortHeatmapRow[];
+}
