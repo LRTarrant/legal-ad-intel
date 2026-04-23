@@ -74,6 +74,8 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "olympus_scopes":         ["Olympus duodenoscope lawsuit", "Olympus scope infection", "Olympus bronchoscope lawsuit", "duodenoscope infection lawsuit"],
     "ai_suicide":             ["AI chatbot lawsuit", "Character.AI lawsuit", "AI suicide lawsuit", "chatbot self-harm", "AI companion lawsuit"],
     "pfas_contamination":     ["PFAS lawsuit", "forever chemicals lawsuit", "PFOA lawsuit", "PFOS contamination lawsuit", "firefighter PFAS exposure"],
+    "cpap":                   ["philips cpap lawsuit", "philips respironics recall lawyer", "cpap cancer lawsuit", "dreamstation recall lawsuit"],
+    "3m_earplugs":            ["3m earplugs lawsuit", "3m combat arms lawsuit", "3m military earplug settlement", "3m earplug hearing loss lawyer"],
 }
 
 

@@ -74,6 +74,9 @@ SERP_SEARCH_TERMS: dict[str, list[str]] = {
     "lyft-sexual-assault":    ["lyft sexual assault lawsuit", "lyft ride assault lawyer"],
     "cpap":                   ["philips cpap lawsuit", "philips respironics recall", "cpap cancer lawsuit", "dreamstation recall lawsuit", "cpap foam lawsuit"],
     "3m_earplugs":            ["3m earplugs lawsuit", "3m combat arms lawsuit", "3m military earplug settlement", "3m earplug hearing loss lawsuit"],
+    "olympus_scopes":         ["olympus scope lawsuit", "olympus duodenoscope lawsuit", "olympus bronchoscope infection lawsuit", "duodenoscope infection attorney", "olympus TJF-Q180V lawsuit", "scope infection lawyer", "CRE infection lawsuit"],
+    "ai_suicide":             ["character ai lawsuit", "ai chatbot suicide lawsuit", "character ai wrongful death", "ai companion lawsuit", "chatbot self harm lawyer", "replika lawsuit", "ai chatbot minor lawsuit"],
+    "pfas_contamination":     ["PFAS lawsuit", "forever chemicals lawsuit", "PFOA contamination lawyer", "PFOS contamination lawsuit", "firefighter PFAS exposure"],
 }
 
 
