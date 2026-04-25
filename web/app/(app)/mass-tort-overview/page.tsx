@@ -10,14 +10,14 @@ export const metadata = {
 };
 
 const MDL_TORT_NAMES: Record<number, { name: string; href: string }> = {
-  3140: { name: "Depo-Provera", href: "/advertising/torts/depo-provera" },
+  3140: { name: "Depo-Provera", href: "/advertising/torts/depo_provera" },
   2741: { name: "Roundup", href: "/advertising/torts/roundup" },
-  3060: { name: "Hair Relaxer", href: "/advertising/torts/hair-relaxer" },
-  2738: { name: "Talcum Powder", href: "/advertising/torts/talcum-powder" },
+  3060: { name: "Hair Relaxer", href: "/advertising/torts/hair_relaxer" },
+  2738: { name: "Talcum Powder", href: "/advertising/torts/talcum_powder" },
   3014: { name: "Paraquat", href: "/advertising/torts/paraquat" },
   2433: {
     name: "AFFF / Firefighter Foam",
-    href: "/advertising/torts/afff-firefighting-foam",
+    href: "/advertising/torts/firefighter_foam",
   },
   3047: {
     name: "Social Media Addiction",

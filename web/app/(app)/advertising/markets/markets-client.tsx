@@ -7,7 +7,7 @@ import { TortQuickStart } from "../../components/tort-quick-start";
 
 const TORT_DISPLAY_NAMES: Record<string, string> = {
   camp_lejeune: "Camp Lejeune",
-  "bard-powerport": "Bard PowerPort",
+  bard_powerport: "Bard PowerPort",
   glp1_gastroparesis: "GLP-1 Gastroparesis",
   glp1_vision_loss: "GLP-1 Vision Loss",
   hair_relaxer: "Hair Relaxer",

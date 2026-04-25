@@ -182,7 +182,7 @@ export default async function MdlDetailPage({
   // Resolve the advertising page slug for this tort (if one exists).
   // Hardcoded overrides for MDLs whose tort page isn't yet in the torts table.
   const MDL_TORT_SLUG_OVERRIDES: Record<number, string> = {
-    3140: "depo-provera",
+    3140: "depo_provera",
   };
 
   const tortAdSlug =
