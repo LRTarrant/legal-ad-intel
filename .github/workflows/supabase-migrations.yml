@@ -1,0 +1,80 @@
+# Auto-apply Supabase migrations when they land on main.
+#
+# WHY THIS EXISTS:
+# PR #238 added a migration for the heatmap RPC, but it wasn't applied to the
+# production database for ~36 hours. This workflow ensures every migration that
+# merges to main is automatically pushed to the linked Supabase project.
+#
+# REQUIRED SECRETS (add in GitHub repo Settings > Secrets and variables > Actions):
+#   SUPABASE_ACCESS_TOKEN  - Personal access token from https://supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD   - Database password from Supabase project settings > Database
+#
+# HOW IT WORKS:
+#   1. Triggers on push to main when any file in supabase/migrations/ changes
+#   2. Links the CLI to the production Supabase project
+#   3. Runs `supabase db push` to apply any pending migrations
+#   4. Prints a summary of migration status
+#
+# MANUAL TRIGGER:
+#   You can also run this manually from the Actions tab (workflow_dispatch)
+#   if you need to re-apply or backfill migrations.
+
+name: Apply Supabase Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+
+  # Allow manual runs from the GitHub Actions tab
+  workflow_dispatch:
+
+# Prevent two migration runs from racing each other
+concurrency:
+  group: supabase-migrations-main
+  cancel-in-progress: false  # Let the first run finish; don't cancel it
+
+jobs:
+  apply-migrations:
+    name: Push migrations to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      # ── 1. Check out the repo so we have the migrations folder ──
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Install the Supabase CLI ──
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # ── 3. Link to the production project ──
+      - name: Link Supabase project
+        run: |
+          supabase link --project-ref inmktpwhpkiknctznrys
+          echo "Linked to Supabase project inmktpwhpkiknctznrys"
+
+      # ── 4. Apply pending migrations ──
+      # This is the core step. `db push` compares local migrations against
+      # what's already been applied in production and runs only the new ones.
+      # If any migration fails, the step (and workflow) fails immediately.
+      - name: Apply pending migrations
+        run: |
+          echo "Pushing migrations to production..."
+          supabase db push
+
+      # ── 5. Print migration status summary ──
+      # Shows which migrations are applied vs. pending so you can verify.
+      - name: Show migration status
+        if: always()  # Run even if the push step failed, for debugging
+        run: |
+          echo "=== Migration Status ==="
+          supabase migration list
