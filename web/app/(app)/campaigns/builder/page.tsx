@@ -1,5 +1,6 @@
 import { Crosshair } from "lucide-react";
 import { CampaignBuilderClient } from "./campaign-builder-client";
+import { AiSearchBar } from "./ai-search-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,8 @@ export default function CampaignBuilderPage() {
           </p>
         </div>
       </div>
+
+      <AiSearchBar />
 
       <CampaignBuilderClient />
     </div>
