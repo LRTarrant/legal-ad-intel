@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createImageProviderWithFallback } from "@/lib/services/image-generation";
+import {
+  createImageProviderWithFallback,
+  getTortLibraryImage,
+} from "@/lib/services/image-generation";
 
 interface CreativeRequest {
   tortName: string;
@@ -134,6 +137,29 @@ export async function POST(req: NextRequest) {
       // Non-blocking: proceed without audience context
     }
 
+    // ── Library-first: check curated tort image library ──────────────
+    // Resolve tort name → slug by looking up mass_torts
+    let libraryUrl: string | null = null;
+    try {
+      const { data: tort } = await (supabase as any)
+        .from("mass_torts")
+        .select("slug")
+        .ilike("name", `%${body.tortName}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (tort?.slug) {
+        libraryUrl = await getTortLibraryImage(tort.slug, supabase);
+      }
+    } catch {
+      // Non-blocking: proceed to AI generation
+    }
+
+    if (libraryUrl) {
+      return NextResponse.json({ imageUrl: libraryUrl, source: "library" });
+    }
+
+    // ── Fallback: AI image generation ─────────────────────────────────
     let provider;
     try {
       provider = createImageProviderWithFallback();
@@ -146,7 +172,7 @@ export async function POST(req: NextRequest) {
     const prompt = buildPrompt(body, audienceNotes);
     const imageUrl = await provider.generate(prompt, { size: "1024x1024" });
 
-    return NextResponse.json({ imageUrl });
+    return NextResponse.json({ imageUrl, source: "ai" });
   } catch (err) {
     console.error("Creative generation error:", err);
     return NextResponse.json(
