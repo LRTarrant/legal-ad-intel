@@ -51,47 +51,27 @@ export async function getMotorcycleTrendByYear(
   }));
 }
 
+/**
+ * Returns motorcycle crash heatmap data via a server-side aggregation RPC.
+ *
+ * WARNING: Do NOT replace this with a client-side pagination loop over
+ * fars_fatalities. See the comment on getCrashHeatmapPoints in fatalities.ts.
+ */
 export async function getMotorcycleHeatmapPoints(
   filters?: FatalitiesFilters
 ): Promise<HeatmapPoint[]> {
-  const pageSize = 1000;
-  const rows: HeatmapPoint[] = [];
-  let from = 0;
-
-  while (true) {
-    let query = getSupabase()
-      .from("fars_fatalities")
-      .select("latitude, longitude, fatalities")
-      .not("latitude", "is", null)
-      .not("longitude", "is", null)
-      .eq("has_motorcycle", true)
-      .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
-
-    if (filters?.state) {
-      query = query.eq("state", filters.state);
-    }
-
-    if (filters?.county != null) {
-      query = query.eq("county_fips", filters.county);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    const batch = ((data ?? []) as { latitude: number; longitude: number; fatalities: number }[]).map((row) => ({
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_fars_motorcycle_heatmap", {
+      filter_state: filters?.state ?? null,
+      filter_county: filters?.county ?? null,
+    } as never)
+    .throwOnError();
+  return ((data ?? []) as { latitude: number; longitude: number; intensity: number }[]).map(
+    (row) => ({
       latitude: Number(row.latitude),
       longitude: Number(row.longitude),
-      intensity: Math.max(Number(row.fatalities ?? 1), 1),
-    }));
-
-    rows.push(...batch);
-
-    if (batch.length < pageSize) {
-      break;
-    }
-
-    from += pageSize;
-  }
-
-  return rows;
+      intensity: Math.max(Number(row.intensity ?? 1), 1),
+    })
+  );
 }
