@@ -20,7 +20,6 @@ export const metadata = {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const KG_TO_LBS = 2.20462;
 const COMPOUNDS = ["PARAQUAT", "GLYPHOSATE"] as const;
 const YEARS = [2013, 2014, 2015, 2016, 2017] as const;
 
@@ -44,47 +43,85 @@ const STATE_ABBR_MAP: Record<string, string> = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Data fetching helpers                                              */
+/*  Data fetching helpers (server-side aggregation RPCs)                */
+/*                                                                      */
+/*  WARNING: Do NOT replace these with client-side pagination loops      */
+/*  over pesticide_usage. The table has 30k+ rows; paginating in        */
+/*  1000-row chunks fires dozens of sequential queries. See PR           */
+/*  "fix(perf): FARS pagination storm" for the incident class.          */
 /* ------------------------------------------------------------------ */
 
-interface RawPesticideRow {
+interface RpcStateRow {
   compound: string;
-  year: number;
-  state_fips: string;
-  county_fips: string;
-  fips: string;
   state_name: string;
-  county_name: string | null;
-  epest_low_kg: number | null;
-  epest_high_kg: number | null;
+  state_fips: string;
+  avg_high_lbs: number;
+  avg_low_lbs: number;
+  total_high_lbs: number;
+  county_count: number;
+  year_count: number;
 }
 
-async function fetchAllPesticide(): Promise<RawPesticideRow[]> {
+interface RpcCountyRow {
+  compound: string;
+  fips: string;
+  county_name: string | null;
+  state_name: string;
+  avg_high_lbs: number;
+  avg_low_lbs: number;
+  years_active: number;
+}
+
+interface RpcStateYearRow {
+  compound: string;
+  year: number;
+  state_name: string;
+  state_fips: string;
+  total_high_lbs: number;
+  total_low_lbs: number;
+  county_count: number;
+}
+
+interface RpcCountyYearRow {
+  compound: string;
+  year: number;
+  fips: string;
+  county_name: string | null;
+  state_name: string;
+  high_lbs: number;
+  low_lbs: number;
+}
+
+async function fetchPesticideStateSummary(): Promise<RpcStateRow[]> {
   const supabase = getSupabase();
-  const pageSize = 1000;
-  const rows: RawPesticideRow[] = [];
-  let from = 0;
+  const { data } = await supabase
+    .rpc("get_pesticide_state_summary", { filter_state: null } as never)
+    .throwOnError();
+  return (data ?? []) as unknown as RpcStateRow[];
+}
 
-  // pesticide_usage table is not in generated types yet — cast to bypass
-  const sb = supabase as unknown as {
-    from: (table: string) => ReturnType<typeof supabase.from>;
-  };
+async function fetchPesticideCountySummary(): Promise<RpcCountyRow[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_pesticide_county_summary", { filter_state: null } as never)
+    .throwOnError();
+  return (data ?? []) as unknown as RpcCountyRow[];
+}
 
-  while (true) {
-    const { data, error } = await sb
-      .from("pesticide_usage")
-      .select("compound,year,state_fips,county_fips,fips,state_name,county_name,epest_low_kg,epest_high_kg")
-      .order("state_name", { ascending: true })
-      .range(from, from + pageSize - 1);
+async function fetchPesticideStateByYear(): Promise<RpcStateYearRow[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_pesticide_state_by_year", { filter_state: null } as never)
+    .throwOnError();
+  return (data ?? []) as unknown as RpcStateYearRow[];
+}
 
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    rows.push(...(data as unknown as RawPesticideRow[]));
-    if (data.length < pageSize) break;
-    from += pageSize;
-  }
-
-  return rows;
+async function fetchPesticideCountyByYear(): Promise<RpcCountyYearRow[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .rpc("get_pesticide_county_by_year", { filter_state: null } as never)
+    .throwOnError();
+  return (data ?? []) as unknown as RpcCountyYearRow[];
 }
 
 interface RawDiseaseRow {
@@ -129,116 +166,73 @@ async function fetchPiScores(): Promise<PiRow[]> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Aggregation                                                        */
+/*  Aggregation (maps pre-aggregated RPC data by compound)              */
 /* ------------------------------------------------------------------ */
 
-function aggregateStateAvg(
-  rows: RawPesticideRow[],
+function stateRowsForCompound(
+  rows: RpcStateRow[],
   compound: string
 ): PesticideStateRow[] {
-  const filtered = rows.filter((r) => r.compound === compound);
-  const byState = new Map<string, { highSum: number; lowSum: number; counties: Set<string>; yearCount: number; stateFips: string }>();
-
-  for (const r of filtered) {
-    let entry = byState.get(r.state_name);
-    if (!entry) {
-      entry = { highSum: 0, lowSum: 0, counties: new Set(), yearCount: 0, stateFips: r.state_fips };
-      byState.set(r.state_name, entry);
-    }
-    entry.highSum += (r.epest_high_kg ?? 0) * KG_TO_LBS;
-    entry.lowSum += (r.epest_low_kg ?? 0) * KG_TO_LBS;
-    entry.counties.add(r.fips);
-  }
-
-  const yearCount = YEARS.length;
-
-  return Array.from(byState.entries()).map(([state_name, e]) => ({
-    state_name,
-    state_fips: e.stateFips,
-    avg_high_lbs: e.highSum / yearCount,
-    avg_low_lbs: e.lowSum / yearCount,
-    county_count: e.counties.size,
-    total_high_lbs: e.highSum,
-  }));
+  return rows
+    .filter((r) => r.compound === compound)
+    .map((r) => ({
+      state_name: r.state_name,
+      state_fips: r.state_fips,
+      avg_high_lbs: Number(r.avg_high_lbs),
+      avg_low_lbs: Number(r.avg_low_lbs),
+      county_count: Number(r.county_count),
+      total_high_lbs: Number(r.total_high_lbs),
+    }));
 }
 
-function aggregateStateYear(
-  rows: RawPesticideRow[],
+function countyRowsForCompound(
+  rows: RpcCountyRow[],
+  compound: string
+): PesticideCountyRow[] {
+  return rows
+    .filter((r) => r.compound === compound)
+    .map((r) => ({
+      county_name: r.county_name,
+      state_name: r.state_name,
+      fips: r.fips,
+      avg_high_lbs: Number(r.avg_high_lbs),
+      avg_low_lbs: Number(r.avg_low_lbs),
+      years_active: Number(r.years_active),
+    }));
+}
+
+function stateYearRows(
+  rows: RpcStateYearRow[],
   compound: string,
   year: number
 ): PesticideStateRow[] {
-  const filtered = rows.filter((r) => r.compound === compound && r.year === year);
-  const byState = new Map<string, { highSum: number; lowSum: number; counties: Set<string>; stateFips: string }>();
-
-  for (const r of filtered) {
-    let entry = byState.get(r.state_name);
-    if (!entry) {
-      entry = { highSum: 0, lowSum: 0, counties: new Set(), stateFips: r.state_fips };
-      byState.set(r.state_name, entry);
-    }
-    entry.highSum += (r.epest_high_kg ?? 0) * KG_TO_LBS;
-    entry.lowSum += (r.epest_low_kg ?? 0) * KG_TO_LBS;
-    entry.counties.add(r.fips);
-  }
-
-  return Array.from(byState.entries()).map(([state_name, e]) => ({
-    state_name,
-    state_fips: e.stateFips,
-    avg_high_lbs: e.highSum,
-    avg_low_lbs: e.lowSum,
-    county_count: e.counties.size,
-    total_high_lbs: e.highSum,
-  }));
+  return rows
+    .filter((r) => r.compound === compound && r.year === year)
+    .map((r) => ({
+      state_name: r.state_name,
+      state_fips: r.state_fips,
+      avg_high_lbs: Number(r.total_high_lbs),
+      avg_low_lbs: Number(r.total_low_lbs),
+      county_count: Number(r.county_count),
+      total_high_lbs: Number(r.total_high_lbs),
+    }));
 }
 
-function aggregateCountyAvg(
-  rows: RawPesticideRow[],
-  compound: string
-): PesticideCountyRow[] {
-  const filtered = rows.filter((r) => r.compound === compound);
-  const byFips = new Map<
-    string,
-    { highSum: number; lowSum: number; years: Set<number>; countyName: string | null; stateName: string }
-  >();
-
-  for (const r of filtered) {
-    let entry = byFips.get(r.fips);
-    if (!entry) {
-      entry = { highSum: 0, lowSum: 0, years: new Set(), countyName: r.county_name, stateName: r.state_name };
-      byFips.set(r.fips, entry);
-    }
-    entry.highSum += (r.epest_high_kg ?? 0) * KG_TO_LBS;
-    entry.lowSum += (r.epest_low_kg ?? 0) * KG_TO_LBS;
-    entry.years.add(r.year);
-    if (!entry.countyName && r.county_name) entry.countyName = r.county_name;
-  }
-
-  const yearCount = YEARS.length;
-
-  return Array.from(byFips.entries()).map(([fips, e]) => ({
-    county_name: e.countyName,
-    state_name: e.stateName,
-    fips,
-    avg_high_lbs: e.highSum / yearCount,
-    avg_low_lbs: e.lowSum / yearCount,
-    years_active: e.years.size,
-  }));
-}
-
-function aggregateCountyYear(
-  rows: RawPesticideRow[],
+function countyYearRows(
+  rows: RpcCountyYearRow[],
   compound: string,
   year: number
 ): PesticideCountyRow[] {
-  const filtered = rows.filter((r) => r.compound === compound && r.year === year);
-  return filtered.map((r) => ({
-    county_name: r.county_name,
-    state_name: r.state_name,
-    fips: r.fips,
-    avg_high_lbs: (r.epest_high_kg ?? 0) * KG_TO_LBS,
-    avg_low_lbs: (r.epest_low_kg ?? 0) * KG_TO_LBS,
-    years_active: 1,
-  }));
+  return rows
+    .filter((r) => r.compound === compound && r.year === year)
+    .map((r) => ({
+      county_name: r.county_name,
+      state_name: r.state_name,
+      fips: r.fips,
+      avg_high_lbs: Number(r.high_lbs),
+      avg_low_lbs: Number(r.low_lbs),
+      years_active: 1,
+    }));
 }
 
 function computeSummary(states: PesticideStateRow[]) {
@@ -375,13 +369,19 @@ function gradeFromComposite(
 /* ------------------------------------------------------------------ */
 
 export default async function ExposurePage() {
-  let pesticideRows: RawPesticideRow[] = [];
+  let rpcStateRows: RpcStateRow[] = [];
+  let rpcCountyRows: RpcCountyRow[] = [];
+  let rpcStateYearRows: RpcStateYearRow[] = [];
+  let rpcCountyYearRows: RpcCountyYearRow[] = [];
   let diseaseRows: RawDiseaseRow[] = [];
   let piScores: PiRow[] = [];
 
   try {
-    [pesticideRows, diseaseRows, piScores] = await Promise.all([
-      fetchAllPesticide(),
+    [rpcStateRows, rpcCountyRows, rpcStateYearRows, rpcCountyYearRows, diseaseRows, piScores] = await Promise.all([
+      fetchPesticideStateSummary(),
+      fetchPesticideCountySummary(),
+      fetchPesticideStateByYear(),
+      fetchPesticideCountyByYear(),
       fetchDiseaseMortality(),
       fetchPiScores(),
     ]);
@@ -389,18 +389,18 @@ export default async function ExposurePage() {
     // Gracefully degrade — render empty state
   }
 
-  // Aggregate pesticide data: 5-year averages
+  // Map pre-aggregated RPC data by compound: 5-year averages
   const pesticideStates = {
-    paraquat: aggregateStateAvg(pesticideRows, "PARAQUAT"),
-    glyphosate: aggregateStateAvg(pesticideRows, "GLYPHOSATE"),
+    paraquat: stateRowsForCompound(rpcStateRows, "PARAQUAT"),
+    glyphosate: stateRowsForCompound(rpcStateRows, "GLYPHOSATE"),
   };
 
   const pesticideCounties = {
-    paraquat: aggregateCountyAvg(pesticideRows, "PARAQUAT"),
-    glyphosate: aggregateCountyAvg(pesticideRows, "GLYPHOSATE"),
+    paraquat: countyRowsForCompound(rpcCountyRows, "PARAQUAT"),
+    glyphosate: countyRowsForCompound(rpcCountyRows, "GLYPHOSATE"),
   };
 
-  // Per-year aggregations
+  // Per-year breakdowns from pre-aggregated RPC data
   const pesticideYearlyStates: Record<string, Record<string, PesticideStateRow[]>> = {
     paraquat: {},
     glyphosate: {},
@@ -413,8 +413,8 @@ export default async function ExposurePage() {
   for (const compound of COMPOUNDS) {
     const key = compound.toLowerCase();
     for (const year of YEARS) {
-      pesticideYearlyStates[key][String(year)] = aggregateStateYear(pesticideRows, compound, year);
-      pesticideYearlyCounties[key][String(year)] = aggregateCountyYear(pesticideRows, compound, year);
+      pesticideYearlyStates[key][String(year)] = stateYearRows(rpcStateYearRows, compound, year);
+      pesticideYearlyCounties[key][String(year)] = countyYearRows(rpcCountyYearRows, compound, year);
     }
   }
 

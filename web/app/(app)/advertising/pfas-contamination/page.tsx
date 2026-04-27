@@ -58,52 +58,46 @@ function computeSeverity(pfas_ppt: number): string {
   return "low";
 }
 
+/**
+ * Fetches PFAS contamination sites via a server-side RPC with a hard
+ * LIMIT 5000 cap.
+ *
+ * WARNING: Do NOT replace this with a client-side pagination loop over
+ * pfas_contamination_sites. See PR "fix(perf): FARS pagination storm"
+ * and the follow-up PR for this fix.
+ */
 async function fetchPfasSites(): Promise<PfasSiteRow[]> {
   const supabase = getSupabase();
-  const sb = supabase as unknown as {
-    from: (table: string) => ReturnType<typeof supabase.from>;
-  };
+  const { data, error } = await supabase
+    .rpc("get_pfas_contamination_summary", {
+      filter_state: null,
+    } as never)
+    .throwOnError();
 
-  const rows: PfasSiteRow[] = [];
-  let from = 0;
-  const pageSize = 1000;
-
-  try {
-    while (true) {
-      const { data, error } = await sb
-        .from("pfas_contamination_sites")
-        .select("id,state,installation_name,pfas_ppt,source,data_year")
-        .order("pfas_ppt", { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) {
-        console.error("[PFAS] fetchPfasSites query error:", error);
-        throw error;
-      }
-      if (!data || data.length === 0) break;
-      rows.push(
-        ...(data as unknown as Record<string, unknown>[]).map((d) => {
-          const pfas_ppt = Number(d.pfas_ppt) || 0;
-          return {
-            id: String(d.id),
-            state: String(d.state),
-            installation_name: String(d.installation_name),
-            pfas_ppt,
-            severity: computeSeverity(pfas_ppt),
-            source: String(d.source),
-            data_year: Number(d.data_year) || 0,
-          };
-        })
-      );
-      if (data.length < pageSize) break;
-      from += pageSize;
-    }
-  } catch (err) {
-    console.error("[PFAS] fetchPfasSites failed:", err);
-    throw err;
+  if (error) {
+    console.error("[PFAS] fetchPfasSites RPC error:", error);
+    throw error;
   }
 
-  return rows;
+  return ((data ?? []) as unknown as {
+    id: string;
+    state: string;
+    installation_name: string;
+    pfas_ppt: number;
+    source: string;
+    data_year: number;
+  }[]).map((d) => {
+    const pfas_ppt = Number(d.pfas_ppt) || 0;
+    return {
+      id: String(d.id),
+      state: String(d.state),
+      installation_name: String(d.installation_name),
+      pfas_ppt,
+      severity: computeSeverity(pfas_ppt),
+      source: String(d.source),
+      data_year: Number(d.data_year) || 0,
+    };
+  });
 }
 
 interface CancerRow {
