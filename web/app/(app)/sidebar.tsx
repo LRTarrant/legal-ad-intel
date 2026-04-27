@@ -33,6 +33,7 @@ import {
   Leaf,
   Users,
   UserCog,
+  ImageIcon,
   Droplets,
   Tractor,
   FlameKindling,
@@ -403,6 +404,7 @@ export function Sidebar() {
               </p>
               <div className="flex flex-col gap-0.5 pl-2">
                 {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
+                {renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
               </div>
             </div>
           )}

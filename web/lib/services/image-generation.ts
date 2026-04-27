@@ -127,6 +127,41 @@ export function createImageProvider(): ImageGenerationProvider {
  * Tries Imagen first; on failure, falls back to DALL-E (if available).
  * ────────────────────────────────────────────────────────────────────── */
 
+/* ── Tort image library lookup ─────────────────────────────────────────
+ * Checks the curated tort_images table first. Returns a random public_url
+ * if enough curated images exist for the tort slug, otherwise null so
+ * callers can fall back to AI generation.
+ * ────────────────────────────────────────────────────────────────────── */
+
+const TORT_IMAGE_LIBRARY_MIN_COUNT = parseInt(
+  process.env.TORT_IMAGE_LIBRARY_MIN_COUNT ?? "3",
+  10,
+);
+
+export async function getTortLibraryImage(
+  tortSlug: string,
+  supabase: any,
+): Promise<string | null> {
+  try {
+    const { data: images, error } = await supabase
+      .from("tort_images")
+      .select("public_url")
+      .eq("tort_slug", tortSlug)
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error || !images || images.length < TORT_IMAGE_LIBRARY_MIN_COUNT) {
+      return null;
+    }
+
+    // Pick a random image from the library
+    const pick = images[Math.floor(Math.random() * images.length)];
+    return pick.public_url;
+  } catch {
+    return null;
+  }
+}
+
 export function createImageProviderWithFallback(): ImageGenerationProvider {
   const primary = createImageProvider();
   const openaiKey = process.env.OPENAI_API_KEY;
