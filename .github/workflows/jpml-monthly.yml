@@ -2,8 +2,10 @@ name: JPML Monthly Pipeline
 
 on:
   schedule:
-    # 2nd business day of each month — run on the 3rd at 15:00 UTC as buffer
-    - cron: '0 15 3 * *'
+    # Runs daily 2nd-5th of each month at 15:00 UTC to catch 1st-business-day
+    # reports regardless of weekday alignment. Script is idempotent (all writes
+    # are upserts); extra runs no-op once the report is ingested.
+    - cron: '0 15 2-5 * *'
   workflow_dispatch:
     inputs:
       dry_run:
