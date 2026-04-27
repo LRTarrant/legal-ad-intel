@@ -234,7 +234,7 @@ export function BardPowerPortClient({ data }: { data: BardPowerPortPageData }) {
       {/* -- 1. Page Header ------------------------------------------------ */}
       <div>
         <Link
-          href="/advertising/torts/afff-firefighting-foam"
+          href="/advertising/torts/firefighter_foam"
           className="text-sm text-slate-gray hover:text-midnight-navy"
         >
           <span className="flex items-center gap-1">

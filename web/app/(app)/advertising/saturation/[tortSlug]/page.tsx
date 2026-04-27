@@ -82,7 +82,8 @@ export default async function TortDrillDownPage({
   params: Promise<{ tortSlug: string }>;
   searchParams: Promise<{ state?: string; window?: string; from?: string; to?: string }>;
 }) {
-  const { tortSlug } = await params;
+  const { tortSlug: rawSlug } = await params;
+  const tortSlug = rawSlug.replace(/-/g, "_");
   const sp = await searchParams;
   const stateFilter = sp.state || undefined;
   const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);

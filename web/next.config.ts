@@ -63,6 +63,42 @@ const nextConfig: NextConfig = {
         destination: "/advertising/trends",
         permanent: true,
       },
+      // Tort slug normalization: hyphens → underscores (DB is source of truth)
+      {
+        source: "/advertising/torts/depo-provera",
+        destination: "/advertising/torts/depo_provera",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/hair-relaxer",
+        destination: "/advertising/torts/hair_relaxer",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/talcum-powder",
+        destination: "/advertising/torts/talcum_powder",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/afff-firefighting-foam",
+        destination: "/advertising/torts/firefighter_foam",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/bard-powerport",
+        destination: "/advertising/torts/bard_powerport",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/olympus-scopes",
+        destination: "/advertising/torts/olympus_scopes",
+        permanent: true,
+      },
+      {
+        source: "/advertising/torts/ai-suicide",
+        destination: "/advertising/torts/ai_suicide",
+        permanent: true,
+      },
     ];
   },
 };

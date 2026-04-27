@@ -43,13 +43,19 @@ export const dynamic = "force-dynamic";
 
 /* ── Metadata ──────────────────────────────────────────────────────────── */
 
+/** Normalize URL slug (may use hyphens) to DB slug (always underscores). */
+function normalizeSlug(slug: string): string {
+  return slug.replace(/-/g, "_");
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ tortSlug: string }>;
 }) {
   const { tortSlug } = await params;
-  const tort = await getTortBySlug(tortSlug);
+  const dbSlug = normalizeSlug(tortSlug);
+  const tort = await getTortBySlug(dbSlug);
   return {
     title: tort
       ? `${tort.label} Advertising Intelligence | Legal Marketing Intelligence`
@@ -99,7 +105,8 @@ export default async function TortAdvertisingPage({
 }: {
   params: Promise<{ tortSlug: string }>;
 }) {
-  const { tortSlug } = await params;
+  const { tortSlug: rawSlug } = await params;
+  const tortSlug = normalizeSlug(rawSlug);
   const tort = await getTortBySlug(tortSlug);
   if (!tort) notFound();
 
