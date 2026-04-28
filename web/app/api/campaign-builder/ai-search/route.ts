@@ -213,7 +213,7 @@ async function fetchStateTargetingGrounding(
     parts.push(`\nRecommended Markets:`);
     for (const r of recommended) {
       parts.push(
-        `- ${r.state_name} (${r.state}): Score ${r.score}, Signal: ${r.primary_signal}`
+        `- ${r.state_name ?? r.state} (${r.state}): Score ${r.score}, Signal: ${r.primary_signal}`
       );
     }
   }
