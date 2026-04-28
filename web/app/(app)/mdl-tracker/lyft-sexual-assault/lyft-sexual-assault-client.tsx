@@ -364,6 +364,14 @@ export function LyftSexualAssaultClient({ data }: { data: LyftSexualAssaultPageD
         <p className="mt-0.5 text-xs text-slate-gray">
           Last Updated: April 17, 2026
         </p>
+        <Link
+          href="/advertising/torts/lyft-sexual-assault"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border-2 border-intelligence-teal px-5 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
+        >
+          <TrendingUp className="w-4 h-4" />
+          View Advertising Intelligence
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* -- 2. Key Stats Row ---------------------------------------------- */}
