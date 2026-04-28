@@ -291,7 +291,7 @@ export function PfasClient({ data }: { data: PfasPageData }) {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div>
         <Link
-          href="/advertising/torts/firefighter_foam"
+          href="/advertising/torts/afff-firefighting-foam"
           className="text-sm text-slate-gray hover:text-midnight-navy"
         >
           <span className="flex items-center gap-1">
@@ -778,7 +778,7 @@ export function PfasClient({ data }: { data: PfasPageData }) {
           {/* Cross-links */}
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/advertising/torts/firefighter_foam"
+              href="/advertising/torts/afff-firefighting-foam"
               className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
             >
               View AFFF Tort Profile

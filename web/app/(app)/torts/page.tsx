@@ -21,17 +21,17 @@ type TortProfile = {
 };
 
 const TORT_PROFILES: TortProfile[] = [
-  { name: "Depo-Provera", route: "/advertising/torts/depo_provera", statusLine: "18,000+ cases filed", mdlBadge: "Active MDL" },
+  { name: "Depo-Provera", route: "/advertising/torts/depo-provera", statusLine: "18,000+ cases filed", mdlBadge: "Active MDL" },
   { name: "Roundup", route: "/advertising/torts/roundup", statusLine: "$11B+ in settlements", mdlBadge: "Post-Settlement" },
-  { name: "Hair Relaxer", route: "/advertising/torts/hair_relaxer", statusLine: "Discovery phase", mdlBadge: "Active MDL" },
-  { name: "Talcum Powder", route: "/advertising/torts/talcum_powder", statusLine: "60,000+ cases filed", mdlBadge: "Active MDL" },
+  { name: "Hair Relaxer", route: "/advertising/torts/hair-relaxer", statusLine: "Discovery phase", mdlBadge: "Active MDL" },
+  { name: "Talcum Powder", route: "/advertising/torts/talcum-powder", statusLine: "60,000+ cases filed", mdlBadge: "Active MDL" },
   { name: "Paraquat", route: "/advertising/torts/paraquat", statusLine: "Parkinson's disease link", mdlBadge: "Active MDL" },
-  { name: "AFFF / Firefighter Foam", route: "/advertising/torts/firefighter_foam", statusLine: "Water contamination", mdlBadge: "Active MDL" },
+  { name: "AFFF / Firefighter Foam", route: "/advertising/torts/afff-firefighting-foam", statusLine: "Water contamination", mdlBadge: "Active MDL" },
   { name: "Social Media Addiction", route: "/advertising/social-media-addiction", statusLine: "800+ school districts", mdlBadge: "Active MDL" },
   { name: "Roblox Abuse", route: "/advertising/roblox-abuse", statusLine: "Child safety litigation", mdlBadge: "Pre-MDL" },
   { name: "GLP-1 Gastroparesis", route: "/advertising/glp1-gastroparesis", statusLine: "Ozempic/Mounjaro claims", mdlBadge: "Emerging" },
   { name: "GLP-1 Vision Loss", route: "/advertising/glp1-vision-loss", statusLine: "NAION risk signal", mdlBadge: "Emerging" },
-  { name: "Bard PowerPort", route: "/advertising/torts/bard_powerport", statusLine: "Catheter complications", mdlBadge: "Active MDL" },
+  { name: "Bard PowerPort", route: "/advertising/torts/bard-powerport", statusLine: "Catheter complications", mdlBadge: "Active MDL" },
 ];
 
 const MDL_BADGE_STYLES: Record<TortProfile["mdlBadge"], string> = {

@@ -1,6 +1,6 @@
 import {
   getAdSaturationWindowed,
-  getTortBySlug,
+  getTortByUrlSlug,
   getTorts,
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ tortSlug: string }>;
 }) {
   const { tortSlug } = await params;
-  const tort = await getTortBySlug(tortSlug);
+  const tort = await getTortByUrlSlug(tortSlug);
   return {
     title: tort
       ? `${tort.label} Ad Intelligence | Legal Marketing Intelligence`
@@ -88,7 +88,7 @@ export default async function TortDrillDownPage({
   const stateFilter = sp.state || undefined;
   const { windowStart, windowEnd } = computeDateRange(sp.window, sp.from, sp.to);
 
-  const tort = await getTortBySlug(tortSlug);
+  const tort = await getTortByUrlSlug(rawSlug);
   if (!tort) notFound();
 
   const [windowedData, segments, topAdvertisers, allTorts] = await Promise.all([

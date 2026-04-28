@@ -251,7 +251,7 @@ export function AiSuicideClient({ data }: { data: AiSuicidePageData }) {
       {/* -- 1. Page Header ------------------------------------------------ */}
       <div>
         <Link
-          href="/advertising/torts/bard_powerport"
+          href="/advertising/torts/bard-powerport"
           className="text-sm text-slate-gray hover:text-midnight-navy"
         >
           <span className="flex items-center gap-1">
