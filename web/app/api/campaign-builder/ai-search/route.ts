@@ -25,11 +25,120 @@ interface ActionChip {
   href: string;
 }
 
+type ActionType =
+  | "tort_detail"
+  | "state_market"
+  | "tort_index"
+  | "mdl_index"
+  | "mdl_detail"
+  | "competitors"
+  | "opportunity"
+  | "planner"
+  | "judicial_profiles"
+  | "storm_events"
+  | "markets_index";
+
+interface LLMActionChip {
+  label: string;
+  action_type: ActionType;
+  params?: Record<string, string>;
+}
+
 interface SearchResponse {
   answer: string;
   actions: ActionChip[];
   intent: Intent;
   entities: IntentResult["entities"];
+}
+
+/* ── Action URL Registry ───────────────────────────────────────────────── */
+
+const VALID_TORT_SLUGS = new Set([
+  "afff-firefighting-foam",
+  "ai-suicide-self-harm",
+  "bard-powerport",
+  "camp-lejeune",
+  "cpap",
+  "depo-provera",
+  "hair-relaxer",
+  "hernia-mesh",
+  "nec-baby-formula",
+  "olympus-duodenoscope",
+  "ozempic-mounjaro",
+  "paraquat",
+  "roblox-cse",
+  "roundup",
+  "social-media-addiction",
+  "social-media-youth-harm",
+  "talcum-powder",
+  "tylenol-acetaminophen",
+  "uber-sexual-assault",
+  "zantac",
+  "3m-earplugs",
+]);
+
+const VALID_STATE_SLUGS = new Set([
+  "alabama",
+  "arizona",
+  "california",
+  "florida",
+]);
+
+const STATE_ABBR_TO_NAME: Record<string, string> = {
+  al: "alabama",
+  az: "arizona",
+  ca: "california",
+  fl: "florida",
+};
+
+function normalizeStateName(input: string): string | null {
+  const cleaned = input.trim().toLowerCase().replace(/\s+/g, "-");
+  if (VALID_STATE_SLUGS.has(cleaned)) return cleaned;
+  const fromAbbr = STATE_ABBR_TO_NAME[cleaned];
+  if (fromAbbr) return fromAbbr;
+  return null;
+}
+
+export function buildActionUrl(
+  actionType: string,
+  params?: Record<string, string>
+): string | null {
+  switch (actionType) {
+    case "tort_detail": {
+      const slug = params?.tort_slug?.trim().toLowerCase();
+      if (!slug || !VALID_TORT_SLUGS.has(slug)) return null;
+      return `/advertising/torts/${slug}`;
+    }
+    case "state_market": {
+      const raw = params?.state_name ?? params?.state_abbr ?? "";
+      const stateSlug = normalizeStateName(raw);
+      if (!stateSlug) return null;
+      return `/state-intelligence/${stateSlug}`;
+    }
+    case "tort_index":
+      return "/advertising/torts";
+    case "mdl_index":
+      return "/mdl-tracker";
+    case "mdl_detail": {
+      const mdlNum = params?.mdl_number?.trim();
+      if (!mdlNum) return null;
+      return `/mdl-tracker/${mdlNum}`;
+    }
+    case "competitors":
+      return "/competitors";
+    case "opportunity":
+      return "/opportunity";
+    case "planner":
+      return "/planner";
+    case "judicial_profiles":
+      return "/judicial-profiles";
+    case "storm_events":
+      return "/storm-events";
+    case "markets_index":
+      return "/markets";
+    default:
+      return null;
+  }
 }
 
 /* ── Rate Limiting (in-memory, per-process) ─────────────────────────────── */
@@ -88,19 +197,26 @@ Respond with ONLY valid JSON matching this schema:
 {
   "answer": "Your prose answer with markdown formatting",
   "actions": [
-    {"label": "Short action label", "href": "/path/in/app"}
+    {"label": "Short action label", "action_type": "tort_detail", "params": {"tort_slug": "paraquat"}}
   ]
 }
 
 Rules for actions:
-- Include 1-3 action chips that link to relevant pages in the app
-- Use these URL patterns:
-  - Tort page: /torts/{tort_slug} (use lowercase, hyphens for spaces)
-  - State intelligence: /states/{state_abbr}
-  - Advertisers: /advertising/advertisers
-  - Ad saturation: /advertising/ad-saturation
-  - MDL tracker: /mdl
-  - Campaign builder: /campaigns/builder
+- Include 1-3 action chips linking to relevant pages
+- Each action must use one of these action_type values with the required params:
+  - "tort_detail" — requires params.tort_slug (lowercase, hyphenated). Known slugs: afff-firefighting-foam, ai-suicide-self-harm, bard-powerport, camp-lejeune, cpap, depo-provera, hair-relaxer, hernia-mesh, nec-baby-formula, olympus-duodenoscope, ozempic-mounjaro, paraquat, roblox-cse, roundup, social-media-addiction, social-media-youth-harm, talcum-powder, tylenol-acetaminophen, uber-sexual-assault, zantac, 3m-earplugs
+  - "state_market" — requires params.state_name (full name or 2-letter abbreviation). Only these states have pages: Alabama (AL), Arizona (AZ), California (CA), Florida (FL)
+  - "tort_index" — no params needed (links to tort listing)
+  - "mdl_index" — no params needed (links to MDL tracker)
+  - "mdl_detail" — requires params.mdl_number
+  - "competitors" — no params needed
+  - "opportunity" — no params needed
+  - "planner" — no params needed
+  - "judicial_profiles" — no params needed
+  - "storm_events" — no params needed
+  - "markets_index" — no params needed
+- Do NOT invent action_type values outside this list
+- Only suggest state_market for AL, AZ, CA, FL — omit chips for other states
 - If the user's question is general/off-topic, still provide a helpful answer but use fewer or no action chips`;
 }
 
@@ -510,20 +626,31 @@ export async function POST(req: NextRequest) {
 
       const content =
         synthesisResponse.choices[0]?.message?.content ?? "{}";
-      let result: { answer: string; actions: ActionChip[] };
+      let raw: { answer: string; actions: LLMActionChip[] };
       try {
-        result = JSON.parse(content);
+        raw = JSON.parse(content);
       } catch {
-        result = {
+        raw = {
           answer:
             "I had trouble processing that question. Could you try rephrasing?",
           actions: [],
         };
       }
 
-      // Ensure actions is an array and cap at 3
-      if (!Array.isArray(result.actions)) result.actions = [];
-      result.actions = result.actions.slice(0, 3);
+      // Map LLM action_type+params to verified URLs, drop invalid chips
+      const llmActions: LLMActionChip[] = Array.isArray(raw.actions)
+        ? raw.actions
+        : [];
+      const resolvedActions: ActionChip[] = [];
+      for (const action of llmActions) {
+        if (resolvedActions.length >= 3) break;
+        const href = buildActionUrl(action.action_type, action.params);
+        if (href) {
+          resolvedActions.push({ label: action.label, href });
+        }
+      }
+
+      const result = { answer: raw.answer, actions: resolvedActions };
 
       const latencyMs = Date.now() - startTime;
 
