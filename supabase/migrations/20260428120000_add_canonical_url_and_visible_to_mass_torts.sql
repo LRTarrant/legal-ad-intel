@@ -33,7 +33,7 @@ UPDATE mass_torts SET canonical_url = '/advertising/torts/ai-suicide'           
 
 -- Pattern 2: Rich pages at /advertising/{slug}
 UPDATE mass_torts SET canonical_url = '/advertising/social-media-addiction'     WHERE slug = 'social-media-addiction' AND canonical_url IS NULL;
-UPDATE mass_torts SET canonical_url = '/advertising/roblox-abuse'              WHERE slug = 'roblox-cse'            AND canonical_url IS NULL;
+UPDATE mass_torts SET canonical_url = '/advertising/roblox-abuse'              WHERE slug = 'roblox-abuse'            AND canonical_url IS NULL;
 
 -- Pattern 3: Rich pages at /mdl-tracker/{slug}
 UPDATE mass_torts SET canonical_url = '/mdl-tracker/uber-sexual-assault'       WHERE slug = 'uber-sexual-assault'   AND canonical_url IS NULL;

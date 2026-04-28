@@ -68,7 +68,7 @@ const VALID_TORT_SLUGS = new Set([
   "nec-baby-formula",
   "olympus-duodenoscope",
   "paraquat",
-  "roblox-cse",
+  "roblox-abuse",
   "roundup",
   "social-media-addiction",
   "talcum-powder",
@@ -83,7 +83,7 @@ const TORT_CANONICAL_URL: Record<string, string> = {
   "olympus-duodenoscope":  "/advertising/torts/olympus-scopes",
   "ai-suicide-self-harm":  "/advertising/torts/ai-suicide",
   "social-media-addiction": "/advertising/social-media-addiction",
-  "roblox-cse":            "/advertising/roblox-abuse",
+  "roblox-abuse":            "/advertising/roblox-abuse",
   "glp1-gastroparesis":    "/advertising/glp1-gastroparesis",
   "glp1-vision-loss":      "/advertising/glp1-vision-loss",
   "uber-sexual-assault":   "/advertising/torts/uber-sexual-assault",
@@ -217,7 +217,7 @@ Respond with ONLY valid JSON matching this schema:
 Rules for actions:
 - Include 1-3 action chips linking to relevant pages
 - Each action must use one of these action_type values with the required params:
-  - "tort_detail" — requires params.tort_slug (lowercase, hyphenated). Known slugs: afff-firefighting-foam, ai-suicide-self-harm, bard-powerport, camp-lejeune, cpap, depo-provera, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, hernia-mesh, lyft-sexual-assault, nec-baby-formula, olympus-duodenoscope, paraquat, roblox-cse, roundup, social-media-addiction, talcum-powder, tylenol-acetaminophen, uber-sexual-assault, zantac, 3m-earplugs
+  - "tort_detail" — requires params.tort_slug (lowercase, hyphenated). Known slugs: afff-firefighting-foam, ai-suicide-self-harm, bard-powerport, camp-lejeune, cpap, depo-provera, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, hernia-mesh, lyft-sexual-assault, nec-baby-formula, olympus-duodenoscope, paraquat, roblox-abuse, roundup, social-media-addiction, talcum-powder, tylenol-acetaminophen, uber-sexual-assault, zantac, 3m-earplugs
   - "state_market" — requires params.state_name (full name or 2-letter abbreviation). Only these states have pages: Alabama (AL), Arizona (AZ), California (CA), Florida (FL)
   - "tort_index" — no params needed (links to tort listing)
   - "mdl_index" — no params needed (links to MDL tracker)

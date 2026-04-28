@@ -19,7 +19,7 @@ test("tort with canonical_url override returns canonical path", () => {
   expect(buildActionUrl("tort_detail", { tort_slug: "social-media-addiction" })).toBe(
     "/advertising/social-media-addiction"
   );
-  expect(buildActionUrl("tort_detail", { tort_slug: "roblox-cse" })).toBe(
+  expect(buildActionUrl("tort_detail", { tort_slug: "roblox-abuse" })).toBe(
     "/advertising/roblox-abuse"
   );
   expect(buildActionUrl("tort_detail", { tort_slug: "olympus-duodenoscope" })).toBe(
@@ -58,7 +58,7 @@ test("all 22 visible catalog slugs resolve to a non-null URL", () => {
     "nec-baby-formula",
     "olympus-duodenoscope",
     "paraquat",
-    "roblox-cse",
+    "roblox-abuse",
     "roundup",
     "social-media-addiction",
     "talcum-powder",
