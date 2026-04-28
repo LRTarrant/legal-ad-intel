@@ -5,6 +5,7 @@ export type Tort = {
   slug: string;
   label: string;
   category: string | null;
+  canonical_url?: string | null;
 };
 
 export type MassTort = {
@@ -88,11 +89,11 @@ export async function getTortByUrlSlug(urlSlug: string): Promise<Tort | null> {
   // 1. Try mass_torts (canonical, hyphenated slugs)
   const { data: mt, error: mtErr } = await sb
     .from("mass_torts")
-    .select("id, slug, name, category")
+    .select("id, slug, name, category, canonical_url")
     .eq("slug", urlSlug)
     .maybeSingle();
   if (!mtErr && mt) {
-    return { id: mt.id, slug: mt.slug, label: mt.name, category: mt.category } as Tort;
+    return { id: mt.id, slug: mt.slug, label: mt.name, category: mt.category, canonical_url: mt.canonical_url } as Tort;
   }
 
   // 2. Fallback: try legacy torts table with underscore slug

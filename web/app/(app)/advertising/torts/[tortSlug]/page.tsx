@@ -12,7 +12,7 @@ import {
 } from "@/lib/queries";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
   Users,
@@ -107,6 +107,13 @@ export default async function TortAdvertisingPage({
   const { tortSlug: rawSlug } = await params;
   const tort = await getTortByUrlSlug(rawSlug);
   if (!tort) notFound();
+
+  // Redirect Pattern 2 torts (canonical at /advertising/{slug}) to their rich page.
+  // Pattern 3 (/mdl-tracker/*) and Pattern 1 (/advertising/torts/*) render here.
+  const canonical = tort.canonical_url;
+  if (canonical && canonical.startsWith('/advertising/') && !canonical.startsWith('/advertising/torts/')) {
+    redirect(canonical);
+  }
 
   // Legacy DB queries use underscore slugs
   const tortSlug = toDbSlug(rawSlug);

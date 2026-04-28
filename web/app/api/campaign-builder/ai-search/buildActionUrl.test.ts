@@ -15,13 +15,34 @@ test("valid tort slug returns advertising path", () => {
   );
 });
 
+test("tort with canonical_url override returns canonical path", () => {
+  expect(buildActionUrl("tort_detail", { tort_slug: "social-media-addiction" })).toBe(
+    "/advertising/social-media-addiction"
+  );
+  expect(buildActionUrl("tort_detail", { tort_slug: "roblox-abuse" })).toBe(
+    "/advertising/roblox-abuse"
+  );
+  expect(buildActionUrl("tort_detail", { tort_slug: "olympus-duodenoscope" })).toBe(
+    "/advertising/torts/olympus-scopes"
+  );
+  expect(buildActionUrl("tort_detail", { tort_slug: "ai-suicide-self-harm" })).toBe(
+    "/advertising/torts/ai-suicide"
+  );
+  expect(buildActionUrl("tort_detail", { tort_slug: "glp1-gastroparesis" })).toBe(
+    "/advertising/glp1-gastroparesis"
+  );
+  expect(buildActionUrl("tort_detail", { tort_slug: "glp1-vision-loss" })).toBe(
+    "/advertising/glp1-vision-loss"
+  );
+});
+
 test("valid tort slug is case-insensitive", () => {
   expect(buildActionUrl("tort_detail", { tort_slug: "Paraquat" })).toBe(
     "/advertising/torts/paraquat"
   );
 });
 
-test("all 21 catalog slugs resolve", () => {
+test("all 22 visible catalog slugs resolve to a non-null URL", () => {
   const slugs = [
     "afff-firefighting-foam",
     "ai-suicide-self-harm",
@@ -29,16 +50,17 @@ test("all 21 catalog slugs resolve", () => {
     "camp-lejeune",
     "cpap",
     "depo-provera",
+    "glp1-gastroparesis",
+    "glp1-vision-loss",
     "hair-relaxer",
     "hernia-mesh",
+    "lyft-sexual-assault",
     "nec-baby-formula",
     "olympus-duodenoscope",
-    "ozempic-mounjaro",
     "paraquat",
-    "roblox-cse",
+    "roblox-abuse",
     "roundup",
     "social-media-addiction",
-    "social-media-youth-harm",
     "talcum-powder",
     "tylenol-acetaminophen",
     "uber-sexual-assault",
@@ -46,10 +68,15 @@ test("all 21 catalog slugs resolve", () => {
     "3m-earplugs",
   ];
   for (const slug of slugs) {
-    expect(buildActionUrl("tort_detail", { tort_slug: slug })).toBe(
-      `/advertising/torts/${slug}`
-    );
+    const url = buildActionUrl("tort_detail", { tort_slug: slug });
+    expect(url).not.toBeNull();
+    expect(url).toMatch(/^\//);
   }
+});
+
+test("hidden alias slugs return null", () => {
+  expect(buildActionUrl("tort_detail", { tort_slug: "ozempic-mounjaro" })).toBeNull();
+  expect(buildActionUrl("tort_detail", { tort_slug: "social-media-youth-harm" })).toBeNull();
 });
 
 test("unknown tort slug returns null", () => {
