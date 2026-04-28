@@ -1,5 +1,5 @@
 import {
-  getTortBySlug,
+  getTortByUrlSlug,
   getSegmentSummary,
   getTopAdvertisersBySegment,
   getAdvertiserPlatforms,
@@ -43,8 +43,8 @@ export const dynamic = "force-dynamic";
 
 /* ── Metadata ──────────────────────────────────────────────────────────── */
 
-/** Normalize URL slug (may use hyphens) to DB slug (always underscores). */
-function normalizeSlug(slug: string): string {
+/** Convert hyphenated URL slug to underscore slug for legacy DB queries. */
+function toDbSlug(slug: string): string {
   return slug.replace(/-/g, "_");
 }
 
@@ -54,8 +54,7 @@ export async function generateMetadata({
   params: Promise<{ tortSlug: string }>;
 }) {
   const { tortSlug } = await params;
-  const dbSlug = normalizeSlug(tortSlug);
-  const tort = await getTortBySlug(dbSlug);
+  const tort = await getTortByUrlSlug(tortSlug);
   return {
     title: tort
       ? `${tort.label} Advertising Intelligence | Legal Marketing Intelligence`
@@ -106,9 +105,11 @@ export default async function TortAdvertisingPage({
   params: Promise<{ tortSlug: string }>;
 }) {
   const { tortSlug: rawSlug } = await params;
-  const tortSlug = normalizeSlug(rawSlug);
-  const tort = await getTortBySlug(tortSlug);
+  const tort = await getTortByUrlSlug(rawSlug);
   if (!tort) notFound();
+
+  // Legacy DB queries use underscore slugs
+  const tortSlug = toDbSlug(rawSlug);
 
   // Default to last 90 days for saturation window
   const now = new Date();

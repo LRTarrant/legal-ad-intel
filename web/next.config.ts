@@ -63,40 +63,40 @@ const nextConfig: NextConfig = {
         destination: "/advertising/trends",
         permanent: true,
       },
-      // Tort slug normalization: hyphens → underscores (DB is source of truth)
+      // Tort slug normalization: underscores → hyphens (hyphens are canonical)
       {
-        source: "/advertising/torts/depo-provera",
-        destination: "/advertising/torts/depo_provera",
+        source: "/advertising/torts/depo_provera",
+        destination: "/advertising/torts/depo-provera",
         permanent: true,
       },
       {
-        source: "/advertising/torts/hair-relaxer",
-        destination: "/advertising/torts/hair_relaxer",
+        source: "/advertising/torts/hair_relaxer",
+        destination: "/advertising/torts/hair-relaxer",
         permanent: true,
       },
       {
-        source: "/advertising/torts/talcum-powder",
-        destination: "/advertising/torts/talcum_powder",
+        source: "/advertising/torts/talcum_powder",
+        destination: "/advertising/torts/talcum-powder",
         permanent: true,
       },
       {
-        source: "/advertising/torts/afff-firefighting-foam",
-        destination: "/advertising/torts/firefighter_foam",
+        source: "/advertising/torts/firefighter_foam",
+        destination: "/advertising/torts/afff-firefighting-foam",
         permanent: true,
       },
       {
-        source: "/advertising/torts/bard-powerport",
-        destination: "/advertising/torts/bard_powerport",
+        source: "/advertising/torts/bard_powerport",
+        destination: "/advertising/torts/bard-powerport",
         permanent: true,
       },
       {
-        source: "/advertising/torts/olympus-scopes",
-        destination: "/advertising/torts/olympus_scopes",
+        source: "/advertising/torts/olympus_scopes",
+        destination: "/advertising/torts/olympus-scopes",
         permanent: true,
       },
       {
-        source: "/advertising/torts/ai-suicide",
-        destination: "/advertising/torts/ai_suicide",
+        source: "/advertising/torts/ai_suicide",
+        destination: "/advertising/torts/ai-suicide",
         permanent: true,
       },
     ];

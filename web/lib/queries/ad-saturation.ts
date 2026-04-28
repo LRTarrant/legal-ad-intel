@@ -7,6 +7,14 @@ export type Tort = {
   category: string | null;
 };
 
+export type MassTort = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string | null;
+  short_description: string | null;
+};
+
 export type AdSaturationRow = {
   id: string;
   tort_id?: string;
@@ -54,6 +62,51 @@ export async function getTortBySlug(slug: string): Promise<Tort | null> {
     .maybeSingle();
   if (error) throw new Error(`Failed to fetch tort: ${error.message}`);
   return data as Tort | null;
+}
+
+/** Fetch all mass_torts (the canonical catalog of 21 torts). */
+export async function getAllMassTorts(): Promise<MassTort[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("mass_torts")
+    .select("id, slug, name, category, short_description")
+    .order("name");
+  if (error) throw new Error(`Failed to fetch mass_torts: ${error.message}`);
+  return (data ?? []) as MassTort[];
+}
+
+/**
+ * Look up a tort by its hyphenated URL slug, querying mass_torts first
+ * (source of truth), then falling back to the legacy torts table.
+ * Returns a normalized Tort shape either way.
+ */
+export async function getTortByUrlSlug(urlSlug: string): Promise<Tort | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+
+  // 1. Try mass_torts (canonical, hyphenated slugs)
+  const { data: mt, error: mtErr } = await sb
+    .from("mass_torts")
+    .select("id, slug, name, category")
+    .eq("slug", urlSlug)
+    .maybeSingle();
+  if (!mtErr && mt) {
+    return { id: mt.id, slug: mt.slug, label: mt.name, category: mt.category } as Tort;
+  }
+
+  // 2. Fallback: try legacy torts table with underscore slug
+  const dbSlug = urlSlug.replace(/-/g, "_");
+  const { data: legacy, error: legacyErr } = await sb
+    .from("torts")
+    .select("id, slug, label, category")
+    .eq("slug", dbSlug)
+    .maybeSingle();
+  if (!legacyErr && legacy) {
+    return legacy as Tort;
+  }
+
+  return null;
 }
 
 export async function getAdSaturationSummary(opts?: {
