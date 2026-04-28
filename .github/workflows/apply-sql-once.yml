@@ -1,0 +1,52 @@
+name: Apply SQL Migration (One-Time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apply-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Execute migration SQL via Management API
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          # Execute the migration SQL directly via Supabase Management API
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://api.supabase.com/v1/projects/inmktpwhpkiknctznrys/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "query": "ALTER TABLE tort_recommended_markets ADD COLUMN IF NOT EXISTS state_name text; UPDATE tort_recommended_markets SET state_name = CASE state WHEN '\''AL'\'' THEN '\''Alabama'\'' WHEN '\''AK'\'' THEN '\''Alaska'\'' WHEN '\''AZ'\'' THEN '\''Arizona'\'' WHEN '\''AR'\'' THEN '\''Arkansas'\'' WHEN '\''CA'\'' THEN '\''California'\'' WHEN '\''CO'\'' THEN '\''Colorado'\'' WHEN '\''CT'\'' THEN '\''Connecticut'\'' WHEN '\''DE'\'' THEN '\''Delaware'\'' WHEN '\''FL'\'' THEN '\''Florida'\'' WHEN '\''GA'\'' THEN '\''Georgia'\'' WHEN '\''HI'\'' THEN '\''Hawaii'\'' WHEN '\''ID'\'' THEN '\''Idaho'\'' WHEN '\''IL'\'' THEN '\''Illinois'\'' WHEN '\''IN'\'' THEN '\''Indiana'\'' WHEN '\''IA'\'' THEN '\''Iowa'\'' WHEN '\''KS'\'' THEN '\''Kansas'\'' WHEN '\''KY'\'' THEN '\''Kentucky'\'' WHEN '\''LA'\'' THEN '\''Louisiana'\'' WHEN '\''ME'\'' THEN '\''Maine'\'' WHEN '\''MD'\'' THEN '\''Maryland'\'' WHEN '\''MA'\'' THEN '\''Massachusetts'\'' WHEN '\''MI'\'' THEN '\''Michigan'\'' WHEN '\''MN'\'' THEN '\''Minnesota'\'' WHEN '\''MS'\'' THEN '\''Mississippi'\'' WHEN '\''MO'\'' THEN '\''Missouri'\'' WHEN '\''MT'\'' THEN '\''Montana'\'' WHEN '\''NE'\'' THEN '\''Nebraska'\'' WHEN '\''NV'\'' THEN '\''Nevada'\'' WHEN '\''NH'\'' THEN '\''New Hampshire'\'' WHEN '\''NJ'\'' THEN '\''New Jersey'\'' WHEN '\''NM'\'' THEN '\''New Mexico'\'' WHEN '\''NY'\'' THEN '\''New York'\'' WHEN '\''NC'\'' THEN '\''North Carolina'\'' WHEN '\''ND'\'' THEN '\''North Dakota'\'' WHEN '\''OH'\'' THEN '\''Ohio'\'' WHEN '\''OK'\'' THEN '\''Oklahoma'\'' WHEN '\''OR'\'' THEN '\''Oregon'\'' WHEN '\''PA'\'' THEN '\''Pennsylvania'\'' WHEN '\''RI'\'' THEN '\''Rhode Island'\'' WHEN '\''SC'\'' THEN '\''South Carolina'\'' WHEN '\''SD'\'' THEN '\''South Dakota'\'' WHEN '\''TN'\'' THEN '\''Tennessee'\'' WHEN '\''TX'\'' THEN '\''Texas'\'' WHEN '\''UT'\'' THEN '\''Utah'\'' WHEN '\''VT'\'' THEN '\''Vermont'\'' WHEN '\''VA'\'' THEN '\''Virginia'\'' WHEN '\''WA'\'' THEN '\''Washington'\'' WHEN '\''WV'\'' THEN '\''West Virginia'\'' WHEN '\''WI'\'' THEN '\''Wisconsin'\'' WHEN '\''WY'\'' THEN '\''Wyoming'\'' WHEN '\''DC'\'' THEN '\''District of Columbia'\'' END WHERE state_name IS NULL; ALTER TABLE tort_recommended_markets ALTER COLUMN state_name SET NOT NULL;"
+            }')
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::error::SQL execution failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Verify migration
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "=== Null count (expect 0) ==="
+          curl -s -X POST \
+            "https://api.supabase.com/v1/projects/inmktpwhpkiknctznrys/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT COUNT(*) AS null_count FROM tort_recommended_markets WHERE state_name IS NULL;"}'
+
+          echo ""
+          echo "=== Total count (expect 210) ==="
+          curl -s -X POST \
+            "https://api.supabase.com/v1/projects/inmktpwhpkiknctznrys/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT COUNT(*) AS total_count FROM tort_recommended_markets;"}'
