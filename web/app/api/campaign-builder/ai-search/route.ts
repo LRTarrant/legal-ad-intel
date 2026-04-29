@@ -96,6 +96,7 @@ const VALID_STATE_SLUGS = new Set([
   "california",
   "florida",
   "tennessee",
+  "georgia",
 ]);
 
 const STATE_ABBR_TO_NAME: Record<string, string> = {
@@ -104,6 +105,7 @@ const STATE_ABBR_TO_NAME: Record<string, string> = {
   ca: "california",
   fl: "florida",
   tn: "tennessee",
+  ga: "georgia",
 };
 
 function normalizeStateName(input: string): string | null {
