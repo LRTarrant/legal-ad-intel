@@ -301,7 +301,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
     let rows = [...data.accidentSummary];
     if (countyFilter.trim()) {
       const f = countyFilter.toLowerCase();
-      rows = rows.filter((r) => r.county.toLowerCase().includes(f));
+      rows = rows.filter((r) => r.county?.toLowerCase().includes(f));
     }
     rows.sort((a, b) => {
       let aVal: number | string | null = null;
@@ -469,15 +469,14 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
   const judicialWithFatalities = useMemo(() => {
     const accidentMap = new Map<string, AccidentSummaryRow>();
     for (const r of data.accidentSummary) {
-      accidentMap.set(r.county.toLowerCase(), r);
+      if (r.county) accidentMap.set(r.county.toLowerCase(), r);
     }
     return data.judicialProfiles.map((j) => {
-      const countyKey = j.county_name
-        .replace(/ County$/i, "")
-        .toLowerCase();
+      const name = j.county_name ?? "";
+      const countyKey = name.replace(/ County$/i, "").toLowerCase();
       const acc = accidentMap.get(countyKey);
       return {
-        county: j.county_name.replace(/ County$/i, ""),
+        county: name.replace(/ County$/i, ""),
         profile: j.judicial_profile,
         population: acc?.total_population ?? null,
         deathsPer100k: acc?.deaths_per_100k ?? null,
