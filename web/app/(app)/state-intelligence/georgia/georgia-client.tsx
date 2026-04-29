@@ -22,17 +22,23 @@ import {
   BarChart3,
   Database,
   Target,
+  Activity,
 } from "lucide-react";
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Cell,
 } from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
+import type { FARSYearlyTrendRow, FARSTopCountyRow } from "./page";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
 import {
@@ -42,39 +48,7 @@ import {
 } from "../../components/pi-advertising-section";
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { georgiaCompetitiveData } from "@/lib/data/competitive-landscape/georgia";
-
-/* ------------------------------------------------------------------ */
-/*  GDOT AASHTOWare Safety Portal — embeddable crash dashboards        */
-/* ------------------------------------------------------------------ */
-
-const GA_CRASH_EMBEDS = [
-  {
-    name: "Statewide Fatality Trend",
-    iframeSrc:
-      "https://gdot.aashtowaresafety.net/crash-data#/f04a8a72-9dc5-42b5-a106-215e60835806",
-    height: 450,
-    description:
-      "Annual fatal crashes in Georgia, 2013\u20132025. Source: GDOT AASHTOWare Safety Portal.",
-  },
-  {
-    name: "Crashes by County",
-    iframeSrc:
-      "https://gdot.aashtowaresafety.net/crash-data#/61117502-479b-44d9-bd84-bbff7415b7c9",
-    height: 600,
-    description:
-      "Total crashes ranked by county (treemap). Use the right-rail KABCO Severity filter inside the embed to drill into Fatal (K) or Suspected Serious Injury (A) crashes.",
-  },
-  {
-    name: "Raw Crash Records",
-    iframeSrc:
-      "https://gdot.aashtowaresafety.net/crash-data#/a0bdc9ce-77ad-4469-b449-f01c2f797e65",
-    height: 800,
-    description:
-      "Row-level crash data with County, City, MPO, KABCO Severity, and other filters. ~4.8M records across 2013\u20132025.",
-  },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -174,6 +148,8 @@ export interface GeorgiaPageData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
+  farsYearlyTrend: FARSYearlyTrendRow[];
+  farsTopCounties: FARSTopCountyRow[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -287,6 +263,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
   const [countyFilter, setCountyFilter] = useState("");
   const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
   const [msaSortAsc, setMsaSortAsc] = useState(false);
+  const [crashTab, setCrashTab] = useState(0);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
@@ -618,14 +595,133 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 3. GEORGIA CRASH INTELLIGENCE (GDOT embeds — existing)       */}
+      {/* 3. GEORGIA CRASH INTELLIGENCE (Native FARS Charts)           */}
       {/* ============================================================ */}
-      <StateCrashEmbed
-        stateName="Georgia"
-        sourceLabel="GDOT AASHTOWare Safety Portal"
-        sourceUrl="https://gdot.aashtowaresafety.net/crash-data#/"
-        embeds={GA_CRASH_EMBEDS}
-      />
+      <div className="rounded-lg border-2 border-intelligence-teal/30 bg-gradient-to-br from-intelligence-teal/[0.06] to-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Georgia Crash Intelligence
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-gray max-w-3xl">
+          Fatal crash trends and breakdowns from NHTSA FARS data, 2019&ndash;2024.
+        </p>
+
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {["Statewide Fatality Trend", "Top 10 Counties", "Fatalities by Crash Type"].map((label, i) => (
+            <button
+              key={label}
+              onClick={() => setCrashTab(i)}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                crashTab === i
+                  ? "bg-intelligence-teal text-white shadow-sm"
+                  : "bg-white text-midnight-navy/70 border border-cloud hover:bg-cloud/60"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab 1: Statewide Fatality Trend */}
+        {crashTab === 0 && (
+          <div>
+            <p className="mb-3 text-xs text-midnight-navy/60">
+              Annual fatal crashes and fatalities in Georgia, 2019&ndash;2024. Source: NHTSA FARS.
+            </p>
+            {data.farsYearlyTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={360}>
+                <LineChart data={data.farsYearlyTrend} margin={{ top: 5, right: 30, bottom: 5, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line type="monotone" dataKey="total_fatalities" name="Fatalities" stroke="#14B8A6" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="fatal_crashes" name="Fatal Crashes" stroke="#F59E0B" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                <p className="text-sm font-medium text-midnight-navy/60">FARS trend data unavailable</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Top 10 Counties */}
+        {crashTab === 1 && (
+          <div>
+            <p className="mb-3 text-xs text-midnight-navy/60">
+              Top 10 Georgia counties by cumulative fatalities, 2020&ndash;2024. Source: NHTSA FARS.
+            </p>
+            {data.farsTopCounties.length > 0 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={data.farsTopCounties} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "#1B2A4A" }} />
+                  <YAxis type="category" dataKey="county_name" width={120} tick={{ fontSize: 11, fill: "#1B2A4A" }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="fatalities" name="Fatalities" radius={[0, 4, 4, 0]}>
+                    {data.farsTopCounties.map((_, index) => (
+                      <Cell key={index} fill={index === 0 ? "#14B8A6" : index < 3 ? "#2DD4BF" : "#5EEAD4"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                <p className="text-sm font-medium text-midnight-navy/60">County fatality data unavailable</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: Fatalities by Crash Type */}
+        {crashTab === 2 && (
+          <div>
+            <p className="mb-3 text-xs text-midnight-navy/60">
+              Annual fatalities by crash type &mdash; motorcycle, large truck, and DUI-involved crashes, 2019&ndash;2024. Source: NHTSA FARS.
+            </p>
+            {data.farsYearlyTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={data.farsYearlyTrend} margin={{ top: 5, right: 30, bottom: 5, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="motorcycle_fatalities" name="Motorcycle" fill="#F59E0B" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="truck_fatalities" name="Large Truck" fill="#EF4444" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="dui_fatalities" name="DUI-Involved" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                <p className="text-sm font-medium text-midnight-navy/60">Crash type data unavailable</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Source citation */}
+        <p className="mt-4 text-[11px] text-slate-gray">
+          Source:{" "}
+          <a
+            href="https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-intelligence-teal"
+          >
+            NHTSA Fatality Analysis Reporting System (FARS)
+          </a>
+        </p>
+      </div>
 
       {/* ============================================================ */}
       {/* 4. LEGAL LANDSCAPE                                           */}
