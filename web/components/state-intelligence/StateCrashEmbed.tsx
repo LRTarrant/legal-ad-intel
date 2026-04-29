@@ -27,6 +27,7 @@ export function StateCrashEmbed({
   const [mountedTabs, setMountedTabs] = useState<Set<number>>(
     () => new Set([0])
   );
+  const [loadedSrcs, setLoadedSrcs] = useState<Set<string>>(new Set());
 
   const handleTabClick = useCallback(
     (index: number) => {
@@ -88,7 +89,18 @@ export function StateCrashEmbed({
                 {embed.description}
               </p>
             )}
-            <div className="w-full overflow-hidden rounded-lg border bg-white">
+            <div className="relative w-full overflow-hidden rounded-lg border bg-white">
+              {!loadedSrcs.has(embed.iframeSrc) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50">
+                  <div className="flex flex-col items-center gap-3 text-slate-500">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-intelligence-teal" />
+                    <p className="text-sm">Loading dashboard&hellip;</p>
+                    <p className="text-xs text-slate-400">
+                      Some embeds with large datasets may take 15–30 seconds.
+                    </p>
+                  </div>
+                </div>
+              )}
               <iframe
                 src={embed.iframeSrc}
                 width="100%"
@@ -98,6 +110,14 @@ export function StateCrashEmbed({
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 className="max-w-full"
                 title={embed.name}
+                onLoad={() =>
+                  setLoadedSrcs((prev) => {
+                    if (prev.has(embed.iframeSrc)) return prev;
+                    const next = new Set(prev);
+                    next.add(embed.iframeSrc);
+                    return next;
+                  })
+                }
               />
             </div>
             {sourceLabel && (
