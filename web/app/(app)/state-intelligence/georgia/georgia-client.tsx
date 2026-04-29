@@ -1,8 +1,37 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  AlertTriangle,
+  Scale,
+  Car,
+  Truck,
+  Bike,
+  HardHat,
+  Anchor,
+  TrendingUp,
+  FileText,
+  MapPin,
+  ChevronUp,
+  ChevronDown,
+  Lightbulb,
+  CloudLightning,
+  Search,
+  BarChart3,
+  Database,
+  Target,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
@@ -27,7 +56,7 @@ const GA_CRASH_EMBEDS = [
       "https://gdot.aashtowaresafety.net/crash-data#/f04a8a72-9dc5-42b5-a106-215e60835806",
     height: 450,
     description:
-      "Annual fatal crashes in Georgia, 2013–2025. Source: GDOT AASHTOWare Safety Portal.",
+      "Annual fatal crashes in Georgia, 2013\u20132025. Source: GDOT AASHTOWare Safety Portal.",
   },
   {
     name: "Crashes by County",
@@ -43,7 +72,7 @@ const GA_CRASH_EMBEDS = [
       "https://gdot.aashtowaresafety.net/crash-data#/a0bdc9ce-77ad-4469-b449-f01c2f797e65",
     height: 800,
     description:
-      "Row-level crash data with County, City, MPO, KABCO Severity, and other filters. ~4.8M records across 2013–2025.",
+      "Row-level crash data with County, City, MPO, KABCO Severity, and other filters. ~4.8M records across 2013\u20132025.",
   },
 ];
 
@@ -148,10 +177,118 @@ export interface GeorgiaPageData {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Hardcoded Constants (GOHS, BLS, ACS)                               */
+/*  TODO(LANCE): verify all GOHS/BLS stats from authoritative sources  */
+/* ------------------------------------------------------------------ */
+
+// TODO(LANCE): source annual fatality count from GOHS 2023 Annual Report or GDOT crash facts
+const GOHS = {
+  totalCrashes: "TBD", // TODO(LANCE): source from GOHS — total reportable crashes in GA (2023)
+  totalFatalities: "TBD", // TODO(LANCE): source from GOHS/FARS — GA annual traffic fatalities (2023)
+  motorcycleFatalities: "TBD", // TODO(LANCE): source from GOHS — GA motorcycle fatalities (2023)
+  speedRelatedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA speed-related fatalities (2023)
+  speedRelatedPct: "TBD", // TODO(LANCE): source from GOHS — GA speed-related fatality % (2023)
+  alcoholRelatedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA alcohol-related fatalities (2023)
+  alcoholRelatedPct: "TBD", // TODO(LANCE): source from GOHS — GA alcohol-related fatality % (2023)
+  unrestrainedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA unrestrained fatalities (2023)
+  distractedDrivingFatalCrashes: "TBD", // TODO(LANCE): source from GOHS — GA distracted driving fatal crashes (2023)
+};
+
+// TODO(LANCE): source all BLS stats from BLS CFOI 2023 for Georgia
+const BLS_GA = {
+  totalEmployment: "TBD", // TODO(LANCE): source from BLS OES May 2023 — GA total employment
+  totalWorkplaceFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA workplace fatalities
+  constructionFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA construction fatalities
+  constructionPctTotal: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA construction % of total
+  transportWarehouseFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA transport/warehouse fatalities
+  truckTransportFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA truck transport fatalities
+  fallsSlipsTrips: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA falls/slips/trips fatalities
+  transportationIncidents: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA transportation incident fatalities
+};
+
+// TODO(LANCE): source commute data from ACS 5-Year 2023 for Georgia
+const COMMUTE_GA = {
+  driveAlone: "TBD", // TODO(LANCE): source from ACS 2023 — GA drive-alone commute %
+  nationalAvg: 68.7,
+  avgCommuteMinutes: "TBD", // TODO(LANCE): source from ACS 2023 — GA avg commute time (minutes)
+};
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function formatNegligenceRule(rule: string): string {
+  const map: Record<string, string> = {
+    'pure_comparative': 'Pure Comparative',
+    'modified_51': 'Modified Comparative (51% Bar)',
+    'modified_50': 'Modified Comparative (50% Bar)',
+    'contributory': 'Contributory Negligence',
+  };
+  return map[rule] || rule;
+}
+
+function fmtNum(n: number | null | undefined): string {
+  if (n == null) return "\u2014";
+  return n.toLocaleString();
+}
+
+function fmtPct(n: number | null | undefined): string {
+  if (n == null) return "\u2014";
+  return `${n.toFixed(1)}%`;
+}
+
+function fmtCur(n: number | null | undefined): string {
+  if (n == null) return "\u2014";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function getProfileColor(profile: string | null): string {
+  if (!profile) return "bg-slate-100 text-slate-600";
+  const p = profile.toLowerCase();
+  if (p.includes("liberal") || p.includes("plaintiff"))
+    return "bg-emerald-100 text-emerald-700";
+  if (p.includes("conservative") || p.includes("defense"))
+    return "bg-red-100 text-red-700";
+  if (p.includes("moderate"))
+    return "bg-amber-100 text-amber-700";
+  return "bg-slate-100 text-slate-600";
+}
+
+function getProfileBorderColor(profile: string | null): string {
+  if (!profile) return "border-l-slate-300";
+  const p = profile.toLowerCase();
+  if (p.includes("liberal") || p.includes("plaintiff"))
+    return "border-l-emerald-500";
+  if (p.includes("conservative") || p.includes("defense"))
+    return "border-l-red-500";
+  if (p.includes("moderate"))
+    return "border-l-amber-500";
+  return "border-l-slate-300";
+}
+
+type SortKey =
+  | "county"
+  | "population"
+  | "fatal_crashes"
+  | "total_deaths"
+  | "truck_deaths"
+  | "moto_deaths"
+  | "deaths_per_100k"
+  | "rural_pct"
+  | "judicial_profile";
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
+  const [sortKey, setSortKey] = useState<SortKey>("deaths_per_100k");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [countyFilter, setCountyFilter] = useState("");
+  const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
+  const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
@@ -159,9 +296,206 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
     trackStateViewed({ state_code: "GA", state_name: "Georgia" });
   }, []);
 
+  /* -- Sorted / filtered accident table data -- */
+  const filteredAccidentData = useMemo(() => {
+    let rows = [...data.accidentSummary];
+    if (countyFilter.trim()) {
+      const f = countyFilter.toLowerCase();
+      rows = rows.filter((r) => r.county.toLowerCase().includes(f));
+    }
+    rows.sort((a, b) => {
+      let aVal: number | string | null = null;
+      let bVal: number | string | null = null;
+      switch (sortKey) {
+        case "county":
+          aVal = a.county;
+          bVal = b.county;
+          break;
+        case "population":
+          aVal = a.total_population;
+          bVal = b.total_population;
+          break;
+        case "fatal_crashes":
+          aVal = a.fatal_crashes;
+          bVal = b.fatal_crashes;
+          break;
+        case "total_deaths":
+          aVal = a.total_deaths;
+          bVal = b.total_deaths;
+          break;
+        case "truck_deaths":
+          aVal = a.truck_deaths;
+          bVal = b.truck_deaths;
+          break;
+        case "moto_deaths":
+          aVal = a.moto_deaths;
+          bVal = b.moto_deaths;
+          break;
+        case "deaths_per_100k":
+          aVal = a.deaths_per_100k;
+          bVal = b.deaths_per_100k;
+          break;
+        case "rural_pct":
+          aVal = a.rural_pct;
+          bVal = b.rural_pct;
+          break;
+        case "judicial_profile":
+          aVal = a.judicial_profile;
+          bVal = b.judicial_profile;
+          break;
+      }
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortAsc
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+      return sortAsc
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+    return rows;
+  }, [data.accidentSummary, countyFilter, sortKey, sortAsc]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(key === "county");
+    }
+  }
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return null;
+    return sortAsc ? (
+      <ChevronUp className="w-3 h-3 inline ml-0.5" />
+    ) : (
+      <ChevronDown className="w-3 h-3 inline ml-0.5" />
+    );
+  }
+
+  /* -- MSA sorted data -- */
+  const sortedMSA = useMemo(() => {
+    const rows = [...data.msaDemographics];
+    rows.sort((a, b) => {
+      switch (msaSortKey) {
+        case "pop":
+          return msaSortAsc
+            ? a.total_population - b.total_population
+            : b.total_population - a.total_population;
+        case "income":
+          return msaSortAsc
+            ? (a.median_household_income ?? 0) - (b.median_household_income ?? 0)
+            : (b.median_household_income ?? 0) - (a.median_household_income ?? 0);
+        case "poverty":
+          return msaSortAsc
+            ? (a.pct_poverty ?? 0) - (b.pct_poverty ?? 0)
+            : (b.pct_poverty ?? 0) - (a.pct_poverty ?? 0);
+        default:
+          return 0;
+      }
+    });
+    return rows;
+  }, [data.msaDemographics, msaSortKey, msaSortAsc]);
+
+  /* -- Aggregate stats -- */
+  const totalFatalCrashes = data.accidentSummary.reduce(
+    (s, r) => s + r.fatal_crashes,
+    0
+  );
+  const totalDeaths = data.accidentSummary.reduce(
+    (s, r) => s + r.total_deaths,
+    0
+  );
+  const totalTruckDeaths = data.accidentSummary.reduce(
+    (s, r) => s + r.truck_deaths,
+    0
+  );
+  const totalMotoDeaths = data.accidentSummary.reduce(
+    (s, r) => s + r.moto_deaths,
+    0
+  );
+  const totalBoatingAccidents = data.boatingSummary.reduce(
+    (s, r) => s + r.accident_count,
+    0
+  );
+  const totalBoatingDeaths = data.boatingSummary.reduce(
+    (s, r) => s + r.total_deaths,
+    0
+  );
+  const totalBoatingInjuries = data.boatingSummary.reduce(
+    (s, r) => s + r.total_injuries,
+    0
+  );
+  const mvaDeaths = totalDeaths - totalTruckDeaths - totalMotoDeaths;
+
+  /* -- Top 5 counties for each case type -- */
+  const top5MVA = [...data.accidentSummary]
+    .map((r) => ({
+      county: r.county,
+      count: r.total_deaths - r.truck_deaths - r.moto_deaths,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const top5Truck = [...data.accidentSummary]
+    .filter((r) => r.truck_deaths > 0)
+    .sort((a, b) => b.truck_deaths - a.truck_deaths)
+    .slice(0, 5);
+
+  const top5Moto = [...data.accidentSummary]
+    .filter((r) => r.moto_deaths > 0)
+    .sort((a, b) => b.moto_deaths - a.moto_deaths)
+    .slice(0, 5);
+
+  /* -- Rural/Urban aggregates -- */
+  const ruralRow = data.ruralUrban.find((r) => r.category === "Rural");
+  const urbanRow = data.ruralUrban.find((r) => r.category === "Urban");
+
+  /* -- Judicial profile counts -- */
+  const profileCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const j of data.judicialProfiles) {
+      const p = j.judicial_profile || "Unknown";
+      counts[p] = (counts[p] || 0) + 1;
+    }
+    return counts;
+  }, [data.judicialProfiles]);
+
+  /* -- Judicial + fatality merged -- */
+  const judicialWithFatalities = useMemo(() => {
+    const accidentMap = new Map<string, AccidentSummaryRow>();
+    for (const r of data.accidentSummary) {
+      accidentMap.set(r.county.toLowerCase(), r);
+    }
+    return data.judicialProfiles.map((j) => {
+      const countyKey = j.county_name
+        .replace(/ County$/i, "")
+        .toLowerCase();
+      const acc = accidentMap.get(countyKey);
+      return {
+        county: j.county_name.replace(/ County$/i, ""),
+        profile: j.judicial_profile,
+        population: acc?.total_population ?? null,
+        deathsPer100k: acc?.deaths_per_100k ?? null,
+      };
+    });
+  }, [data.judicialProfiles, data.accidentSummary]);
+
+  /* -- PI viability data -- */
+  const piData = data.piViability;
+
+  /* -- Major GA metros -- */
+  const MAJOR_METROS = ["Atlanta", "Augusta", "Savannah", "Columbus", "Macon"];
+
   return (
     <div className="space-y-8">
-      {/* State Header */}
+      {/* ============================================================ */}
+      {/* 1. STATE HEADER                                              */}
+      {/* ============================================================ */}
       <div>
         <Link
           href="/overview"
@@ -176,13 +510,122 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           <h1 className="font-heading text-3xl font-bold text-midnight-navy">
             Georgia
           </h1>
+          <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-600">
+            Modified Comparative (50% Bar)
+          </span>
         </div>
         <p className="mt-1 text-lg text-slate-gray">
           State Intelligence Report
         </p>
+        <p className="mt-1 text-sm text-slate-gray max-w-3xl">
+          Cross-signal intelligence for plaintiff firm advertising and case
+          acquisition in Georgia &mdash; combining accident data, demographics,
+          judicial profiles, GDOT crash dashboards, and market opportunity
+          signals across MVA, trucking, motorcycle, construction, and boating.
+          Major metros: Atlanta, Augusta, Savannah, Columbus, and Macon.
+          Population ~10.9M.
+        </p>
       </div>
 
-      {/* Crash Intelligence — GDOT AASHTOWare Safety Portal embeds */}
+      {/* ============================================================ */}
+      {/* 2. STATE SNAPSHOT                                            */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Car className="w-3.5 h-3.5 text-intelligence-teal" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Fatal Crashes
+            </p>
+          </div>
+          <p className="text-3xl font-bold text-midnight-navy">
+            {fmtNum(totalFatalCrashes)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            2019&ndash;2024 &middot; FARS
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Annual Fatalities
+            </p>
+          </div>
+          {/* TODO(LANCE): source from GOHS 2023 Annual Report — GA annual traffic fatalities */}
+          <p className="text-3xl font-bold text-midnight-navy">
+            {GOHS.totalFatalities}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            GOHS 2023
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <MapPin className="w-3.5 h-3.5 text-intelligence-teal" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Rural Fatal Share
+            </p>
+          </div>
+          {/* TODO(LANCE): source from GOHS/FARS — GA rural fatality share % */}
+          <p className="text-3xl font-bold text-midnight-navy">TBD</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            of GOHS fatalities
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Scale className="w-3.5 h-3.5 text-intelligence-teal" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              PI Viability
+            </p>
+          </div>
+          <p className="text-3xl font-bold text-midnight-navy">
+            {piData?.composite_score ?? "\u2014"}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            Modified comparative (50%)
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <HardHat className="w-3.5 h-3.5 text-intelligence-teal" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Workplace Fatalities
+            </p>
+          </div>
+          {/* TODO(LANCE): source from BLS CFOI 2023 — GA workplace fatalities + construction breakdown */}
+          <p className="text-3xl font-bold text-midnight-navy">
+            {BLS_GA.totalWorkplaceFatalities}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            {BLS_GA.constructionFatalities} construction &middot; BLS CFOI 2023
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-4 shadow-sm border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <CloudLightning className="w-3.5 h-3.5 text-intelligence-teal" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Storm Events
+            </p>
+          </div>
+          <p className="text-3xl font-bold text-midnight-navy">
+            {fmtNum(data.stormCount)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">
+            NOAA Storm Events
+          </p>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* 3. GEORGIA CRASH INTELLIGENCE (GDOT embeds — existing)       */}
+      {/* ============================================================ */}
       <StateCrashEmbed
         stateName="Georgia"
         sourceLabel="GDOT AASHTOWare Safety Portal"
@@ -190,20 +633,1130 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
         embeds={GA_CRASH_EMBEDS}
       />
 
-      {/* Advertising sections */}
+      {/* ============================================================ */}
+      {/* 4. LEGAL LANDSCAPE                                           */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Legal Landscape
+          </h2>
+        </div>
+
+        {piData ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Negligence Rule
+                </p>
+                <p className="text-sm font-bold text-amber-600">
+                  {formatNegligenceRule(piData.negligence_rule)}
+                </p>
+              </div>
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Statute of Limitations
+                </p>
+                <p className="text-sm font-semibold text-midnight-navy">
+                  {piData.statute_of_limitations}
+                </p>
+              </div>
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Non-Economic Damage Caps
+                </p>
+                <p className="text-sm text-midnight-navy">
+                  {piData.non_economic_cap ?? "None"}
+                </p>
+              </div>
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Punitive Damage Caps
+                </p>
+                <p className="text-sm text-midnight-navy">
+                  {piData.punitive_cap ?? "None"}
+                </p>
+              </div>
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Average Jury Verdict
+                </p>
+                <p className="text-sm font-semibold text-midnight-navy">
+                  {piData.avg_jury_verdict != null
+                    ? typeof piData.avg_jury_verdict === "string" &&
+                      /^[a-zA-Z]/.test(piData.avg_jury_verdict)
+                      ? piData.avg_jury_verdict
+                      : fmtCur(Number(piData.avg_jury_verdict))
+                    : "\u2014"}
+                </p>
+              </div>
+              <div className="rounded-md bg-cloud/60 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
+                  Composite Score
+                </p>
+                <p className="text-sm font-bold text-intelligence-teal">
+                  {piData.composite_score}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-md border-l-4 border-amber-500 bg-amber-50 px-4 py-3">
+              <p className="text-sm text-midnight-navy/80">
+                Georgia follows modified comparative negligence with a 50%
+                bar &mdash; plaintiffs who are 50% or more at fault are barred
+                from recovery. Georgia has a 2-year statute of limitations for
+                personal injury, which provides a reasonable window for case
+                acquisition compared to shorter-SOL states. Georgia does not cap
+                non-economic damages in most PI cases, though punitive damages
+                are generally capped at $250,000 (O.C.G.A. &sect; 51-12-5.1)
+                with exceptions for intentional torts and product liability.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              PI viability data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 5. CASE TYPE OPPORTUNITIES                                   */}
+      {/* ============================================================ */}
+      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Target className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Case Type Opportunities
+          </h2>
+        </div>
+        <p className="mb-6 text-sm text-slate-gray">
+          Data-driven targeting recommendations by case type
+        </p>
+
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {/* MVA Card */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Car className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Motor Vehicle Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">MVA Fatal Deaths (FARS)</span>
+                <span className="font-semibold text-midnight-navy">
+                  {fmtNum(mvaDeaths)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Top Counties</span>
+                <span className="font-medium text-midnight-navy text-right">
+                  {top5MVA.map((r) => r.county).join(", ")}
+                </span>
+              </div>
+              {/* TODO(LANCE): source from GOHS — GA speed-related fatalities (2023) */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Speed-Related Fatalities (2023)</span>
+                <span className="font-semibold text-midnight-navy">
+                  {GOHS.speedRelatedFatalities} ({GOHS.speedRelatedPct}%)
+                </span>
+              </div>
+              {/* TODO(LANCE): source from GOHS — GA alcohol-related fatalities (2023) */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Alcohol-Related Fatalities (2023)</span>
+                <span className="font-semibold text-midnight-navy">
+                  {GOHS.alcoholRelatedFatalities} ({GOHS.alcoholRelatedPct}%)
+                </span>
+              </div>
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA MVA audience targeting */}
+                Atlanta metro (Fulton, DeKalb, Gwinnett, Cobb) dominates
+                volume. I-75, I-85, and the I-285 perimeter are among the
+                highest-fatality corridors in the Southeast. Georgia&apos;s
+                large commuter population and sprawling metro area generate
+                high exposure. Savannah and Augusta are secondary markets with
+                significant crash volume.
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA MVA media strategy */}
+                Digital + CTV in Atlanta metro. Billboard and radio along I-75
+                (Atlanta-Macon-Valdosta), I-85 (Atlanta-Gainesville), I-95
+                (Savannah coast corridor), and I-16 (Macon-Savannah). Atlanta
+                urban radio and digital geo-fencing around the I-285 perimeter.
+              </p>
+            </div>
+          </div>
+
+          {/* Large Truck Card */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Truck className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Large Truck Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">
+                  Truck Fatal Deaths (FARS)
+                </span>
+                <span className="font-semibold text-midnight-navy">
+                  {fmtNum(totalTruckDeaths)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Top Counties</span>
+                <span className="font-medium text-midnight-navy text-right">
+                  {top5Truck.map((r) => r.county).join(", ")}
+                </span>
+              </div>
+              {/* TODO(LANCE): source from BLS CFOI 2023 — GA truck transport workplace fatalities */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
+                <span className="font-medium text-midnight-navy">
+                  {BLS_GA.truckTransportFatalities} (BLS CFOI)
+                </span>
+              </div>
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA truck audience targeting */}
+                Georgia is a major freight hub &mdash; the Port of Savannah is
+                the 3rd busiest container port in the U.S. and generates heavy
+                truck traffic along I-16 and I-95. Atlanta sits at the
+                intersection of I-75, I-85, and I-20, creating one of the
+                busiest freight corridors in the Southeast. Rural stretches of
+                I-75 in South Georgia see heavy truck traffic with
+                disproportionate fatalities.
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA truck media strategy */}
+                Geo-fenced digital ads along I-75, I-85, I-16, and I-95
+                corridors. Truck stop billboards at major rest areas. Target CDL
+                holder families and passenger vehicle occupants struck by trucks.
+                Savannah market reaches into South Carolina.
+              </p>
+            </div>
+          </div>
+
+          {/* Motorcycle Card */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Bike className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Motorcycle Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">
+                  Motorcycle Fatal Deaths (FARS)
+                </span>
+                <span className="font-semibold text-midnight-navy">
+                  {fmtNum(totalMotoDeaths)}
+                </span>
+              </div>
+              {/* TODO(LANCE): source from GOHS — GA motorcycle fatalities (2023) */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">
+                  GOHS 2023 Motorcycle Fatalities
+                </span>
+                <span className="font-semibold text-midnight-navy">
+                  {GOHS.motorcycleFatalities}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Top Counties</span>
+                <span className="font-medium text-midnight-navy text-right">
+                  {top5Moto.map((r) => r.county).join(", ")}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA motorcycle audience targeting */}
+                Georgia&apos;s North Georgia mountains (Blue Ridge, Dahlonega)
+                and coastal routes draw motorcycle tourism. Fulton and Gwinnett
+                counties lead in volume. Georgia requires helmets for all riders
+                (O.C.G.A. &sect; 40-6-315), which affects severity distributions
+                compared to states without universal helmet laws.
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA motorcycle media strategy */}
+                Seasonal spring/summer campaigns during peak riding season.
+                Social media + streaming targeting motorcycle interests. Digital
+                geo-fencing near popular riding routes in North Georgia mountains.
+                Atlanta metro digital for urban motorcycle commuters.
+              </p>
+            </div>
+          </div>
+
+          {/* Construction Card */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <HardHat className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Construction Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              {/* TODO(LANCE): source from BLS CFOI 2023 — GA construction fatalities */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Construction Fatalities (2023)</span>
+                <span className="font-semibold text-midnight-navy">
+                  {BLS_GA.constructionFatalities} ({BLS_GA.constructionPctTotal}% of all workplace deaths)
+                </span>
+              </div>
+              {/* TODO(LANCE): source from BLS CFOI 2023 — GA falls/slips/trips fatalities */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">
+                  Falls/Slips/Trips Fatalities
+                </span>
+                <span className="font-semibold text-midnight-navy">
+                  {BLS_GA.fallsSlipsTrips}
+                </span>
+              </div>
+              {/* TODO(LANCE): source from BLS CFOI 2023 — GA total workplace fatalities */}
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Total Workplace Fatalities</span>
+                <span className="font-medium text-midnight-navy">
+                  {BLS_GA.totalWorkplaceFatalities} (BLS CFOI 2023)
+                </span>
+              </div>
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA construction audience targeting */}
+                Atlanta&apos;s construction boom (driven by film/TV industry,
+                tech expansion, and residential growth) creates a large at-risk
+                workforce. Savannah&apos;s port expansion and Augusta&apos;s
+                Cyber Command growth are also driving significant development.
+                Target construction workers, their families, and workers&apos;
+                comp attorneys.
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA construction media strategy */}
+                Job site proximity targeting via mobile in Atlanta, Savannah,
+                and Augusta. Workers&apos; comp and construction injury keywords.
+                Spanish-language digital and radio for growing Hispanic workforce
+                in metro Atlanta construction.
+              </p>
+            </div>
+          </div>
+
+          {/* Boating Card */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Anchor className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Boating Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Total Boating Accidents</span>
+                <span className="font-semibold text-midnight-navy">
+                  {fmtNum(totalBoatingAccidents)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Deaths / Injuries</span>
+                <span className="font-semibold text-midnight-navy">
+                  {fmtNum(totalBoatingDeaths)} / {fmtNum(totalBoatingInjuries)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-gray">Top Counties</span>
+                <span className="font-medium text-midnight-navy text-right">
+                  {data.boatingSummary
+                    .slice(0, 5)
+                    .map((r) => r.county)
+                    .join(", ")}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA boating audience targeting */}
+                Georgia has extensive lake and coastal recreation &mdash;
+                including Lake Lanier, Lake Oconee, Lake Hartwell, the
+                Intracoastal Waterway, and the barrier islands (Tybee, Jekyll,
+                St. Simons). Summer weekends drive peak accident periods.
+                Target boating enthusiasts and coastal vacation demographics.
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {/* TODO(LANCE): editorial pass — refine GA boating media strategy */}
+                Seasonal spring/summer campaigns. Geo-targeted digital around
+                Lake Lanier, Lake Oconee, and coastal communities. Local radio
+                in lakeside and coastal counties. Marina signage and outfitter
+                partnerships.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* 6. ACCIDENT DATA BY COUNTY (Interactive Table)               */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-2">
+          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Accident Data by County
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-gray">
+          159 Georgia counties &mdash; sortable by any column. Click headers to
+          sort.
+        </p>
+
+        <div className="mb-4 flex items-center gap-2">
+          <Search className="w-4 h-4 text-slate-gray" />
+          <input
+            type="text"
+            placeholder="Filter by county name..."
+            value={countyFilter}
+            onChange={(e) => setCountyFilter(e.target.value)}
+            className="rounded-md border border-cloud bg-cloud/40 px-3 py-1.5 text-sm text-midnight-navy placeholder:text-slate-gray/60 focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+          />
+        </div>
+
+        {data.accidentSummary.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-cloud">
+                  {[
+                    { key: "county" as SortKey, label: "County" },
+                    { key: "population" as SortKey, label: "Population" },
+                    { key: "fatal_crashes" as SortKey, label: "Fatal Crashes" },
+                    { key: "total_deaths" as SortKey, label: "Total Deaths" },
+                    { key: "truck_deaths" as SortKey, label: "Truck Deaths" },
+                    { key: "moto_deaths" as SortKey, label: "Moto Deaths" },
+                    {
+                      key: "deaths_per_100k" as SortKey,
+                      label: "Deaths/100K",
+                    },
+                    { key: "rural_pct" as SortKey, label: "Rural %" },
+                    {
+                      key: "judicial_profile" as SortKey,
+                      label: "Judicial Profile",
+                    },
+                  ].map((col) => (
+                    <th
+                      key={col.key}
+                      onClick={() => handleSort(col.key)}
+                      className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
+                    >
+                      {col.label}
+                      <SortIcon col={col.key} />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAccidentData.map((row) => (
+                  <tr
+                    key={row.county}
+                    className="border-b border-cloud/60 hover:bg-cloud/30 transition-colors"
+                  >
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      {row.county}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(row.total_population)}
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-midnight-navy">
+                      {fmtNum(row.fatal_crashes)}
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-red-600">
+                      {fmtNum(row.total_deaths)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(row.truck_deaths)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(row.moto_deaths)}
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-midnight-navy">
+                      {row.deaths_per_100k != null
+                        ? row.deaths_per_100k.toFixed(1)
+                        : "\u2014"}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(row.rural_pct)}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {row.judicial_profile ? (
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
+                            row.judicial_profile
+                          )}`}
+                        >
+                          {row.judicial_profile}
+                        </span>
+                      ) : (
+                        <span className="text-slate-gray/50">&mdash;</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              Accident data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 7. RURAL vs. URBAN ANALYSIS                                  */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Rural vs. Urban Analysis
+          </h2>
+        </div>
+
+        {ruralRow && urbanRow ? (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-cloud">
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                      Metric
+                    </th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                      Rural
+                    </th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                      Urban
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-cloud/60">
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Fatal Crashes
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(ruralRow.fatal_crashes)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(urbanRow.fatal_crashes)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-cloud/60">
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Total Deaths
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(ruralRow.total_deaths)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(urbanRow.total_deaths)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-cloud/60">
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Avg Median Income
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtCur(ruralRow.avg_median_income)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtCur(urbanRow.avg_median_income)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-cloud/60">
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Avg Poverty Rate
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(ruralRow.avg_poverty_pct)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(urbanRow.avg_poverty_pct)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-cloud/60">
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Avg Internet Access
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(ruralRow.avg_internet_pct)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(urbanRow.avg_internet_pct)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      Avg Uninsured Rate
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(ruralRow.avg_uninsured_pct)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(urbanRow.avg_uninsured_pct)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
+              <p className="text-sm text-midnight-navy/80">
+                {/* TODO(LANCE): editorial pass — refine GA rural/urban analysis insight */}
+                Georgia&apos;s rural counties have disproportionately high
+                fatality rates despite lower total crash counts. South Georgia
+                and the rural Black Belt counties have lower internet access and
+                higher uninsured rates, limiting digital-only advertising reach
+                and increasing the severity of untreated injuries. The contrast
+                between metro Atlanta and rural South Georgia is among the
+                starkest rural/urban divides in the Southeast.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              Rural/urban data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 8. MARKET DEMOGRAPHICS BY METRO                              */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Market Demographics by Metro
+          </h2>
+        </div>
+
+        {data.msaDemographics.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-cloud">
+                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Metro Area
+                  </th>
+                  <th
+                    onClick={() => {
+                      if (msaSortKey === "pop") setMsaSortAsc(!msaSortAsc);
+                      else {
+                        setMsaSortKey("pop");
+                        setMsaSortAsc(false);
+                      }
+                    }}
+                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
+                  >
+                    Population
+                    {msaSortKey === "pop" &&
+                      (msaSortAsc ? (
+                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
+                      ))}
+                  </th>
+                  <th
+                    onClick={() => {
+                      if (msaSortKey === "income") setMsaSortAsc(!msaSortAsc);
+                      else {
+                        setMsaSortKey("income");
+                        setMsaSortAsc(false);
+                      }
+                    }}
+                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
+                  >
+                    Median Income
+                    {msaSortKey === "income" &&
+                      (msaSortAsc ? (
+                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
+                      ))}
+                  </th>
+                  <th
+                    onClick={() => {
+                      if (msaSortKey === "poverty") setMsaSortAsc(!msaSortAsc);
+                      else {
+                        setMsaSortKey("poverty");
+                        setMsaSortAsc(false);
+                      }
+                    }}
+                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
+                  >
+                    Poverty %
+                    {msaSortKey === "poverty" &&
+                      (msaSortAsc ? (
+                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
+                      ))}
+                  </th>
+                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Uninsured %
+                  </th>
+                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Employed %
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedMSA.map((row) => (
+                  <tr
+                    key={row.cbsa_code}
+                    className="border-b border-cloud/60 hover:bg-cloud/30 transition-colors"
+                  >
+                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                      {row.cbsa_title}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtNum(row.total_population)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtCur(row.median_household_income)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(row.pct_poverty)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(row.pct_uninsured)}
+                    </td>
+                    <td className="py-2.5 px-3 text-midnight-navy/80">
+                      {fmtPct(row.pct_employed)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              MSA demographic data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 9. JUDICIAL PROFILES BY COUNTY                               */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Judicial Profiles by County
+          </h2>
+        </div>
+
+        {judicialWithFatalities.length > 0 ? (
+          <>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {Object.entries(profileCounts).map(([profile, count]) => (
+                <span
+                  key={profile}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${getProfileColor(
+                    profile
+                  )}`}
+                >
+                  {profile}: {count}
+                </span>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-cloud">
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                      County
+                    </th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                      Judicial Profile
+                    </th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray text-right">
+                      Population
+                    </th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray text-right">
+                      Deaths/100K
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {judicialWithFatalities
+                    .sort((a, b) => (b.population ?? 0) - (a.population ?? 0))
+                    .map((row) => (
+                      <tr
+                        key={row.county}
+                        className={`border-b border-cloud/60 hover:bg-cloud/30 transition-colors border-l-4 ${getProfileBorderColor(
+                          row.profile
+                        )}`}
+                      >
+                        <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                          {row.county}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
+                              row.profile
+                            )}`}
+                          >
+                            {row.profile}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-midnight-navy/80">
+                          {fmtNum(row.population)}
+                        </td>
+                        <td className="py-2.5 pl-3 text-right font-semibold text-midnight-navy">
+                          {row.deathsPer100k != null
+                            ? row.deathsPer100k.toFixed(1)
+                            : "\u2014"}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
+              <p className="text-sm text-midnight-navy/80">
+                {/* TODO(LANCE): editorial pass — refine GA judicial profiles insight */}
+                Fulton County (Atlanta) and DeKalb County are the two largest
+                population centers. Filing venue selection in Georgia
+                matters &mdash; judicial leanings can vary significantly between
+                metro Atlanta counties and rural South Georgia counties.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              Judicial profile data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 10. PI VIABILITY DEEP DIVE                                   */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            PI Viability Deep Dive
+          </h2>
+        </div>
+
+        {piData ? (
+          <>
+            <div className="rounded-lg bg-white p-4 mb-4">
+              <p className="mb-3 text-xs font-semibold text-midnight-navy">
+                Component Scores
+              </p>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart
+                  data={[
+                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
+                  ]}
+                  layout="vertical"
+                  margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
+                >
+                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={160}
+                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
+                  />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                    {[
+                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
+                    ].map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
+              <p className="text-sm text-midnight-navy/80">
+                Georgia&apos;s modified comparative negligence rule (50% bar)
+                bars plaintiffs who are 50% or more at fault. The 2-year statute
+                of limitations provides a reasonable acquisition window. Georgia
+                does not cap non-economic damages in most PI cases, making it
+                more plaintiff-friendly than states with strict caps. Punitive
+                damages are generally capped at $250,000 but with significant
+                exceptions for product liability and intentional torts.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              PI viability data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 11. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* ============================================================ */}
       <PIAdvertisingSection stateAbbr="GA" onDataLoaded={handlePIAdDataLoaded} />
+
+      {/* ============================================================ */}
+      {/* 12. COMPETITIVE LANDSCAPE                                    */}
+      {/* ============================================================ */}
       <CompetitiveLandscapeTable data={georgiaCompetitiveData} />
+
+      {/* ============================================================ */}
+      {/* 12b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
+      {/* ============================================================ */}
       <StateAdvertisingSection stateAbbr="GA" stateName="Georgia" />
 
-      {/* Ask AI */}
+      {/* ============================================================ */}
+      {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
+      {/* ============================================================ */}
+      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Lightbulb className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Cross-Signal Insights
+          </h2>
+        </div>
+        <p className="mb-6 text-sm text-slate-gray">
+          Non-obvious opportunities surfaced by cross-referencing multiple data
+          sources
+        </p>
+
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {/* TODO(LANCE): editorial pass — refine all GA cross-signal insight cards */}
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🍑</span>
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Atlanta PI Market Saturation
+              </h3>
+            </div>
+            <p className="text-[11px] text-midnight-navy/70">
+              Atlanta&apos;s massive population (~6M metro) has attracted
+              national PI firms (Morgan &amp; Morgan, Alexander Shunnarah),
+              creating one of the most competitive advertising markets in the
+              Southeast. However, surrounding counties (Gwinnett, Forsyth,
+              Henry, Cherokee) are growing rapidly with less advertising
+              saturation. Satellite-metro targeting offers better
+              cost-per-case economics.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🚢</span>
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Port of Savannah Freight Corridor
+              </h3>
+            </div>
+            <p className="text-[11px] text-midnight-navy/70">
+              The Port of Savannah is the 3rd busiest container port in the
+              U.S. and the fastest-growing. I-16 from Savannah to Macon and
+              I-95 along the coast see extreme truck traffic volumes. Combined
+              with cross-state reach into South Carolina, Savannah-market truck
+              accident campaigns have unusually broad geographic impact. The
+              port expansion project will increase container capacity 60% by
+              2028, driving even more truck traffic.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">⏰</span>
+              <h3 className="text-sm font-bold text-midnight-navy">
+                2-Year SOL Opportunity Window
+              </h3>
+            </div>
+            <p className="text-[11px] text-midnight-navy/70">
+              Georgia&apos;s 2-year statute of limitations for personal injury
+              provides a longer acquisition window than Tennessee (1 year) or
+              neighboring states with shorter SOLs. This allows for sustained
+              brand-building campaigns alongside direct-response tactics. Firms
+              can invest in awareness-phase advertising knowing prospects have
+              a reasonable window to convert.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🏗️</span>
+              <h3 className="text-sm font-bold text-midnight-navy">
+                South Georgia Connectivity Gap
+              </h3>
+            </div>
+            <p className="text-[11px] text-midnight-navy/70">
+              {/* TODO(LANCE): editorial pass — refine South GA connectivity gap insight */}
+              South Georgia&apos;s rural counties have lower internet access
+              rates and higher uninsured populations. These areas also have
+              high fatality rates on two-lane rural highways. Digital-only
+              advertising cannot reach these communities effectively. Radio,
+              community health centers, and local TV are necessary channels
+              for plaintiff firm outreach in the I-75 South Georgia corridor
+              and the rural Black Belt.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🏔️</span>
+              <h3 className="text-sm font-bold text-midnight-navy">
+                North Georgia Mountain Tourism
+              </h3>
+            </div>
+            <p className="text-[11px] text-midnight-navy/70">
+              {/* TODO(LANCE): editorial pass — refine North GA mountain tourism insight */}
+              The North Georgia mountains (Blue Ridge, Dahlonega, Helen) draw
+              motorcycle and outdoor tourism from across the Southeast.
+              Out-of-state visitors injured in Georgia may not know local
+              attorneys. Geo-fenced digital ads near scenic routes plus
+              partnerships with tourism-adjacent businesses (cabins, outfitters)
+              can capture cases from this unique tourism segment. Mountain
+              roads also see elevated crash severity.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* ASK AI PANEL                                                 */}
+      {/* ============================================================ */}
       <AskAIPanel
         pageContext={{
           pageName: "Georgia State Intelligence",
           pageDescription:
-            "State-level intelligence for plaintiff firm advertising and case acquisition in Georgia.",
-          dataSummary: `State: Georgia.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ""}`,
+            "State-level intelligence for plaintiff firm advertising and case acquisition in Georgia — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, GDOT crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
+          dataSummary: `State: Georgia. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_50')} (50% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 159. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Key corridors: I-75, I-85, I-20, I-16, I-95.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
         }}
       />
+
+      {/* ============================================================ */}
+      {/* 14. SOURCES & METHODOLOGY                                    */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            Sources &amp; Methodology
+          </h2>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            "FARS (NHTSA) \u2014 Fatal crash data 2019\u20132024",
+            "GDOT AASHTOWare Safety Portal \u2014 Crash Dashboards",
+            "ACS 5-Year Estimates 2023 (Census Bureau)",
+            "BLS OES (Occupational Employment Statistics) May 2023",
+            "BLS CFOI (Census of Fatal Occupational Injuries) 2023",
+            "NOAA Storm Events Database",
+            "USCG Boating Accident Report Database",
+            "CDC/USCS Cancer Incidence Data",
+            "Court records / judicial profile data",
+          ].map((source) => (
+            <div
+              key={source}
+              className="flex items-start gap-2 rounded-md bg-cloud/60 px-3 py-2"
+            >
+              <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0 text-intelligence-teal" />
+              <p className="text-xs text-midnight-navy/80">{source}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* -- Footer / Disclaimer --------------------------------------- */}
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
+        <p className="text-xs leading-relaxed text-slate-gray">
+          This page is refreshed periodically. Content reflects research and
+          publicly available data as of the date shown. This page does not
+          constitute legal advice.
+        </p>
+        <p className="mt-3 text-[11px] text-slate-gray/80">
+          Data sources: FARS (NHTSA), GDOT AASHTOWare Safety Portal, ACS
+          5-Year Estimates, BLS OES/CFOI, NOAA Storm Events, USCG Boating
+          Accidents, Judicial Profile Data.
+        </p>
+      </div>
     </div>
   );
 }
