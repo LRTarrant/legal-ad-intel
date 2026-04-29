@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Activity } from "lucide-react";
+
+/** Max ms to show the loading overlay before auto-dismissing. Cross-origin
+ *  iframes (GDOT Numetric, Tableau, etc.) do not reliably fire `onLoad` in
+ *  sandboxed contexts, so the overlay must self-clear to avoid permanently
+ *  hiding the iframe content. */
+const OVERLAY_TIMEOUT_MS = 8_000;
 
 export interface CrashEmbed {
   name: string;
@@ -28,6 +34,41 @@ export function StateCrashEmbed({
     () => new Set([0])
   );
   const [loadedSrcs, setLoadedSrcs] = useState<Set<string>>(new Set());
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const markLoaded = useCallback((src: string) => {
+    setLoadedSrcs((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+    // Clear any pending timeout for this src
+    const tid = timersRef.current.get(src);
+    if (tid) {
+      clearTimeout(tid);
+      timersRef.current.delete(src);
+    }
+  }, []);
+
+  // Auto-dismiss overlay after timeout for each mounted embed
+  useEffect(() => {
+    const timers = timersRef.current;
+    for (const embed of embeds) {
+      const src = embed.iframeSrc;
+      if (!loadedSrcs.has(src) && !timers.has(src)) {
+        const tid = setTimeout(() => {
+          markLoaded(src);
+          timers.delete(src);
+        }, OVERLAY_TIMEOUT_MS);
+        timers.set(src, tid);
+      }
+    }
+    return () => {
+      for (const tid of timers.values()) clearTimeout(tid);
+      timers.clear();
+    };
+  }, [embeds, loadedSrcs, markLoaded]);
 
   const handleTabClick = useCallback(
     (index: number) => {
@@ -91,7 +132,7 @@ export function StateCrashEmbed({
             )}
             <div className="relative w-full overflow-hidden rounded-lg border bg-white">
               {!loadedSrcs.has(embed.iframeSrc) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm transition-opacity">
                   <div className="flex flex-col items-center gap-3 text-slate-500">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-intelligence-teal" />
                     <p className="text-sm">Loading dashboard&hellip;</p>
@@ -110,14 +151,7 @@ export function StateCrashEmbed({
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 className="max-w-full"
                 title={embed.name}
-                onLoad={() =>
-                  setLoadedSrcs((prev) => {
-                    if (prev.has(embed.iframeSrc)) return prev;
-                    const next = new Set(prev);
-                    next.add(embed.iframeSrc);
-                    return next;
-                  })
-                }
+                onLoad={() => markLoaded(embed.iframeSrc)}
               />
             </div>
             {sourceLabel && (
