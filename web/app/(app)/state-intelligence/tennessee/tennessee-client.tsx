@@ -22,7 +22,6 @@ import {
   BarChart3,
   Database,
   Target,
-  Activity,
 } from "lucide-react";
 import {
   BarChart,
@@ -48,8 +47,9 @@ import {
   TN_COUNTY_INJURY_DATA,
   TN_INJURY_DATA_YEARS,
   TN_INJURY_DATA_LATEST_YEAR,
-  type TnCountyInjuryRow,
 } from "@/lib/data/tn-injury-stats";
+import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
+import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -188,29 +188,26 @@ const COMMUTE = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Tableau Dashboard Config                                           */
+/*  Tableau Dashboard Config (passed to StateCrashEmbed)               */
 /* ------------------------------------------------------------------ */
 
-const TABLEAU_DASHBOARDS = [
+const TN_CRASH_EMBEDS = [
   {
-    id: "fsic",
-    title: "Fatal & Serious Injury Crashes",
-    src: "https://data.tn.gov/t/Public/views/FatalandSeriousInjuryPublic/FSIC_dashboard?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:toolbar=no",
+    name: "Fatal & Serious Injury Crashes",
+    iframeSrc: "https://data.tn.gov/t/Public/views/FatalandSeriousInjuryPublic/FSIC_dashboard?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:toolbar=no",
     height: 2000,
     description:
       "Statewide fatal and serious injury crashes by county, route, and time period. Updated continuously by the Tennessee Department of Safety & Homeland Security.",
   },
   {
-    id: "recent",
-    title: "Recent Crashes",
-    src: "https://data.tn.gov/t/Public/views/RecentCrashes/RecentCrashes?:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link&:toolbar=no&:embed=yes",
+    name: "Recent Crashes",
+    iframeSrc: "https://data.tn.gov/t/Public/views/RecentCrashes/RecentCrashes?:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link&:toolbar=no&:embed=yes",
     height: 4500,
     description: "Most recent reported crashes statewide.",
   },
   {
-    id: "fatality-trends",
-    title: "Traffic Fatality Trends",
-    src: "https://data.tn.gov/t/Public/views/TN_Traffic_Fatality/TTF_dashboard?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:toolbar=no",
+    name: "Traffic Fatality Trends",
+    iframeSrc: "https://data.tn.gov/t/Public/views/TN_Traffic_Fatality/TTF_dashboard?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:toolbar=no",
     height: 3100,
     description: "Historic and trending traffic fatality data.",
   },
@@ -293,11 +290,6 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
   const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
   const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const [activeTab, setActiveTab] = useState("fsic");
-  const [injuryYear, setInjuryYear] = useState(TN_INJURY_DATA_LATEST_YEAR);
-  const [injurySortKey, setInjurySortKey] = useState<keyof TnCountyInjuryRow>("seriousInjury");
-  const [injurySortAsc, setInjurySortAsc] = useState(false);
-  const [injuryFilter, setInjuryFilter] = useState("");
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
   useEffect(() => {
@@ -366,68 +358,6 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
     });
     return rows;
   }, [data.accidentSummary, countyFilter, sortKey, sortAsc]);
-
-  /* -- Injury data for selected year -- */
-  const injuryYearData = useMemo(() => {
-    return TN_COUNTY_INJURY_DATA.filter((r) => r.year === injuryYear);
-  }, [injuryYear]);
-
-  const injuryStatewide = useMemo(() => {
-    return injuryYearData.find((r) => r.county === "TENNESSEE STATEWIDE") ?? null;
-  }, [injuryYearData]);
-
-  const injuryCounties = useMemo(() => {
-    return injuryYearData.filter((r) => r.county !== "TENNESSEE STATEWIDE");
-  }, [injuryYearData]);
-
-  const injuryTop10 = useMemo(() => {
-    const stateTotal = injuryStatewide?.seriousInjury ?? 1;
-    return [...injuryCounties]
-      .sort((a, b) => b.seriousInjury - a.seriousInjury)
-      .slice(0, 10)
-      .map((r) => ({
-        county: r.county,
-        seriousInjury: r.seriousInjury,
-        pct: ((r.seriousInjury / stateTotal) * 100).toFixed(1),
-      }));
-  }, [injuryCounties, injuryStatewide]);
-
-  const filteredInjuryData = useMemo(() => {
-    let rows = [...injuryCounties];
-    if (injuryFilter.trim()) {
-      const f = injuryFilter.toLowerCase();
-      rows = rows.filter((r) => r.county.toLowerCase().includes(f));
-    }
-    rows.sort((a, b) => {
-      const aVal = a[injurySortKey];
-      const bVal = b[injurySortKey];
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return injurySortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-      return injurySortAsc
-        ? (aVal as number) - (bVal as number)
-        : (bVal as number) - (aVal as number);
-    });
-    return rows;
-  }, [injuryCounties, injuryFilter, injurySortKey, injurySortAsc]);
-
-  function handleInjurySort(key: keyof TnCountyInjuryRow) {
-    if (injurySortKey === key) {
-      setInjurySortAsc(!injurySortAsc);
-    } else {
-      setInjurySortKey(key);
-      setInjurySortAsc(key === "county");
-    }
-  }
-
-  function InjurySortIcon({ col }: { col: keyof TnCountyInjuryRow }) {
-    if (injurySortKey !== col) return null;
-    return injurySortAsc ? (
-      <ChevronUp className="w-3 h-3 inline ml-0.5" />
-    ) : (
-      <ChevronDown className="w-3 h-3 inline ml-0.5" />
-    );
-  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -694,266 +624,27 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 2b. COUNTY-LEVEL INJURY RANKINGS                             */}
+      {/* 2b. COUNTY-LEVEL INJURY RANKINGS (reusable component)        */}
       {/* ============================================================ */}
-      <div className="rounded-lg border-2 border-intelligence-teal/30 bg-gradient-to-br from-intelligence-teal/[0.06] to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Counties Ranked by Serious Injuries
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray max-w-3xl">
-          Suspected Serious Injury counts by county from the Tennessee
-          Department of Safety &amp; Homeland Security crash data. Select a year
-          to view the top-10 chart and full county table.
-        </p>
-
-        {/* Year selector */}
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-            Year:
-          </span>
-          {TN_INJURY_DATA_YEARS.map((y) => (
-            <button
-              key={y}
-              onClick={() => setInjuryYear(y)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                injuryYear === y
-                  ? "bg-intelligence-teal text-white shadow-sm"
-                  : "bg-white text-midnight-navy/70 border border-cloud hover:bg-cloud/60"
-              }`}
-            >
-              {y === 2025 ? "2025 (Jan\u2013Sept)" : y}
-            </button>
-          ))}
-        </div>
-
-        {injuryYear === 2025 && (
-          <div className="mb-4 rounded-md border-l-4 border-amber-500 bg-amber-50 px-4 py-2">
-            <p className="text-xs text-midnight-navy/80">
-              2025 data covers January 1 &ndash; September 30, 2025 and is
-              preliminary. Use 2024 for the latest complete-year comparison.
-            </p>
-          </div>
-        )}
-
-        {/* Top-10 horizontal bar chart */}
-        <div className="mb-6">
-          <h3 className="mb-3 text-sm font-bold text-midnight-navy">
-            Top 10 Counties by Serious Injury ({injuryYear === 2025 ? "2025 Jan\u2013Sept" : injuryYear})
-          </h3>
-          <ResponsiveContainer width="100%" height={340}>
-            <BarChart
-              data={injuryTop10}
-              layout="vertical"
-              margin={{ top: 0, right: 60, bottom: 0, left: 0 }}
-            >
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis
-                type="category"
-                dataKey="county"
-                width={100}
-                tick={{ fontSize: 11, fill: "#1B2A4A" }}
-              />
-              <Tooltip
-                contentStyle={{ fontSize: 12 }}
-                formatter={(value: number, _name: string, props: { payload: { pct: string } }) => [
-                  `${value.toLocaleString()} (${props.payload.pct}% of statewide)`,
-                  "Serious Injuries",
-                ]}
-              />
-              <Bar dataKey="seriousInjury" radius={[0, 4, 4, 0]}>
-                {injuryTop10.map((_entry, index) => (
-                  <Cell key={index} fill={index === 0 ? "#0F766E" : "#14B8A6"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Sortable searchable table */}
-        <h3 className="mb-2 text-sm font-bold text-midnight-navy">
-          All Counties ({injuryYear === 2025 ? "2025 Jan\u2013Sept" : injuryYear})
-        </h3>
-        <div className="mb-3 flex items-center gap-2">
-          <Search className="w-4 h-4 text-slate-gray" />
-          <input
-            type="text"
-            placeholder="Search county..."
-            value={injuryFilter}
-            onChange={(e) => setInjuryFilter(e.target.value)}
-            className="rounded-md border border-cloud bg-white px-3 py-1.5 text-sm text-midnight-navy placeholder:text-slate-gray/60 focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
-          />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-gradient-to-br from-intelligence-teal/[0.06] to-white">
-              <tr className="border-b border-cloud">
-                {([
-                  { key: "county" as const, label: "County" },
-                  { key: "fatal" as const, label: "Fatal" },
-                  { key: "seriousInjury" as const, label: "Serious Injury" },
-                  { key: "minorInjury" as const, label: "Minor Injury" },
-                  { key: "possibleInjury" as const, label: "Possible Injury" },
-                  { key: "total" as const, label: "Total" },
-                ] as { key: keyof TnCountyInjuryRow; label: string }[]).map((col) => (
-                  <th
-                    key={col.key}
-                    onClick={() => handleInjurySort(col.key)}
-                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
-                  >
-                    {col.label}
-                    <InjurySortIcon col={col.key} />
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Pinned statewide row */}
-              {injuryStatewide && (
-                <tr className="border-b-2 border-intelligence-teal/30 bg-intelligence-teal/[0.08] font-semibold">
-                  <td className="py-2.5 px-3 text-midnight-navy">
-                    {injuryStatewide.county}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy">
-                    {fmtNum(injuryStatewide.fatal)}
-                  </td>
-                  <td className="py-2.5 px-3 text-intelligence-teal">
-                    {fmtNum(injuryStatewide.seriousInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy">
-                    {fmtNum(injuryStatewide.minorInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy">
-                    {fmtNum(injuryStatewide.possibleInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy">
-                    {fmtNum(injuryStatewide.total)}
-                  </td>
-                </tr>
-              )}
-              {filteredInjuryData.map((row) => (
-                <tr
-                  key={row.county}
-                  className="border-b border-cloud/60 hover:bg-cloud/30 transition-colors"
-                >
-                  <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                    {row.county}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy/80">
-                    {fmtNum(row.fatal)}
-                  </td>
-                  <td className="py-2.5 px-3 font-semibold text-intelligence-teal">
-                    {fmtNum(row.seriousInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy/80">
-                    {fmtNum(row.minorInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy/80">
-                    {fmtNum(row.possibleInjury)}
-                  </td>
-                  <td className="py-2.5 px-3 text-midnight-navy/80">
-                    {fmtNum(row.total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Source attribution */}
-        <div className="mt-4 space-y-1">
-          <p className="text-[11px] text-slate-gray">
-            Source:{" "}
-            <a
-              href="https://www.tn.gov/content/dam/tn/safety/documents/crash_stats/Injuries.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-intelligence-teal"
-            >
-              Tennessee Traffic Crash Injuries by Severity 2010&ndash;2025
-            </a>
-            , Tennessee Department of Safety &amp; Homeland Security.
-          </p>
-          <p className="text-[11px] text-slate-gray/80">
-            Suspected Serious Injury follows the federal MMUCC standard for
-            incapacitating injuries &mdash; the metric most relevant to
-            plaintiff PI case acquisition.
-          </p>
-        </div>
-      </div>
+      <StateInjuryTable
+        stateName="Tennessee"
+        data={TN_COUNTY_INJURY_DATA}
+        years={TN_INJURY_DATA_YEARS}
+        latestCompleteYear={TN_INJURY_DATA_LATEST_YEAR}
+        partialYearLabels={{ 2025: "(Jan\u2013Sept)" }}
+        sourceLabel="Tennessee Traffic Crash Injuries by Severity 2010\u20132025"
+        sourceUrl="https://www.tn.gov/content/dam/tn/safety/documents/crash_stats/Injuries.pdf"
+      />
 
       {/* ============================================================ */}
-      {/* 3. TENNESSEE CRASH INTELLIGENCE (Tableau Dashboards)         */}
+      {/* 3. TENNESSEE CRASH INTELLIGENCE (reusable component)         */}
       {/* ============================================================ */}
-      <div className="rounded-lg border-2 border-intelligence-teal/30 bg-gradient-to-br from-intelligence-teal/[0.06] to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Tennessee Crash Intelligence
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray max-w-3xl">
-          Tennessee publishes one of the most comprehensive and current state
-          crash datasets in the U.S. &mdash; including serious-injury crashes,
-          which are rarely available elsewhere.
-        </p>
-
-        {/* Tab buttons */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {TABLEAU_DASHBOARDS.map((dash) => (
-            <button
-              key={dash.id}
-              onClick={() => setActiveTab(dash.id)}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === dash.id
-                  ? "bg-intelligence-teal text-white shadow-sm"
-                  : "bg-white text-midnight-navy/70 border border-cloud hover:bg-cloud/60"
-              }`}
-            >
-              {dash.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Active dashboard */}
-        {TABLEAU_DASHBOARDS.map((dash) => {
-          const isActive = activeTab === dash.id;
-          if (!isActive) return null;
-          return (
-            <div key={dash.id}>
-              <p className="mb-3 text-xs text-midnight-navy/60">
-                {dash.description}
-              </p>
-              <div className="w-full overflow-hidden rounded-lg border bg-white">
-                <iframe
-                  src={dash.src}
-                  width="100%"
-                  height={dash.height}
-                  frameBorder="0"
-                  loading="lazy"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  className="max-w-full"
-                  title={dash.title}
-                />
-              </div>
-              <p className="mt-2 text-[11px] text-slate-gray">
-                Source:{" "}
-                <a
-                  href="https://www.tn.gov/safety/stats/dashboards.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-intelligence-teal"
-                >
-                  Tennessee Department of Safety &amp; Homeland Security
-                </a>
-              </p>
-            </div>
-          );
-        })}
-      </div>
+      <StateCrashEmbed
+        stateName="Tennessee"
+        sourceLabel="Tennessee Department of Safety & Homeland Security"
+        sourceUrl="https://www.tn.gov/safety/stats/dashboards.html"
+        embeds={TN_CRASH_EMBEDS}
+      />
 
       {/* ============================================================ */}
       {/* 4. LEGAL LANDSCAPE                                           */}
