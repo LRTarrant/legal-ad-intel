@@ -597,7 +597,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
             {fmtNum(BLS_GA.totalWorkplaceFatalities)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            {BLS_GA.constructionFatalities} construction &middot; BLS CFOI 2023
+            {BLS_GA.constructionFatalities}{" "}construction &middot; BLS CFOI 2023
           </p>
         </div>
 
@@ -758,13 +758,13 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Speed-Related Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {fmtNum(GOHS.speedRelatedFatalities)} ({GOHS.speedRelatedPct}%)
+                  {fmtNum(GOHS.speedRelatedFatalities)}{" "}({GOHS.speedRelatedPct}%)
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Alcohol-Related Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {fmtNum(GOHS.alcoholRelatedFatalities)} ({GOHS.alcoholRelatedPct}%)
+                  {fmtNum(GOHS.alcoholRelatedFatalities)}{" "}({GOHS.alcoholRelatedPct}%)
                 </span>
               </div>
             </div>
@@ -776,8 +776,8 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 Atlanta metro (Fulton, DeKalb, Gwinnett, Cobb) dominates
                 volume, with I-75, I-85, and the I-285 perimeter ranking
                 among the highest-fatality corridors in the Southeast.
-                Georgia recorded {fmtNum(GOHS.totalCrashes)} police-reported
-                crashes and {fmtNum(GOHS.totalFatalities)} fatalities in 2023,
+                Georgia recorded {fmtNum(GOHS.totalCrashes)}{" "}police-reported
+                crashes and {fmtNum(GOHS.totalFatalities)}{" "}fatalities in 2023,
                 with {GOHS.alcoholRelatedPct}% alcohol-related and {GOHS.speedRelatedPct}% speed-related.
                 The 2-year statute of limitations (O.C.G.A. &sect; 9-3-33)
                 provides a reasonable acquisition window. Savannah and Augusta
@@ -824,7 +824,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
                 <span className="font-medium text-midnight-navy">
-                  {fmtNum(BLS_GA.truckTransportFatalities)} (BLS CFOI)
+                  {fmtNum(BLS_GA.truckTransportFatalities)}{" "}(BLS CFOI)
                 </span>
               </div>
             </div>
@@ -835,8 +835,8 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 </span>{" "}
                 Georgia is a major freight hub &mdash; the Port of Savannah is
                 the 3rd busiest container port in the U.S. and generates heavy
-                truck traffic along I-16 and I-95. BLS CFOI data show {fmtNum(BLS_GA.transportWarehouseFatalities)} transportation/warehousing
-                workplace fatalities and {fmtNum(BLS_GA.truckTransportFatalities)} in
+                truck traffic along I-16 and I-95. BLS CFOI data show {fmtNum(BLS_GA.transportWarehouseFatalities)}{" "}transportation/warehousing
+                workplace fatalities and {fmtNum(BLS_GA.truckTransportFatalities)}{" "}in
                 truck transportation alone in 2023. Atlanta sits at the
                 intersection of I-75, I-85, and I-20, creating one of the
                 busiest freight corridors in the Southeast. FMCSA federal
@@ -893,7 +893,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                GOHS reported {fmtNum(GOHS.motorcycleFatalities)} motorcycle
+                GOHS reported {fmtNum(GOHS.motorcycleFatalities)}{" "}motorcycle
                 fatalities in 2023, representing roughly 12% of all Georgia
                 traffic deaths. North Georgia mountains (Blue Ridge, Dahlonega)
                 and coastal routes draw motorcycle tourism. Fulton and Gwinnett
@@ -927,7 +927,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Construction Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {fmtNum(BLS_GA.constructionFatalities)} ({BLS_GA.constructionPctTotal}% of all workplace deaths)
+                  {fmtNum(BLS_GA.constructionFatalities)}{" "}({BLS_GA.constructionPctTotal}% of all workplace deaths)
                 </span>
               </div>
               <div className="flex justify-between text-xs">
@@ -941,7 +941,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Total Workplace Fatalities</span>
                 <span className="font-medium text-midnight-navy">
-                  {fmtNum(BLS_GA.totalWorkplaceFatalities)} (BLS CFOI 2023)
+                  {fmtNum(BLS_GA.totalWorkplaceFatalities)}{" "}(BLS CFOI 2023)
                 </span>
               </div>
             </div>
@@ -950,10 +950,10 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                BLS CFOI recorded {fmtNum(BLS_GA.constructionFatalities)} construction
+                BLS CFOI recorded {fmtNum(BLS_GA.constructionFatalities)}{" "}construction
                 fatalities in Georgia in 2023 ({BLS_GA.constructionPctTotal}% of
-                all {fmtNum(BLS_GA.totalWorkplaceFatalities)} workplace deaths),
-                with falls/slips/trips accounting for {fmtNum(BLS_GA.fallsSlipsTrips)} fatalities
+                all {fmtNum(BLS_GA.totalWorkplaceFatalities)}{" "}workplace deaths),
+                with falls/slips/trips accounting for {fmtNum(BLS_GA.fallsSlipsTrips)}{" "}fatalities
                 statewide. Atlanta&apos;s construction boom, Savannah&apos;s port
                 expansion, and Augusta&apos;s growth corridors sustain a large
                 at-risk workforce. Third-party negligence claims may exist
@@ -1013,9 +1013,9 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 Georgia has extensive lake and coastal recreation &mdash;
                 Lake Lanier, Lake Oconee, Lake Hartwell, the Intracoastal
                 Waterway, and barrier islands (Tybee, Jekyll, St. Simons).
-                The county data above shows {fmtNum(totalBoatingAccidents)} boating
-                accidents with {fmtNum(totalBoatingDeaths)} deaths
-                and {fmtNum(totalBoatingInjuries)} injuries. Summer weekends
+                The county data above shows {fmtNum(totalBoatingAccidents)}{" "}boating
+                accidents with {fmtNum(totalBoatingDeaths)}{" "}deaths
+                and {fmtNum(totalBoatingInjuries)}{" "}injuries. Summer weekends
                 drive peak accident volume. Target boating enthusiasts and
                 coastal vacation demographics in the Savannah and
                 Brunswick DMAs.
@@ -1643,7 +1643,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               demographics table above) is one of Georgia&apos;s fastest-growing
               metros, driving both construction and freight activity. I-16
               from Savannah to Macon and I-95 along the coast see extreme
-              truck traffic, while BLS data show {fmtNum(BLS_GA.transportWarehouseFatalities)} transportation/warehousing
+              truck traffic, while BLS data show {fmtNum(BLS_GA.transportWarehouseFatalities)}{" "}transportation/warehousing
               workplace fatalities statewide. Savannah-market trucking
               campaigns reach into South Carolina for cross-border coverage.
             </p>
@@ -1678,7 +1678,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Georgia recorded {fmtNum(BLS_GA.totalWorkplaceFatalities)} workplace
+              Georgia recorded {fmtNum(BLS_GA.totalWorkplaceFatalities)}{" "}workplace
               fatalities in 2023, with construction ({fmtNum(BLS_GA.constructionFatalities)})
               and transportation/warehousing ({fmtNum(BLS_GA.transportWarehouseFatalities)})
               as the top industry sectors. Transportation incidents

@@ -51,11 +51,11 @@ export function StateCrashEmbed({
       <div className="flex items-center gap-2 mb-1">
         <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
         <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-          {stateName} Crash Intelligence
+          {stateName}{" "}Crash Intelligence
         </h2>
       </div>
       <p className="mb-4 text-sm text-slate-gray max-w-3xl">
-        {stateName} publishes one of the most comprehensive and current state
+        {stateName}{" "}publishes one of the most comprehensive and current state
         crash datasets in the U.S. &mdash; including serious-injury crashes,
         which are rarely available elsewhere.
       </p>
