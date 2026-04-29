@@ -22,6 +22,7 @@ STATE_FILES = {
     "california": "california.ts",
     "florida": "florida.ts",
     "tennessee": "tennessee.ts",
+    "georgia": "georgia.ts",
 }
 
 
