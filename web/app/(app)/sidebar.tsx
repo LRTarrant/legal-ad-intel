@@ -360,8 +360,9 @@ export function Sidebar() {
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin })}
               {renderNavLink({ label: "Arizona", href: "/state-intelligence/arizona", Icon: MapPin })}
-              {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
               {renderNavLink({ label: "California", href: "/state-intelligence/california", Icon: MapPin })}
+              {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
+              {renderNavLink({ label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin })}
             </div>
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">
