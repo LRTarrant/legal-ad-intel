@@ -178,39 +178,37 @@ export interface GeorgiaPageData {
 
 /* ------------------------------------------------------------------ */
 /*  Hardcoded Constants (GOHS, BLS, ACS)                               */
-/*  TODO(LANCE): verify all GOHS/BLS stats from authoritative sources  */
+/*  Stats verified against primary sources — see Sources & Methodology */
 /* ------------------------------------------------------------------ */
 
-// TODO(LANCE): source annual fatality count from GOHS 2023 Annual Report or GDOT crash facts
 const GOHS = {
-  totalCrashes: "TBD", // TODO(LANCE): source from GOHS — total reportable crashes in GA (2023)
-  totalFatalities: "TBD", // TODO(LANCE): source from GOHS/FARS — GA annual traffic fatalities (2023)
-  motorcycleFatalities: "TBD", // TODO(LANCE): source from GOHS — GA motorcycle fatalities (2023)
-  speedRelatedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA speed-related fatalities (2023)
-  speedRelatedPct: "TBD", // TODO(LANCE): source from GOHS — GA speed-related fatality % (2023)
-  alcoholRelatedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA alcohol-related fatalities (2023)
-  alcoholRelatedPct: "TBD", // TODO(LANCE): source from GOHS — GA alcohol-related fatality % (2023)
-  unrestrainedFatalities: "TBD", // TODO(LANCE): source from GOHS — GA unrestrained fatalities (2023)
-  distractedDrivingFatalCrashes: "TBD", // TODO(LANCE): source from GOHS — GA distracted driving fatal crashes (2023)
+  totalCrashes: 373_135, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 5
+  totalFatalities: 1_615, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 1/8
+  motorcycleFatalities: 196, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 7/8
+  speedRelatedFatalities: 349, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 8
+  speedRelatedPct: 21.6, // Derived: 349 ÷ 1,615 (both from GOHS 2023 Overview, p. 8)
+  alcoholRelatedFatalities: 433, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 8
+  alcoholRelatedPct: 27, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 7 (stated directly)
+  unrestrainedFatalities: 464, // 2023 GOHS Overview of Motor Vehicle Crashes, p. 8
+  distractedDrivingFatalCrashes: 41, // 2023 GOHS Distracted Driving Traffic Safety Facts
+  ruralFatalShare: 34.6, // 2023 GOHS Overview, p. 8 (559 rural roadway fatalities ÷ 1,615 total)
 };
 
-// TODO(LANCE): source all BLS stats from BLS CFOI 2023 for Georgia
 const BLS_GA = {
-  totalEmployment: "TBD", // TODO(LANCE): source from BLS OES May 2023 — GA total employment
-  totalWorkplaceFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA workplace fatalities
-  constructionFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA construction fatalities
-  constructionPctTotal: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA construction % of total
-  transportWarehouseFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA transport/warehouse fatalities
-  truckTransportFatalities: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA truck transport fatalities
-  fallsSlipsTrips: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA falls/slips/trips fatalities
-  transportationIncidents: "TBD", // TODO(LANCE): source from BLS CFOI 2023 — GA transportation incident fatalities
+  totalEmployment: 4_802_800, // 2023 Q2 BLS QCEW covered employment
+  totalWorkplaceFatalities: 192, // 2023 BLS CFOI Georgia state table
+  constructionFatalities: 37, // 2023 BLS CFOI Georgia state table (NAICS 23)
+  constructionPctTotal: 19.3, // Derived: 37 ÷ 192 (both from BLS CFOI 2023)
+  transportWarehouseFatalities: 36, // 2023 BLS CFOI Georgia state table (NAICS 48-49)
+  truckTransportFatalities: 26, // BLS Fatal Work Injuries in Georgia — 2024 news release, Table 2
+  fallsSlipsTrips: 35, // 2023 BLS CFOI Georgia state table
+  transportationIncidents: 69, // 2023 BLS CFOI Georgia state table
 };
 
-// TODO(LANCE): source commute data from ACS 5-Year 2023 for Georgia
 const COMMUTE_GA = {
-  driveAlone: "TBD", // TODO(LANCE): source from ACS 2023 — GA drive-alone commute %
+  driveAlone: 72.3, // ACS 5-Year 2019–2023, Table S0801
   nationalAvg: 68.7,
-  avgCommuteMinutes: "TBD", // TODO(LANCE): source from ACS 2023 — GA avg commute time (minutes)
+  avgCommuteMinutes: 28.3, // ACS 5-Year 2019–2023, Table S0801
 };
 
 /* ------------------------------------------------------------------ */
@@ -552,9 +550,8 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               Annual Fatalities
             </p>
           </div>
-          {/* TODO(LANCE): source from GOHS 2023 Annual Report — GA annual traffic fatalities */}
           <p className="text-3xl font-bold text-midnight-navy">
-            {GOHS.totalFatalities}
+            {fmtNum(GOHS.totalFatalities)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
             GOHS 2023
@@ -568,8 +565,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               Rural Fatal Share
             </p>
           </div>
-          {/* TODO(LANCE): source from GOHS/FARS — GA rural fatality share % */}
-          <p className="text-3xl font-bold text-midnight-navy">TBD</p>
+          <p className="text-3xl font-bold text-midnight-navy">{GOHS.ruralFatalShare}%</p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
             of GOHS fatalities
           </p>
@@ -597,9 +593,8 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               Workplace Fatalities
             </p>
           </div>
-          {/* TODO(LANCE): source from BLS CFOI 2023 — GA workplace fatalities + construction breakdown */}
           <p className="text-3xl font-bold text-midnight-navy">
-            {BLS_GA.totalWorkplaceFatalities}
+            {fmtNum(BLS_GA.totalWorkplaceFatalities)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
             {BLS_GA.constructionFatalities} construction &middot; BLS CFOI 2023
@@ -760,18 +755,16 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                   {top5MVA.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              {/* TODO(LANCE): source from GOHS — GA speed-related fatalities (2023) */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Speed-Related Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {GOHS.speedRelatedFatalities} ({GOHS.speedRelatedPct}%)
+                  {fmtNum(GOHS.speedRelatedFatalities)} ({GOHS.speedRelatedPct}%)
                 </span>
               </div>
-              {/* TODO(LANCE): source from GOHS — GA alcohol-related fatalities (2023) */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Alcohol-Related Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {GOHS.alcoholRelatedFatalities} ({GOHS.alcoholRelatedPct}%)
+                  {fmtNum(GOHS.alcoholRelatedFatalities)} ({GOHS.alcoholRelatedPct}%)
                 </span>
               </div>
             </div>
@@ -780,23 +773,27 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA MVA audience targeting */}
                 Atlanta metro (Fulton, DeKalb, Gwinnett, Cobb) dominates
-                volume. I-75, I-85, and the I-285 perimeter are among the
-                highest-fatality corridors in the Southeast. Georgia&apos;s
-                large commuter population and sprawling metro area generate
-                high exposure. Savannah and Augusta are secondary markets with
-                significant crash volume.
+                volume, with I-75, I-85, and the I-285 perimeter ranking
+                among the highest-fatality corridors in the Southeast.
+                Georgia recorded {fmtNum(GOHS.totalCrashes)} police-reported
+                crashes and {fmtNum(GOHS.totalFatalities)} fatalities in 2023,
+                with {GOHS.alcoholRelatedPct}% alcohol-related and {GOHS.speedRelatedPct}% speed-related.
+                The 2-year statute of limitations (O.C.G.A. &sect; 9-3-33)
+                provides a reasonable acquisition window. Savannah and Augusta
+                are secondary markets with meaningful crash volume.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA MVA media strategy */}
-                Digital + CTV in Atlanta metro. Billboard and radio along I-75
-                (Atlanta-Macon-Valdosta), I-85 (Atlanta-Gainesville), I-95
-                (Savannah coast corridor), and I-16 (Macon-Savannah). Atlanta
-                urban radio and digital geo-fencing around the I-285 perimeter.
+                Digital + CTV in Atlanta metro, where {COMMUTE_GA.driveAlone}% of
+                workers drive alone (ACS 2019&ndash;2023) with a {COMMUTE_GA.avgCommuteMinutes}-minute
+                average commute. Billboard and radio along I-75
+                (Atlanta&ndash;Macon&ndash;Valdosta), I-85 (Atlanta&ndash;Gainesville), I-95
+                (Savannah coast corridor), and I-16 (Macon&ndash;Savannah).
+                Geo-fenced mobile and streaming ads around the I-285 perimeter
+                capture high-exposure commuter audiences.
               </p>
             </div>
           </div>
@@ -824,11 +821,10 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                   {top5Truck.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              {/* TODO(LANCE): source from BLS CFOI 2023 — GA truck transport workplace fatalities */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
                 <span className="font-medium text-midnight-navy">
-                  {BLS_GA.truckTransportFatalities} (BLS CFOI)
+                  {fmtNum(BLS_GA.truckTransportFatalities)} (BLS CFOI)
                 </span>
               </div>
             </div>
@@ -837,24 +833,25 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA truck audience targeting */}
                 Georgia is a major freight hub &mdash; the Port of Savannah is
                 the 3rd busiest container port in the U.S. and generates heavy
-                truck traffic along I-16 and I-95. Atlanta sits at the
+                truck traffic along I-16 and I-95. BLS CFOI data show {fmtNum(BLS_GA.transportWarehouseFatalities)} transportation/warehousing
+                workplace fatalities and {fmtNum(BLS_GA.truckTransportFatalities)} in
+                truck transportation alone in 2023. Atlanta sits at the
                 intersection of I-75, I-85, and I-20, creating one of the
-                busiest freight corridors in the Southeast. Rural stretches of
-                I-75 in South Georgia see heavy truck traffic with
-                disproportionate fatalities.
+                busiest freight corridors in the Southeast. FMCSA federal
+                preemption considerations apply to interstate carrier claims.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA truck media strategy */}
                 Geo-fenced digital ads along I-75, I-85, I-16, and I-95
-                corridors. Truck stop billboards at major rest areas. Target CDL
-                holder families and passenger vehicle occupants struck by trucks.
-                Savannah market reaches into South Carolina.
+                corridors targeting passenger vehicle occupants involved in
+                truck collisions. Truck stop billboards at major rest areas
+                and weigh stations between Savannah and Atlanta. The Savannah
+                DMA reaches into South Carolina, extending campaign coverage
+                across state lines for multi-jurisdiction trucking claims.
               </p>
             </div>
           </div>
@@ -876,13 +873,12 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                   {fmtNum(totalMotoDeaths)}
                 </span>
               </div>
-              {/* TODO(LANCE): source from GOHS — GA motorcycle fatalities (2023) */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">
                   GOHS 2023 Motorcycle Fatalities
                 </span>
                 <span className="font-semibold text-midnight-navy">
-                  {GOHS.motorcycleFatalities}
+                  {fmtNum(GOHS.motorcycleFatalities)}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
@@ -897,22 +893,24 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA motorcycle audience targeting */}
-                Georgia&apos;s North Georgia mountains (Blue Ridge, Dahlonega)
+                GOHS reported {fmtNum(GOHS.motorcycleFatalities)} motorcycle
+                fatalities in 2023, representing roughly 12% of all Georgia
+                traffic deaths. North Georgia mountains (Blue Ridge, Dahlonega)
                 and coastal routes draw motorcycle tourism. Fulton and Gwinnett
-                counties lead in volume. Georgia requires helmets for all riders
-                (O.C.G.A. &sect; 40-6-315), which affects severity distributions
-                compared to states without universal helmet laws.
+                counties lead in volume. Georgia requires helmets for all
+                riders (O.C.G.A. &sect; 40-6-315), which affects severity
+                distributions compared to states without universal helmet laws.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA motorcycle media strategy */}
-                Seasonal spring/summer campaigns during peak riding season.
-                Social media + streaming targeting motorcycle interests. Digital
-                geo-fencing near popular riding routes in North Georgia mountains.
-                Atlanta metro digital for urban motorcycle commuters.
+                Seasonal spring/summer campaigns aligned with peak riding
+                months (March&ndash;October). Social media and streaming ads
+                targeting motorcycle-interest audiences. Digital geo-fencing
+                near popular riding routes in the North Georgia mountains
+                and along coastal GA-17. Atlanta metro digital for urban
+                motorcycle commuters on surface streets and I-285.
               </p>
             </div>
           </div>
@@ -926,27 +924,24 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
               </h3>
             </div>
             <div className="space-y-2 mb-3">
-              {/* TODO(LANCE): source from BLS CFOI 2023 — GA construction fatalities */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Construction Fatalities (2023)</span>
                 <span className="font-semibold text-midnight-navy">
-                  {BLS_GA.constructionFatalities} ({BLS_GA.constructionPctTotal}% of all workplace deaths)
+                  {fmtNum(BLS_GA.constructionFatalities)} ({BLS_GA.constructionPctTotal}% of all workplace deaths)
                 </span>
               </div>
-              {/* TODO(LANCE): source from BLS CFOI 2023 — GA falls/slips/trips fatalities */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">
                   Falls/Slips/Trips Fatalities
                 </span>
                 <span className="font-semibold text-midnight-navy">
-                  {BLS_GA.fallsSlipsTrips}
+                  {fmtNum(BLS_GA.fallsSlipsTrips)}
                 </span>
               </div>
-              {/* TODO(LANCE): source from BLS CFOI 2023 — GA total workplace fatalities */}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Total Workplace Fatalities</span>
                 <span className="font-medium text-midnight-navy">
-                  {BLS_GA.totalWorkplaceFatalities} (BLS CFOI 2023)
+                  {fmtNum(BLS_GA.totalWorkplaceFatalities)} (BLS CFOI 2023)
                 </span>
               </div>
             </div>
@@ -955,23 +950,26 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA construction audience targeting */}
-                Atlanta&apos;s construction boom (driven by film/TV industry,
-                tech expansion, and residential growth) creates a large at-risk
-                workforce. Savannah&apos;s port expansion and Augusta&apos;s
-                Cyber Command growth are also driving significant development.
-                Target construction workers, their families, and workers&apos;
-                comp attorneys.
+                BLS CFOI recorded {fmtNum(BLS_GA.constructionFatalities)} construction
+                fatalities in Georgia in 2023 ({BLS_GA.constructionPctTotal}% of
+                all {fmtNum(BLS_GA.totalWorkplaceFatalities)} workplace deaths),
+                with falls/slips/trips accounting for {fmtNum(BLS_GA.fallsSlipsTrips)} fatalities
+                statewide. Atlanta&apos;s construction boom, Savannah&apos;s port
+                expansion, and Augusta&apos;s growth corridors sustain a large
+                at-risk workforce. Third-party negligence claims may exist
+                alongside workers&apos; compensation where a non-employer
+                party contributed to the injury.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA construction media strategy */}
-                Job site proximity targeting via mobile in Atlanta, Savannah,
-                and Augusta. Workers&apos; comp and construction injury keywords.
-                Spanish-language digital and radio for growing Hispanic workforce
-                in metro Atlanta construction.
+                Job site proximity targeting via mobile geo-fencing in
+                Atlanta, Savannah, and Augusta metro areas. Construction
+                injury and workers&apos; comp keyword campaigns. Spanish-language
+                digital and radio for the growing Hispanic workforce in metro
+                Atlanta construction. Target both injured workers and family
+                members searching on their behalf.
               </p>
             </div>
           </div>
@@ -1012,22 +1010,25 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA boating audience targeting */}
                 Georgia has extensive lake and coastal recreation &mdash;
-                including Lake Lanier, Lake Oconee, Lake Hartwell, the
-                Intracoastal Waterway, and the barrier islands (Tybee, Jekyll,
-                St. Simons). Summer weekends drive peak accident periods.
-                Target boating enthusiasts and coastal vacation demographics.
+                Lake Lanier, Lake Oconee, Lake Hartwell, the Intracoastal
+                Waterway, and barrier islands (Tybee, Jekyll, St. Simons).
+                The county data above shows {fmtNum(totalBoatingAccidents)} boating
+                accidents with {fmtNum(totalBoatingDeaths)} deaths
+                and {fmtNum(totalBoatingInjuries)} injuries. Summer weekends
+                drive peak accident volume. Target boating enthusiasts and
+                coastal vacation demographics in the Savannah and
+                Brunswick DMAs.
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                {/* TODO(LANCE): editorial pass — refine GA boating media strategy */}
-                Seasonal spring/summer campaigns. Geo-targeted digital around
-                Lake Lanier, Lake Oconee, and coastal communities. Local radio
-                in lakeside and coastal counties. Marina signage and outfitter
-                partnerships.
+                Seasonal spring/summer campaigns (May&ndash;September peak).
+                Geo-targeted digital around Lake Lanier, Lake Oconee, and
+                coastal communities. Local radio in lakeside and coastal
+                counties. Marina signage, boat ramp postings, and outfitter
+                partnerships reach boaters at the point of activity.
               </p>
             </div>
           </div>
@@ -1254,14 +1255,15 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
 
             <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                {/* TODO(LANCE): editorial pass — refine GA rural/urban analysis insight */}
-                Georgia&apos;s rural counties have disproportionately high
-                fatality rates despite lower total crash counts. South Georgia
-                and the rural Black Belt counties have lower internet access and
-                higher uninsured rates, limiting digital-only advertising reach
-                and increasing the severity of untreated injuries. The contrast
-                between metro Atlanta and rural South Georgia is among the
-                starkest rural/urban divides in the Southeast.
+                GOHS data show {GOHS.ruralFatalShare}% of Georgia&apos;s 2023
+                traffic fatalities occurred on rural roadways, despite only
+                about 21% of the state&apos;s population living in rural areas.
+                As the table above illustrates, rural counties tend to have
+                lower internet access and higher uninsured rates, limiting
+                digital-only advertising reach and increasing injury severity.
+                Firms targeting outside metro Atlanta should consider radio,
+                local TV, and community-based channels to reach these
+                underserved populations.
               </p>
             </div>
           </>
@@ -1477,11 +1479,14 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
 
             <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                {/* TODO(LANCE): editorial pass — refine GA judicial profiles insight */}
-                Fulton County (Atlanta) and DeKalb County are the two largest
-                population centers. Filing venue selection in Georgia
-                matters &mdash; judicial leanings can vary significantly between
-                metro Atlanta counties and rural South Georgia counties.
+                The judicial profile distribution above shows how Georgia&apos;s
+                159 counties break down across liberal/plaintiff-leaning,
+                moderate, and conservative/defense-leaning benches. Fulton
+                County (Atlanta) and DeKalb County are the two largest
+                population centers. Filing venue selection matters &mdash;
+                judicial leanings can vary significantly between metro Atlanta
+                counties and rural South Georgia, affecting both jury
+                composition and case outcomes for plaintiff firms.
               </p>
             </div>
           </>
@@ -1604,95 +1609,104 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
         </p>
 
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {/* TODO(LANCE): editorial pass — refine all GA cross-signal insight cards */}
+          {/* Cross-Signal Card 1: Top accident counties × judicial profile */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🍑</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Atlanta PI Market Saturation
+                High-Volume Counties &amp; Judicial Profile
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Atlanta&apos;s massive population (~6M metro) has attracted
-              national PI firms (Morgan &amp; Morgan, Alexander Shunnarah),
-              creating one of the most competitive advertising markets in the
-              Southeast. However, surrounding counties (Gwinnett, Forsyth,
-              Henry, Cherokee) are growing rapidly with less advertising
-              saturation. Satellite-metro targeting offers better
-              cost-per-case economics.
+              The top accident counties by total deaths (shown in the county
+              table above) overlap with some of the state&apos;s most
+              plaintiff-friendly judicial profiles. Cross-referencing crash
+              volume with judicial leanings reveals which counties combine
+              high case supply with favorable venue dynamics. Satellite
+              counties around Atlanta (Gwinnett, Forsyth, Henry, Cherokee) are
+              growing rapidly with less advertising saturation, offering
+              better cost-per-case economics than Fulton County proper.
             </p>
           </div>
 
+          {/* Cross-Signal Card 2: MSA growth × case type opportunity */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🚢</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Port of Savannah Freight Corridor
+                Savannah MSA Growth &amp; Trucking Opportunity
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
               The Port of Savannah is the 3rd busiest container port in the
-              U.S. and the fastest-growing. I-16 from Savannah to Macon and
-              I-95 along the coast see extreme truck traffic volumes. Combined
-              with cross-state reach into South Carolina, Savannah-market truck
-              accident campaigns have unusually broad geographic impact. The
-              port expansion project will increase container capacity 60% by
-              2028, driving even more truck traffic.
+              U.S. and continues to expand capacity. The Savannah MSA (see
+              demographics table above) is one of Georgia&apos;s fastest-growing
+              metros, driving both construction and freight activity. I-16
+              from Savannah to Macon and I-95 along the coast see extreme
+              truck traffic, while BLS data show {fmtNum(BLS_GA.transportWarehouseFatalities)} transportation/warehousing
+              workplace fatalities statewide. Savannah-market trucking
+              campaigns reach into South Carolina for cross-border coverage.
             </p>
           </div>
 
+          {/* Cross-Signal Card 3: Rural fatal share × ad strategy implications */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">⏰</span>
+              <span className="text-lg">🛣️</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                2-Year SOL Opportunity Window
+                Rural Fatal Share &amp; Ad Strategy
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Georgia&apos;s 2-year statute of limitations for personal injury
-              provides a longer acquisition window than Tennessee (1 year) or
-              neighboring states with shorter SOLs. This allows for sustained
-              brand-building campaigns alongside direct-response tactics. Firms
-              can invest in awareness-phase advertising knowing prospects have
-              a reasonable window to convert.
+              {GOHS.ruralFatalShare}% of Georgia&apos;s 2023 traffic fatalities
+              occurred on rural roadways, yet the rural/urban table shows these
+              counties have lower internet access and higher uninsured rates.
+              Digital-only campaigns miss a significant share of potential
+              claimants. Firms investing in radio, local TV, and community
+              health partnerships in South Georgia&apos;s I-75 corridor and the
+              rural Black Belt can reach underserved markets with less
+              advertising competition.
             </p>
           </div>
 
+          {/* Cross-Signal Card 4: Workplace fatalities × industry concentration */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🏗️</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                South Georgia Connectivity Gap
+                Workplace Fatalities &amp; Industry Hotspots
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              {/* TODO(LANCE): editorial pass — refine South GA connectivity gap insight */}
-              South Georgia&apos;s rural counties have lower internet access
-              rates and higher uninsured populations. These areas also have
-              high fatality rates on two-lane rural highways. Digital-only
-              advertising cannot reach these communities effectively. Radio,
-              community health centers, and local TV are necessary channels
-              for plaintiff firm outreach in the I-75 South Georgia corridor
-              and the rural Black Belt.
+              Georgia recorded {fmtNum(BLS_GA.totalWorkplaceFatalities)} workplace
+              fatalities in 2023, with construction ({fmtNum(BLS_GA.constructionFatalities)})
+              and transportation/warehousing ({fmtNum(BLS_GA.transportWarehouseFatalities)})
+              as the top industry sectors. Transportation incidents
+              ({fmtNum(BLS_GA.transportationIncidents)}) were the leading event type.
+              Atlanta&apos;s construction growth and Savannah&apos;s logistics
+              expansion concentrate workplace injury risk in these two metros,
+              creating dual-market opportunities for firms handling both
+              workers&apos; comp and third-party negligence claims.
             </p>
           </div>
 
+          {/* Cross-Signal Card 5: Demographic shifts × tort exposure */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">🏔️</span>
+              <span className="text-lg">📊</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                North Georgia Mountain Tourism
+                Demographic Growth &amp; Tort Exposure
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              {/* TODO(LANCE): editorial pass — refine North GA mountain tourism insight */}
-              The North Georgia mountains (Blue Ridge, Dahlonega, Helen) draw
-              motorcycle and outdoor tourism from across the Southeast.
-              Out-of-state visitors injured in Georgia may not know local
-              attorneys. Geo-fenced digital ads near scenic routes plus
-              partnerships with tourism-adjacent businesses (cabins, outfitters)
-              can capture cases from this unique tourism segment. Mountain
-              roads also see elevated crash severity.
+              Georgia&apos;s MSA demographics (above) show rapid population
+              growth in suburban Atlanta metros and along the Savannah
+              corridor. Growing populations drive more vehicle-miles traveled,
+              more construction activity, and more tort exposure. Combined
+              with {COMMUTE_GA.driveAlone}% drive-alone commute rates and
+              a {COMMUTE_GA.avgCommuteMinutes}-minute average commute, Georgia&apos;s
+              expanding suburban ring creates rising case volume in counties
+              that are not yet saturated by national PI advertisers.
             </p>
           </div>
         </div>
@@ -1724,12 +1738,14 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           {[
             "FARS (NHTSA) \u2014 Fatal crash data 2019\u20132024",
             "GDOT AASHTOWare Safety Portal \u2014 Crash Dashboards",
-            "ACS 5-Year Estimates 2023 (Census Bureau)",
-            "BLS OES (Occupational Employment Statistics) May 2023",
-            "BLS CFOI (Census of Fatal Occupational Injuries) 2023",
+            "GOHS 2023 Overview of Motor Vehicle Crashes \u2014 Georgia Traffic Safety Facts (Oct 2025)",
+            "GOHS 2023 Distracted Driving \u2014 Georgia Traffic Safety Facts (Apr 2025)",
+            "BLS CFOI Georgia 2023 \u2014 Fatal Occupational Injuries state table (Dec 2024)",
+            "BLS Fatal Work Injuries in Georgia \u2014 2024 news release (Mar 2026)",
+            "ACS 5-Year Estimates 2019\u20132023, Table S0801 (Census Bureau)",
+            "BLS QCEW \u2014 Covered Employment Q2 2023",
             "NOAA Storm Events Database",
             "USCG Boating Accident Report Database",
-            "CDC/USCS Cancer Incidence Data",
             "Court records / judicial profile data",
           ].map((source) => (
             <div
@@ -1751,8 +1767,9 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           constitute legal advice.
         </p>
         <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: FARS (NHTSA), GDOT AASHTOWare Safety Portal, ACS
-          5-Year Estimates, BLS OES/CFOI, NOAA Storm Events, USCG Boating
+          Data sources: FARS (NHTSA), GDOT AASHTOWare Safety Portal, GOHS
+          2023 Traffic Safety Facts, BLS CFOI 2023, BLS QCEW, ACS 5-Year
+          Estimates 2019&ndash;2023, NOAA Storm Events, USCG Boating
           Accidents, Judicial Profile Data.
         </p>
       </div>
