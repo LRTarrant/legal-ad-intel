@@ -13,31 +13,37 @@ import {
 } from "../../components/pi-advertising-section";
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { StateCrashLinkCard } from "@/components/state-intelligence/StateCrashLinkCard";
+import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { georgiaCompetitiveData } from "@/lib/data/competitive-landscape/georgia";
 
 /* ------------------------------------------------------------------ */
-/*  GDOT Crash Data Resources (Path B — iframe embed blocked)          */
+/*  GDOT AASHTOWare Safety Portal — embeddable crash dashboards        */
 /* ------------------------------------------------------------------ */
 
-const GA_CRASH_LINKS = [
+const GA_CRASH_EMBEDS = [
   {
-    label: "GDOT Crash Data Dashboard",
-    url: "https://www.dot.ga.gov/GDOT/Pages/CrashReporting.aspx",
+    name: "Statewide Fatality Trend",
+    iframeSrc:
+      "https://gdot.aashtowaresafety.net/crash-data#/f04a8a72-9dc5-42b5-a106-215e60835806",
+    height: 450,
     description:
-      "Numetric-powered interactive dashboard with 5-year rolling crash data by county, city, region, and crash type. Maintained by the Georgia Department of Transportation.",
+      "Annual fatal crashes in Georgia, 2013–2025. Source: GDOT AASHTOWare Safety Portal.",
   },
   {
-    label: "GOHS FY2023 Annual Report",
-    url: "https://www.nhtsa.gov/sites/nhtsa.gov/files/2024-05/GA%20FY23%20Annual%20Report-tag.pdf",
+    name: "Crashes by County",
+    iframeSrc:
+      "https://gdot.aashtowaresafety.net/crash-data#/61117502-479b-44d9-bd84-bbff7415b7c9",
+    height: 600,
     description:
-      "Governor's Office of Highway Safety annual report with county-level fatality breakdowns, pedestrian, alcohol, speed, and motorcyclist fatality data.",
+      "Total crashes ranked by county (treemap). Use the right-rail KABCO Severity filter inside the embed to drill into Fatal (K) or Suspected Serious Injury (A) crashes.",
   },
   {
-    label: "GA Traffic Safety Facts",
-    url: "https://www.gahighwaysafety.org/wp-content/uploads/2023/12/2021-Rural-and-Urban-Comparison-Driving-Georgia-Traffic-Safety-Facts.pdf",
+    name: "Raw Crash Records",
+    iframeSrc:
+      "https://gdot.aashtowaresafety.net/crash-data#/a0bdc9ce-77ad-4469-b449-f01c2f797e65",
+    height: 800,
     description:
-      "Rural vs. urban crash comparison with county appendices from the Georgia Highway Safety Office.",
+      "Row-level crash data with County, City, MPO, KABCO Severity, and other filters. ~4.8M records across 2013–2025.",
   },
 ];
 
@@ -176,11 +182,12 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
         </p>
       </div>
 
-      {/* Crash Intelligence — external link card (GDOT blocks iframe embed) */}
-      <StateCrashLinkCard
+      {/* Crash Intelligence — GDOT AASHTOWare Safety Portal embeds */}
+      <StateCrashEmbed
         stateName="Georgia"
-        body="Georgia's crash data is published by GDOT on a Numetric dashboard that does not support third-party embedding. Use the links below to access the interactive dashboard and supplemental reports directly."
-        links={GA_CRASH_LINKS}
+        sourceLabel="GDOT AASHTOWare Safety Portal"
+        sourceUrl="https://gdot.aashtowaresafety.net/crash-data#/"
+        embeds={GA_CRASH_EMBEDS}
       />
 
       {/* Advertising sections */}
