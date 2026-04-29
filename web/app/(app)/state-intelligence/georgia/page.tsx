@@ -107,6 +107,24 @@ interface MSADemographicsRow {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Types for FARS crash chart data                                     */
+/* ------------------------------------------------------------------ */
+
+export interface FARSYearlyTrendRow {
+  year: number;
+  fatal_crashes: number;
+  total_fatalities: number;
+  motorcycle_fatalities: number;
+  truck_fatalities: number;
+  dui_fatalities: number;
+}
+
+export interface FARSTopCountyRow {
+  county_name: string;
+  fatalities: number;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Data-fetching helpers                                               */
 /* ------------------------------------------------------------------ */
 
@@ -194,6 +212,70 @@ async function fetchMSADemographics(): Promise<MSADemographicsRow[]> {
   return (data ?? []) as unknown as MSADemographicsRow[];
 }
 
+async function fetchFARSYearlyTrend(): Promise<FARSYearlyTrendRow[]> {
+  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("get_fars_yearly_trend", {
+    p_state: "GA",
+  });
+  if (!error && data) return data as FARSYearlyTrendRow[];
+
+  // Fallback: aggregate from fars_fatalities table directly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (supabase as any)
+    .from("fars_fatalities")
+    .select("year, fatalities, has_motorcycle, has_large_truck, drunk_drivers")
+    .eq("state", "GA")
+    .gte("year", 2019)
+    .lte("year", 2024);
+  if (res.error) throw res.error;
+  const rows = (res.data ?? []) as Array<{
+    year: number;
+    fatalities: number;
+    has_motorcycle: boolean;
+    has_large_truck: boolean;
+    drunk_drivers: number;
+  }>;
+
+  const byYear = new Map<number, FARSYearlyTrendRow>();
+  for (const r of rows) {
+    let entry = byYear.get(r.year);
+    if (!entry) {
+      entry = { year: r.year, fatal_crashes: 0, total_fatalities: 0, motorcycle_fatalities: 0, truck_fatalities: 0, dui_fatalities: 0 };
+      byYear.set(r.year, entry);
+    }
+    entry.fatal_crashes += 1;
+    entry.total_fatalities += r.fatalities;
+    if (r.has_motorcycle) entry.motorcycle_fatalities += r.fatalities;
+    if (r.has_large_truck) entry.truck_fatalities += r.fatalities;
+    if (r.drunk_drivers > 0) entry.dui_fatalities += r.fatalities;
+  }
+  return Array.from(byYear.values()).sort((a, b) => a.year - b.year);
+}
+
+async function fetchFARSTopCounties(): Promise<FARSTopCountyRow[]> {
+  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("fars_fatalities")
+    .select("county_name, fatalities")
+    .eq("state", "GA")
+    .gte("year", 2020)
+    .lte("year", 2024)
+    .not("county_name", "is", null);
+  if (error) throw error;
+  const rows = (data ?? []) as Array<{ county_name: string; fatalities: number }>;
+
+  const byCounty = new Map<string, number>();
+  for (const r of rows) {
+    byCounty.set(r.county_name, (byCounty.get(r.county_name) ?? 0) + r.fatalities);
+  }
+  return Array.from(byCounty.entries())
+    .map(([county_name, fatalities]) => ({ county_name, fatalities }))
+    .sort((a, b) => b.fatalities - a.fatalities)
+    .slice(0, 10);
+}
+
 async function fetchStormCount(): Promise<number> {
   const supabase = getSupabase();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,6 +301,8 @@ export default async function GeorgiaStatePage() {
   let msaDemographics: MSADemographicsRow[] = [];
   let judicialRows: JudicialProfileRow[] = [];
   let stormCount = 0;
+  let farsYearlyTrend: FARSYearlyTrendRow[] = [];
+  let farsTopCounties: FARSTopCountyRow[] = [];
 
   const results = await Promise.allSettled([
     fetchAccidentSummary(),
@@ -230,6 +314,8 @@ export default async function GeorgiaStatePage() {
     fetchMSADemographics(),
     getJudicialProfiles("GA"),
     fetchStormCount(),
+    fetchFARSYearlyTrend(),
+    fetchFARSTopCounties(),
   ]);
 
   if (results[0].status === "fulfilled") accidentSummary = results[0].value;
@@ -259,6 +345,12 @@ export default async function GeorgiaStatePage() {
   if (results[8].status === "fulfilled") stormCount = results[8].value;
   else console.error("[Georgia] fetchStormCount failed:", results[8].reason);
 
+  if (results[9].status === "fulfilled") farsYearlyTrend = results[9].value;
+  else console.error("[Georgia] fetchFARSYearlyTrend failed:", results[9].reason);
+
+  if (results[10].status === "fulfilled") farsTopCounties = results[10].value;
+  else console.error("[Georgia] fetchFARSTopCounties failed:", results[10].reason);
+
   const pageData: GeorgiaPageData = {
     accidentSummary,
     ruralUrban,
@@ -269,6 +361,8 @@ export default async function GeorgiaStatePage() {
     msaDemographics,
     judicialProfiles: judicialRows,
     stormCount,
+    farsYearlyTrend,
+    farsTopCounties,
   };
 
   return <GeorgiaClient data={pageData} />;
