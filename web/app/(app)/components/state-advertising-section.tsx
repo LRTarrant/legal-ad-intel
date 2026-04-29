@@ -186,8 +186,9 @@ export function StateAdvertisingSection({ stateAbbr, stateName }: Props) {
         sb
           .from("ad_observations_raw")
           .select(
-            "id, source, advertiser_raw, creative_url, creative_text, ad_format, first_seen, last_seen, geo_target_id"
+            "id, source, advertiser_raw, creative_url, creative_text, ad_format, first_seen, last_seen, geo_target_id, geo_targets!inner(state_abbr)"
           )
+          .eq("geo_targets.state_abbr", stateAbbr)
           .or("creative_url.neq.null,creative_text.neq.null")
           .order("last_seen", { ascending: false })
           .limit(12),
@@ -274,7 +275,7 @@ export function StateAdvertisingSection({ stateAbbr, stateName }: Props) {
         }
       }
 
-      // Sample ads (basic fetch — state-scoped ads require geo join; use all for now)
+      // Sample ads — geo-filtered via inner join on geo_targets.state_abbr
       if (results[3].status === "fulfilled") {
         const res = results[3].value as { data: unknown; error: unknown };
         if (!res.error && Array.isArray(res.data)) {
@@ -620,8 +621,8 @@ export function StateAdvertisingSection({ stateAbbr, stateName }: Props) {
           </div>
         ) : (
           <EmptyState
-            title="Sample ad collection in progress"
-            description={`Ad creatives for ${stateName} will appear here once collected from ad platforms.`}
+            title={`Ad ingestion is in progress for ${stateName}`}
+            description={`${stateName} was added recently \u2014 sample ads will populate after the next daily ingestion run. No action is needed.`}
           />
         )}
       </div>
