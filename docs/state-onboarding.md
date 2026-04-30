@@ -18,7 +18,31 @@ This creates:
 - `web/lib/data/ga-injury-stats.ts` (stub, if `--has-injury-data`)
 - Registers the state in the sidebar, AI search allowlist, and `STATE_FILES`
 
-## 2. Add Tableau (or similar) iframe URLs
+## 2. Seed DMAs
+
+Without DMA rows in `geo_targets`, advertising sections (Platform Breakdown, Top Advertisers, Top Torts by Ad Concentration, Sample Ads) will show "data collection in progress" placeholders.
+
+Create a JSON file listing the state's primary DMAs (Nielsen codes — only DMAs whose geographic center falls inside the state):
+
+```json
+[
+  {"code": "623", "name": "Dallas-Ft Worth", "population": 8000000},
+  {"code": "618", "name": "Houston", "population": 7500000}
+]
+```
+
+Then pass it to the scaffolder with `--dmas`:
+
+```bash
+python scripts/onboard_state.py texas \
+  --abbr TX \
+  --display-name "Texas" \
+  --dmas scripts/dma_configs/texas.json
+```
+
+This generates a Supabase migration under `supabase/migrations/`. Apply it after merge. See the DMA reference list at the top of `scripts/onboard_state.py` for common state DMAs.
+
+## 3. Add Tableau (or similar) iframe URLs
 
 Open `web/app/(app)/state-intelligence/{slug}/{slug}-client.tsx` and find the `StateCrashEmbed` TODO comment. Replace it with:
 
@@ -40,7 +64,7 @@ Open `web/app/(app)/state-intelligence/{slug}/{slug}-client.tsx` and find the `S
 
 If the state has no public crash dashboards, remove the TODO comment entirely.
 
-## 3. Parse injury data (if applicable)
+## 4. Parse injury data (if applicable)
 
 a. Download the state's injury PDF.
 
@@ -73,19 +97,19 @@ python scripts/parse_state_injury_pdf.py \
   --out web/lib/data/ga-injury-stats.ts
 ```
 
-## 4. Seed plaintiff firms
+## 5. Seed plaintiff firms
 
 Edit `web/lib/data/competitive-landscape/{slug}.ts`:
 - Add 5 firms per major DMA
 - Follow the existing Tennessee file as a template
 
-## 5. Verify build
+## 6. Verify build
 
 ```bash
 cd web && npm run build
 ```
 
-## 6. Open PR
+## 7. Open PR
 
 Create a PR against `main`. After merge, trigger the ingestion workflows:
 - Ad Intel Daily
