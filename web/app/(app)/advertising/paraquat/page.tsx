@@ -19,7 +19,7 @@ import {
   Database,
   Crosshair,
 } from "lucide-react";
-import { AskAIPanel } from "../../../components/ask-ai-panel";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -31,7 +31,7 @@ import {
   getSampleAds,
   extractDomain,
 } from "@/lib/queries";
-import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
+import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
 
 export const dynamic = "force-dynamic";
 

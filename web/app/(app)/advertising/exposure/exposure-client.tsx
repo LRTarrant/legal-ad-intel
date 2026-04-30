@@ -130,12 +130,12 @@ function sortRows<T>(rows: T[], key: keyof T, dir: SortDir): T[] {
 }
 
 const COMPOUND_TORT_MAP: Record<string, { tort: string; href: string }> = {
-  PARAQUAT: { tort: "Paraquat", href: "/advertising/torts/paraquat" },
-  GLYPHOSATE: { tort: "Roundup", href: "/advertising/torts/roundup" },
+  PARAQUAT: { tort: "Paraquat", href: "/advertising/paraquat" },
+  GLYPHOSATE: { tort: "Roundup", href: "/advertising/roundup" },
 };
 
 const DISEASE_TORT_MAP: Record<string, { tort: string; href: string }> = {
-  "Parkinsons Disease": { tort: "Paraquat", href: "/advertising/torts/paraquat" },
+  "Parkinsons Disease": { tort: "Paraquat", href: "/advertising/paraquat" },
 };
 
 function gradeColor(grade: string): { bg: string; text: string } {
@@ -1008,7 +1008,7 @@ export function ExposureClient({ data }: { data: ExposurePageData }) {
                     <td className="py-3 px-3 font-semibold text-midnight-navy">Paraquat</td>
                     <td className="py-3 px-3">Parkinson&apos;s Disease</td>
                     <td className="py-3 px-3">
-                      <Link href="/advertising/torts/paraquat" className="text-intelligence-teal hover:underline font-semibold">
+                      <Link href="/advertising/paraquat" className="text-intelligence-teal hover:underline font-semibold">
                         Paraquat ↗
                       </Link>
                     </td>
@@ -1022,7 +1022,7 @@ export function ExposureClient({ data }: { data: ExposurePageData }) {
                     <td className="py-3 px-3 font-semibold text-midnight-navy">Glyphosate</td>
                     <td className="py-3 px-3">Non-Hodgkin Lymphoma</td>
                     <td className="py-3 px-3">
-                      <Link href="/advertising/torts/roundup" className="text-intelligence-teal hover:underline font-semibold">
+                      <Link href="/advertising/roundup" className="text-intelligence-teal hover:underline font-semibold">
                         Roundup ↗
                       </Link>
                     </td>

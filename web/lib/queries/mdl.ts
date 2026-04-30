@@ -280,30 +280,7 @@ export async function getTortSlugForMdl(
 
   const mt = massTort as { slug: string; name: string };
 
-  // Get all torts and find the best match
-  const { data: torts } = await supabase
-    .from("torts")
-    .select("slug, label")
-    .throwOnError();
-
-  if (!torts || torts.length === 0) return null;
-
-  const mtNameLower = mt.name.toLowerCase();
-  const mtSlugNorm = mt.slug.replace(/-/g, "_");
-  // Extract significant words (4+ chars) from the mass tort name
-  const mtWords = mtNameLower.split(/[\s\/,]+/).filter((w) => w.length > 3);
-
-  for (const t of torts as { slug: string; label: string }[]) {
-    const tLabelLower = t.label.toLowerCase();
-    // Exact slug match (normalize hyphens to underscores)
-    if (t.slug === mtSlugNorm) return t.slug;
-    // Name/label containment
-    if (tLabelLower.includes(mtNameLower) || mtNameLower.includes(tLabelLower)) return t.slug;
-    // Significant word overlap
-    const tWords = tLabelLower.split(/[\s\/,]+/).filter((w) => w.length > 3);
-    const overlap = mtWords.some((w) => tWords.includes(w));
-    if (overlap) return t.slug;
-  }
-
-  return null;
+  // Return the mass_torts hyphenated slug directly — it matches the canonical
+  // /advertising/{slug} URL pattern.
+  return mt.slug;
 }

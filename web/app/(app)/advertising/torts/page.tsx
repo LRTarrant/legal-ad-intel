@@ -36,7 +36,7 @@ export default async function TortsIndexPage() {
         {torts.map((tort) => (
           <Link
             key={tort.id}
-            href={`/advertising/torts/${tort.slug}`}
+            href={`/advertising/${tort.slug}`}
             className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-intelligence-teal/30"
           >
             <div className="flex items-start justify-between">

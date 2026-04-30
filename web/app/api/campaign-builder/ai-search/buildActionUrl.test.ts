@@ -11,7 +11,7 @@ import { buildActionUrl } from "./route";
 
 test("valid tort slug returns advertising path", () => {
   expect(buildActionUrl("tort_detail", { tort_slug: "paraquat" })).toBe(
-    "/advertising/torts/paraquat"
+    "/advertising/paraquat"
   );
 });
 
@@ -23,10 +23,10 @@ test("tort with canonical_url override returns canonical path", () => {
     "/advertising/roblox-abuse"
   );
   expect(buildActionUrl("tort_detail", { tort_slug: "olympus-duodenoscope" })).toBe(
-    "/advertising/torts/olympus-scopes"
+    "/advertising/olympus-scopes"
   );
   expect(buildActionUrl("tort_detail", { tort_slug: "ai-suicide-self-harm" })).toBe(
-    "/advertising/torts/ai-suicide"
+    "/advertising/ai-suicide"
   );
   expect(buildActionUrl("tort_detail", { tort_slug: "glp1-gastroparesis" })).toBe(
     "/advertising/glp1-gastroparesis"
@@ -38,7 +38,7 @@ test("tort with canonical_url override returns canonical path", () => {
 
 test("valid tort slug is case-insensitive", () => {
   expect(buildActionUrl("tort_detail", { tort_slug: "Paraquat" })).toBe(
-    "/advertising/torts/paraquat"
+    "/advertising/paraquat"
   );
 });
 

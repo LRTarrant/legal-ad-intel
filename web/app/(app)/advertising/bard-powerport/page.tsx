@@ -3,7 +3,7 @@ import { getSupabase } from "@/lib/supabase";
 import type { BardPowerPortPageData } from "./bard-powerport-client";
 
 const BardPowerPortClient = nextDynamic(() => import("./bard-powerport-client").then((m) => m.BardPowerPortClient));
-import { AskAIPanel } from "../../../components/ask-ai-panel";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
