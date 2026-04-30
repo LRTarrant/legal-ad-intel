@@ -232,6 +232,8 @@ export default async function GLP1VisionLossPage() {
       if (bName === tortLabelLower) return true;
       if (bName.includes("glp-1") && bName.includes("vision")) return true;
       if (bName.includes("naion")) return true;
+      // Fallback: match the shared "Ozempic / GLP-1" benchmark
+      if (bName.includes("glp-1") || bName.includes("ozempic")) return true;
       return false;
     }) ?? null;
 

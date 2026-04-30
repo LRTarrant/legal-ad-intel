@@ -55,12 +55,23 @@ export async function getSerpTopResults(
 ): Promise<SerpResult[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
+
+  // Resolve slug alias: SERP tables store the canonical torts.slug,
+  // but the page may pass an alias (e.g. "olympus_duodenoscope" → "olympus_scopes")
+  let resolvedSlug = tortSlug;
+  const { data: aliasRow } = await sb
+    .from("torts")
+    .select("slug")
+    .eq("slug_alias", tortSlug)
+    .maybeSingle();
+  if (aliasRow) resolvedSlug = aliasRow.slug;
+
   const { data, error } = await sb
     .from("serp_results_normalized")
     .select(
       "query, result_type, position, domain, title, snippet, link, fetched_at"
     )
-    .eq("tort_slug", tortSlug)
+    .eq("tort_slug", resolvedSlug)
     .eq("result_type", "organic")
     .order("position", { ascending: true })
     .limit(50);
