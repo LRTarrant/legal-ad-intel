@@ -160,13 +160,16 @@ export default async function TortAdvertisingCatchallPage({
     .sort((a, b) => (b.saturation_score ?? 0) - (a.saturation_score ?? 0))
     .slice(0, 15);
 
-  // Find best matching benchmark
+  // Find best matching benchmark — prefer explicit cost_benchmark_name mapping
+  const benchmarkName = tort.cost_benchmark_name;
   const tortLabelLower = tort.label.toLowerCase();
   const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
   const benchmark = benchmarks
     .sort((a, b) => b.observed_date.localeCompare(a.observed_date))
     .find((b) => {
       const bName = b.tort_name.toLowerCase();
+      // Explicit mapping from mass_torts.cost_benchmark_name takes priority
+      if (benchmarkName && bName === benchmarkName.toLowerCase()) return true;
       if (bName === tortLabelLower) return true;
       if (bName.includes(tortLabelLower) || tortLabelLower.includes(bName)) return true;
       return tortLabelWords.some((w) => w.length > 3 && bName.includes(w));

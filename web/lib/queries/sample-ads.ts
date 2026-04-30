@@ -44,14 +44,24 @@ export async function getSampleAds(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = getSupabase() as any;
 
-  // Resolve tort_id from slug
-  const { data: tort, error: tortError } = await sb
+  // Resolve tort_id from slug (check slug first, then slug_alias for aliased torts)
+  let { data: tort, error: tortError } = await sb
     .from("torts")
     .select("id")
     .eq("slug", tortSlug)
     .maybeSingle();
 
   if (tortError) throw new Error(`Failed to fetch tort: ${tortError.message}`);
+  if (!tort) {
+    // Try slug_alias for torts like olympus_duodenoscope → olympus_scopes
+    const { data: aliased, error: aliasErr } = await sb
+      .from("torts")
+      .select("id")
+      .eq("slug_alias", tortSlug)
+      .maybeSingle();
+    if (aliasErr) throw new Error(`Failed to fetch tort alias: ${aliasErr.message}`);
+    tort = aliased;
+  }
   if (!tort) return [];
 
   const { data, error } = await sb
