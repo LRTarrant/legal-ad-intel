@@ -50,17 +50,17 @@ const FEATURED_TORT_PROFILES: FeaturedTort[] = [
   {
     name: "Depo-Provera",
     status: "Active MDL · 18,000+ cases filed",
-    href: "/advertising/torts/depo-provera",
+    href: "/advertising/depo-provera",
   },
   {
     name: "Roundup",
     status: "Post-settlement · $11B+ resolved",
-    href: "/advertising/torts/roundup",
+    href: "/advertising/roundup",
   },
   {
     name: "Hair Relaxer",
     status: "Active MDL · Discovery phase",
-    href: "/advertising/torts/hair-relaxer",
+    href: "/advertising/hair-relaxer",
   },
   {
     name: "Social Media Addiction",
@@ -75,7 +75,7 @@ const FEATURED_TORT_PROFILES: FeaturedTort[] = [
   {
     name: "Bard PowerPort",
     status: "Active MDL · Bellwether trials",
-    href: "/advertising/torts/bard-powerport",
+    href: "/advertising/bard-powerport",
   },
 ];
 

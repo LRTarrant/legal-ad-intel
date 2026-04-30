@@ -182,7 +182,7 @@ export default async function MdlDetailPage({
   // Resolve the advertising page slug for this tort (if one exists).
   // Hardcoded overrides for MDLs whose tort page isn't yet in the torts table.
   const MDL_TORT_SLUG_OVERRIDES: Record<number, string> = {
-    3140: "depo_provera",
+    3140: "depo-provera",
   };
 
   const tortAdSlug =
@@ -422,7 +422,7 @@ export default async function MdlDetailPage({
       <div className="flex flex-wrap gap-3">
         {tortAdSlug && (
           <Link
-            href={`/advertising/torts/${tortAdSlug}`}
+            href={`/advertising/${tortAdSlug}`}
             className="inline-flex items-center gap-2 rounded-lg border-2 border-intelligence-teal px-6 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

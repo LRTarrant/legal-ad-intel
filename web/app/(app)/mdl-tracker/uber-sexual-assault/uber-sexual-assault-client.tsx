@@ -357,7 +357,7 @@ export function UberSexualAssaultClient({ data }: { data: UberSexualAssaultPageD
           Last Updated: April 17, 2026
         </p>
         <Link
-          href="/advertising/torts/uber-sexual-assault"
+          href="/advertising/uber-sexual-assault"
           className="mt-3 inline-flex items-center gap-2 rounded-lg border-2 border-intelligence-teal px-5 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
         >
           <TrendingUp className="w-4 h-4" />

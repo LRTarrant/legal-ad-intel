@@ -78,16 +78,10 @@ const VALID_TORT_SLUGS = new Set([
   "3m-earplugs",
 ]);
 
-/** Canonical URL overrides for torts whose best page is NOT /advertising/torts/{slug}. */
+/** Canonical URL overrides for torts whose DB slug differs from their page route slug. */
 const TORT_CANONICAL_URL: Record<string, string> = {
-  "olympus-duodenoscope":  "/advertising/torts/olympus-scopes",
-  "ai-suicide-self-harm":  "/advertising/torts/ai-suicide",
-  "social-media-addiction": "/advertising/social-media-addiction",
-  "roblox-abuse":            "/advertising/roblox-abuse",
-  "glp1-gastroparesis":    "/advertising/glp1-gastroparesis",
-  "glp1-vision-loss":      "/advertising/glp1-vision-loss",
-  "uber-sexual-assault":   "/advertising/torts/uber-sexual-assault",
-  "lyft-sexual-assault":   "/advertising/torts/lyft-sexual-assault",
+  "olympus-duodenoscope":  "/advertising/olympus-scopes",
+  "ai-suicide-self-harm":  "/advertising/ai-suicide",
 };
 
 const VALID_STATE_SLUGS = new Set([
@@ -124,7 +118,7 @@ export function buildActionUrl(
     case "tort_detail": {
       const slug = params?.tort_slug?.trim().toLowerCase();
       if (!slug || !VALID_TORT_SLUGS.has(slug)) return null;
-      return TORT_CANONICAL_URL[slug] ?? `/advertising/torts/${slug}`;
+      return TORT_CANONICAL_URL[slug] ?? `/advertising/${slug}`;
     }
     case "state_market": {
       const raw = params?.state_name ?? params?.state_abbr ?? "";

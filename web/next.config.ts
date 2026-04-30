@@ -63,40 +63,50 @@ const nextConfig: NextConfig = {
         destination: "/advertising/trends",
         permanent: true,
       },
-      // Tort slug normalization: underscores → hyphens (hyphens are canonical)
+      // Legacy nested tort URLs → flat canonical pattern
+      // Catch-all: /advertising/torts/{slug} → /advertising/{slug}
+      // (Named static pages under /advertising/torts/ were moved; this catches
+      //  the dynamic [tortSlug] route which issues its own 308, plus any
+      //  bookmarks that bypass the app's redirect.)
+      {
+        source: "/advertising/torts/:slug",
+        destination: "/advertising/:slug",
+        permanent: true,
+      },
+      // Legacy underscore slugs → canonical hyphenated flat URLs
       {
         source: "/advertising/torts/depo_provera",
-        destination: "/advertising/torts/depo-provera",
+        destination: "/advertising/depo-provera",
         permanent: true,
       },
       {
         source: "/advertising/torts/hair_relaxer",
-        destination: "/advertising/torts/hair-relaxer",
+        destination: "/advertising/hair-relaxer",
         permanent: true,
       },
       {
         source: "/advertising/torts/talcum_powder",
-        destination: "/advertising/torts/talcum-powder",
+        destination: "/advertising/talcum-powder",
         permanent: true,
       },
       {
         source: "/advertising/torts/firefighter_foam",
-        destination: "/advertising/torts/afff-firefighting-foam",
+        destination: "/advertising/afff-firefighting-foam",
         permanent: true,
       },
       {
         source: "/advertising/torts/bard_powerport",
-        destination: "/advertising/torts/bard-powerport",
+        destination: "/advertising/bard-powerport",
         permanent: true,
       },
       {
         source: "/advertising/torts/olympus_scopes",
-        destination: "/advertising/torts/olympus-scopes",
+        destination: "/advertising/olympus-scopes",
         permanent: true,
       },
       {
         source: "/advertising/torts/ai_suicide",
-        destination: "/advertising/torts/ai-suicide",
+        destination: "/advertising/ai-suicide",
         permanent: true,
       },
     ];

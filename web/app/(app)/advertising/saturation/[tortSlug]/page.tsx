@@ -196,7 +196,7 @@ export default async function TortDrillDownPage({
           {tort.category && <span className="ml-1 text-zinc-500">Category: {tort.category}</span>}
         </p>
         <Link
-          href={`/advertising/torts/${tortSlug}`}
+          href={`/advertising/${tortSlug}`}
           className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 transition"
         >
           View Full Advertising Page →

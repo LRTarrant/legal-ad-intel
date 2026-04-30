@@ -34,8 +34,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
-import type { BenchmarkScorecardData } from "../../../components/cost-benchmark-scorecard";
+import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
+import type { BenchmarkScorecardData } from "../../components/cost-benchmark-scorecard";
 import { extractDomain } from "@/lib/queries";
 
 /* ------------------------------------------------------------------ */
@@ -251,7 +251,7 @@ export function AiSuicideClient({ data }: { data: AiSuicidePageData }) {
       {/* -- 1. Page Header ------------------------------------------------ */}
       <div>
         <Link
-          href="/advertising/torts/bard-powerport"
+          href="/advertising/bard-powerport"
           className="text-sm text-slate-gray hover:text-midnight-navy"
         >
           <span className="flex items-center gap-1">

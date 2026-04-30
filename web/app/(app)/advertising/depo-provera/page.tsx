@@ -17,10 +17,8 @@ import {
   Eye,
   Monitor,
   Database,
-  Activity,
-  Crosshair,
 } from "lucide-react";
-import { AskAIPanel } from "../../../components/ask-ai-panel";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -32,7 +30,7 @@ import {
   getSampleAds,
   extractDomain,
 } from "@/lib/queries";
-import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
+import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
 
 export const dynamic = "force-dynamic";
 
@@ -41,229 +39,259 @@ export const dynamic = "force-dynamic";
 export function generateMetadata() {
   return {
     title:
-      "Talcum Powder Tort Intelligence | Legal Marketing Intelligence",
+      "Depo-Provera (Meningioma) Tort Intelligence | Legal Marketing Intelligence",
     description:
-      "Comprehensive advertising intelligence brief for Talcum Powder ovarian cancer & mesothelioma litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
+      "Comprehensive advertising intelligence brief for Depo-Provera meningioma litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
   };
 }
 
 /* ── Static Data ───────────────────────────────────────────────────────── */
 
-const TALCUM_POWDER_TORT_CONTEXT = {
-  tortName: "Talcum Powder (Ovarian Cancer & Mesothelioma)",
-  injury: "Ovarian Cancer & Mesothelioma — linked to asbestos-contaminated talc in J&J Baby Powder and Shower to Shower products",
-  mdlNumber: "MDL 2738, D. New Jersey, Judge Freda L. Wolfson",
-  pendingCases: "67,000+ (April 2026)",
-  settlementRange: "$100K–$50M+ depending on injury type. Mesothelioma: $1M–$50M+, Ovarian Cancer (strong): $250K–$5M, Ovarian Cancer (moderate): $100K–$500K, Peritoneal Mesothelioma: $5M–$50M+",
-  estimatedCPA: "TBD — mass tort advertising landscape evolving as bankruptcy settlement remains contested",
-  bellwetherDate: "N/A — state trials ongoing; $8.2B bankruptcy settlement pending creditor vote.",
-  caseSummary: "Johnson & Johnson's talc-based baby powder and Shower to Shower products have been linked to ovarian cancer and mesothelioma due to asbestos contamination. Over 67,000 lawsuits are consolidated in MDL-2738 before Judge Freda L. Wolfson in the District of New Jersey. J&J proposed an $8.2 billion settlement through a controversial pre-packaged bankruptcy of its subsidiary Red River Talc, but approval remains contested. Meanwhile, state court trials continue to produce massive verdicts — including a $966 million mesothelioma award in California (October 2025), a $40 million ovarian cancer verdict in Los Angeles (December 2025), and a $250,000 Philadelphia verdict (February 2026).",
-  qualification: "Product: Regular use of talcum powder products (especially J&J Baby Powder or Shower to Shower) for personal hygiene, typically 3+ years. Qualifying diagnosis: Ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer. Diagnosis timing: Cancer diagnosed after age 22 and generally after year 2000. Causation link: Medical records or biopsy showing cancer potentially linked to talc/asbestos exposure. Statute of limitations: Claim filed within applicable state deadline (varies by state, typically 2-6 years).",
-  advertisingLandscape: "Stage: Mature/Late. Primary channels: TV, Google Search/LSAs, Meta lead forms, legal lead gen networks. Primary demographic: Women who used talcum powder for feminine hygiene (all demographics, especially women 40+). Key metro areas: St. Louis MO, Los Angeles CA, Newark NJ, Philadelphia PA, Chicago IL, New York NY.",
-  targetingInsights: "Primary demographic: Women who used talcum powder for feminine hygiene (all demographics, especially women 40+). Secondary: Mesothelioma victims (any gender) with occupational or consumer talc exposure. Key verdict jurisdictions: St. Louis MO, Los Angeles CA, Newark NJ, Philadelphia PA, Chicago IL. High-volume markets: NY, CA, FL, TX, NJ, PA, IL.",
+const DEPO_TORT_CONTEXT = {
+  tortName: "Depo-Provera (Meningioma)",
+  injury: "Meningioma — brain tumor in the meninges (tissue lining the brain/spinal cord)",
+  mdlNumber: "MDL 3140, N.D. Florida, Judge M. Casey Rodgers",
+  pendingCases: "3,490+ (April 2026), 3,873% increase from March 2025 to March 2026",
+  settlementRange: "$100K–$1.5M depending on severity tier. Tier 1 (Severe): $500K–$1.5M+, Tier 2 (Moderate): $250K–$500K, Tier 3 (Lower): $100K–$250K, Tier 4 (Minimal): $25K–$100K",
+  estimatedCPA: "$2,500–$4,500. Comparable torts: Tylenol ~$2,550, PFAS ~$3,000, NEC ~$4,000, Hair Relaxer ~$4,500, Paraquat ~$9,950",
+  bellwetherDate: "December 2026 (first bellwether trial). Settlement negotiations could begin 2027, first payments late 2027–2028.",
+  caseSummary: "Depo-Provera (DMPA) is a Pfizer-manufactured injectable contraceptive. Thousands of women allege prolonged use caused meningioma brain tumors. MDL 3140 consolidated in N.D. Florida. Pfizer's central defense is federal preemption, but the FDA's December 2025 label change adding a meningioma warning undercuts this defense. Key studies: López-González (BMJ, 2024) 5.5x risk, Griffin (2024) 1.53x odds, Xiao (JAMA Neurology, 2025) 2.43x risk.",
+  qualification: "Product: Depo-Provera, Depo-SubQ Provera 104, or authorized generic. Minimum 2 injections or 12 months use. Diagnosed with meningioma after initiating use. Use window 1992–present. Not currently represented. Statute of limitations 2–3 years from diagnosis. Three screening tiers: Tier 1 Basic (2–3 questions, lowest CPL), Tier 2 Qualified (4–6 steps, mid CPL), Tier 3 Retainer-Ready (10–15 steps, highest CPA but lowest fallout).",
+  advertisingLandscape: "Stage: Early-to-mid (2–3). ~96 active Meta ads from ~34 advertisers. ~45 Google Ads from ~22 advertisers. ~18 TikTok ads from ~8 advertisers. Primary channels: Meta lead forms, Google Search/LSAs, legal lead gen networks. Top advertisers: TorHoerman Law (21 ads, ~$85K/mo), Morgan & Morgan (18 ads, ~$120K/mo), Lawsuit Legal News (17 ads, ~$55K/mo), Ben Crump Law (12 ads, ~$70K/mo). Platform risk: Meta removed law firm ads for social media addiction lawsuits in April 2026.",
+  targetingInsights: "41.2% of Black women have ever used Depo-Provera vs 20.3% White. Higher use among women without HS diploma (39.9%), rural women (29.4%). Top prescribing states (Medicaid, per 10K): RI (376), MS (309), MD (303), LA (291), SC (280), NM (268), OH (265), IA (253). High-value crossover states (high DMPA + high Black pop): MS, MD, LA, SC, OH, PA, TN, VA, NC, MI. Key DMAs: Baltimore, New Orleans, Columbia SC, Cleveland/Columbus, Jackson MS, Memphis, Philadelphia, Detroit. 424K+ Medicaid DMPA prescriptions in 2023.",
 };
 
 const SCIENTIFIC_STUDIES = [
   {
-    study: "Nurses' Health Study & Meta-analyses",
-    year: "Multiple",
-    source: "Various peer-reviewed",
+    study: "López-González et al. (French national case-control)",
+    year: "2024",
+    source: "BMJ",
     finding:
-      "Regular perineal use of talcum powder associated with 20-33% increased risk of ovarian cancer across multiple studies.",
+      "5.5x higher odds of meningioma with 1+ year use",
   },
   {
-    study: "Asbestos Contamination Testing",
-    year: "2018–2024",
-    source: "FDA / Independent labs",
+    study: "Griffin et al. (U.S. insurance database)",
+    year: "2024",
+    source: "Medical journal",
     finding:
-      "Testing has found asbestos fibers in J&J baby powder samples, linking talc products to mesothelioma. Internal documents revealed J&J knew about contamination for decades.",
+      "1.53x higher odds (OR 1.53, CI 1.40–1.67). 117,503 cases analyzed",
   },
   {
-    study: "IARC Classification",
-    year: "2006",
-    source: "WHO / IARC",
+    study: "Xiao et al. (U.S. cohort, TriNetX)",
+    year: "2025",
+    source: "JAMA Neurology",
     finding:
-      "The International Agency for Research on Cancer classifies perineal use of talc-based body powder as \"possibly carcinogenic to humans\" (Group 2B).",
+      "2.43x relative risk (CI 1.77–3.33). Highest for 4+ years use. NNH of 1,152",
   },
-];
-
-const CANCER_INCIDENCE_DATA = {
-  cancerSite: "Ovary",
-  subtitle: "Ovarian cancer incidence rates across U.S. counties",
-  nationalAvg: 25.7,
-  states: [
-    { state: "IL", avgRate: 31.1, annualCases: "3,544", pctRising: 71 },
-    { state: "MD", avgRate: 30.8, annualCases: "1,827", pctRising: 79 },
-    { state: "OH", avgRate: 28.2, annualCases: "3,902", pctRising: 80 },
-    { state: "CA", avgRate: 27.5, annualCases: "10,419", pctRising: 76 },
-    { state: "NC", avgRate: 27.2, annualCases: "3,476", pctRising: 74 },
-    { state: "FL", avgRate: 27.1, annualCases: "8,065", pctRising: 52 },
-    { state: "GA", avgRate: 26.3, annualCases: "2,869", pctRising: 44 },
-    { state: "NY", avgRate: 23.8, annualCases: "4,405", pctRising: 80 },
-  ],
-  hotspots: [
-    { county: "Forsyth County", state: "GA", rate: 48.0, trend: 1.0, cases: 126 },
-    { county: "Virginia Beach", state: "VA", rate: 43.6, trend: 3.3, cases: 223 },
-    { county: "Carteret County", state: "NC", rate: 52.0, trend: 6.9, cases: 54 },
-    { county: "Warren County", state: "OH", rate: 42.0, trend: 4.1, cases: 117 },
-    { county: "Harford County", state: "MD", rate: 41.2, trend: 2.8, cases: 134 },
-    { county: "St. Johns County", state: "FL", rate: 46.8, trend: 0.5, cases: 177 },
-  ],
-  note: "Ovarian cancer is the primary qualifying injury in the Talcum Powder litigation. Johnson & Johnson's baby powder has been linked to a 20-33% increased risk of ovarian cancer with regular perineal use. Counties with above-average incidence and rising trends may represent areas with larger potential claimant pools. Source: CDC/NCI USCS cancer statistics.",
-};
-
-const TRIPLE_SIGNAL_COUNTIES = [
-  { county: "Washington County", state: "MN", cancerRate: 51.0, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
-  { county: "Chittenden County", state: "VT", cancerRate: 40.3, trend: "Rising" as const, judicial: "Liberal", piScore: 93.1, verdict: "High" },
-  { county: "Anoka County", state: "MN", cancerRate: 38.7, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
-  { county: "Champaign County", state: "IL", cancerRate: 36.8, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
-  { county: "Warren County", state: "NY", cancerRate: 35.5, trend: "Rising" as const, judicial: "Moderate", piScore: 97.2, verdict: "Very High ($1M+)" },
-  { county: "Ramsey County (St. Paul)", state: "MN", cancerRate: 34.5, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
-  { county: "Boone County (Columbia)", state: "MO", cancerRate: 31.2, trend: "Rising" as const, judicial: "Liberal", piScore: 93.1, verdict: "High" },
-  { county: "Monmouth County", state: "NJ", cancerRate: 30.5, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
-];
-
-const TOP_PI_STATES = [
-  { state: "NY", piScore: 97.2, verdict: "Very High ($1M+)", cancerRate: "23.8", key: "Pure comparative, no caps" },
-  { state: "CA", piScore: 94.4, verdict: "Very High ($1M+)", cancerRate: "27.5", key: "$966M mesothelioma verdict" },
-  { state: "MO", piScore: 93.1, verdict: "High", cancerRate: "(key counties)", key: "$4.7B landmark verdict" },
-  { state: "MN", piScore: 88.9, verdict: "High", cancerRate: "(key counties)", key: "$65.5M mesothelioma verdict" },
-  { state: "NJ", piScore: 87.5, verdict: "Very High", cancerRate: "(MDL venue)", key: "MDL-2738 venue, no caps" },
+  {
+    study: "Roland et al. (European case-control)",
+    year: "2022–2023",
+    source: "French study",
+    finding:
+      "5.5x higher odds among injectable users (small sample)",
+  },
 ];
 
 const QUALIFICATION_CRITERIA = [
   {
-    criterion: "Product Use",
-    standard: "Regular use of talcum powder products (especially J&J Baby Powder or Shower to Shower) for personal hygiene, typically 3+ years",
-    notes: "Both consumer and occupational talc exposure qualify",
+    criterion: "Product",
+    standard: "Depo-Provera, Depo-SubQ Provera 104, or authorized generic",
+    notes: "Unauthorized generics and oral MPA do not qualify",
   },
   {
-    criterion: "Qualifying Diagnosis",
-    standard: "Ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer",
-    notes: "Mesothelioma claims are highest value; ovarian cancer is most common",
+    criterion: "Minimum Exposure",
+    standard: "At least 2 injections or 12 months of use",
+    notes: "Some screen at 6+ months; most firms require 12 months",
+  },
+  {
+    criterion: "Diagnosis",
+    standard: "Meningioma (intracranial or spinal)",
+    notes: "Some forms accept other brain tumors; meningioma is primary",
   },
   {
     criterion: "Diagnosis Timing",
-    standard: "Cancer diagnosed after age 22 and generally after year 2000",
-    notes: "Earlier diagnoses may still qualify depending on exposure history",
+    standard: "After initiating Depo-Provera use",
+    notes: "Most accepted within 5–15 years of first use",
   },
   {
-    criterion: "Causation Link",
-    standard: "Medical records or biopsy showing cancer potentially linked to talc/asbestos exposure",
-    notes: "Pathology evidence of asbestos strengthens mesothelioma claims",
+    criterion: "Use Window",
+    standard: "1992–present",
+    notes: "Pre-1992 use before FDA approval",
+  },
+  {
+    criterion: "Existing Representation",
+    standard: "Not currently represented",
+    notes: "Standard disqualifier",
   },
   {
     criterion: "Statute of Limitations",
-    standard: "Claim filed within applicable state deadline (varies by state, typically 2-6 years)",
-    notes: "Discovery rule may extend deadline from date of diagnosis",
+    standard: "2–3 years from diagnosis (varies by state)",
+    notes: "Filing deadlines are a real constraint",
   },
 ];
 
 const SCREENING_QUESTIONS = [
   "Who is the claimant? (You or loved one)",
-  "Which talcum powder products did you use? (J&J Baby Powder, Shower to Shower, other brands)",
-  "How did you use the product? (Perineal/genital area, body dusting, occupational exposure)",
-  "How long did you use the product? (Duration in years)",
-  "How frequently did you use the product? (Daily, weekly, occasionally)",
-  "Have you been diagnosed with ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer?",
-  "When were you diagnosed?",
-  "Treatment received? (Surgery, chemotherapy, radiation, etc.)",
-  "Any occupational exposure to talc or asbestos?",
+  "Which product? (Depo-Provera / SubQ / generic)",
+  "How many injections? (Minimum 2)",
+  "Duration of use? (6 months to 1+ year)",
+  "When did you start/stop?",
+  "Diagnosed with brain tumor? (Meningioma specifically)",
+  "When diagnosed?",
+  "Treatment received? (Surgery, radiation, etc.)",
+  "Symptoms? (Headaches, seizures, vision, etc.)",
   "Already have an attorney?",
 ];
 
 const DISQUALIFIERS = [
-  "Never used talcum powder products",
-  "Only brief or minimal exposure (less than 1 year)",
-  "No qualifying cancer diagnosis (ovarian, mesothelioma, etc.)",
-  "Diagnosis existed before talcum powder use began",
-  "Already represented by another attorney",
+  "Never used Depo-Provera",
+  "Only 1 injection / less than 6 months",
+  "No brain tumor diagnosis",
+  "Brain tumor existed before Depo use",
+  "Already represented",
+  "Use prior to 1992",
 ];
 
 const LITIGATION_TIMELINE = [
-  { date: "2009", event: "First talcum powder lawsuit filed by Deane Berg (Sioux Falls, SD) against J&J", short: "First Lawsuit Filed" },
-  { date: "2013", event: "Berg wins unanimous verdict against J&J but no damages awarded", short: "First Verdict (No Damages)" },
-  { date: "February 2016", event: "First damages verdict — $72 million to family in Missouri", short: "$72M Missouri Verdict" },
-  { date: "July 2018", event: "Missouri jury awards $4.7 billion to 22 women (later reduced to $2.1 billion on appeal)", short: "$4.7B Missouri Verdict" },
-  { date: "2022", event: "J&J creates LTL Management subsidiary, attempts first \"Texas Two-Step\" bankruptcy — dismissed", short: "Bankruptcy Attempt #1" },
-  { date: "April 2023", event: "J&J proposes $8.9 billion settlement — rejected by bankruptcy court", short: "$8.9B Settlement Rejected" },
-  { date: "May 2024", event: "Revised $6.5 billion settlement proposed through Red River Talc subsidiary", short: "$6.5B Revised Proposal" },
-  { date: "2024", event: "J&J pays $700 million multi-state settlement for deceptive marketing", short: "$700M Marketing Settlement" },
-  { date: "October 2025", event: "$966 million mesothelioma verdict in California", short: "$966M CA Meso Verdict" },
-  { date: "December 2025", event: "$40 million ovarian cancer verdict in Los Angeles", short: "$40M LA Verdict" },
-  { date: "February 2026", event: "$250,000 Philadelphia verdict; MDL reaches 67,000+ cases", short: "67K+ Cases" },
-  { date: "March 2026", event: "$8.2 billion bankruptcy settlement pending creditor vote; state trials continue", short: "$8.2B Settlement Pending", future: true },
+  { date: "1992", event: "FDA approves Depo-Provera for U.S. contraceptive use", short: "FDA Approves Depo-Provera" },
+  { date: "March 2024", event: "BMJ publishes French study — 5.5x meningioma risk", short: "BMJ Study: 5.5x Risk" },
+  { date: "October 2024", event: "First Depo-Provera meningioma lawsuit filed", short: "First Lawsuit Filed" },
+  { date: "December 2024", event: "Motion filed with JPML to consolidate into MDL", short: "MDL Consolidation Motion" },
+  { date: "February 2025", event: "MDL No. 3140 established in N.D. Florida; Judge Rodgers assigned", short: "MDL 3140 Established" },
+  { date: "April 2025", event: "Proof of Use/Injury Questionnaire deadline set", short: "Questionnaire Deadline" },
+  { date: "June 2025", event: "Third-party review of MDL complaints begins", short: "Complaint Review Begins" },
+  { date: "September 2025", event: "Pfizer files summary judgment motion (preemption); JAMA Neurology study published", short: "Pfizer SJ Motion Filed" },
+  { date: "October 2025", event: "1,346 cases in MDL; 439+ in state courts", short: "1,346 Cases in MDL" },
+  { date: "December 2025", event: "FDA adds meningioma warning to Depo-Provera label", short: "FDA Label Warning Added" },
+  { date: "February 2026", event: "2,100+ cases; court orders supplemental briefing on preemption", short: "2,100+ Cases Filed" },
+  { date: "March 2026", event: "3,099 cases — 47.7% jump in one month", short: "3,099 Cases — 47.7% Jump" },
+  { date: "April 2026", event: "MDL leadership reappointed; 3,490+ cases pending", short: "3,490+ Cases Pending" },
+  { date: "Spring 2026", event: "Expert witness challenges (Daubert) expected", short: "Daubert Challenges", future: true },
+  { date: "December 2026", event: "First bellwether trial scheduled", short: "Bellwether Trial", future: true },
+  { date: "2027 (projected)", event: "Settlement negotiations could begin; first payments late 2027–2028", short: "Settlement Negotiations", future: true },
 ];
 
 const SETTLEMENT_TIERS = [
   {
-    tier: "Mesothelioma",
-    severity: "Critical",
-    range: "$1M – $50M+",
-    factors:
-      "Highest value claims; $966M and $260M verdicts demonstrate massive jury awards",
-  },
-  {
-    tier: "Ovarian Cancer (strong causation)",
+    tier: "Tier 1: Severe",
     severity: "High",
-    range: "$250K – $5M",
+    range: "$500K – $1.5M+",
     factors:
-      "$40M verdict for two plaintiffs in 2025; strong cases with long-term use",
+      "WHO Grade II/III, craniotomy/multiple surgeries, radiation, permanent neuro damage, disability, lost earning capacity",
   },
   {
-    tier: "Ovarian Cancer (moderate)",
+    tier: "Tier 2: Moderate",
     severity: "Moderate",
-    range: "$100K – $500K",
+    range: "$250K – $500K",
     factors:
-      "Philadelphia verdict at $250K; shorter use duration or weaker causation link",
+      "Symptomatic Grade I requiring surgery, partial recovery with residual effects, ongoing monitoring",
   },
   {
-    tier: "Peritoneal Mesothelioma",
-    severity: "Critical",
-    range: "$5M – $50M+",
+    tier: "Tier 3: Lower",
+    severity: "Mild",
+    range: "$100K – $250K",
     factors:
-      "$1.5B Maryland verdict (largest ever); rare but devastating diagnosis",
+      "Small non-surgical Grade I, incidental finding, watch-and-wait, minimal symptoms",
+  },
+  {
+    tier: "Tier 4: Minimal",
+    severity: "Lowest",
+    range: "$25K – $100K",
+    factors:
+      "Suspected/unconfirmed diagnosis, limited documentation",
   },
 ];
 
+/* AD_METRICS removed — now sourced from Supabase live queries */
+
 const COMPARATIVE_CPA = [
+  { tort: "Depo-Provera", stage: "Early-mid", cpa: "~$2,500–$4,500", settlement: "TBD ($100K–$1.5M)", highlight: true },
   { tort: "Tylenol", stage: "Early", cpa: "~$2,550", settlement: "$60–90K" },
-  { tort: "Depo-Provera", stage: "Early-mid", cpa: "~$2,500–$4,500", settlement: "TBD ($100K–$1.5M)" },
   { tort: "PFAS (AFFF)", stage: "Mid-late", cpa: "~$3,000", settlement: "$75–175K" },
   { tort: "NEC Formula", stage: "Mid", cpa: "~$4,000", settlement: "$100–300K" },
-  { tort: "Hair Relaxer", stage: "Early", cpa: "~$4,500", settlement: "$90K–$1M" },
-  { tort: "Talcum Powder", stage: "Mature", cpa: "TBD", settlement: "$100K–$50M+", highlight: true },
+  { tort: "Hair Relaxer", stage: "Early", cpa: "~$4,500", settlement: "$75–125K" },
   { tort: "Paraquat", stage: "Mid-late", cpa: "~$9,950", settlement: "$105–250K" },
 ];
 
-const GEOGRAPHIC_TARGETING = {
-  primaryDemographic: "Women who used talcum powder for feminine hygiene (all demographics, especially women 40+)",
-  ageRange: "40+ (peak diagnosed demographics)",
-  regionalFocus: "Key verdict jurisdictions and high-volume markets nationwide",
-  keyMetros: [
-    "St. Louis, MO",
-    "Los Angeles, CA",
-    "Newark, NJ",
-    "Philadelphia, PA",
-    "Chicago, IL",
-    "New York, NY",
-    "Houston, TX",
-    "Miami, FL",
-    "Dallas, TX",
-    "Atlanta, GA",
-  ],
-};
-
-const TRACKED_KEYWORDS = [
-  { keyword: "talcum powder lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$45.20" },
-  { keyword: "baby powder cancer", volume: "33,100", difficulty: "High" as const, cpc: "$38.80" },
-  { keyword: "talcum powder ovarian cancer", volume: "22,200", difficulty: "High" as const, cpc: "$42.50" },
-  { keyword: "j&j baby powder settlement", volume: "18,100", difficulty: "Medium" as const, cpc: "$35.00" },
-  { keyword: "talcum powder mesothelioma", volume: "12,100", difficulty: "Medium" as const, cpc: "$48.00" },
-  { keyword: "baby powder lawsuit settlement", volume: "8,100", difficulty: "Medium" as const, cpc: "$32.50" },
+const DEMOGRAPHIC_PROFILE = [
+  { demographic: "Overall", value: "24.5%" },
+  { demographic: "Black women", value: "41.2%" },
+  { demographic: "Hispanic women", value: "27.2%" },
+  { demographic: "White women", value: "20.3%" },
+  { demographic: "Asian women", value: "7.1%" },
+  { demographic: "No HS diploma", value: "39.9%" },
+  { demographic: "HS diploma/GED", value: "33.7%" },
+  { demographic: "Some college", value: "29.2%" },
+  { demographic: "Bachelor's+", value: "12.7%" },
+  { demographic: "Rural", value: "29.4%" },
+  { demographic: "Urban", value: "23.5%" },
 ];
 
+const STATE_PRESCRIBING = [
+  { rank: 1, state: "Rhode Island", totalRx: "4,138", rate: 376, blackPop: "8.5%", signal: "HIGH" as const },
+  { rank: 2, state: "Mississippi", totalRx: "9,873", rate: 309, blackPop: "38.0%", signal: "HIGH" as const },
+  { rank: 3, state: "Maryland", totalRx: "19,676", rate: 303, blackPop: "31.1%", signal: "HIGH" as const },
+  { rank: 4, state: "Louisiana", totalRx: "14,822", rate: 291, blackPop: "33.1%", signal: "HIGH" as const },
+  { rank: 5, state: "South Carolina", totalRx: "15,109", rate: 280, blackPop: "27.0%", signal: "HIGH" as const },
+  { rank: 6, state: "New Mexico", totalRx: "5,637", rate: 268, blackPop: "2.6%", signal: "HIGH" as const },
+  { rank: 7, state: "Ohio", totalRx: "31,814", rate: 265, blackPop: "13.1%", signal: "HIGH" as const },
+  { rank: 8, state: "Iowa", totalRx: "8,087", rate: 253, blackPop: "4.1%", signal: "HIGH" as const },
+  { rank: 9, state: "Oklahoma", totalRx: "9,638", rate: 235, blackPop: "7.8%", signal: "MED-HI" as const },
+  { rank: 10, state: "Vermont", totalRx: "1,139", rate: 207, blackPop: "1.4%", signal: "MED-HI" as const },
+  { rank: 11, state: "West Virginia", totalRx: "3,396", rate: 200, blackPop: "3.6%", signal: "MED-HI" as const },
+  { rank: 12, state: "Montana", totalRx: "1,774", rate: 177, blackPop: "0.6%", signal: "MED-HI" as const },
+  { rank: 13, state: "Pennsylvania", totalRx: "21,632", rate: 166, blackPop: "12.0%", signal: "MED-HI" as const },
+  { rank: 14, state: "Oregon", totalRx: "6,462", rate: 154, blackPop: "2.2%", signal: "MED-HI" as const },
+  { rank: 15, state: "Tennessee", totalRx: "11,053", rate: 154, blackPop: "17.1%", signal: "MED-HI" as const },
+  { rank: 16, state: "Kentucky", totalRx: "7,180", rate: 153, blackPop: "8.6%", signal: "MED-HI" as const },
+  { rank: 17, state: "Virginia", totalRx: "13,497", rate: 150, blackPop: "20.0%", signal: "MED" as const },
+  { rank: 18, state: "Colorado", totalRx: "9,160", rate: 148, blackPop: "4.6%", signal: "MED" as const },
+  { rank: 19, state: "Arizona", totalRx: "11,121", rate: 144, blackPop: "5.2%", signal: "MED" as const },
+  { rank: 20, state: "Delaware", totalRx: "1,424", rate: 142, blackPop: "23.2%", signal: "MED" as const },
+];
+
+const CROSSOVER_STATES = [
+  { state: "Mississippi", rate: 309, blackPop: "38.0%", totalRx: "9,873", dmas: "Jackson" },
+  { state: "Maryland", rate: 303, blackPop: "31.1%", totalRx: "19,676", dmas: "Baltimore, DC suburbs" },
+  { state: "Louisiana", rate: 291, blackPop: "33.1%", totalRx: "14,822", dmas: "New Orleans, Baton Rouge" },
+  { state: "South Carolina", rate: 280, blackPop: "27.0%", totalRx: "15,109", dmas: "Columbia, Charleston" },
+  { state: "Ohio", rate: 265, blackPop: "13.1%", totalRx: "31,814", dmas: "Cleveland, Columbus, Cincinnati" },
+  { state: "Pennsylvania", rate: 166, blackPop: "12.0%", totalRx: "21,632", dmas: "Philadelphia, Pittsburgh" },
+  { state: "Tennessee", rate: 154, blackPop: "17.1%", totalRx: "11,053", dmas: "Memphis, Nashville" },
+  { state: "Virginia", rate: 150, blackPop: "20.0%", totalRx: "13,497", dmas: "Norfolk, Richmond" },
+  { state: "North Carolina", rate: 130, blackPop: "22.2%", totalRx: "14,251", dmas: "Charlotte, Raleigh" },
+  { state: "Michigan", rate: 132, blackPop: "14.1%", totalRx: "13,151", dmas: "Detroit, Grand Rapids" },
+];
+
+const TRACKED_KEYWORDS = [
+  { keyword: "depo provera lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$42.80" },
+  { keyword: "depo provera meningioma", volume: "22,200", difficulty: "High" as const, cpc: "$38.50" },
+  { keyword: "depo provera brain tumor", volume: "14,800", difficulty: "Medium" as const, cpc: "$35.20" },
+  { keyword: "depo provera lawyer", volume: "8,100", difficulty: "High" as const, cpc: "$52.00" },
+  { keyword: "depo provera settlement", volume: "6,600", difficulty: "Medium" as const, cpc: "$28.40" },
+  { keyword: "depo shot lawsuit", volume: "4,400", difficulty: "Medium" as const, cpc: "$31.00" },
+];
+
+/* PAID_AD_DATA, SAMPLE_ADS, TOP_FIRMS removed — now sourced from Supabase live queries */
+
 /* ── Helpers ────────────────────────────────────────────────────────────── */
+
+function SignalBadge({ signal }: { signal: "HIGH" | "MED-HI" | "MED" }) {
+  const styles = {
+    HIGH: "bg-red-50 text-alert border-alert/20",
+    "MED-HI": "bg-amber-50 text-warning border-warning/20",
+    MED: "bg-slate-50 text-slate-gray border-slate-gray/20",
+  };
+  return (
+    <span
+      className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styles[signal]}`}
+    >
+      {signal}
+    </span>
+  );
+}
+
+/* ── Format Helpers (from dynamic page) ─────────────────────────────── */
 
 function fmtCur(n: number | null): string {
   if (n == null) return "—";
@@ -300,9 +328,9 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
-const TORT_SLUG = "talcum_powder";
+const TORT_SLUG = "depo_provera";
 
-export default async function TalcumPowderPage() {
+export default async function DepoProveraPage() {
   /* ── Live data fetch from Supabase ─────────────────────────────────── */
   const now = new Date();
   const windowEnd = now.toISOString().slice(0, 10);
@@ -347,7 +375,7 @@ export default async function TalcumPowderPage() {
     .slice(0, 10);
 
   // Fuzzy-match benchmark
-  const tortLabel = "Talcum Powder";
+  const tortLabel = "Depo-Provera";
   const tortLabelLower = tortLabel.toLowerCase();
   const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
   const benchmark = benchmarks
@@ -376,14 +404,14 @@ export default async function TalcumPowderPage() {
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            Talcum Powder
+            Depo-Provera
           </h1>
           <span className="rounded-full bg-emerald-50 border border-success/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-success">
             Active Litigation
           </span>
         </div>
         <p className="mt-1 text-lg text-slate-gray">
-          Baby Powder / Ovarian Cancer &amp; Mesothelioma Litigation — MDL-2738
+          Meningioma (Brain Tumor)
         </p>
         <p className="mt-0.5 text-xs text-slate-gray">
           Last Updated: April 16, 2026
@@ -396,40 +424,40 @@ export default async function TalcumPowderPage() {
           <div className="flex items-center gap-1.5 mb-2">
             <Scale className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Cases Filed
+              Pending Cases
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">67,000+</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 2738</p>
+          <p className="text-2xl font-bold text-midnight-navy">3,490+</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 3140</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Proposed Settlement
+              Settlement Range
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">$8.2 Billion</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Pending creditor vote</p>
+          <p className="text-2xl font-bold text-midnight-navy">$100K – $1.5M</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">Projected</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <Target className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Primary Injuries
+              Estimated CPA
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy text-lg">Ovarian Cancer &amp; Mesothelioma</p>
+          <p className="text-2xl font-bold text-midnight-navy">~$2,500 – $4,500</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <Calendar className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Status
+              Bellwether Trial
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy text-lg">Bankruptcy Settlement Pending / Active State Trials</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Judge Freda L. Wolfson, D. New Jersey</p>
+          <p className="text-2xl font-bold text-midnight-navy">Dec 2026</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">First scheduled</p>
         </div>
       </div>
 
@@ -440,33 +468,39 @@ export default async function TalcumPowderPage() {
         </h2>
         <div className="space-y-4 text-sm leading-relaxed text-midnight-navy/80">
           <p>
-            Johnson &amp; Johnson&apos;s talc-based baby powder and Shower to Shower
-            products have been linked to ovarian cancer and mesothelioma due to
-            asbestos contamination. Over 67,000 lawsuits are consolidated in
-            MDL-2738 before Judge Freda L. Wolfson in the District of New Jersey.
-            J&amp;J proposed an $8.2 billion settlement through a controversial
-            pre-packaged bankruptcy of its subsidiary Red River Talc, but approval
-            remains contested.
+            Depo-Provera (depot medroxyprogesterone acetate, or DMPA) is a
+            Pfizer-manufactured injectable contraceptive administered every three
+            months, FDA-approved in the United States since 1992. Thousands of
+            women are alleging that prolonged use caused them to develop
+            meningioma — a tumor of the tissue lining the brain and spinal cord —
+            and that Pfizer knew or should have known about this risk for decades
+            but failed to update the U.S. warning label.
           </p>
           <p>
-            Meanwhile, state court trials continue to produce massive verdicts —
-            including a $966 million mesothelioma award in California (October 2025),
-            a $40 million ovarian cancer verdict in Los Angeles (December 2025), and
-            a $250,000 Philadelphia verdict (February 2026). J&amp;J previously paid
-            a $700 million multi-state settlement for deceptive marketing practices.
-            The $4.7 billion Missouri verdict in 2018 remains the landmark judgment
-            in talc litigation.
+            The litigation is consolidated as MDL No. 3140 in the U.S. District
+            Court for the Northern District of Florida under Judge M. Casey
+            Rodgers. As of April 2026, more than 3,490 cases are pending in the
+            MDL, with additional filings in state courts across Delaware, New
+            York, California, Illinois, and Pennsylvania. Case volume has grown
+            dramatically — a 3,873% increase from March 2025 to March 2026.
+          </p>
+          <p>
+            Pfizer&apos;s central defense is federal preemption: the argument that
+            the FDA previously rejected a stronger warning label, so state-level
+            failure-to-warn claims should be blocked. In December 2025, the FDA
+            approved a label change adding a meningioma warning — a pivotal
+            development that undercuts this defense.
           </p>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-cloud/60 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-              Defendant
+              Defendants
             </p>
             <p className="text-sm text-midnight-navy">
-              Johnson &amp; Johnson (and subsidiary Red River Talc LLC,
-              formerly LTL Management). Products: J&amp;J Baby Powder,
-              Shower to Shower.
+              Pfizer Inc., Greenstone LLC, Pharmacia &amp; Upjohn Company LLC,
+              A-S Medication Solutions, Prasco Laboratories, Preferred
+              Pharmaceuticals Inc.
             </p>
           </div>
           <div className="rounded-md bg-cloud/60 px-4 py-3">
@@ -474,8 +508,8 @@ export default async function TalcumPowderPage() {
               Legal Theories
             </p>
             <p className="text-sm text-midnight-navy">
-              Failure to warn, negligent design, negligence, strict liability,
-              fraudulent concealment of asbestos contamination, deceptive marketing.
+              Failure to warn, negligent design, negligence, fraudulent
+              concealment, breach of implied warranty of safety.
             </p>
           </div>
         </div>
@@ -490,23 +524,26 @@ export default async function TalcumPowderPage() {
           </h2>
         </div>
         <p className="text-sm leading-relaxed text-midnight-navy/80 mb-4">
-          Talcum powder products contaminated with asbestos have been linked to
-          ovarian cancer and mesothelioma. Studies show a 20-33% increased risk
-          of ovarian cancer with regular perineal use.
+          The core injury is meningioma — a tumor forming in the meninges (tissue
+          surrounding the brain and spinal cord). ~90% intracranial, ~10% spinal.
+          While most are classified as benign (WHO Grade I), they can cause
+          serious neurological complications requiring craniotomy.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
-              Linked Conditions
+              Symptoms &amp; Complications
             </p>
             <ul className="space-y-1.5">
               {[
-                "Ovarian cancer (studies show 20-33% increased risk with regular perineal talc use)",
-                "Mesothelioma (from asbestos-contaminated talc)",
-                "Peritoneal mesothelioma",
-                "Fallopian tube cancer",
-                "Endometrial cancer",
-                "Uterine cancer",
+                "Chronic headaches and migraines",
+                "Seizures",
+                "Vision problems (blurred vision, partial vision loss)",
+                "Hearing loss",
+                "Memory loss and cognitive impairment",
+                "Trouble speaking",
+                "Weakness in arms or legs",
+                "Permanent neurological damage or disability",
               ].map((s) => (
                 <li
                   key={s}
@@ -520,20 +557,19 @@ export default async function TalcumPowderPage() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
-              Key Risk Factor
+              Treatment
             </p>
             <p className="text-sm leading-relaxed text-midnight-navy/80">
-              Regular perineal use of talcum powder for personal hygiene is the
-              primary risk factor. Women who used J&amp;J Baby Powder or similar
-              talc products for years are at highest risk for ovarian cancer claims.
-              Asbestos contamination in talc creates additional mesothelioma risk.
+              Brain surgery (craniotomy/tumor excision), radiation therapy,
+              chemotherapy, hospitalization, long-term &quot;watch and wait&quot;
+              surveillance with serial MRI.
             </p>
             <div className="mt-4 rounded-md border border-alert/20 bg-red-50 px-4 py-3">
-              <p className="text-xs font-semibold text-alert">Internal Documents</p>
+              <p className="text-xs font-semibold text-alert">FDA Label Update</p>
               <p className="mt-1 text-sm text-midnight-navy/80">
-                Discovery revealed J&amp;J knew about asbestos contamination in
-                its talc supply chain for decades but concealed this information
-                from consumers and regulators.
+                The FDA&apos;s updated label now instructs providers to
+                discontinue Depo-Provera immediately if a meningioma is
+                diagnosed.
               </p>
             </div>
           </div>
@@ -594,298 +630,10 @@ export default async function TalcumPowderPage() {
         <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
           <p className="text-sm text-midnight-navy/80">
             <span className="font-semibold text-midnight-navy">Key point:</span>{" "}
-            The combination of epidemiological evidence (20-33% increased ovarian
-            cancer risk) and physical evidence (asbestos fibers found in J&amp;J
-            products) has driven massive jury verdicts. Internal documents showing
-            J&amp;J&apos;s knowledge of contamination have been particularly
-            damaging in trial.
+            Multiple independent studies consistently show elevated risk. Other
+            contraceptives (IUDs, oral pills, etc.) show NO increased risk —
+            strengthening the DMPA-specific association.
           </p>
-        </div>
-      </div>
-
-      {/* ── 5b. Cancer Incidence Insight ─────────────────────────────────── */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Cancer Incidence Insight
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          {CANCER_INCIDENCE_DATA.subtitle}
-        </p>
-
-        {/* National Benchmark */}
-        <div className="mb-5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-3 py-1 text-sm font-semibold text-intelligence-teal">
-            National Avg: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
-          </span>
-        </div>
-
-        {/* Above-Average States Table */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Above-Average States
-        </h3>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  State
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Avg Rate
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Annual Cases
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  % Counties Rising
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {CANCER_INCIDENCE_DATA.states.map((s) => (
-                <tr
-                  key={s.state}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy">
-                    {s.state}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono text-midnight-navy">
-                    {s.avgRate}
-                  </td>
-                  <td className="py-3 px-3 text-right text-midnight-navy/80">
-                    {s.annualCases}
-                  </td>
-                  <td className="py-3 pl-3 text-right">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
-                        s.pctRising > 60
-                          ? "bg-red-50 text-alert"
-                          : s.pctRising >= 30
-                          ? "bg-amber-50 text-warning"
-                          : "bg-emerald-50 text-success"
-                      }`}
-                    >
-                      {s.pctRising}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Rising Hotspots */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Rising Hotspot Counties
-        </h3>
-        <div className="grid gap-2 sm:grid-cols-2 mb-6">
-          {CANCER_INCIDENCE_DATA.hotspots.map((h) => (
-            <div
-              key={`${h.county}-${h.state}`}
-              className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/5 px-4 py-3"
-            >
-              <p className="text-sm font-medium text-midnight-navy">
-                {h.county}, {h.state}
-              </p>
-              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-midnight-navy/70">
-                <span>
-                  Rate: <span className="font-semibold text-midnight-navy">{h.rate}</span>
-                </span>
-                <span className="font-semibold text-intelligence-teal">
-                  ↑ +{h.trend}%
-                </span>
-                <span>~{h.cases} cases/yr</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Cross-link */}
-        <Link
-          href="/cancer-incidence"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-intelligence-teal hover:underline"
-        >
-          Explore full cancer incidence data
-          <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
-
-        {/* Explanatory Note */}
-        <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
-          <p className="text-xs leading-relaxed text-slate-gray">
-            {CANCER_INCIDENCE_DATA.note}
-          </p>
-        </div>
-      </div>
-
-      {/* ── 5c. Market Opportunity Signals ─────────────────────────────── */}
-      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Crosshair className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Market Opportunity Signals
-          </h2>
-        </div>
-        <p className="mb-5 text-sm text-slate-gray">
-          Counties where cancer incidence, judicial climate, and plaintiff-friendly laws converge
-        </p>
-
-        {/* Signal Legend */}
-        <div className="mb-5 flex flex-wrap items-center gap-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#ef4444" }} />
-            Above-Avg Cancer Rate
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#14b8a6" }} />
-            Liberal/Moderate Judicial
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-navy/80">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#10b981" }} />
-            Plaintiff-Friendly State
-          </span>
-        </div>
-
-        {/* Triple-Signal Counties Table */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Triple-Signal Counties
-        </h3>
-        <p className="mb-3 text-xs text-slate-gray">
-          All three signals present — national avg ovarian cancer rate: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
-        </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-intelligence-teal/20">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  County, State
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Cancer Rate
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Trend
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Judicial
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  PI Score
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Avg Jury Verdict
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {TRIPLE_SIGNAL_COUNTIES.map((c) => (
-                <tr
-                  key={`${c.county}-${c.state}`}
-                  className="border-b border-cloud/50 hover:bg-intelligence-teal/[0.04] transition-colors"
-                >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy">
-                    {c.county}, {c.state}
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <span className="inline-flex items-center gap-1.5 font-mono text-midnight-navy">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#ef4444" }} />
-                      {c.cancerRate}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="text-intelligence-teal font-semibold text-xs">
-                      {c.trend === "Rising" ? "↑ Rising" : c.trend === "Falling" ? "↓ Falling" : "→ Stable"}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-2 py-0.5 text-xs font-medium text-intelligence-teal">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#14b8a6" }} />
-                      {c.judicial}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <span className="inline-flex items-center gap-1.5 font-mono font-semibold text-midnight-navy">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#10b981" }} />
-                      {c.piScore}
-                    </span>
-                  </td>
-                  <td className="py-3 pl-3 text-center">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        c.verdict.includes("Very High")
-                          ? "bg-red-50 text-alert"
-                          : "bg-amber-50 text-warning"
-                      }`}
-                    >
-                      {c.verdict}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* State PI Viability Summary */}
-        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Top PI Viability States
-        </h3>
-        <div className="flex flex-wrap gap-2 mb-6">
-          {TOP_PI_STATES.map((s) => (
-            <div
-              key={s.state}
-              className="rounded-lg border border-intelligence-teal/20 bg-white px-4 py-2.5"
-            >
-              <p className="text-sm font-bold text-midnight-navy">
-                {s.state}{" "}
-                <span className="font-mono text-intelligence-teal">{s.piScore}</span>
-              </p>
-              <p className="text-[11px] text-midnight-navy/60">
-                {s.verdict}
-              </p>
-              <p className="text-[10px] text-slate-gray">{s.key}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Insight Callout */}
-        <div className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/[0.06] px-4 py-3 mb-4">
-          <p className="text-sm leading-relaxed text-midnight-navy/80">
-            These counties combine above-average ovarian cancer incidence with
-            plaintiff-friendly legal environments. Key talc verdict jurisdictions —
-            Missouri ($4.7B), California ($966M), and New Jersey (MDL venue) — all
-            have strong plaintiff frameworks. Firms advertising in these markets may
-            find both a larger potential claimant pool and more favorable litigation
-            outcomes.
-          </p>
-        </div>
-
-        {/* Cross-links */}
-        <div className="flex flex-wrap gap-4">
-          <Link
-            href="/judicial-profiles"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
-          >
-            View Judicial Profiles
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href="/pi-viability"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
-          >
-            View PI Viability Scores
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href="/cancer-incidence"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
-          >
-            View Cancer Incidence Data
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       </div>
 
@@ -947,7 +695,7 @@ export default async function TalcumPowderPage() {
               color: "border-success/30 bg-emerald-50",
               tagColor: "bg-success/10 text-success",
               details:
-                "2–3 yes/no questions + contact info. Did you use talcum powder? Diagnosed with cancer? Cheapest but highest rejection at intake.",
+                "2–3 yes/no questions + contact info. Cheapest but highest rejection at intake.",
             },
             {
               label: "Tier 2: Qualified Lead",
@@ -955,7 +703,7 @@ export default async function TalcumPowderPage() {
               color: "border-warning/30 bg-amber-50",
               tagColor: "bg-warning/10 text-warning",
               details:
-                "4–6 step form. Confirmed 3+ years use, qualifying diagnosis (ovarian/meso), diagnosis year, attorney check. Better conversion.",
+                "4–6 step form. Confirmed 12+ months use, meningioma, diagnosis year, attorney check. Better conversion.",
             },
             {
               label: "Tier 3: Retainer-Ready",
@@ -963,7 +711,7 @@ export default async function TalcumPowderPage() {
               color: "border-alert/30 bg-red-50",
               tagColor: "bg-alert/10 text-alert",
               details:
-                "10–15 step deep intake. Product brands used, application method, frequency, duration, specific diagnosis, treatment history, occupational exposure. Most expensive but lowest fallout.",
+                "10–15 step deep intake. Product ID, injection dates/count, tumor type, treatment, symptoms, narrative. Most expensive but lowest fallout.",
             },
           ].map((tier) => (
             <div
@@ -1077,8 +825,10 @@ export default async function TalcumPowderPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          J&amp;J&apos;s $8.2 billion proposed settlement is pending. If it fails,
-          individual case values based on verdicts:
+          No settlements reached yet. Projections based on attorney estimates and
+          comparable mass tort outcomes. Average jury verdict in prior meningioma
+          cases ~$3M; settlements ~$868K. Mass tort economics will bring
+          individual Depo settlements lower.
         </p>
 
         {/* Settlement Tiers */}
@@ -1087,16 +837,16 @@ export default async function TalcumPowderPage() {
             <thead>
               <tr className="border-b border-cloud">
                 <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Injury Type
+                  Tier
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
                   Severity
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Estimated Range
+                  Range
                 </th>
                 <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Notes
+                  Qualifying Factors
                 </th>
               </tr>
             </thead>
@@ -1112,9 +862,7 @@ export default async function TalcumPowderPage() {
                   <td className="py-3 px-3 text-center">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        t.severity === "Critical"
-                          ? "bg-red-50 text-alert"
-                          : t.severity === "High"
+                        t.severity === "High"
                           ? "bg-red-50 text-alert"
                           : t.severity === "Moderate"
                           ? "bg-amber-50 text-warning"
@@ -1138,12 +886,6 @@ export default async function TalcumPowderPage() {
           </table>
         </div>
 
-        <p className="mt-4 text-xs text-slate-gray">
-          Under the proposed $8.2B settlement, individual payouts would depend on
-          injury tier and claim strength. 95% of mesothelioma claims already
-          resolved separately.
-        </p>
-
         {/* Factors */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-emerald-50/60 px-4 py-3">
@@ -1152,12 +894,12 @@ export default async function TalcumPowderPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "Mesothelioma diagnosis",
-                "Long-term daily use (10+ years)",
-                "J&J Baby Powder specifically",
-                "Strong medical documentation",
-                "Asbestos fibers found in pathology",
-                "Younger age at diagnosis",
+                "6+ years use",
+                "Multiple meningiomas",
+                "Younger age",
+                "Complex tumor location",
+                "WHO Grade II/III",
+                "Permanent impairment",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <TrendingUp className="w-3 h-3 shrink-0 text-success" />
@@ -1172,11 +914,11 @@ export default async function TalcumPowderPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "Infrequent or short-term use",
-                "Non-J&J talc products",
-                "Older age at diagnosis",
-                "Pre-existing risk factors (BRCA, family history)",
-                "Weak documentation of product use",
+                "Short duration",
+                "Incidental finding",
+                "No surgery",
+                "Pre-existing risk factors",
+                "Weak documentation",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <XCircle className="w-3 h-3 shrink-0 text-alert" />
@@ -1194,19 +936,19 @@ export default async function TalcumPowderPage() {
           </p>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-midnight-navy/70">
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Creditor Vote 2026
+              Bellwether Dec 2026
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Bankruptcy Approval / Rejection
+              Settlement Framework Spring 2027
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              State Trials Continue
+              Claims Admin Summer 2027
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Payments TBD
+              First Payments Late 2027–2028
             </span>
           </div>
         </div>
@@ -1343,24 +1085,25 @@ export default async function TalcumPowderPage() {
         <div className="grid gap-3 sm:grid-cols-2 mb-6">
           {[
             {
-              channel: "TV",
-              detail: "Major channel for talcum powder litigation — mature tort with established TV ad presence",
-              color: "border-indigo-500/30 bg-indigo-50",
-            },
-            {
-              channel: "Google Ads/LSAs",
-              detail: "High-intent search queries for talcum powder lawsuit and baby powder cancer keywords",
-              color: "border-emerald-500/30 bg-emerald-50",
-            },
-            {
               channel: "Meta (Facebook/Instagram)",
-              detail: "Lead generation forms targeting women who used talcum powder for feminine hygiene",
+              detail: "Dominant channel, quiz-style lead forms",
               color: "border-blue-500/30 bg-blue-50",
             },
             {
+              channel: "Google Ads/LSAs",
+              detail: "High-intent search queries, pay-per-lead pricing",
+              color: "border-emerald-500/30 bg-emerald-50",
+            },
+            {
               channel: "Legal Lead Gen Networks",
-              detail: "Per-lead or per-retainer pricing through legal lead generation networks",
+              detail:
+                "Per-lead or per-retainer pricing through legal lead generation networks",
               color: "border-purple-500/30 bg-purple-50",
+            },
+            {
+              channel: "TV",
+              detail: "Less prevalent, may increase as litigation matures",
+              color: "border-indigo-500/30 bg-indigo-50",
             },
           ].map((ch) => (
             <div
@@ -1425,14 +1168,13 @@ export default async function TalcumPowderPage() {
           </table>
         </div>
 
-        {/* Settlement Warning (editorial) */}
+        {/* Meta Warning (editorial) */}
         <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
           <p className="text-xs text-midnight-navy/80">
-            <span className="font-semibold text-warning">Bankruptcy Risk:</span>{" "}
-            J&amp;J&apos;s $8.2 billion bankruptcy settlement through Red River Talc
-            remains contested. If approved, it would resolve most claims through
-            a trust fund. If rejected, state trials will continue with potential
-            for massive individual verdicts.
+            <span className="font-semibold text-warning">Platform Risk:</span>{" "}
+            Meta recently removed law firm ads recruiting plaintiffs for social
+            media addiction lawsuits (April 2026). Has not affected Depo-Provera,
+            but signals platform risk for firms reliant on Meta.
           </p>
         </div>
       </div>
@@ -1449,7 +1191,7 @@ export default async function TalcumPowderPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Top organic search results for Talcum Powder litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
+          Top organic search results for Depo-Provera litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
         </p>
 
         {/* Tracked Keywords Table */}
@@ -1749,7 +1491,7 @@ export default async function TalcumPowderPage() {
           )}
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Competitive landscape — firms with the highest advertising presence for Talcum Powder litigation.
+          Competitive landscape — firms with the highest advertising presence for Depo-Provera litigation.
         </p>
 
         {topAdvertisers.length > 0 ? (
@@ -1757,7 +1499,7 @@ export default async function TalcumPowderPage() {
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs text-slate-gray">{topAdvertisers.length} advertisers tracked</p>
               <Link
-                href="/advertising/saturation/talcum_powder"
+                href="/advertising/saturation/depo_provera"
                 className="flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
               >
                 Full saturation view <ChevronRight className="w-3 h-3" />
@@ -1924,53 +1666,168 @@ export default async function TalcumPowderPage() {
           </h2>
         </div>
 
-        {/* Primary Demographic */}
-        <div className="mb-6">
-          <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-            Target Demographics
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md bg-cloud/60 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                Primary Demographic
-              </p>
-              <p className="text-sm text-midnight-navy">
-                {GEOGRAPHIC_TARGETING.primaryDemographic}
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                Age Range
-              </p>
-              <p className="text-sm text-midnight-navy">
-                {GEOGRAPHIC_TARGETING.ageRange}
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                Regional Focus
-              </p>
-              <p className="text-sm text-midnight-navy">
-                {GEOGRAPHIC_TARGETING.regionalFocus}
-              </p>
-            </div>
-          </div>
+        {/* Demographic Profile */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          Demographic Profile of Depo-Provera Users
+        </h3>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Demographic
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Ever Used Depo-Provera
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {DEMOGRAPHIC_PROFILE.map((d) => (
+                <tr
+                  key={d.demographic}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-2.5 pr-4 text-midnight-navy">
+                    {d.demographic}
+                  </td>
+                  <td className="py-2.5 pl-3 text-right font-mono font-semibold text-midnight-navy">
+                    {d.value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[11px] text-slate-gray">
+            Source: CDC National Health Statistics Report, 2023
+          </p>
         </div>
 
-        {/* Key Metro Areas */}
+        {/* State Prescribing */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Key Metro Areas
+          State-Level DMPA Prescribing Intensity (Medicaid, 2023)
         </h3>
-        <div className="grid gap-1.5 sm:grid-cols-2 mb-6">
-          {GEOGRAPHIC_TARGETING.keyMetros.map((metro) => (
-            <div
-              key={metro}
-              className="flex items-center gap-2 rounded-md bg-cloud/60 px-3 py-2"
-            >
-              <MapPin className="w-3.5 h-3.5 shrink-0 text-intelligence-teal" />
-              <p className="text-sm text-midnight-navy">{metro}</p>
-            </div>
-          ))}
+        <p className="mb-3 text-xs text-slate-gray">
+          Top 20 states by per-capita prescribing rate. Higher rates indicate
+          greater drug exposure in the Medicaid population.
+        </p>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-2 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center w-10">
+                  #
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  State
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Total Rx
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Rate/10K
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  % Black Pop
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
+                  Signal
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {STATE_PRESCRIBING.map((s) => (
+                <tr
+                  key={s.state}
+                  className={`border-b border-cloud/50 transition-colors ${
+                    s.signal === "HIGH"
+                      ? "bg-red-50/40 hover:bg-red-50/70"
+                      : "hover:bg-cloud/40"
+                  }`}
+                >
+                  <td className="py-2.5 pr-2 text-center text-xs text-slate-gray">
+                    {s.rank}
+                  </td>
+                  <td className="py-2.5 px-3 font-medium text-midnight-navy">
+                    {s.state}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
+                    {s.totalRx}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono font-semibold text-midnight-navy">
+                    {s.rate}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
+                    {s.blackPop}
+                  </td>
+                  <td className="py-2.5 pl-3 text-center">
+                    <SignalBadge signal={s.signal} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[11px] text-slate-gray">
+            Source: CMS Medicaid State Drug Utilization Data, 2023. Rate per 10K
+            women of reproductive age.
+          </p>
+        </div>
+
+        {/* Crossover States */}
+        <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
+          High-Value Targeting Crossover States
+        </h3>
+        <p className="mb-3 text-xs text-slate-gray">
+          States with both above-median DMPA prescribing rates AND above-median
+          Black population — where drug exposure and the most impacted
+          demographic overlap.
+        </p>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-cloud">
+                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  State
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Rate/10K
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  % Black
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
+                  Total Rx
+                </th>
+                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Key DMAs
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {CROSSOVER_STATES.map((s) => (
+                <tr
+                  key={s.state}
+                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+                >
+                  <td className="py-2.5 pr-4 font-medium text-midnight-navy">
+                    {s.state}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono font-semibold text-midnight-navy">
+                    {s.rate}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
+                    {s.blackPop}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-midnight-navy/80">
+                    {s.totalRx}
+                  </td>
+                  <td className="py-2.5 pl-3 text-midnight-navy/80">
+                    {s.dmas}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Targeting Implications */}
@@ -1979,10 +1836,10 @@ export default async function TalcumPowderPage() {
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { title: "Key Verdict Jurisdictions", detail: "Focus on St. Louis MO ($4.7B verdict), Los Angeles CA ($966M, $40M verdicts), Newark NJ (MDL venue), Philadelphia PA — these jurisdictions have proven track records for plaintiff success" },
-            { title: "Demographic Targeting", detail: "Women 40+ who used talcum powder for feminine hygiene, health-conscious demographics, mesothelioma victims of any gender with occupational talc exposure" },
-            { title: "High-Volume Markets", detail: "NY, CA, FL, TX, NJ, PA, IL — largest populations with high potential claimant pools across all demographics" },
-            { title: "Creative Messaging", detail: "Lead with $8.2B settlement news and urgency around pending creditor vote. Mention J&J knew about asbestos contamination. Emphasize that state trials continue to produce massive verdicts" },
+            { title: "Concentrate in High-Rate States", detail: "Focus ad spend in high-prescribing states rather than running nationally — RI, MS, MD, LA, SC, NM, OH, IA" },
+            { title: "Layer Demographic Targeting on Meta", detail: "Women 25–55, Black women, lower-education, Medicaid-eligible income brackets" },
+            { title: "DMA-Level Focus", detail: "Baltimore, New Orleans, Columbia SC, Cleveland/Columbus OH, Jackson MS, Memphis, Philadelphia, Detroit" },
+            { title: "Pharmacist-Prescribing States", detail: "States where pharmacists can directly administer DMPA: CA, CO, HI, ID, IL, IN, MD, ME, MN, NV, NM, NH, OR, SC, TN, VA + DC" },
           ].map((imp, i) => (
             <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
               <div className="flex items-start gap-2">
@@ -2006,13 +1863,13 @@ export default async function TalcumPowderPage() {
           constitute legal advice.
         </p>
         <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: Nurses&apos; Health Study, FDA asbestos testing reports, IARC
-          classifications, JPML, court filings, Meta Ad Library, Google Ads
-          transparency data.
+          Data sources: CMS Medicaid State Drug Utilization Data (2023), CDC
+          National Health Statistics Reports (2023), U.S. Census Bureau, CBTRUS,
+          Meta Ad Library, JPML, court filings.
         </p>
       </div>
 
-      <AskAIPanel tortContext={TALCUM_POWDER_TORT_CONTEXT} />
+      <AskAIPanel tortContext={DEPO_TORT_CONTEXT} />
     </div>
   );
 }

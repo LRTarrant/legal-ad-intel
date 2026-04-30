@@ -20,7 +20,7 @@ import {
   Activity,
   Crosshair,
 } from "lucide-react";
-import { AskAIPanel } from "../../../components/ask-ai-panel";
+import { AskAIPanel } from "../../components/ask-ai-panel";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -32,7 +32,7 @@ import {
   getSampleAds,
   extractDomain,
 } from "@/lib/queries";
-import { CostBenchmarkScorecard } from "../../../components/cost-benchmark-scorecard";
+import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
 
 export const dynamic = "force-dynamic";
 
@@ -41,265 +41,226 @@ export const dynamic = "force-dynamic";
 export function generateMetadata() {
   return {
     title:
-      "AFFF / Firefighter Foam Tort Intelligence | Legal Marketing Intelligence",
+      "Talcum Powder Tort Intelligence | Legal Marketing Intelligence",
     description:
-      "Comprehensive advertising intelligence brief for AFFF firefighting foam (PFAS) litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
+      "Comprehensive advertising intelligence brief for Talcum Powder ovarian cancer & mesothelioma litigation — case data, qualification criteria, settlement projections, and geographic targeting.",
   };
 }
 
 /* ── Static Data ───────────────────────────────────────────────────────── */
 
-const AFFF_TORT_CONTEXT = {
-  tortName: "AFFF / Firefighter Foam",
-  injury: "Kidney Cancer, Testicular Cancer, Bladder Cancer — linked to PFAS 'forever chemicals' in AFFF firefighting foam",
-  mdlNumber: "MDL 2873, D. South Carolina, Judge Richard M. Gergel",
-  pendingCases: "15,222+ (April 2026)",
-  settlementRange: "Water System Claims: $12.975B+ combined. Individual PI Claims: $75K–$500K per plaintiff (no global PI settlement yet)",
-  estimatedCPA: "~$3,000. Comparable torts: Tylenol ~$2,550, NEC ~$4,000, Hair Relaxer ~$4,500, Depo-Provera ~$2,500–$4,500, Paraquat ~$9,950",
-  bellwetherDate: "PI bellwether trials scheduling ongoing as of April 2026.",
-  caseSummary: "AFFF (Aqueous Film-Forming Foam) is a firefighting suppressant used since the 1960s by military, municipal, and airport firefighters. AFFF contains per- and polyfluoroalkyl substances (PFAS)—known as 'forever chemicals'—that persist indefinitely in the environment and accumulate in human blood and tissue. The MDL 2873, consolidated in the District of South Carolina before Judge Richard M. Gergel, encompasses both water contamination claims and personal injury claims from individuals who developed cancer or other serious diseases after occupational or environmental AFFF exposure. Major defendants include 3M, DuPont/Chemours/Corteva, BASF, Johnson Controls, and Carrier/Kidde-Fenwal. Water system settlements have reached nearly $13 billion, but individual personal injury bellwether trials are still pending.",
-  qualification: "Exposure Type: Occupational use of AFFF (firefighters, military personnel) OR residential/drinking water contamination near military bases, airports, or industrial sites. Duration: Minimum 6 months occupational exposure; or documented contaminated water supply. Diagnosis: Kidney cancer, testicular cancer, bladder cancer, thyroid disease, ulcerative colitis, or other PFAS-linked condition. Timing: Diagnosis during or after exposure period. Documentation: Medical records, military service records, fire department employment records, water testing results.",
-  advertisingLandscape: "Stage: Mid-Late. Primary channels: Google Search/LSAs, Meta lead forms, TV, legal lead gen networks. Primary demographic: Military veterans, active-duty firefighters, municipal firefighters, airport crash-rescue crews. Key states: CA, FL, CO, AK, AR, DE, HI, MI, NC, OH, PA.",
-  targetingInsights: "Primary demographic: Military veterans and firefighters aged 35–75. Key states with highest military PFAS contamination: CA, FL, CO, AK, AR, DE, HI, MI, NC, OH, PA. Metro areas: San Diego, Colorado Springs, Jacksonville FL, Fayetteville NC, Hampton Roads VA. Cross-reference PFAS Contamination Intelligence page for installation-level targeting data.",
+const TALCUM_POWDER_TORT_CONTEXT = {
+  tortName: "Talcum Powder (Ovarian Cancer & Mesothelioma)",
+  injury: "Ovarian Cancer & Mesothelioma — linked to asbestos-contaminated talc in J&J Baby Powder and Shower to Shower products",
+  mdlNumber: "MDL 2738, D. New Jersey, Judge Freda L. Wolfson",
+  pendingCases: "67,000+ (April 2026)",
+  settlementRange: "$100K–$50M+ depending on injury type. Mesothelioma: $1M–$50M+, Ovarian Cancer (strong): $250K–$5M, Ovarian Cancer (moderate): $100K–$500K, Peritoneal Mesothelioma: $5M–$50M+",
+  estimatedCPA: "TBD — mass tort advertising landscape evolving as bankruptcy settlement remains contested",
+  bellwetherDate: "N/A — state trials ongoing; $8.2B bankruptcy settlement pending creditor vote.",
+  caseSummary: "Johnson & Johnson's talc-based baby powder and Shower to Shower products have been linked to ovarian cancer and mesothelioma due to asbestos contamination. Over 67,000 lawsuits are consolidated in MDL-2738 before Judge Freda L. Wolfson in the District of New Jersey. J&J proposed an $8.2 billion settlement through a controversial pre-packaged bankruptcy of its subsidiary Red River Talc, but approval remains contested. Meanwhile, state court trials continue to produce massive verdicts — including a $966 million mesothelioma award in California (October 2025), a $40 million ovarian cancer verdict in Los Angeles (December 2025), and a $250,000 Philadelphia verdict (February 2026).",
+  qualification: "Product: Regular use of talcum powder products (especially J&J Baby Powder or Shower to Shower) for personal hygiene, typically 3+ years. Qualifying diagnosis: Ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer. Diagnosis timing: Cancer diagnosed after age 22 and generally after year 2000. Causation link: Medical records or biopsy showing cancer potentially linked to talc/asbestos exposure. Statute of limitations: Claim filed within applicable state deadline (varies by state, typically 2-6 years).",
+  advertisingLandscape: "Stage: Mature/Late. Primary channels: TV, Google Search/LSAs, Meta lead forms, legal lead gen networks. Primary demographic: Women who used talcum powder for feminine hygiene (all demographics, especially women 40+). Key metro areas: St. Louis MO, Los Angeles CA, Newark NJ, Philadelphia PA, Chicago IL, New York NY.",
+  targetingInsights: "Primary demographic: Women who used talcum powder for feminine hygiene (all demographics, especially women 40+). Secondary: Mesothelioma victims (any gender) with occupational or consumer talc exposure. Key verdict jurisdictions: St. Louis MO, Los Angeles CA, Newark NJ, Philadelphia PA, Chicago IL. High-volume markets: NY, CA, FL, TX, NJ, PA, IL.",
 };
 
 const SCIENTIFIC_STUDIES = [
   {
-    study: "NASEM Report",
-    year: "2022",
-    source: "National Academies",
+    study: "Nurses' Health Study & Meta-analyses",
+    year: "Multiple",
+    source: "Various peer-reviewed",
     finding:
-      "Confirmed PFAS exposure linked to kidney and testicular cancer, thyroid disease, elevated cholesterol.",
+      "Regular perineal use of talcum powder associated with 20-33% increased risk of ovarian cancer across multiple studies.",
   },
   {
-    study: "ATSDR Toxicological Profile",
-    year: "2021",
-    source: "ATSDR / CDC",
+    study: "Asbestos Contamination Testing",
+    year: "2018–2024",
+    source: "FDA / Independent labs",
     finding:
-      "PFOA/PFOS classified as sufficient evidence for kidney cancer in humans.",
+      "Testing has found asbestos fibers in J&J baby powder samples, linking talc products to mesothelioma. Internal documents revealed J&J knew about contamination for decades.",
   },
   {
-    study: "EPA Health Advisory",
-    year: "2022",
-    source: "U.S. EPA",
+    study: "IARC Classification",
+    year: "2006",
+    source: "WHO / IARC",
     finding:
-      "Lowered PFOS/PFOA advisory to near-zero (4 ppt) reflecting cancer risk.",
+      "The International Agency for Research on Cancer classifies perineal use of talc-based body powder as \"possibly carcinogenic to humans\" (Group 2B).",
   },
-  {
-    study: "IARC (WHO)",
-    year: "2023",
-    source: "World Health Organization",
-    finding:
-      "PFOA classified Group 1 carcinogen; PFOS classified Group 2B (possibly carcinogenic).",
-  },
-  {
-    study: "C8 Health Project (DuPont)",
-    year: "2012",
-    source: "Epidemiology",
-    finding:
-      "Probable link between PFOA exposure and kidney cancer, testicular cancer, thyroid disease, ulcerative colitis, high cholesterol, pregnancy-induced hypertension.",
-  },
-];
-
-const INJURIES = [
-  { injury: "Kidney Cancer (Renal Cell Carcinoma)", classification: "Primary", icd10: "C64" },
-  { injury: "Testicular Cancer", classification: "Primary", icd10: "C62" },
-  { injury: "Bladder Cancer", classification: "Associated", icd10: "C67" },
-  { injury: "Thyroid Disease", classification: "Associated", icd10: "E01-E07" },
-  { injury: "Ulcerative Colitis", classification: "Associated", icd10: "K51" },
-  { injury: "Non-Hodgkin Lymphoma", classification: "Emerging", icd10: "C82-C85" },
-  { injury: "Liver Cancer", classification: "Emerging", icd10: "C22" },
-  { injury: "Prostate Cancer", classification: "Emerging", icd10: "C61" },
 ];
 
 const CANCER_INCIDENCE_DATA = {
-  cancerSites: ["Kidney & Renal Pelvis", "Bladder"],
-  subtitle: "Kidney & bladder cancer incidence rates across U.S. states",
-  insightText:
-    "AFFF exposure is most strongly linked to kidney and bladder cancers. States with high military installation density and elevated PFAS contamination levels often show above-average incidence rates for these cancers — a correlation that strengthens plaintiff recruitment arguments.",
-  kidneyNationalAvg: 18.7,
-  bladderNationalAvg: 13.91,
-  kidneyStates: [
-    { state: "KY", avgRate: 24.1, annualCases: "2,156", pctRising: 68 },
-    { state: "IA", avgRate: 22.8, annualCases: "1,421", pctRising: 72 },
-    { state: "SD", avgRate: 22.3, annualCases: "396", pctRising: 65 },
-    { state: "WV", avgRate: 21.9, annualCases: "928", pctRising: 70 },
-    { state: "MS", avgRate: 21.5, annualCases: "1,312", pctRising: 58 },
-    { state: "OH", avgRate: 21.2, annualCases: "5,442", pctRising: 74 },
-    { state: "IN", avgRate: 20.8, annualCases: "3,102", pctRising: 66 },
-    { state: "PA", avgRate: 20.5, annualCases: "5,891", pctRising: 62 },
+  cancerSite: "Ovary",
+  subtitle: "Ovarian cancer incidence rates across U.S. counties",
+  nationalAvg: 25.7,
+  states: [
+    { state: "IL", avgRate: 31.1, annualCases: "3,544", pctRising: 71 },
+    { state: "MD", avgRate: 30.8, annualCases: "1,827", pctRising: 79 },
+    { state: "OH", avgRate: 28.2, annualCases: "3,902", pctRising: 80 },
+    { state: "CA", avgRate: 27.5, annualCases: "10,419", pctRising: 76 },
+    { state: "NC", avgRate: 27.2, annualCases: "3,476", pctRising: 74 },
+    { state: "FL", avgRate: 27.1, annualCases: "8,065", pctRising: 52 },
+    { state: "GA", avgRate: 26.3, annualCases: "2,869", pctRising: 44 },
+    { state: "NY", avgRate: 23.8, annualCases: "4,405", pctRising: 80 },
   ],
-  bladderStates: [
-    { state: "ME", avgRate: 19.8, annualCases: "586", pctRising: 55 },
-    { state: "CT", avgRate: 18.2, annualCases: "1,312", pctRising: 60 },
-    { state: "NH", avgRate: 17.9, annualCases: "487", pctRising: 52 },
-    { state: "VT", avgRate: 17.6, annualCases: "228", pctRising: 48 },
-    { state: "RI", avgRate: 17.3, annualCases: "376", pctRising: 56 },
-    { state: "PA", avgRate: 16.8, annualCases: "4,822", pctRising: 63 },
+  hotspots: [
+    { county: "Forsyth County", state: "GA", rate: 48.0, trend: 1.0, cases: 126 },
+    { county: "Virginia Beach", state: "VA", rate: 43.6, trend: 3.3, cases: 223 },
+    { county: "Carteret County", state: "NC", rate: 52.0, trend: 6.9, cases: 54 },
+    { county: "Warren County", state: "OH", rate: 42.0, trend: 4.1, cases: 117 },
+    { county: "Harford County", state: "MD", rate: 41.2, trend: 2.8, cases: 134 },
+    { county: "St. Johns County", state: "FL", rate: 46.8, trend: 0.5, cases: 177 },
   ],
+  note: "Ovarian cancer is the primary qualifying injury in the Talcum Powder litigation. Johnson & Johnson's baby powder has been linked to a 20-33% increased risk of ovarian cancer with regular perineal use. Counties with above-average incidence and rising trends may represent areas with larger potential claimant pools. Source: CDC/NCI USCS cancer statistics.",
 };
 
 const TRIPLE_SIGNAL_COUNTIES = [
-  { county: "San Diego County", state: "CA", cancerRate: 22.4, trend: "Rising" as const, judicial: "Moderate", piScore: 94.4, verdict: "Very High" },
-  { county: "El Paso County", state: "CO", cancerRate: 21.8, trend: "Rising" as const, judicial: "Moderate", piScore: 72.2, verdict: "High" },
-  { county: "Duval County", state: "FL", cancerRate: 20.9, trend: "Rising" as const, judicial: "Liberal", piScore: 77.8, verdict: "High" },
-  { county: "Cumberland County", state: "NC", cancerRate: 21.2, trend: "Rising" as const, judicial: "Moderate", piScore: 73.6, verdict: "High" },
-  { county: "Hampton Roads", state: "VA", cancerRate: 20.6, trend: "Rising" as const, judicial: "Moderate", piScore: 76.4, verdict: "High" },
-  { county: "Anchorage", state: "AK", cancerRate: 21.1, trend: "Rising" as const, judicial: "Moderate", piScore: 70.8, verdict: "High" },
-  { county: "New Castle County", state: "DE", cancerRate: 22.1, trend: "Rising" as const, judicial: "Liberal", piScore: 84.7, verdict: "Very High" },
-  { county: "Washtenaw County", state: "MI", cancerRate: 20.4, trend: "Rising" as const, judicial: "Liberal", piScore: 83.3, verdict: "Very High" },
+  { county: "Washington County", state: "MN", cancerRate: 51.0, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Chittenden County", state: "VT", cancerRate: 40.3, trend: "Rising" as const, judicial: "Liberal", piScore: 93.1, verdict: "High" },
+  { county: "Anoka County", state: "MN", cancerRate: 38.7, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Champaign County", state: "IL", cancerRate: 36.8, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
+  { county: "Warren County", state: "NY", cancerRate: 35.5, trend: "Rising" as const, judicial: "Moderate", piScore: 97.2, verdict: "Very High ($1M+)" },
+  { county: "Ramsey County (St. Paul)", state: "MN", cancerRate: 34.5, trend: "Rising" as const, judicial: "Liberal", piScore: 88.9, verdict: "High" },
+  { county: "Boone County (Columbia)", state: "MO", cancerRate: 31.2, trend: "Rising" as const, judicial: "Liberal", piScore: 93.1, verdict: "High" },
+  { county: "Monmouth County", state: "NJ", cancerRate: 30.5, trend: "Rising" as const, judicial: "Moderate", piScore: 87.5, verdict: "Very High" },
 ];
 
 const TOP_PI_STATES = [
-  { state: "NY", piScore: 97.2, verdict: "Very High ($1M+)", cancerRate: "20.1", key: "Pure comparative, no caps" },
-  { state: "CA", piScore: 94.4, verdict: "Very High ($1M+)", cancerRate: "19.8", key: "Pure comparative, no caps" },
-  { state: "DE", piScore: 84.7, verdict: "Very High", cancerRate: "22.1", key: "Major PFAS contamination state" },
-  { state: "MI", piScore: 83.3, verdict: "Very High", cancerRate: "20.4", key: "Numerous contaminated bases" },
-  { state: "FL", piScore: 77.8, verdict: "High", cancerRate: "19.5", key: "High military installation density" },
+  { state: "NY", piScore: 97.2, verdict: "Very High ($1M+)", cancerRate: "23.8", key: "Pure comparative, no caps" },
+  { state: "CA", piScore: 94.4, verdict: "Very High ($1M+)", cancerRate: "27.5", key: "$966M mesothelioma verdict" },
+  { state: "MO", piScore: 93.1, verdict: "High", cancerRate: "(key counties)", key: "$4.7B landmark verdict" },
+  { state: "MN", piScore: 88.9, verdict: "High", cancerRate: "(key counties)", key: "$65.5M mesothelioma verdict" },
+  { state: "NJ", piScore: 87.5, verdict: "Very High", cancerRate: "(MDL venue)", key: "MDL-2738 venue, no caps" },
 ];
 
 const QUALIFICATION_CRITERIA = [
   {
-    criterion: "Exposure Type",
-    standard: "Occupational use of AFFF (firefighters, military personnel) OR residential/drinking water contamination near military bases, airports, or industrial sites",
-    notes: "Both occupational and environmental exposure qualify",
-  },
-  {
-    criterion: "Duration",
-    standard: "Minimum 6 months occupational exposure; or documented contaminated water supply",
-    notes: "Longer exposure duration strengthens the claim",
+    criterion: "Product Use",
+    standard: "Regular use of talcum powder products (especially J&J Baby Powder or Shower to Shower) for personal hygiene, typically 3+ years",
+    notes: "Both consumer and occupational talc exposure qualify",
   },
   {
     criterion: "Qualifying Diagnosis",
-    standard: "Kidney cancer, testicular cancer, bladder cancer, thyroid disease, ulcerative colitis, or other PFAS-linked condition",
-    notes: "Kidney and testicular cancer are the strongest claims",
+    standard: "Ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer",
+    notes: "Mesothelioma claims are highest value; ovarian cancer is most common",
   },
   {
-    criterion: "Causation Timeline",
-    standard: "Diagnosis during or after exposure period",
-    notes: "Latency period for PFAS cancers can be 10–30 years",
+    criterion: "Diagnosis Timing",
+    standard: "Cancer diagnosed after age 22 and generally after year 2000",
+    notes: "Earlier diagnoses may still qualify depending on exposure history",
+  },
+  {
+    criterion: "Causation Link",
+    standard: "Medical records or biopsy showing cancer potentially linked to talc/asbestos exposure",
+    notes: "Pathology evidence of asbestos strengthens mesothelioma claims",
   },
   {
     criterion: "Statute of Limitations",
-    standard: "Varies by state; discovery rule often applies",
-    notes: "Many states allow claims from discovery of PFAS link",
-  },
-  {
-    criterion: "Documentation",
-    standard: "Medical records, military service records, fire department employment records, water testing results",
-    notes: "Military DD-214 forms and AFFF exposure logs are key evidence",
+    standard: "Claim filed within applicable state deadline (varies by state, typically 2-6 years)",
+    notes: "Discovery rule may extend deadline from date of diagnosis",
   },
 ];
 
 const SCREENING_QUESTIONS = [
   "Who is the claimant? (You or loved one)",
-  "What was your occupation? (Firefighter, military, airport crew, etc.)",
-  "Did you use or handle AFFF firefighting foam?",
-  "How long were you exposed to AFFF? (Duration in years)",
-  "Where were you stationed or employed? (Base/installation name)",
-  "Did you drink water from wells near military bases or airports?",
-  "Have you been diagnosed with kidney cancer, testicular cancer, bladder cancer, thyroid disease, or ulcerative colitis?",
+  "Which talcum powder products did you use? (J&J Baby Powder, Shower to Shower, other brands)",
+  "How did you use the product? (Perineal/genital area, body dusting, occupational exposure)",
+  "How long did you use the product? (Duration in years)",
+  "How frequently did you use the product? (Daily, weekly, occasionally)",
+  "Have you been diagnosed with ovarian cancer, mesothelioma, peritoneal mesothelioma, fallopian tube cancer, or endometrial cancer?",
   "When were you diagnosed?",
   "Treatment received? (Surgery, chemotherapy, radiation, etc.)",
+  "Any occupational exposure to talc or asbestos?",
   "Already have an attorney?",
 ];
 
 const DISQUALIFIERS = [
-  "No occupational or environmental AFFF/PFAS exposure",
-  "Exposure less than 6 months with no water contamination",
-  "No qualifying cancer or disease diagnosis",
-  "Diagnosis existed before AFFF exposure",
+  "Never used talcum powder products",
+  "Only brief or minimal exposure (less than 1 year)",
+  "No qualifying cancer diagnosis (ovarian, mesothelioma, etc.)",
+  "Diagnosis existed before talcum powder use began",
   "Already represented by another attorney",
 ];
 
 const LITIGATION_TIMELINE = [
-  { date: "December 2018", event: "MDL 2873 created, consolidated in D.S.C. before Judge Gergel", short: "MDL 2873 Created" },
-  { date: "June 2023", event: "3M announces $10.3B water system settlement", short: "3M $10.3B Settlement" },
-  { date: "June 2023", event: "DuPont/Chemours/Corteva announce $1.185B water settlement", short: "DuPont $1.185B Settlement" },
-  { date: "December 2023", event: "Carrier Global $615M water settlement", short: "Carrier $615M Settlement" },
-  { date: "April 2024", event: "New Jersey $875M PFAS settlement", short: "NJ $875M Settlement" },
-  { date: "October 2025", event: "Personal injury bellwether trial selection pushed past this date", short: "PI Bellwether Delayed" },
-  { date: "April 2026", event: "15,222+ cases pending; PI bellwether scheduling ongoing", short: "15,222+ Cases Pending" },
-  { date: "2026–2027 (projected)", event: "PI bellwether trials expected to begin", short: "PI Bellwether Trials", future: true },
+  { date: "2009", event: "First talcum powder lawsuit filed by Deane Berg (Sioux Falls, SD) against J&J", short: "First Lawsuit Filed" },
+  { date: "2013", event: "Berg wins unanimous verdict against J&J but no damages awarded", short: "First Verdict (No Damages)" },
+  { date: "February 2016", event: "First damages verdict — $72 million to family in Missouri", short: "$72M Missouri Verdict" },
+  { date: "July 2018", event: "Missouri jury awards $4.7 billion to 22 women (later reduced to $2.1 billion on appeal)", short: "$4.7B Missouri Verdict" },
+  { date: "2022", event: "J&J creates LTL Management subsidiary, attempts first \"Texas Two-Step\" bankruptcy — dismissed", short: "Bankruptcy Attempt #1" },
+  { date: "April 2023", event: "J&J proposes $8.9 billion settlement — rejected by bankruptcy court", short: "$8.9B Settlement Rejected" },
+  { date: "May 2024", event: "Revised $6.5 billion settlement proposed through Red River Talc subsidiary", short: "$6.5B Revised Proposal" },
+  { date: "2024", event: "J&J pays $700 million multi-state settlement for deceptive marketing", short: "$700M Marketing Settlement" },
+  { date: "October 2025", event: "$966 million mesothelioma verdict in California", short: "$966M CA Meso Verdict" },
+  { date: "December 2025", event: "$40 million ovarian cancer verdict in Los Angeles", short: "$40M LA Verdict" },
+  { date: "February 2026", event: "$250,000 Philadelphia verdict; MDL reaches 67,000+ cases", short: "67K+ Cases" },
+  { date: "March 2026", event: "$8.2 billion bankruptcy settlement pending creditor vote; state trials continue", short: "$8.2B Settlement Pending", future: true },
 ];
 
 const SETTLEMENT_TIERS = [
   {
-    tier: "Water System Claims",
-    severity: "Resolved",
-    range: "$12.975B+",
-    factors: "3M ($10.3B) + DuPont/Chemours/Corteva ($1.185B) + Carrier ($615M) + NJ ($875M). Substantially resolved.",
+    tier: "Mesothelioma",
+    severity: "Critical",
+    range: "$1M – $50M+",
+    factors:
+      "Highest value claims; $966M and $260M verdicts demonstrate massive jury awards",
   },
   {
-    tier: "Kidney Cancer (PI)",
+    tier: "Ovarian Cancer (strong causation)",
     severity: "High",
-    range: "$200K – $500K",
-    factors: "Strongest individual PI claims; supported by IARC Group 1 carcinogen classification for PFOA.",
+    range: "$250K – $5M",
+    factors:
+      "$40M verdict for two plaintiffs in 2025; strong cases with long-term use",
   },
   {
-    tier: "Testicular Cancer (PI)",
-    severity: "High",
-    range: "$200K – $500K",
-    factors: "Strong scientific evidence from C8 Health Project and NASEM report.",
-  },
-  {
-    tier: "Bladder Cancer (PI)",
+    tier: "Ovarian Cancer (moderate)",
     severity: "Moderate",
-    range: "$100K – $300K",
-    factors: "Associated injury; supported by epidemiological data but less direct evidence.",
+    range: "$100K – $500K",
+    factors:
+      "Philadelphia verdict at $250K; shorter use duration or weaker causation link",
   },
   {
-    tier: "Other PFAS Conditions",
-    severity: "Varies",
-    range: "$75K – $200K",
-    factors: "Thyroid disease, ulcerative colitis; lower values but high volume potential.",
+    tier: "Peritoneal Mesothelioma",
+    severity: "Critical",
+    range: "$5M – $50M+",
+    factors:
+      "$1.5B Maryland verdict (largest ever); rare but devastating diagnosis",
   },
 ];
 
 const COMPARATIVE_CPA = [
   { tort: "Tylenol", stage: "Early", cpa: "~$2,550", settlement: "$60–90K" },
   { tort: "Depo-Provera", stage: "Early-mid", cpa: "~$2,500–$4,500", settlement: "TBD ($100K–$1.5M)" },
-  { tort: "PFAS (AFFF)", stage: "Mid-late", cpa: "~$3,000", settlement: "$75K–$500K", highlight: true },
+  { tort: "PFAS (AFFF)", stage: "Mid-late", cpa: "~$3,000", settlement: "$75–175K" },
   { tort: "NEC Formula", stage: "Mid", cpa: "~$4,000", settlement: "$100–300K" },
   { tort: "Hair Relaxer", stage: "Early", cpa: "~$4,500", settlement: "$90K–$1M" },
+  { tort: "Talcum Powder", stage: "Mature", cpa: "TBD", settlement: "$100K–$50M+", highlight: true },
   { tort: "Paraquat", stage: "Mid-late", cpa: "~$9,950", settlement: "$105–250K" },
 ];
 
 const GEOGRAPHIC_TARGETING = {
-  primaryDemographic: "Military veterans, active-duty firefighters, municipal firefighters, airport crash-rescue crews",
-  ageRange: "35–75 (reflecting latency period for cancer development)",
-  regionalFocus: "States with highest military PFAS contamination: CA, FL, CO, AK, AR, DE, HI, MI, NC, OH, PA",
+  primaryDemographic: "Women who used talcum powder for feminine hygiene (all demographics, especially women 40+)",
+  ageRange: "40+ (peak diagnosed demographics)",
+  regionalFocus: "Key verdict jurisdictions and high-volume markets nationwide",
   keyMetros: [
-    "San Diego, CA",
-    "Colorado Springs, CO",
-    "Jacksonville, FL",
-    "Fayetteville, NC",
-    "Hampton Roads, VA",
-    "Anchorage, AK",
-    "Dover, DE",
-    "Detroit, MI",
-    "Honolulu, HI",
-    "Columbus, OH",
+    "St. Louis, MO",
+    "Los Angeles, CA",
+    "Newark, NJ",
+    "Philadelphia, PA",
+    "Chicago, IL",
+    "New York, NY",
+    "Houston, TX",
+    "Miami, FL",
+    "Dallas, TX",
+    "Atlanta, GA",
   ],
 };
 
 const TRACKED_KEYWORDS = [
-  { keyword: "AFFF lawsuit", volume: "27,100", difficulty: "High" as const, cpc: "$42.00" },
-  { keyword: "firefighter foam cancer", volume: "14,800", difficulty: "High" as const, cpc: "$38.50" },
-  { keyword: "PFAS lawsuit", volume: "12,100", difficulty: "High" as const, cpc: "$35.80" },
-  { keyword: "AFFF cancer lawsuit", volume: "8,100", difficulty: "Medium" as const, cpc: "$40.20" },
-  { keyword: "firefighting foam settlement", volume: "6,600", difficulty: "Medium" as const, cpc: "$32.00" },
-  { keyword: "AFFF settlement amounts", volume: "4,400", difficulty: "Medium" as const, cpc: "$28.40" },
-];
-
-const KEY_DEFENDANTS = [
-  "3M Company",
-  "DuPont de Nemours / Chemours / Corteva",
-  "BASF Corporation",
-  "Tyco Fire Products (Johnson Controls)",
-  "Carrier Global / Kidde-Fenwal",
-  "Dynax Corporation",
-  "National Foam / Angus Fire",
+  { keyword: "talcum powder lawsuit", volume: "49,500", difficulty: "High" as const, cpc: "$45.20" },
+  { keyword: "baby powder cancer", volume: "33,100", difficulty: "High" as const, cpc: "$38.80" },
+  { keyword: "talcum powder ovarian cancer", volume: "22,200", difficulty: "High" as const, cpc: "$42.50" },
+  { keyword: "j&j baby powder settlement", volume: "18,100", difficulty: "Medium" as const, cpc: "$35.00" },
+  { keyword: "talcum powder mesothelioma", volume: "12,100", difficulty: "Medium" as const, cpc: "$48.00" },
+  { keyword: "baby powder lawsuit settlement", volume: "8,100", difficulty: "Medium" as const, cpc: "$32.50" },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -339,9 +300,9 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
-const TORT_SLUG = "firefighter_foam";
+const TORT_SLUG = "talcum_powder";
 
-export default async function AfffPage() {
+export default async function TalcumPowderPage() {
   /* ── Live data fetch from Supabase ─────────────────────────────────── */
   const now = new Date();
   const windowEnd = now.toISOString().slice(0, 10);
@@ -386,7 +347,7 @@ export default async function AfffPage() {
     .slice(0, 10);
 
   // Fuzzy-match benchmark
-  const tortLabel = "AFFF";
+  const tortLabel = "Talcum Powder";
   const tortLabelLower = tortLabel.toLowerCase();
   const tortLabelWords = tortLabelLower.split(/[\s\/,]+/).filter(Boolean);
   const benchmark = benchmarks
@@ -395,7 +356,6 @@ export default async function AfffPage() {
       const bName = b.tort_name.toLowerCase();
       if (bName === tortLabelLower) return true;
       if (bName.includes(tortLabelLower) || tortLabelLower.includes(bName)) return true;
-      if (bName.includes("firefight") || bName.includes("pfas")) return true;
       return tortLabelWords.some((w) => w.length > 3 && bName.includes(w));
     }) ?? null;
 
@@ -416,17 +376,17 @@ export default async function AfffPage() {
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            AFFF / Firefighter Foam
+            Talcum Powder
           </h1>
           <span className="rounded-full bg-emerald-50 border border-success/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-success">
-            Active MDL
+            Active Litigation
           </span>
         </div>
         <p className="mt-1 text-lg text-slate-gray">
-          Aqueous Film-Forming Foam (AFFF) Litigation Intelligence — MDL-2873
+          Baby Powder / Ovarian Cancer &amp; Mesothelioma Litigation — MDL-2738
         </p>
         <p className="mt-0.5 text-xs text-slate-gray">
-          Last Updated: April 17, 2026
+          Last Updated: April 16, 2026
         </p>
       </div>
 
@@ -436,31 +396,30 @@ export default async function AfffPage() {
           <div className="flex items-center gap-1.5 mb-2">
             <Scale className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Pending Cases
+              Cases Filed
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">15,222+</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 2873, D. South Carolina</p>
+          <p className="text-2xl font-bold text-midnight-navy">67,000+</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">MDL 2738</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Water Settlements
+              Proposed Settlement
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy">$12.975B+</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Combined (3M + DuPont + Carrier + NJ)</p>
+          <p className="text-2xl font-bold text-midnight-navy">$8.2 Billion</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">Pending creditor vote</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
             <Target className="w-3.5 h-3.5 text-intelligence-teal" />
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Individual PI Estimate
+              Primary Injuries
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy text-lg">$75K – $500K</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Per plaintiff (no global PI settlement yet)</p>
+          <p className="text-2xl font-bold text-midnight-navy text-lg">Ovarian Cancer &amp; Mesothelioma</p>
         </div>
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-2">
@@ -469,8 +428,8 @@ export default async function AfffPage() {
               Status
             </p>
           </div>
-          <p className="text-2xl font-bold text-midnight-navy text-lg">PI Bellwethers Pending</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">Judge Richard M. Gergel, D.S.C.</p>
+          <p className="text-2xl font-bold text-midnight-navy text-lg">Bankruptcy Settlement Pending / Active State Trials</p>
+          <p className="mt-0.5 text-[11px] text-slate-gray">Judge Freda L. Wolfson, D. New Jersey</p>
         </div>
       </div>
 
@@ -481,28 +440,33 @@ export default async function AfffPage() {
         </h2>
         <div className="space-y-4 text-sm leading-relaxed text-midnight-navy/80">
           <p>
-            AFFF (Aqueous Film-Forming Foam) is a firefighting suppressant used
-            since the 1960s by military, municipal, and airport firefighters.
-            AFFF contains per- and polyfluoroalkyl substances (PFAS)—known as
-            &ldquo;forever chemicals&rdquo;—that persist indefinitely in the
-            environment and accumulate in human blood and tissue.
+            Johnson &amp; Johnson&apos;s talc-based baby powder and Shower to Shower
+            products have been linked to ovarian cancer and mesothelioma due to
+            asbestos contamination. Over 67,000 lawsuits are consolidated in
+            MDL-2738 before Judge Freda L. Wolfson in the District of New Jersey.
+            J&amp;J proposed an $8.2 billion settlement through a controversial
+            pre-packaged bankruptcy of its subsidiary Red River Talc, but approval
+            remains contested.
           </p>
           <p>
-            The MDL 2873, consolidated in the District of South Carolina before
-            Judge Richard M. Gergel, encompasses both water contamination claims
-            and personal injury claims from individuals who developed cancer or
-            other serious diseases after occupational or environmental AFFF
-            exposure. Water system settlements have reached nearly $13 billion,
-            but individual personal injury bellwether trials are still pending.
+            Meanwhile, state court trials continue to produce massive verdicts —
+            including a $966 million mesothelioma award in California (October 2025),
+            a $40 million ovarian cancer verdict in Los Angeles (December 2025), and
+            a $250,000 Philadelphia verdict (February 2026). J&amp;J previously paid
+            a $700 million multi-state settlement for deceptive marketing practices.
+            The $4.7 billion Missouri verdict in 2018 remains the landmark judgment
+            in talc litigation.
           </p>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-cloud/60 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-              Key Defendants
+              Defendant
             </p>
             <p className="text-sm text-midnight-navy">
-              {KEY_DEFENDANTS.join(", ")}
+              Johnson &amp; Johnson (and subsidiary Red River Talc LLC,
+              formerly LTL Management). Products: J&amp;J Baby Powder,
+              Shower to Shower.
             </p>
           </div>
           <div className="rounded-md bg-cloud/60 px-4 py-3">
@@ -510,8 +474,8 @@ export default async function AfffPage() {
               Legal Theories
             </p>
             <p className="text-sm text-midnight-navy">
-              Strict liability, failure to warn, negligent design, negligence,
-              public nuisance, unjust enrichment.
+              Failure to warn, negligent design, negligence, strict liability,
+              fraudulent concealment of asbestos contamination, deceptive marketing.
             </p>
           </div>
         </div>
@@ -526,53 +490,53 @@ export default async function AfffPage() {
           </h2>
         </div>
         <p className="text-sm leading-relaxed text-midnight-navy/80 mb-4">
-          PFAS chemicals in AFFF persist in the human body for years and have
-          been linked to multiple cancers and serious health conditions.
+          Talcum powder products contaminated with asbestos have been linked to
+          ovarian cancer and mesothelioma. Studies show a 20-33% increased risk
+          of ovarian cancer with regular perineal use.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Injury
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Classification
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  ICD-10
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {INJURIES.map((inj) => (
-                <tr
-                  key={inj.injury}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Linked Conditions
+            </p>
+            <ul className="space-y-1.5">
+              {[
+                "Ovarian cancer (studies show 20-33% increased risk with regular perineal talc use)",
+                "Mesothelioma (from asbestos-contaminated talc)",
+                "Peritoneal mesothelioma",
+                "Fallopian tube cancer",
+                "Endometrial cancer",
+                "Uterine cancer",
+              ].map((s) => (
+                <li
+                  key={s}
+                  className="flex items-start gap-2 text-sm text-midnight-navy/80"
                 >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy">
-                    {inj.injury}
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        inj.classification === "Primary"
-                          ? "bg-red-50 text-alert"
-                          : inj.classification === "Associated"
-                          ? "bg-amber-50 text-warning"
-                          : "bg-slate-50 text-slate-gray"
-                      }`}
-                    >
-                      {inj.classification}
-                    </span>
-                  </td>
-                  <td className="py-3 pl-3 text-center font-mono text-xs text-midnight-navy/70">
-                    {inj.icd10}
-                  </td>
-                </tr>
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-alert/60" />
+                  {s}
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-2">
+              Key Risk Factor
+            </p>
+            <p className="text-sm leading-relaxed text-midnight-navy/80">
+              Regular perineal use of talcum powder for personal hygiene is the
+              primary risk factor. Women who used J&amp;J Baby Powder or similar
+              talc products for years are at highest risk for ovarian cancer claims.
+              Asbestos contamination in talc creates additional mesothelioma risk.
+            </p>
+            <div className="mt-4 rounded-md border border-alert/20 bg-red-50 px-4 py-3">
+              <p className="text-xs font-semibold text-alert">Internal Documents</p>
+              <p className="mt-1 text-sm text-midnight-navy/80">
+                Discovery revealed J&amp;J knew about asbestos contamination in
+                its talc supply chain for decades but concealed this information
+                from consumers and regulators.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -630,11 +594,11 @@ export default async function AfffPage() {
         <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
           <p className="text-sm text-midnight-navy/80">
             <span className="font-semibold text-midnight-navy">Key point:</span>{" "}
-            The IARC classification of PFOA as a Group 1 carcinogen (2023)
-            significantly strengthened the scientific basis for individual PI
-            claims. Combined with the C8 Health Project&apos;s probable link
-            findings and the NASEM report, the evidentiary foundation for AFFF
-            cancer claims is among the strongest in active mass torts.
+            The combination of epidemiological evidence (20-33% increased ovarian
+            cancer risk) and physical evidence (asbestos fibers found in J&amp;J
+            products) has driven massive jury verdicts. Internal documents showing
+            J&amp;J&apos;s knowledge of contamination have been particularly
+            damaging in trial.
           </p>
         </div>
       </div>
@@ -651,19 +615,16 @@ export default async function AfffPage() {
           {CANCER_INCIDENCE_DATA.subtitle}
         </p>
 
-        {/* National Benchmarks */}
-        <div className="mb-5 flex flex-wrap gap-3">
+        {/* National Benchmark */}
+        <div className="mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-3 py-1 text-sm font-semibold text-intelligence-teal">
-            Kidney Avg: {CANCER_INCIDENCE_DATA.kidneyNationalAvg} per 100K
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-intelligence-teal/10 px-3 py-1 text-sm font-semibold text-intelligence-teal">
-            Bladder Avg: {CANCER_INCIDENCE_DATA.bladderNationalAvg} per 100K
+            National Avg: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
           </span>
         </div>
 
-        {/* Kidney Cancer States Table */}
+        {/* Above-Average States Table */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Kidney &amp; Renal Pelvis — Above-Average States
+          Above-Average States
         </h3>
         <div className="overflow-x-auto mb-6">
           <table className="w-full text-left text-sm">
@@ -684,7 +645,7 @@ export default async function AfffPage() {
               </tr>
             </thead>
             <tbody>
-              {CANCER_INCIDENCE_DATA.kidneyStates.map((s) => (
+              {CANCER_INCIDENCE_DATA.states.map((s) => (
                 <tr
                   key={s.state}
                   className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
@@ -717,75 +678,45 @@ export default async function AfffPage() {
           </table>
         </div>
 
-        {/* Bladder Cancer States Table */}
+        {/* Rising Hotspots */}
         <h3 className="mb-3 text-sm font-semibold text-midnight-navy">
-          Bladder — Above-Average States
+          Rising Hotspot Counties
         </h3>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-cloud">
-                <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  State
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Avg Rate
-                </th>
-                <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  Annual Cases
-                </th>
-                <th className="py-3 pl-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
-                  % Counties Rising
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {CANCER_INCIDENCE_DATA.bladderStates.map((s) => (
-                <tr
-                  key={s.state}
-                  className="border-b border-cloud/50 hover:bg-cloud/40 transition-colors"
-                >
-                  <td className="py-3 pr-4 font-medium text-midnight-navy">
-                    {s.state}
-                  </td>
-                  <td className="py-3 px-3 text-right font-mono text-midnight-navy">
-                    {s.avgRate}
-                  </td>
-                  <td className="py-3 px-3 text-right text-midnight-navy/80">
-                    {s.annualCases}
-                  </td>
-                  <td className="py-3 pl-3 text-right">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
-                        s.pctRising > 60
-                          ? "bg-red-50 text-alert"
-                          : s.pctRising >= 30
-                          ? "bg-amber-50 text-warning"
-                          : "bg-emerald-50 text-success"
-                      }`}
-                    >
-                      {s.pctRising}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-2 sm:grid-cols-2 mb-6">
+          {CANCER_INCIDENCE_DATA.hotspots.map((h) => (
+            <div
+              key={`${h.county}-${h.state}`}
+              className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/5 px-4 py-3"
+            >
+              <p className="text-sm font-medium text-midnight-navy">
+                {h.county}, {h.state}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-midnight-navy/70">
+                <span>
+                  Rate: <span className="font-semibold text-midnight-navy">{h.rate}</span>
+                </span>
+                <span className="font-semibold text-intelligence-teal">
+                  ↑ +{h.trend}%
+                </span>
+                <span>~{h.cases} cases/yr</span>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Cross-link to PFAS page */}
+        {/* Cross-link */}
         <Link
-          href="/advertising/pfas-contamination"
+          href="/cancer-incidence"
           className="inline-flex items-center gap-1 text-sm font-semibold text-intelligence-teal hover:underline"
         >
-          View PFAS Contamination Intelligence
+          Explore full cancer incidence data
           <ChevronRight className="w-3.5 h-3.5" />
         </Link>
 
         {/* Explanatory Note */}
         <div className="mt-4 rounded-md bg-cloud/60 px-4 py-3">
           <p className="text-xs leading-relaxed text-slate-gray">
-            {CANCER_INCIDENCE_DATA.insightText}
+            {CANCER_INCIDENCE_DATA.note}
           </p>
         </div>
       </div>
@@ -823,7 +754,7 @@ export default async function AfffPage() {
           Triple-Signal Counties
         </h3>
         <p className="mb-3 text-xs text-slate-gray">
-          All three signals present — national avg kidney cancer rate: {CANCER_INCIDENCE_DATA.kidneyNationalAvg} per 100K
+          All three signals present — national avg ovarian cancer rate: {CANCER_INCIDENCE_DATA.nationalAvg} per 100K
         </p>
         <div className="overflow-x-auto mb-6">
           <table className="w-full text-left text-sm">
@@ -884,7 +815,7 @@ export default async function AfffPage() {
                   <td className="py-3 pl-3 text-center">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        c.verdict === "Very High"
+                        c.verdict.includes("Very High")
                           ? "bg-red-50 text-alert"
                           : "bg-amber-50 text-warning"
                       }`}
@@ -923,11 +854,11 @@ export default async function AfffPage() {
         {/* Insight Callout */}
         <div className="rounded-md border border-intelligence-teal/20 bg-intelligence-teal/[0.06] px-4 py-3 mb-4">
           <p className="text-sm leading-relaxed text-midnight-navy/80">
-            These counties combine above-average kidney cancer incidence with
-            plaintiff-friendly legal environments — liberal or moderate judicial
-            climates and states with favorable PI statutes. Firms advertising
-            in these markets near contaminated military installations may find
-            both a larger potential claimant pool and more favorable litigation
+            These counties combine above-average ovarian cancer incidence with
+            plaintiff-friendly legal environments. Key talc verdict jurisdictions —
+            Missouri ($4.7B), California ($966M), and New Jersey (MDL venue) — all
+            have strong plaintiff frameworks. Firms advertising in these markets may
+            find both a larger potential claimant pool and more favorable litigation
             outcomes.
           </p>
         </div>
@@ -953,13 +884,6 @@ export default async function AfffPage() {
             className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
           >
             View Cancer Incidence Data
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href="/advertising/pfas-contamination"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
-          >
-            View PFAS Contamination Data
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -1023,7 +947,7 @@ export default async function AfffPage() {
               color: "border-success/30 bg-emerald-50",
               tagColor: "bg-success/10 text-success",
               details:
-                "2–3 yes/no questions + contact info. Were you a firefighter/military? Exposed to AFFF? Diagnosed with cancer? Cheapest but highest rejection at intake.",
+                "2–3 yes/no questions + contact info. Did you use talcum powder? Diagnosed with cancer? Cheapest but highest rejection at intake.",
             },
             {
               label: "Tier 2: Qualified Lead",
@@ -1031,7 +955,7 @@ export default async function AfffPage() {
               color: "border-warning/30 bg-amber-50",
               tagColor: "bg-warning/10 text-warning",
               details:
-                "4–6 step form. Confirmed AFFF exposure, duration, qualifying diagnosis, diagnosis year, attorney check. Better conversion.",
+                "4–6 step form. Confirmed 3+ years use, qualifying diagnosis (ovarian/meso), diagnosis year, attorney check. Better conversion.",
             },
             {
               label: "Tier 3: Retainer-Ready",
@@ -1039,7 +963,7 @@ export default async function AfffPage() {
               color: "border-alert/30 bg-red-50",
               tagColor: "bg-alert/10 text-alert",
               details:
-                "10–15 step deep intake. Installation/base name, years of service, AFFF frequency, specific diagnosis, treatment history, water testing results. Most expensive but lowest fallout.",
+                "10–15 step deep intake. Product brands used, application method, frequency, duration, specific diagnosis, treatment history, occupational exposure. Most expensive but lowest fallout.",
             },
           ].map((tier) => (
             <div
@@ -1153,10 +1077,8 @@ export default async function AfffPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Water system claims are substantially resolved ($12.975B+). Individual
-          PI claims have no global settlement yet — bellwether trials will set
-          benchmark values. Kidney and testicular cancer claims are expected to
-          command the highest individual values.
+          J&amp;J&apos;s $8.2 billion proposed settlement is pending. If it fails,
+          individual case values based on verdicts:
         </p>
 
         {/* Settlement Tiers */}
@@ -1165,10 +1087,10 @@ export default async function AfffPage() {
             <thead>
               <tr className="border-b border-cloud">
                 <th className="py-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                  Claim Type
+                  Injury Type
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-center">
-                  Status
+                  Severity
                 </th>
                 <th className="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray text-right">
                   Estimated Range
@@ -1190,11 +1112,13 @@ export default async function AfffPage() {
                   <td className="py-3 px-3 text-center">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        t.severity === "High"
+                        t.severity === "Critical"
+                          ? "bg-red-50 text-alert"
+                          : t.severity === "High"
                           ? "bg-red-50 text-alert"
                           : t.severity === "Moderate"
                           ? "bg-amber-50 text-warning"
-                          : t.severity === "Resolved"
+                          : t.severity === "Mild"
                           ? "bg-emerald-50 text-success"
                           : "bg-slate-50 text-slate-gray"
                       }`}
@@ -1214,6 +1138,12 @@ export default async function AfffPage() {
           </table>
         </div>
 
+        <p className="mt-4 text-xs text-slate-gray">
+          Under the proposed $8.2B settlement, individual payouts would depend on
+          injury tier and claim strength. 95% of mesothelioma claims already
+          resolved separately.
+        </p>
+
         {/* Factors */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-md bg-emerald-50/60 px-4 py-3">
@@ -1222,12 +1152,12 @@ export default async function AfffPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "Kidney or testicular cancer diagnosis",
-                "Long occupational AFFF exposure (10+ years)",
-                "Military service at highly contaminated base",
-                "Multiple cancer diagnoses",
-                "Strong documentation (DD-214, exposure logs)",
-                "Plaintiff-friendly jurisdiction",
+                "Mesothelioma diagnosis",
+                "Long-term daily use (10+ years)",
+                "J&J Baby Powder specifically",
+                "Strong medical documentation",
+                "Asbestos fibers found in pathology",
+                "Younger age at diagnosis",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <TrendingUp className="w-3 h-3 shrink-0 text-success" />
@@ -1242,11 +1172,11 @@ export default async function AfffPage() {
             </p>
             <ul className="space-y-1">
               {[
-                "Short exposure duration (<6 months)",
-                "Emerging (not primary) cancer type",
-                "Weak documentation of exposure",
-                "Pre-existing risk factors (smoking for bladder cancer)",
-                "Unfavorable jurisdiction",
+                "Infrequent or short-term use",
+                "Non-J&J talc products",
+                "Older age at diagnosis",
+                "Pre-existing risk factors (BRCA, family history)",
+                "Weak documentation of product use",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-1.5 text-xs text-midnight-navy/70">
                   <XCircle className="w-3 h-3 shrink-0 text-alert" />
@@ -1264,19 +1194,19 @@ export default async function AfffPage() {
           </p>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-midnight-navy/70">
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              PI Bellwethers 2026–2027
+              Creditor Vote 2026
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              Bellwether Verdicts 2027
+              Bankruptcy Approval / Rejection
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              PI Settlement Framework 2027–2028
+              State Trials Continue
             </span>
             <ChevronRight className="w-3 h-3 text-slate-gray" />
             <span className="rounded bg-intelligence-teal/10 px-2 py-1 font-medium text-intelligence-teal">
-              First PI Payments 2028+
+              Payments TBD
             </span>
           </div>
         </div>
@@ -1413,19 +1343,19 @@ export default async function AfffPage() {
         <div className="grid gap-3 sm:grid-cols-2 mb-6">
           {[
             {
+              channel: "TV",
+              detail: "Major channel for talcum powder litigation — mature tort with established TV ad presence",
+              color: "border-indigo-500/30 bg-indigo-50",
+            },
+            {
               channel: "Google Ads/LSAs",
-              detail: "Primary channel — high-intent search queries for AFFF lawsuit, firefighter foam cancer keywords",
+              detail: "High-intent search queries for talcum powder lawsuit and baby powder cancer keywords",
               color: "border-emerald-500/30 bg-emerald-50",
             },
             {
               channel: "Meta (Facebook/Instagram)",
-              detail: "Veteran and firefighter audience targeting, lead generation forms",
+              detail: "Lead generation forms targeting women who used talcum powder for feminine hygiene",
               color: "border-blue-500/30 bg-blue-50",
-            },
-            {
-              channel: "TV",
-              detail: "Growing presence as PI bellwethers approach — broad reach for veteran demographics",
-              color: "border-indigo-500/30 bg-indigo-50",
             },
             {
               channel: "Legal Lead Gen Networks",
@@ -1494,6 +1424,17 @@ export default async function AfffPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Settlement Warning (editorial) */}
+        <div className="mt-4 rounded-md border border-warning/20 bg-amber-50 px-4 py-3">
+          <p className="text-xs text-midnight-navy/80">
+            <span className="font-semibold text-warning">Bankruptcy Risk:</span>{" "}
+            J&amp;J&apos;s $8.2 billion bankruptcy settlement through Red River Talc
+            remains contested. If approved, it would resolve most claims through
+            a trust fund. If rejected, state trials will continue with potential
+            for massive individual verdicts.
+          </p>
+        </div>
       </div>
 
       {/* ── 9b. Cost Benchmark Scorecard (LIVE DATA) ───────────────────── */}
@@ -1508,7 +1449,7 @@ export default async function AfffPage() {
           </h2>
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Top organic search results for AFFF litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
+          Top organic search results for Talcum Powder litigation keywords. Understanding who ranks helps assess content competition and SEO opportunity.
         </p>
 
         {/* Tracked Keywords Table */}
@@ -1808,7 +1749,7 @@ export default async function AfffPage() {
           )}
         </div>
         <p className="mb-4 text-xs text-slate-gray">
-          Competitive landscape — firms with the highest advertising presence for AFFF litigation.
+          Competitive landscape — firms with the highest advertising presence for Talcum Powder litigation.
         </p>
 
         {topAdvertisers.length > 0 ? (
@@ -1816,7 +1757,7 @@ export default async function AfffPage() {
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs text-slate-gray">{topAdvertisers.length} advertisers tracked</p>
               <Link
-                href="/advertising/saturation/firefighter_foam"
+                href="/advertising/saturation/talcum_powder"
                 className="flex items-center gap-1 text-xs font-semibold text-intelligence-teal hover:underline"
               >
                 Full saturation view <ChevronRight className="w-3 h-3" />
@@ -2038,10 +1979,10 @@ export default async function AfffPage() {
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { title: "Focus on Military Installation Areas", detail: "Concentrate ad spend near bases with documented PFAS contamination — San Diego, Colorado Springs, Jacksonville, Fayetteville, Hampton Roads" },
-            { title: "Veteran & Firefighter Targeting", detail: "Military veterans aged 35–75, active-duty and municipal firefighters, airport crash-rescue crews — use veteran-interest audiences on Meta and Google" },
-            { title: "Cross-Reference PFAS Data", detail: "Use PFAS Contamination Intelligence page to identify bases with extreme contamination levels for hyper-local geographic targeting" },
-            { title: "Creative Messaging", detail: "Lead with PFAS 'forever chemicals' angle, reference $12.975B in water settlements already paid, emphasize individual PI claims still pending — creates urgency" },
+            { title: "Key Verdict Jurisdictions", detail: "Focus on St. Louis MO ($4.7B verdict), Los Angeles CA ($966M, $40M verdicts), Newark NJ (MDL venue), Philadelphia PA — these jurisdictions have proven track records for plaintiff success" },
+            { title: "Demographic Targeting", detail: "Women 40+ who used talcum powder for feminine hygiene, health-conscious demographics, mesothelioma victims of any gender with occupational talc exposure" },
+            { title: "High-Volume Markets", detail: "NY, CA, FL, TX, NJ, PA, IL — largest populations with high potential claimant pools across all demographics" },
+            { title: "Creative Messaging", detail: "Lead with $8.2B settlement news and urgency around pending creditor vote. Mention J&J knew about asbestos contamination. Emphasize that state trials continue to produce massive verdicts" },
           ].map((imp, i) => (
             <div key={i} className="rounded-lg border-l-4 border-intelligence-teal bg-intelligence-teal/5 p-4">
               <div className="flex items-start gap-2">
@@ -2065,13 +2006,13 @@ export default async function AfffPage() {
           constitute legal advice.
         </p>
         <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: NASEM (2022), ATSDR (2021), EPA (2022), IARC/WHO (2023),
-          C8 Health Project (2012), JPML, court filings, Meta Ad Library, Google
-          Ads transparency data.
+          Data sources: Nurses&apos; Health Study, FDA asbestos testing reports, IARC
+          classifications, JPML, court filings, Meta Ad Library, Google Ads
+          transparency data.
         </p>
       </div>
 
-      <AskAIPanel tortContext={AFFF_TORT_CONTEXT} />
+      <AskAIPanel tortContext={TALCUM_POWDER_TORT_CONTEXT} />
     </div>
   );
 }

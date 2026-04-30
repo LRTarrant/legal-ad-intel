@@ -578,7 +578,7 @@ function TortActivityCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
-            href={`/advertising/torts/${tort.tort_slug}`}
+            href={`/advertising/${tort.tort_slug}`}
             className="font-heading text-lg font-semibold text-midnight-navy hover:text-intelligence-teal transition-colors"
           >
             {tort.tort_name}
@@ -651,7 +651,7 @@ function TortActivityCard({
 
       <div className="mt-3 border-t border-slate-100 pt-3">
         <Link
-          href={`/advertising/torts/${tort.tort_slug}`}
+          href={`/advertising/${tort.tort_slug}`}
           className="text-xs font-medium text-intelligence-teal hover:underline inline-flex items-center gap-1"
         >
           View full tort intelligence
