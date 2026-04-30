@@ -49,6 +49,9 @@ import {
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { georgiaCompetitiveData } from "@/lib/data/competitive-landscape/georgia";
+import { gaInjuryData } from "@/lib/data/ga-injury-stats";
+import type { InjuryRow } from "@/components/state-intelligence/StateInjuryTable";
+import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -462,6 +465,25 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
   /* -- PI viability data -- */
   const piData = data.piViability;
 
+  /* -- GA injury data mapped to InjuryRow shape for StateInjuryTable -- */
+  const gaInjuryRows: InjuryRow[] = useMemo(
+    () =>
+      gaInjuryData
+        .filter((r) => r.county !== "None")
+        .map((r) => ({
+          county: r.county,
+          year: r.year,
+          fatal: r.fatalities,
+          seriousInjury: r.seriousInjuries,
+          minorInjury: r.visibleInjuries,
+          possibleInjury: 0,
+          noInjury: 0,
+          unknown: 0,
+          total: r.totalCrashes,
+        })),
+    []
+  );
+
   /* -- Major GA metros -- */
   const MAJOR_METROS = ["Atlanta", "Augusta", "Savannah", "Columbus", "Macon"];
 
@@ -722,6 +744,19 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           </a>
         </p>
       </div>
+
+      {/* ============================================================ */}
+      {/* 3b. COUNTIES RANKED BY SERIOUS INJURIES (GDOT)               */}
+      {/* ============================================================ */}
+      <StateInjuryTable
+        stateName="Georgia"
+        data={gaInjuryRows}
+        years={[2020, 2021, 2022]}
+        latestCompleteYear={2021}
+        partialYearLabels={{ 2022: "(through Nov 2022)" }}
+        sourceLabel="GDOT AASHTOWare Crash Data Portal"
+        sourceUrl="https://gdot.aashtowaresafety.net/crash-data#/"
+      />
 
       {/* ============================================================ */}
       {/* 4. LEGAL LANDSCAPE                                           */}
@@ -1834,6 +1869,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           {[
             "FARS (NHTSA) \u2014 Fatal crash data 2019\u20132024",
             "GDOT AASHTOWare Safety Portal \u2014 Crash Dashboards",
+            "GDOT AASHTOWare Crash Data Portal \u2014 County-level injury & severity data, 2020\u2013Nov 8, 2022",
             "GOHS 2023 Overview of Motor Vehicle Crashes \u2014 Georgia Traffic Safety Facts (Oct 2025)",
             "GOHS 2023 Distracted Driving \u2014 Georgia Traffic Safety Facts (Apr 2025)",
             "BLS CFOI Georgia 2023 \u2014 Fatal Occupational Injuries state table (Dec 2024)",
