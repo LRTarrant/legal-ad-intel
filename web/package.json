@@ -11,6 +11,7 @@
     "check:tort-registry": "node scripts/check-tort-profile-registry.mjs"
   },
   "dependencies": {
+    "@google-analytics/data": "^5.2.1",
     "@napi-rs/canvas": "^0.1.99",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
