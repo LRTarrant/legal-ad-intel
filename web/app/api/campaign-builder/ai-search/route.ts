@@ -535,7 +535,7 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedQuestion = question.trim().slice(0, 500); // cap input length
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({ apiKey, maxRetries: 2 });
     const db = supabase as any;
 
     // Step 1: Intent classification + entity extraction
@@ -615,23 +615,26 @@ export async function POST(req: NextRequest) {
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
     try {
-      const synthesisResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.3,
-        max_tokens: 500,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: buildSynthesisPrompt(
-              trimmedQuestion,
-              parsed.intent,
-              groundingData
-            ),
-          },
-          { role: "user", content: trimmedQuestion },
-        ],
-      });
+      const synthesisResponse = await openai.chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          temperature: 0.3,
+          max_tokens: 500,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: buildSynthesisPrompt(
+                trimmedQuestion,
+                parsed.intent,
+                groundingData
+              ),
+            },
+            { role: "user", content: trimmedQuestion },
+          ],
+        },
+        { signal: controller.signal }
+      );
 
       clearTimeout(timeout);
 
@@ -698,7 +701,46 @@ export async function POST(req: NextRequest) {
       }
       throw err;
     }
-  } catch {
+  } catch (err) {
+    // Map OpenAI errors to specific user-facing messages so prod issues are
+    // diagnosable without server log access.
+    if (err instanceof OpenAI.APIError) {
+      const status = err.status ?? 500;
+      console.error(
+        `[ai-search] OpenAI ${status} ${err.code ?? "unknown"}: ${err.message}`
+      );
+      if (status === 401) {
+        return NextResponse.json(
+          { error: "AI service authentication failed" },
+          { status: 503 }
+        );
+      }
+      if (status === 429) {
+        // Distinguish quota exhaustion from rate limiting
+        if (err.code === "insufficient_quota") {
+          return NextResponse.json(
+            { error: "AI service over quota — please contact support" },
+            { status: 503 }
+          );
+        }
+        return NextResponse.json(
+          { error: "AI service is busy, please try again" },
+          { status: 429 }
+        );
+      }
+      if (status >= 500) {
+        return NextResponse.json(
+          { error: "AI service temporarily unavailable" },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json(
+        { error: "AI request failed" },
+        { status: 502 }
+      );
+    }
+
+    console.error("[ai-search] Unhandled error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
