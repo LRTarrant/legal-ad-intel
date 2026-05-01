@@ -47,7 +47,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error:
-          "Google Analytics is not configured. Set GA4_PROPERTY_ID, GA_CLIENT_EMAIL, and GA_PRIVATE_KEY.",
+          "Google Analytics is not configured. Set GA4_PROPERTY_ID, GA_CLIENT_ID, GA_CLIENT_SECRET, and GA_REFRESH_TOKEN.",
       },
       { status: 503 },
     );
