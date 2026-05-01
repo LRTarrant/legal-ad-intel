@@ -1,4 +1,5 @@
 import { BetaAnalyticsDataClient, protos } from "@google-analytics/data";
+import { UserRefreshClient } from "google-auth-library";
 
 type IRunReportResponse = protos.google.analytics.data.v1beta.IRunReportResponse;
 
@@ -6,17 +7,15 @@ let cachedClient: BetaAnalyticsDataClient | null = null;
 
 export function getGa4Config() {
   const propertyId = process.env.GA4_PROPERTY_ID;
-  const clientEmail = process.env.GA_CLIENT_EMAIL;
-  const rawKey = process.env.GA_PRIVATE_KEY;
+  const clientId = process.env.GA_CLIENT_ID;
+  const clientSecret = process.env.GA_CLIENT_SECRET;
+  const refreshToken = process.env.GA_REFRESH_TOKEN;
 
-  if (!propertyId || !clientEmail || !rawKey) {
+  if (!propertyId || !clientId || !clientSecret || !refreshToken) {
     return null;
   }
 
-  // Vercel/dotenv stores newlines as the literal "\n" — restore real newlines.
-  const privateKey = rawKey.replace(/\\n/g, "\n");
-
-  return { propertyId, clientEmail, privateKey };
+  return { propertyId, clientId, clientSecret, refreshToken };
 }
 
 export function getGa4Client(): BetaAnalyticsDataClient | null {
@@ -24,12 +23,15 @@ export function getGa4Client(): BetaAnalyticsDataClient | null {
   const cfg = getGa4Config();
   if (!cfg) return null;
 
-  cachedClient = new BetaAnalyticsDataClient({
-    credentials: {
-      client_email: cfg.clientEmail,
-      private_key: cfg.privateKey,
-    },
+  // OAuth2 user refresh token auth — used in place of service-account keys
+  // because some Google Cloud orgs block service account key creation.
+  const authClient = new UserRefreshClient({
+    clientId: cfg.clientId,
+    clientSecret: cfg.clientSecret,
+    refreshToken: cfg.refreshToken,
   });
+
+  cachedClient = new BetaAnalyticsDataClient({ authClient });
   return cachedClient;
 }
 
