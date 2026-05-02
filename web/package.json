@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-tort-profile-registry.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:tort-registry": "node scripts/check-tort-profile-registry.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.99",
