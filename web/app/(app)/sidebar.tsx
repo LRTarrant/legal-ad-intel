@@ -34,6 +34,7 @@ import {
   Users,
   UserCog,
   ImageIcon,
+  BarChart3,
   Droplets,
   Tractor,
   FlameKindling,
@@ -407,6 +408,7 @@ export function Sidebar() {
               <div className="flex flex-col gap-0.5 pl-2">
                 {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
                 {renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
+                {renderNavLink({ label: "Site Analytics", href: "/admin/analytics", Icon: BarChart3 })}
               </div>
             </div>
           )}
