@@ -2605,12 +2605,12 @@ function AiRadioSpotCard({
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Generating {formatLabel} Spot...
+                Generating Audio Ad...
               </>
             ) : (
               <>
                 <Mic className="h-4 w-4" />
-                Generate {formatLabel} Spot
+                Generate Audio Ad
               </>
             )}
           </button>
