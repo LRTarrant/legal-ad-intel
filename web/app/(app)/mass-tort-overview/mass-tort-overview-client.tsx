@@ -30,6 +30,11 @@ type MdlSummary = {
   latestEventType: string;
 };
 
+type PreMdlTort = {
+  name: string;
+  href: string;
+};
+
 const EVENT_TYPE_COLORS: Record<
   string,
   { bg: string; text: string; dot: string; label: string }
@@ -117,10 +122,12 @@ export function MassTortOverviewClient({
   developments,
   tortFilters,
   mdlSummaries,
+  preMdlTorts = [],
 }: {
   developments: AnnotatedDevelopment[];
   tortFilters: TortFilter[];
   mdlSummaries: MdlSummary[];
+  preMdlTorts?: PreMdlTort[];
 }) {
   const [selectedMdl, setSelectedMdl] = useState<number | null>(null);
 
@@ -132,7 +139,7 @@ export function MassTortOverviewClient({
 
   return (
     <>
-      {/* Filter Pills */}
+      {/* Filter Pills (active MDLs) */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedMdl(null)}
@@ -158,6 +165,24 @@ export function MassTortOverviewClient({
           </button>
         ))}
       </div>
+
+      {/* Pre-MDL Watchlist (links to full profile pages — no filter behavior) */}
+      {preMdlTorts.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Pre-MDL Watchlist
+          </span>
+          {preMdlTorts.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className="rounded-full border border-dashed border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:border-intelligence-teal hover:text-intelligence-teal"
+            >
+              {t.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Development Timeline */}
       <section className="rounded-lg bg-white p-6 shadow-sm">
