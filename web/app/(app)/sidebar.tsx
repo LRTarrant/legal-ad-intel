@@ -141,6 +141,7 @@ const dataModules: NavGroup[] = [
           { label: "GLP-1 Gastroparesis", href: "/advertising/glp1-gastroparesis", Icon: Pill },
           { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
           { label: "Bard PowerPort", href: "/advertising/bard-powerport", Icon: Activity },
+          { label: "Bair Hugger", href: "/advertising/bair-hugger", Icon: Stethoscope },
           { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
           { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
         ],
