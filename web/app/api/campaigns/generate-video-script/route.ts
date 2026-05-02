@@ -15,6 +15,7 @@ interface VideoScene {
   headline: string;
   subheadline: string;
   imagePrompt: string;
+  voiceover?: string;
   durationSeconds: number;
 }
 
@@ -24,6 +25,44 @@ interface VideoScriptResponse {
   ctaPhone: string;
   ctaSubline: string;
   disclaimer: string;
+}
+
+// English speaking rate used for narration timing.
+// ~2.5 words/sec → 12 words for 5s, 25 for 10s, 50 for 20s.
+const WORDS_PER_SECOND = 2.5;
+
+// Duration-aware budgets — exactly 3 scenes, evenly distributed.
+const SCENE_BUDGETS: Record<"15s" | "30s" | "60s", { perSceneSec: number; perSceneWords: number; totalSec: number; tone: string }> = {
+  "15s": {
+    perSceneSec: 5,
+    perSceneWords: 12,
+    totalSec: 15,
+    tone: "very concise — one short beat per scene, no wasted words",
+  },
+  "30s": {
+    perSceneSec: 10,
+    perSceneWords: 25,
+    totalSec: 30,
+    tone: "balanced short script across all 3 scenes",
+  },
+  "60s": {
+    perSceneSec: 20,
+    perSceneWords: 50,
+    totalSec: 60,
+    tone: "fuller script, still paced evenly across all 3 scenes",
+  },
+};
+
+function countWords(text: string): number {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function trimToWordLimit(text: string, maxWords: number): string {
+  if (!text) return text;
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return text.trim();
+  return words.slice(0, maxWords).join(" ");
 }
 
 function deriveToneGuidance(notes: string): string {
@@ -61,41 +100,36 @@ function formatAgeBands(ageBandWeights: Record<string, number> | null): string {
   return sorted.map(([band, weight]) => `${band} (${Math.round(weight * 100)}%)`).join(", ");
 }
 
-function getSceneCount(duration: string): string {
-  switch (duration) {
-    case "15s": return "exactly 2";
-    case "30s": return "3-4";
-    case "60s": return "5-6";
-    default: return "3-4";
-  }
-}
-
-const SYSTEM_PROMPT = `You are an expert direct-response video advertising scriptwriter for legal services.
-You generate scene-by-scene breakdowns for multi-scene video compositions.
+const SYSTEM_PROMPT = `You are generating a legal video ad storyboard with exactly 3 scenes for a selected runtime of :15, :30, or :60.
+Keep the existing visual workflow unchanged. Do not make decisions about image sourcing or visual asset selection.
+Your job is to produce duration-aware scene copy only. Write scene-by-scene narration that fits naturally within the
+selected total runtime, distribute copy evenly across all 3 scenes, and avoid front-loading the first scene or leaving
+later scenes sparse. For each scene, provide visual placeholder text, on-screen text, voiceover, and target duration.
 
 Rules:
-- Generate {scene_count} scenes for a {duration} video
-- Each scene has a HEADLINE (2-5 words, bold, attention-grabbing) and SUBHEADLINE (5-10 words, supporting detail)
-- Each scene has an imagePrompt describing the background image for that scene
-- Scene durations must sum to approximately the total video duration
-- First scene MUST hook the viewer immediately
-- Last content scene should set up the CTA
-- Do NOT use the word "lawsuit" — use "legal rights" or "compensation"
-- Tone: {tone_guidance}
+- Generate EXACTLY 3 scenes for a {duration} video (total runtime ~{total_sec}s).
+- Each scene has a per-scene budget of ~{per_scene_sec}s and ~{per_scene_words} words of voiceover (English ~2.5 words/sec).
+- Distribute spoken copy evenly across all 3 scenes — do not overload scene 1 while leaving scenes 2 and 3 sparse.
+- Each scene returns: headline (on-screen text, 2-5 words), subheadline (5-10 words), imagePrompt (visual placeholder description),
+  voiceover (the spoken narration sized to the per-scene word budget), and durationSeconds (the per-scene budget).
+- Scene 1 hooks the viewer; scene 2 builds the case; scene 3 sets up the CTA.
+- Pacing guidance: {pacing_tone}.
+- Do NOT use the word "lawsuit" — use "legal rights" or "compensation".
+- Tone: {tone_guidance}.
 - CRITICAL: Only reference the specific injury/disease provided in the tort context. Do NOT guess or add other medical conditions.
 
-IMAGE PROMPT RULES (CRITICAL):
+IMAGE PROMPT RULES (visual placeholder only — the existing visual pipeline handles image selection):
 - NO courtrooms, NO gavels, NO legal scales, NO suits, NO handshakes
 - NO generic "justice" or "legal" imagery
-- Images must be tort-contextual and demographic-appropriate
 - Describe real people in real settings relevant to the tort
 - NO text, words, letters, or logos in the image description
-- Focus on emotional, relatable scenes that connect with the target audience
 
 Respond with ONLY valid JSON matching this exact structure:
 {
   "scenes": [
-    { "sceneNumber": 1, "headline": "...", "subheadline": "...", "imagePrompt": "...", "durationSeconds": 8 }
+    { "sceneNumber": 1, "headline": "...", "subheadline": "...", "imagePrompt": "...", "voiceover": "...", "durationSeconds": {per_scene_sec} },
+    { "sceneNumber": 2, "headline": "...", "subheadline": "...", "imagePrompt": "...", "voiceover": "...", "durationSeconds": {per_scene_sec} },
+    { "sceneNumber": 3, "headline": "...", "subheadline": "...", "imagePrompt": "...", "voiceover": "...", "durationSeconds": {per_scene_sec} }
   ],
   "ctaHeadline": "CALL NOW",
   "ctaPhone": "1-800-YOUR-FIRM",
@@ -139,9 +173,10 @@ TORT MEDICAL/LEGAL CONTEXT:
     ? `\n\nLANGUAGE: Spanish (Español)\nIMPORTANT: Generate all scene headlines, subheadlines, ctaHeadline, ctaSubline, and disclaimer text in natural, culturally appropriate Spanish — not a direct translation from English. Image prompts should remain in English (they are used for image generation). The JSON keys must remain in English. Keep the firm name as-is (do not translate it).`
     : "";
 
+  const budget = SCENE_BUDGETS[req.duration];
   return `Generate a scene-by-scene video script breakdown ${firmRef} regarding ${req.tort_name} litigation.
 
-Duration: ${req.duration} (${getSceneCount(req.duration)} scenes)
+Duration: ${req.duration} total — exactly 3 scenes, ~${budget.perSceneSec}s each (~${budget.perSceneWords} voiceover words per scene).
 Platform: ${req.platform.replace(/_/g, " ")}
 ${statesRef}
 ${audienceSection}
@@ -202,10 +237,21 @@ export async function POST(req: NextRequest) {
       ? deriveToneGuidance(audienceProfile.notes)
       : "Authoritative but empathetic. Balance urgency with trustworthiness.";
 
+    const budget = SCENE_BUDGETS[body.duration];
+    if (!budget) {
+      return NextResponse.json(
+        { error: "duration must be one of 15s, 30s, 60s" },
+        { status: 400 },
+      );
+    }
+
     const filledSystemPrompt = SYSTEM_PROMPT
-      .replace("{scene_count}", getSceneCount(body.duration))
-      .replace("{duration}", body.duration)
-      .replace("{tone_guidance}", toneGuidance);
+      .replace(/\{duration\}/g, body.duration)
+      .replace(/\{total_sec\}/g, String(budget.totalSec))
+      .replace(/\{per_scene_sec\}/g, String(budget.perSceneSec))
+      .replace(/\{per_scene_words\}/g, String(budget.perSceneWords))
+      .replace(/\{pacing_tone\}/g, budget.tone)
+      .replace(/\{tone_guidance\}/g, toneGuidance);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -270,6 +316,41 @@ export async function POST(req: NextRequest) {
       if (body.firm_name && parsed.ctaPhone === "1-800-YOUR-FIRM") {
         parsed.ctaPhone = "1-800-555-0100";
       }
+
+      // Normalize to exactly 3 scenes with even per-scene duration budgets so
+      // the timeline has no gaps and voiceover length fits each scene's clip.
+      const incoming = Array.isArray(parsed.scenes) ? parsed.scenes : [];
+      const normalizedScenes: VideoScene[] = [];
+      for (let i = 0; i < 3; i++) {
+        const src = incoming[i] ?? incoming[incoming.length - 1] ?? {
+          sceneNumber: i + 1,
+          headline: "",
+          subheadline: "",
+          imagePrompt: "",
+          durationSeconds: budget.perSceneSec,
+        };
+        const voiceoverRaw = typeof (src as VideoScene).voiceover === "string"
+          ? ((src as VideoScene).voiceover as string)
+          : `${src.headline ?? ""} ${src.subheadline ?? ""}`.trim();
+        // Cap voiceover to per-scene word budget so spoken length fits the clip.
+        const voiceover = trimToWordLimit(voiceoverRaw, budget.perSceneWords);
+        // Pin every scene's clip to the per-scene budget — even spacing across
+        // 3 scenes is what removes the awkward pause after scene 1 and the
+        // dead air on scenes 2 and 3. We log a warning if the trimmed
+        // narration would still over-run the budget.
+        if (countWords(voiceover) / WORDS_PER_SECOND > budget.perSceneSec + 0.5) {
+          console.warn(`[generate-video-script] scene ${i + 1} voiceover exceeds budget`);
+        }
+        normalizedScenes.push({
+          sceneNumber: i + 1,
+          headline: src.headline ?? "",
+          subheadline: src.subheadline ?? "",
+          imagePrompt: src.imagePrompt ?? "",
+          voiceover,
+          durationSeconds: budget.perSceneSec,
+        });
+      }
+      parsed.scenes = normalizedScenes;
 
       return NextResponse.json(parsed);
     } catch (err) {

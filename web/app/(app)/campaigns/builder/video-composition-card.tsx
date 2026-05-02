@@ -24,6 +24,7 @@ interface VideoScene {
   headline: string;
   subheadline: string;
   imagePrompt: string;
+  voiceover?: string;
   durationSeconds: number;
   imageUrl?: string | null;
 }
@@ -159,6 +160,13 @@ export function VideoCompositionCard({
   function generateVoiceoverScript(): string {
     const parts: string[] = [];
     for (const scene of scenes) {
+      // Prefer the duration-aware per-scene voiceover when the API supplies it,
+      // so narration length matches each scene's clip budget and there's no
+      // dead air between scenes. Fall back to headline/subheadline otherwise.
+      if (scene.voiceover && scene.voiceover.trim()) {
+        parts.push(stripMarkdown(scene.voiceover));
+        continue;
+      }
       if (scene.headline) {
         const headline = stripMarkdown(scene.headline)
           .replace(/\?$/g, "?")
@@ -253,6 +261,14 @@ export function VideoCompositionCard({
 
       if (data.scenes) {
         setScenes(data.scenes.map((s: any) => ({ ...s, imageUrl: null })));
+        // Pre-populate the voiceover script from per-scene narration so the
+        // spoken length matches the per-scene clip budget out of the box.
+        const sceneVoiceovers = (data.scenes as VideoScene[])
+          .map((s) => (s.voiceover ?? "").trim())
+          .filter(Boolean);
+        if (sceneVoiceovers.length > 0) {
+          setVoiceoverScript(sceneVoiceovers.join(" "));
+        }
         setCta({
           headline: data.ctaHeadline ?? "CALL NOW",
           phone: data.ctaPhone ?? "1-800-555-0100",
