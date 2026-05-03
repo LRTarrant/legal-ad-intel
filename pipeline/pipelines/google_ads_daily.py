@@ -39,7 +39,7 @@ import httpx
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.pipeline import (
     PipelineRun, DRY_RUN,
-    _get, _bulk_insert, _delete,
+    _get, _bulk_insert, _delete, _dedup_rows,
     SUPABASE_URL, _headers,
 )
 from lib.domain_mapper import DomainMapper, extract_root_domain
@@ -242,7 +242,10 @@ def step_fetch_raw(step) -> list[dict]:
         print("  WARNING: SEARCHAPI_API_KEY not set — using seed data")
         rows = _generate_seed_ads(torts, advertisers, geos)
         step.set_metadata({"source": "seed_data"})
-        count = _bulk_insert("ad_observations_raw", rows)
+        rows = _dedup_rows(rows, ("source", "source_id"))
+        count = _bulk_insert(
+            "ad_observations_raw", rows, on_conflict="source,source_id"
+        )
         step.set_counts(rows_in=0, rows_out=count)
         return rows
 
@@ -277,16 +280,21 @@ def step_fetch_raw(step) -> list[dict]:
 
         per_tort_counts[slug] = tort_count
 
+    pre_dedup_count = len(rows)
+    rows = _dedup_rows(rows, ("source", "source_id"))
     step.set_metadata({
         "source": "searchapi_google_ads",
         "total_api_ads": total_api_ads,
+        "rows_pre_dedup": pre_dedup_count,
         "unique_rows": len(rows),
         "per_tort_counts": per_tort_counts,
         "failed_torts": failed_torts,
         "unmatched_domains": list(domain_mapper.unmatched_domains)[:50],
     })
 
-    count = _bulk_insert("ad_observations_raw", rows)
+    count = _bulk_insert(
+        "ad_observations_raw", rows, on_conflict="source,source_id"
+    )
     step.set_counts(rows_in=0, rows_out=count)
     return rows
 

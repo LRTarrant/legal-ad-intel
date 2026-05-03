@@ -122,6 +122,33 @@ def _delete(table: str, params: dict) -> None:
 BULK_CHUNK_SIZE = 500
 
 
+def _dedup_rows(rows: list[dict], keys: tuple[str, ...]) -> list[dict]:
+    """Return rows deduplicated on the given key columns (last-wins per key).
+
+    Defends against PostgREST 409 Conflict when a batch contains duplicate
+    natural-key values. PostgREST's `Prefer: resolution=ignore-duplicates`
+    only handles cross-row conflicts when `on_conflict=` is set, and even
+    then a within-batch duplicate can still surface as a constraint
+    violation depending on the underlying constraint type. Dedup the batch
+    in Python first; pass `on_conflict` to `_bulk_insert` for cross-day
+    conflicts.
+
+    Args:
+        rows: Row dicts.
+        keys: Column names that form the natural key.
+
+    Returns:
+        New list with duplicates collapsed (last occurrence wins).
+    """
+    if not rows or not keys:
+        return rows
+    by_key: dict[tuple, dict] = {}
+    for r in rows:
+        k = tuple(r.get(c) for c in keys)
+        by_key[k] = r
+    return list(by_key.values())
+
+
 def _bulk_insert(
     table: str,
     rows: list[dict],
