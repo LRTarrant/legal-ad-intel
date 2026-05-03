@@ -36,7 +36,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
+          # TikTok Commercial Content Library (Research API) credentials.
+          # When either is missing, the pipeline marks every step `skipped`
+          # rather than failing — see pipelines/tiktok_ads_daily.py.
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
