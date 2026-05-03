@@ -370,7 +370,7 @@ export function RecallWatchlistClient({
         </p>
         <p className="mt-1 text-xs text-slate-gray">
           Cold → Boiling scoring based on CourtListener case counts, state
-          diversity, specialty-firm involvement, and JPML/MDL milestones.
+          diversity, plaintiff-firm involvement, and JPML/MDL milestones.
           Generated {fmtRelative(data.generatedAt)}.
         </p>
       </div>
@@ -546,7 +546,7 @@ export function RecallWatchlistClient({
               <option value="recalls">Sort: Recall count</option>
               <option value="class_i">Sort: Class I recalls</option>
               <option value="states">Sort: States filed</option>
-              <option value="specialty">Sort: Specialty firms</option>
+              <option value="specialty">Sort: Plaintiff firms</option>
               <option value="mdl">Sort: MDL status</option>
               <option value="scored">Sort: Last scored</option>
               <option value="name">Sort: Manufacturer name</option>
@@ -634,7 +634,7 @@ export function RecallWatchlistClient({
                     align="right"
                   />
                   <SortHeader
-                    label="Specialty"
+                    label="Plaintiff"
                     sortKey="specialty"
                     activeKey={sortKey}
                     dir={sortDir}
@@ -776,10 +776,10 @@ export function RecallWatchlistClient({
 
 const STAGE_COPY: Record<number, string> = {
   1: "No litigation observed yet. FDA recalls exist but no plaintiff cases have been filed against the manufacturer.",
-  2: "1–4 cases filed in fewer than 3 states. Early signal; monitor for specialty-firm pickup.",
-  3: "5+ cases OR 3+ states OR at least one specialty mass-tort firm on a complaint. Actionable intake opportunity.",
-  4: "25+ cases across 5+ states with 2+ specialty firms, or a JPML petition filed. Pre-MDL maturity — plan media now.",
-  5: "MDL formed, OR 50+ cases across 10+ states with 4+ specialty firms. Full mass-tort status, national media ramp.",
+  2: "1–4 cases filed in fewer than 3 states. Early signal; monitor for plaintiff-firm pickup.",
+  3: "5+ cases OR 3+ states OR at least one plaintiff mass-tort firm on a complaint. Actionable intake opportunity.",
+  4: "25+ cases across 5+ states with 2+ plaintiff firms, or a JPML petition filed. Pre-MDL maturity — plan media now.",
+  5: "MDL formed, OR 50+ cases across 10+ states with 4+ plaintiff firms. Full mass-tort status, national media ramp.",
 };
 
 /* ------------------------------------------------------------------ */
@@ -1025,7 +1025,7 @@ function DrilldownCard({ mfr }: { mfr: ManufacturerRow }) {
           icon={<MapPin className="h-3 w-3" />}
         />
         <StatTile
-          label="Specialty firms"
+          label="Plaintiff firms"
           value={mfr.specialty_firm_count.toString()}
         />
         <StatTile

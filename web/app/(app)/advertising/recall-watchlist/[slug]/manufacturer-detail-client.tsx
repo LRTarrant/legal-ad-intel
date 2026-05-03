@@ -220,7 +220,7 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
         <KpiCard icon={<AlertTriangle className="h-5 w-5" />} label="Recalls" value={kpis.total_recalls} sublabel={`${kpis.class_i_recalls} Class I`} />
         <KpiCard icon={<Scale className="h-5 w-5" />} label="Cases filed" value={kpis.total_cases} />
         <KpiCard icon={<MapPin className="h-5 w-5" />} label="States" value={kpis.state_count} />
-        <KpiCard icon={<Users className="h-5 w-5" />} label="Specialty firms" value={kpis.specialty_firm_count} />
+        <KpiCard icon={<Users className="h-5 w-5" />} label="Plaintiff firms" value={kpis.specialty_firm_count} />
         <KpiCard
           icon={<Shield className="h-5 w-5" />}
           label="JPML status"
@@ -355,7 +355,7 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
                           {c.plaintiff_firm_name}
                           {c.is_specialty_firm && (
                             <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-semibold text-emerald-700">
-                              Specialty
+                              Plaintiff
                             </span>
                           )}
                         </span>
