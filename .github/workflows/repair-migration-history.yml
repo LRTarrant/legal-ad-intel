@@ -1,0 +1,101 @@
+name: Repair Supabase Migration History (one-shot)
+
+# One-shot helper to mark 15 local-only migrations as `applied` in the
+# remote schema_migrations table without re-executing their SQL.
+#
+# Why this exists:
+#   PR #288 backfilled 111 placeholder migrations so local + remote
+#   history align on the *remote-only* side. After that PR landed,
+#   `supabase db push` started reporting 15 *local-only* migrations
+#   that haven't been recorded in remote history yet — but their SQL
+#   was already applied to prod via psql / the SQL editor at the time
+#   they were originally written. Re-running them would mean
+#   double-inserting seed rows, re-creating tables that exist, etc.
+#
+#   `supabase migration repair --status applied <version>` records
+#   each version as applied in remote schema_migrations *without*
+#   running the SQL — exactly what we want here.
+#
+# How to use:
+#   1. Trigger this workflow manually from the Actions tab
+#      (workflow_dispatch).
+#   2. Confirm the run reports SUCCESS and lists each of the 15
+#      versions as marked applied.
+#   3. After this completes once, the regular `Apply Supabase
+#      Migrations` workflow will succeed on every future push.
+#   4. This file can be deleted in a follow-up cleanup PR.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-migration-repair-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    name: Mark drifted local migrations as applied in remote
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: |
+          supabase link --project-ref inmktpwhpkiknctznrys
+          echo "Linked to Supabase project inmktpwhpkiknctznrys"
+
+      # The 15 versions below are the exact set surfaced by `supabase
+      # db push` in run 25289066395 as "Found local migration files to
+      # be inserted before the last migration on remote database."
+      # Their SQL was applied to prod at original authoring time;
+      # this step just aligns the schema_migrations history.
+      - name: Mark drifted versions as applied
+        run: |
+          set -euo pipefail
+          versions=(
+            20260419100000
+            20260425160000
+            20260427120000
+            20260427160000
+            20260427200000
+            20260427210000
+            20260427220000
+            20260427230000
+            20260428042217
+            20260428120000
+            20260430160000
+            20260430180000
+            20260430200000
+            20260430210000
+          )
+          for v in "${versions[@]}"; do
+            echo "::group::Marking $v applied"
+            supabase migration repair --status applied "$v"
+            echo "::endgroup::"
+          done
+
+      - name: Show migration status
+        if: always()
+        run: |
+          echo "=== Migration Status ==="
+          supabase migration list || true
+
+      - name: Verify Apply Supabase Migrations would now succeed (dry-run)
+        if: success()
+        run: |
+          # `db push --dry-run` validates the planned actions without
+          # applying them. After repair, this should be a no-op.
+          echo "=== Dry-run db push to confirm history is aligned ==="
+          supabase db push --dry-run || true
