@@ -36,6 +36,7 @@ import {
   ImageIcon,
   Map,
   ListChecks,
+  Database,
   Droplets,
   Tractor,
   FlameKindling,
@@ -412,6 +413,7 @@ export function Sidebar() {
                 {renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
                 {renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
                 {renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}
+                {renderNavLink({ label: "State Data Sources", href: "/admin/data-sources", Icon: Database })}
               </div>
             </div>
           )}
