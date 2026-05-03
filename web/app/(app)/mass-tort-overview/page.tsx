@@ -2,6 +2,7 @@ import { Newspaper } from "lucide-react";
 import { getAllDevelopments } from "@/lib/queries/mdl-developments";
 import { MassTortOverviewClient } from "./mass-tort-overview-client";
 import type { MdlDevelopment } from "@/lib/queries/mdl-developments";
+import { PageTour } from "../components/page-tour";
 
 export const dynamic = "force-dynamic";
 
@@ -209,9 +210,12 @@ export default async function MassTortOverviewPage() {
           <Newspaper className="h-6 w-6 text-intelligence-teal" />
         </div>
         <div>
-          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            Mass Tort Overview
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-heading text-3xl font-bold text-midnight-navy">
+              Mass Tort Overview
+            </h1>
+            <PageTour slug="mass-tort-overview" />
+          </div>
           <p className="mt-1 text-sm text-slate-gray">
             Recent litigation developments, rulings, and signals across all
             tracked mass torts.

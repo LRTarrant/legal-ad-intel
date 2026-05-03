@@ -17,6 +17,7 @@ import { MdlFilterBar } from "./mdl-filter-bar";
 import { MdlTrackerNav } from "./mdl-tracker-nav";
 import { JpmlDateSelect } from "./jpml-date-select";
 import { JpmlDonutWrapper } from "./jpml-donut-wrapper";
+import { PageTour } from "../components/page-tour";
 
 export const metadata = {
   title: "MDL Tracker | Legal Marketing Intelligence",
@@ -80,9 +81,12 @@ export default async function MdlTrackerPage({
       <MdlTrackerNav />
 
       <div>
-        <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-          MDL Tracker
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
+            MDL Tracker
+          </h1>
+          <PageTour slug="mdl-tracker" />
+        </div>
         <p className="mt-1 text-slate-gray">
           Monthly MDL docket counts with trend and momentum tracking
         </p>

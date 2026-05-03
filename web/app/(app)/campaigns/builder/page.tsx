@@ -1,6 +1,7 @@
 import { Crosshair } from "lucide-react";
 import { CampaignBuilderClient } from "./campaign-builder-client";
 import { AiSearchBar } from "./ai-search-bar";
+import { PageTour } from "../../components/page-tour";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,12 @@ export default function CampaignBuilderPage() {
           <Crosshair className="h-5 w-5 text-intelligence-teal" />
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-midnight-navy">
-            Campaign Builder
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-heading text-2xl font-bold text-midnight-navy">
+              Campaign Builder
+            </h1>
+            <PageTour slug="campaign-builder" />
+          </div>
           <p className="text-sm text-slate-gray">
             Generate data-driven campaign plans powered by real market
             intelligence.

@@ -22,6 +22,7 @@ import {
   Users,
   ExternalLink,
 } from "lucide-react";
+import { PageTour } from "@/app/(app)/components/page-tour";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -362,6 +363,7 @@ export function RecallWatchlistClient({
             <Thermometer className="h-3 w-3" />
             Pre-MDL Early-Warning Board
           </span>
+          <PageTour slug="recall-watchlist" />
         </div>
         <p className="mt-1 text-lg text-slate-gray">
           Five-Stage Thermometer scoring across {data.totalRecalls.toLocaleString()}{" "}
