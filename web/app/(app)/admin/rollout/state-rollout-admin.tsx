@@ -26,6 +26,7 @@ interface StateRow {
   has_serp_data: boolean | null;
   has_judicial_data: boolean | null;
   has_mdl_data: boolean | null;
+  deep_data_count: number | null;
   target_launch_date: string | null;
   launched_at: string | null;
   owner: string | null;
@@ -35,6 +36,24 @@ interface StateRow {
 
 interface QueueRow extends StateRow {
   rank_score: number;
+}
+
+function DeepDataBadge({ count }: { count: number | null | undefined }) {
+  const c = count ?? 0;
+  const cls =
+    c === 0
+      ? "bg-slate-100 text-slate-500"
+      : c < 2
+        ? "bg-amber-100 text-amber-800"
+        : "bg-green-100 text-green-800";
+  return (
+    <span
+      title="Number of integrated deep data sources for this state"
+      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${cls}`}
+    >
+      {c} deep
+    </span>
+  );
 }
 
 const STATUS_OPTIONS: Status[] = [
@@ -273,6 +292,9 @@ export function StateRolloutAdmin() {
           />
         </td>
         <td className="px-3 py-2">
+          <DeepDataBadge count={row.deep_data_count} />
+        </td>
+        <td className="px-3 py-2">
           <input
             type="date"
             value={merged.launched_at ?? ""}
@@ -402,6 +424,7 @@ export function StateRolloutAdmin() {
                 <th className="px-3 py-2">Score</th>
                 <th className="px-3 py-2">Pop rank</th>
                 <th className="px-3 py-2">Coverage %</th>
+                <th className="px-3 py-2">Deep data</th>
                 <th className="px-3 py-2">Rank score</th>
               </tr>
             </thead>
@@ -435,6 +458,9 @@ export function StateRolloutAdmin() {
                   <td className="px-3 py-2 text-xs text-slate-500">
                     {r.data_coverage_pct ?? "—"}
                   </td>
+                  <td className="px-3 py-2">
+                    <DeepDataBadge count={r.deep_data_count} />
+                  </td>
                   <td className="px-3 py-2 text-xs font-medium text-charcoal">
                     {Number(r.rank_score ?? 0).toFixed(1)}
                   </td>
@@ -443,7 +469,7 @@ export function StateRolloutAdmin() {
               {queueRows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-3 py-8 text-center text-sm text-slate-500"
                   >
                     No states currently in backlog / scoping / in_build.
@@ -500,6 +526,7 @@ export function StateRolloutAdmin() {
                   <th className="px-3 py-2">Score</th>
                   <th className="px-3 py-2">Pop</th>
                   <th className="px-3 py-2">Cov %</th>
+                  <th className="px-3 py-2">Deep</th>
                   <th className="px-3 py-2">Launched</th>
                   <th className="px-3 py-2">Owner</th>
                   <th className="px-3 py-2">Blockers</th>
