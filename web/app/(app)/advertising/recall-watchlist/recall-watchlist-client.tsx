@@ -375,7 +375,42 @@ export function RecallWatchlistClient({
         </p>
       </div>
 
-      {/* 2. KPI strip */}
+      {/* 2. Stage legend / methodology */}
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Thermometer className="h-4 w-4 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            Five-Stage Thermometer
+          </h2>
+        </div>
+        <div className="grid gap-3 md:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((s) => {
+            const t = themeFor(s);
+            const copy = STAGE_COPY[s];
+            return (
+              <div
+                key={s}
+                className={`rounded-lg border p-3 ${t.softBorder} ${t.softBg}`}
+              >
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <span className={`h-2 w-2 rounded-full ${t.dot}`} />
+                  Stage {s} · {t.label}
+                </div>
+                <p className="mt-1.5 text-xs text-midnight-navy/80 leading-relaxed">
+                  {copy}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs text-slate-gray">
+          Scores refresh weekly (Mondays 6 AM CT) via a CourtListener party-search
+          pipeline. Heuristics are manufacturer-level in v1 — product-code matching
+          and docket enrichment ship Day 4.
+        </p>
+      </div>
+
+      {/* 3. KPI strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
         <KpiCard
           label="Total mfrs"
@@ -390,7 +425,7 @@ export function RecallWatchlistClient({
         <StageKpi stage={5} count={stageCounts.boiling} />
       </div>
 
-      {/* 3. Recent escalations strip */}
+      {/* 4. Recent escalations strip */}
       {data.recentEscalations.length > 0 && (
         <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
@@ -439,7 +474,7 @@ export function RecallWatchlistClient({
         </div>
       )}
 
-      {/* 4. Filter bar */}
+      {/* 5. Filter bar */}
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <FilterPill
@@ -520,7 +555,7 @@ export function RecallWatchlistClient({
         </div>
       </div>
 
-      {/* 5. Manufacturer board */}
+      {/* 6. Manufacturer board */}
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-4 py-3 flex items-center gap-2">
           <Gavel className="h-4 w-4 text-intelligence-teal" />
@@ -735,40 +770,6 @@ export function RecallWatchlistClient({
         )}
       </div>
 
-      {/* 6. Stage legend / methodology */}
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
-          <Thermometer className="h-4 w-4 text-intelligence-teal" />
-          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
-            Five-Stage Thermometer
-          </h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-5">
-          {[1, 2, 3, 4, 5].map((s) => {
-            const t = themeFor(s);
-            const copy = STAGE_COPY[s];
-            return (
-              <div
-                key={s}
-                className={`rounded-lg border p-3 ${t.softBorder} ${t.softBg}`}
-              >
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-                  <span className={`h-2 w-2 rounded-full ${t.dot}`} />
-                  Stage {s} · {t.label}
-                </div>
-                <p className="mt-1.5 text-xs text-midnight-navy/80 leading-relaxed">
-                  {copy}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-xs text-slate-gray">
-          Scores refresh weekly (Mondays 6 AM CT) via a CourtListener party-search
-          pipeline. Heuristics are manufacturer-level in v1 — product-code matching
-          and docket enrichment ship Day 4.
-        </p>
-      </div>
     </div>
   );
 }
