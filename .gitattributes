@@ -1,0 +1,9 @@
+# Treat video and image assets as binary (no line-ending conversion, no diffs)
+*.mp4 binary
+*.webm binary
+*.mov binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary

@@ -21,6 +21,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { PageTour } from "../../components/page-tour";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -378,6 +379,7 @@ export default async function HairRelaxerPage() {
           <span className="rounded-full bg-emerald-50 border border-success/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-success">
             Active Litigation
           </span>
+          <PageTour slug="hair-relaxer" />
         </div>
         <p className="mt-1 text-lg text-slate-gray">
           Chemical Hair Straightener Cancer Litigation — MDL-3060
