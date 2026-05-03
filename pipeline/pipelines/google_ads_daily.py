@@ -243,7 +243,7 @@ def step_fetch_raw(step) -> list[dict]:
         rows = _generate_seed_ads(torts, advertisers, geos)
         step.set_metadata({"source": "seed_data"})
         rows = _dedup_rows(rows, ("source", "source_id"))
-        count = _bulk_insert("ad_observations_raw", rows)
+        count = _bulk_insert("ad_observations_raw", rows, skip_existing=True)
         step.set_counts(rows_in=0, rows_out=count)
         return rows
 
@@ -290,7 +290,7 @@ def step_fetch_raw(step) -> list[dict]:
         "unmatched_domains": list(domain_mapper.unmatched_domains)[:50],
     })
 
-    count = _bulk_insert("ad_observations_raw", rows)
+    count = _bulk_insert("ad_observations_raw", rows, skip_existing=True)
     step.set_counts(rows_in=0, rows_out=count)
     return rows
 

@@ -155,6 +155,7 @@ def _bulk_insert(
     *,
     on_conflict: str | None = None,
     resolution: str = "ignore-duplicates",
+    skip_existing: bool = False,
 ) -> int:
     """Bulk insert rows in chunks. In dry-run mode, logs summary.
 
@@ -163,11 +164,23 @@ def _bulk_insert(
         rows: List of row dicts to insert.
         on_conflict: Comma-separated column names for the ON CONFLICT target.
                      Required when the table has multiple unique constraints.
+                     Must reference an actual UNIQUE constraint or matching
+                     unique INDEX. Note: PostgREST 42P10 errors mean the
+                     column list does not match a constraint Postgres can
+                     use for ON CONFLICT inference (e.g., partial index).
         resolution: PostgREST resolution strategy.
-                    'ignore-duplicates' (default) — skip rows that conflict.
+                    'ignore-duplicates' (default) — skip rows that conflict
+                                                     (only when on_conflict
+                                                     is set and matches).
                     'merge-duplicates' — upsert (update on conflict).
+        skip_existing: When true, on a 409 (unique-constraint violation),
+                       fall back to per-row inserts within the failing
+                       chunk so the rest of the batch lands. Use for
+                       tables where the natural-key index can't be
+                       referenced via on_conflict (e.g., partial unique
+                       indexes) but we still want re-runs to be idempotent.
     Returns:
-        Number of rows sent.
+        Number of rows actually written (excludes skipped duplicates).
     """
     if not rows:
         return 0
@@ -191,10 +204,31 @@ def _bulk_insert(
     import logging
     logger = logging.getLogger(__name__)
     total_sent = 0
+    skipped_dupes = 0
     for i in range(0, len(rows), BULK_CHUNK_SIZE):
         chunk = rows[i : i + BULK_CHUNK_SIZE]
         logger.info("Inserting chunk %d-%d of %d into %s", i, i + len(chunk), len(rows), table)
         resp = httpx.post(base_url, headers=headers, json=chunk, timeout=120)
+        if resp.status_code == 409 and skip_existing:
+            # Chunk had at least one row that violates a unique constraint.
+            # Fall back to per-row inserts so the non-duplicate rows land.
+            logger.warning(
+                "Chunk had unique-constraint violation; falling back to "
+                "per-row insert for %s (chunk size=%d)", table, len(chunk),
+            )
+            for row in chunk:
+                row_resp = httpx.post(base_url, headers=headers, json=[row], timeout=60)
+                if row_resp.status_code == 409:
+                    skipped_dupes += 1
+                    continue
+                if row_resp.status_code >= 400:
+                    logger.error(
+                        "Per-row insert error %d for %s: %s",
+                        row_resp.status_code, table, row_resp.text[:500],
+                    )
+                    row_resp.raise_for_status()
+                total_sent += 1
+            continue
         if resp.status_code >= 400:
             logger.error(
                 "Bulk insert error %d for %s: %s",
@@ -202,6 +236,8 @@ def _bulk_insert(
             )
         resp.raise_for_status()
         total_sent += len(chunk)
+    if skipped_dupes:
+        logger.info("Skipped %d duplicate rows on %s", skipped_dupes, table)
     return total_sent
 
 
