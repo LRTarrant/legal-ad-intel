@@ -99,36 +99,36 @@ INSERT INTO public.tort_cost_benchmarks (
 -- ---------------------------------------------------------------------------
 DELETE FROM public.tort_recommended_markets WHERE tort_name = 'Bair Hugger';
 
-INSERT INTO public.tort_recommended_markets (tort_name, state, rank, score, primary_signal, signals, rationale)
+INSERT INTO public.tort_recommended_markets (tort_name, state, state_name, rank, score, primary_signal, signals, rationale)
 VALUES
-  ('Bair Hugger', 'UT',  1, 100, 'Highest TKA Rate',
+  ('Bair Hugger', 'UT', 'Utah',          1, 100, 'Highest TKA Rate',
    ARRAY['Highest TKA Rate', 'Mountain West', 'Joint Replacement Belt'],
    'Highest TKA rate in nation: 16/1000 Medicare beneficiaries. Salt Lake City, Ogden DMAs.'),
-  ('Bair Hugger', 'MI',  2, 95, 'Highest THA Rate',
+  ('Bair Hugger', 'MI', 'Michigan',      2, 95, 'Highest THA Rate',
    ARRAY['Highest THA Rate', 'Joint Replacement Belt'],
    'Highest THA rate (Traverse City HRR: 7.55/1000). Detroit, Grand Rapids DMAs.'),
-  ('Bair Hugger', 'IA',  3, 90, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'IA', 'Iowa',          3, 90, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Upper Midwest'],
    'High TKA density in Des Moines, Cedar Rapids DMAs.'),
-  ('Bair Hugger', 'NE',  4, 85, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'NE', 'Nebraska',      4, 85, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Upper Midwest'],
    'Omaha, Lincoln DMAs — JR Belt.'),
-  ('Bair Hugger', 'SD',  5, 80, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'SD', 'South Dakota',  5, 80, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Upper Midwest'],
    'Sioux Falls, Rapid City DMAs — JR Belt.'),
-  ('Bair Hugger', 'WI',  6, 75, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'WI', 'Wisconsin',     6, 75, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Upper Midwest'],
    'Milwaukee, Madison, Green Bay DMAs.'),
-  ('Bair Hugger', 'MN',  7, 70, 'MDL Home',
+  ('Bair Hugger', 'MN', 'Minnesota',     7, 70, 'MDL Home',
    ARRAY['MDL Home', 'Joint Replacement Belt', 'Local Counsel'],
    'MDL 2666 home jurisdiction. Meshbesher & Spence is the local heavyweight. Minneapolis-St. Paul, Rochester DMAs.'),
-  ('Bair Hugger', 'ID',  8, 65, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'ID', 'Idaho',         8, 65, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Mountain West'],
    'Boise DMA — Mountain West JR Belt.'),
-  ('Bair Hugger', 'ND',  9, 60, 'High Joint Replacement Volume',
+  ('Bair Hugger', 'ND', 'North Dakota',  9, 60, 'High Joint Replacement Volume',
    ARRAY['Joint Replacement Belt', 'Upper Midwest'],
    'Fargo, Bismarck DMAs — JR Belt.'),
-  ('Bair Hugger', 'FL', 10, 55, 'Retirement Corridor',
+  ('Bair Hugger', 'FL', 'Florida',      10, 55, 'Retirement Corridor',
    ARRAY['Retirement Corridor', '65+ Medicare-Heavy'],
    'Tampa, Orlando, Miami DMAs — retirement-corridor skew with high Medicare population. 4-yr SOL is most favorable in nation.');
 
