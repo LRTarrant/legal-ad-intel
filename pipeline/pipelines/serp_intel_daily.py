@@ -35,7 +35,7 @@ import httpx
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.pipeline import (
     PipelineRun, DRY_RUN,
-    _get, _bulk_insert, _delete,
+    _get, _bulk_insert, _delete, _dedup_rows,
     SUPABASE_URL, _headers,
 )
 from lib.domain_mapper import DomainMapper, extract_root_domain
@@ -467,7 +467,18 @@ def step_score(step, norm_rows: list[dict]) -> int:
             "queries_tracked": q_tracked,
         })
 
-    count = _bulk_insert("serp_visibility_scores", score_rows)
+    # Upsert on the unique constraint so re-running today's pipeline (e.g.,
+    # workflow_dispatch retry) refreshes scores for the same period instead
+    # of 409-conflicting on (domain, tort_slug, period_start, period_end).
+    score_rows = _dedup_rows(
+        score_rows, ("domain", "tort_slug", "period_start", "period_end")
+    )
+    count = _bulk_insert(
+        "serp_visibility_scores",
+        score_rows,
+        on_conflict="domain,tort_slug,period_start,period_end",
+        resolution="merge-duplicates",
+    )
     step.set_counts(rows_in=len(norm_rows), rows_out=count)
     step.set_metadata({
         "domain_tort_combos": len(groups),
