@@ -32,6 +32,7 @@ const TORT_PROFILES: TortProfile[] = [
   { name: "GLP-1 Gastroparesis", route: "/advertising/glp1-gastroparesis", statusLine: "Ozempic/Mounjaro claims", mdlBadge: "Emerging" },
   { name: "GLP-1 Vision Loss", route: "/advertising/glp1-vision-loss", statusLine: "NAION risk signal", mdlBadge: "Emerging" },
   { name: "Bard PowerPort", route: "/advertising/bard-powerport", statusLine: "Catheter complications", mdlBadge: "Active MDL" },
+  { name: "Bair Hugger", route: "/advertising/bair-hugger", statusLine: "MDL 2666 · 8,550+ cases", mdlBadge: "Active MDL" },
 ];
 
 const MDL_BADGE_STYLES: Record<TortProfile["mdlBadge"], string> = {

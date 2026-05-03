@@ -78,6 +78,11 @@ const MDL_TORT_NAMES: Record<
     href: "/advertising/roblox-abuse",
     hasFullProfile: true,
   },
+  2666: {
+    name: "Bair Hugger",
+    href: "/advertising/bair-hugger",
+    hasFullProfile: true,
+  },
 
   // Active MDLs (tracker-only, no full profile yet)
   3049: { name: "Camp Lejeune", href: "/mdl-tracker/3049" },

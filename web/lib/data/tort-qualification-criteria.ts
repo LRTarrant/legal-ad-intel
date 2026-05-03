@@ -759,6 +759,95 @@ const UBER: TortQualificationCriteria = {
     "Based on your answers, you may qualify for the Uber sexual assault lawsuit. Your information will be kept strictly confidential. Please provide your contact details for a free case evaluation.",
 };
 
+const BAIR_HUGGER: TortQualificationCriteria = {
+  slug: "bair-hugger",
+  tortName: "Bair Hugger (Periprosthetic Joint Infection)",
+  screeningQuestions: [
+    {
+      id: "bh-procedure",
+      question: "Did you have a hip or knee replacement (or revision) surgery?",
+      type: "select",
+      options: [
+        "Total hip replacement",
+        "Total knee replacement",
+        "Partial joint replacement",
+        "Revision surgery",
+        "Other orthopedic surgery",
+        "No",
+      ],
+      disqualifyOn: ["Other orthopedic surgery", "No"],
+      helpText: "Most firms qualify hip and knee arthroplasty (and revisions). Some accept other orthopedic implant procedures.",
+    },
+    {
+      id: "bh-surgery-date",
+      question: "When was your surgery?",
+      type: "select",
+      options: [
+        "Before 2010",
+        "2010–2015",
+        "2016–2020",
+        "2021–present",
+      ],
+      disqualifyOn: ["Before 2010"],
+      helpText: "Most firms qualify surgeries from 2010 onward. State statute of limitations and statute of repose are the binding constraints.",
+    },
+    {
+      id: "bh-device",
+      question: "Was a Bair Hugger or forced-air warming blanket used during your surgery?",
+      type: "select",
+      options: ["Yes — confirmed by records", "Believe so — not yet confirmed", "No", "Unsure"],
+      disqualifyOn: ["No"],
+      helpText: "If you're not sure, your operating room records can confirm device use. Records review is part of intake.",
+    },
+    {
+      id: "bh-infection",
+      question: "Did you develop a deep infection at the surgical site (periprosthetic joint infection / deep SSI)?",
+      type: "yes_no",
+      disqualifyOn: ["No"],
+      helpText: "Superficial wound infections do not qualify. The infection must be deep — confirmed via culture, imaging, or revision pathology.",
+    },
+    {
+      id: "bh-treatment",
+      question: "Did the infection require revision surgery, IV antibiotics, an antibiotic spacer, or hospitalization?",
+      type: "yes_no",
+      disqualifyOn: ["No"],
+      helpText: "\"Required treatment\" is a key qualifier. DAIR procedures, 1-stage or 2-stage revision, and 6+ weeks IV antibiotics all qualify.",
+    },
+    {
+      id: "bh-onset",
+      question: "When was the infection diagnosed relative to your surgery?",
+      type: "select",
+      options: [
+        "Within 90 days of surgery",
+        "Within 1 year of surgery",
+        "Within 2 years of surgery",
+        "More than 2 years after surgery",
+      ],
+      disqualifyOn: ["More than 2 years after surgery"],
+      helpText: "Most firms accept diagnosis within 1 year (some up to 2 years). CDC defines deep PJI as <90 days, chronic <1 year.",
+    },
+    {
+      id: "bh-representation",
+      question: "Do you currently have an attorney representing you for this claim?",
+      type: "yes_no",
+      disqualifyOn: ["Yes"],
+    },
+  ],
+  disqualifiers: [
+    "Surgery without a joint implant (e.g., arthroscopy)",
+    "Superficial wound infection only",
+    "Infection diagnosed more than 2 years post-op",
+    "Bair Hugger not used (verifiable via OR records)",
+    "Pre-existing infection at the surgical site",
+    "Already represented",
+    "Outside the state statute of limitations / statute of repose",
+  ],
+  disqualifyMessage:
+    "Based on your answers, you may not meet the current qualification criteria for the Bair Hugger MDL. However, every situation is unique. We recommend speaking with a legal professional for a personalized review of your case.",
+  qualifyMessage:
+    "Based on your answers, you may qualify for the Bair Hugger MDL (MDL 2666). Complete your contact information below for a free, no-obligation case review. We can request your operating room records to confirm device use.",
+};
+
 /* ── Exports ───────────────────────────────────────────────────────────── */
 
 export const TORT_QUALIFICATION_CRITERIA: TortQualificationCriteria[] = [
@@ -769,6 +858,7 @@ export const TORT_QUALIFICATION_CRITERIA: TortQualificationCriteria[] = [
   PARAQUAT,
   AFFF,
   BARD_POWERPORT,
+  BAIR_HUGGER,
   SOCIAL_MEDIA,
   ROBLOX,
   GLP1_GASTROPARESIS,

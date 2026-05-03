@@ -90,6 +90,7 @@ TORT_SEARCH_TERMS: dict[str, list[str]] = {
     "roblox_abuse":      ["roblox child abuse lawsuit", "roblox predator lawsuit"],
     "social_media_addiction": ["social media addiction lawsuit", "instagram addiction teens", "tiktok addiction lawsuit"],
     "depo_provera":          ["depo provera lawsuit", "depo provera meningioma lawyer", "depo provera brain tumor lawsuit"],
+    "bair_hugger":           ["bair hugger lawsuit", "bair hugger infection", "forced air warming lawsuit", "3M warming blanket lawsuit", "MDL 2666"],
     "glp1_gastroparesis":     ["ozempic lawsuit", "ozempic stomach paralysis lawyer", "glp-1 gastroparesis lawsuit"],
     "glp1_vision_loss":       ["ozempic blindness lawsuit", "glp-1 vision loss lawyer", "ozempic naion lawsuit"],
     "uber-sexual-assault":    ["uber sexual assault", "uber lawsuit", "uber safety", "rideshare sexual assault", "uber driver assault", "uber rape lawsuit", "uber mdl 3084", "rideshare lawsuit"],
