@@ -150,7 +150,7 @@ export async function PATCH(req: NextRequest) {
           { status: 400 },
         );
       }
-      updates[k] = v;
+      updates[k] = v === "" ? null : v;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -161,6 +161,19 @@ export async function PATCH(req: NextRequest) {
     }
 
     const serviceClient = getServiceClient();
+
+    // Auto-stamp launched_at = today when status flips to 'launched'
+    // and the caller hasn't explicitly provided a date.
+    if (updates.status === "launched" && !("launched_at" in updates)) {
+      const { data: existing } = await serviceClient
+        .from("state_rollout")
+        .select("launched_at")
+        .eq("state_code", stateCode)
+        .single();
+      if (!existing?.launched_at) {
+        updates.launched_at = new Date().toISOString().slice(0, 10);
+      }
+    }
     const { data, error } = await serviceClient
       .from("state_rollout")
       .update(updates)

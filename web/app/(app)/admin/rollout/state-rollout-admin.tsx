@@ -274,6 +274,16 @@ export function StateRolloutAdmin() {
         </td>
         <td className="px-3 py-2">
           <input
+            type="date"
+            value={merged.launched_at ?? ""}
+            onChange={(ev) =>
+              stage(code, { launched_at: ev.target.value || null })
+            }
+            className="rounded-md border border-slate-200 px-2 py-1 text-xs"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <input
             type="text"
             value={merged.owner ?? ""}
             onChange={(ev) =>
@@ -490,6 +500,7 @@ export function StateRolloutAdmin() {
                   <th className="px-3 py-2">Score</th>
                   <th className="px-3 py-2">Pop</th>
                   <th className="px-3 py-2">Cov %</th>
+                  <th className="px-3 py-2">Launched</th>
                   <th className="px-3 py-2">Owner</th>
                   <th className="px-3 py-2">Blockers</th>
                   <th className="px-3 py-2"></th>
