@@ -146,8 +146,12 @@ def _extract_ads_from_serp(serp_data: dict, query: str, tort_slug: str,
         link = ad.get("link", "")
         displayed_link = ad.get("displayed_link", "")
         domain = extract_root_domain(link or displayed_link)
-        advertiser_id = domain_mapper.match(domain) if domain else None
-        advertiser_raw = ad.get("title", "") or displayed_link or domain
+        title = ad.get("title", "") or ""
+        # Try domain first; fall back to fuzzy-name match against
+        # canonical_name + aliases. The headline often carries the firm
+        # name even when the displayed_link goes to a tracking shim.
+        advertiser_id = domain_mapper.match_with_name_fallback(domain or "", title)
+        advertiser_raw = title or displayed_link or domain
 
         source_id = f"google_ads:{tort_slug}:{query}:{i}:{now.strftime('%Y%m%d')}"
 
@@ -288,6 +292,9 @@ def step_fetch_raw(step) -> list[dict]:
         "per_tort_counts": per_tort_counts,
         "failed_torts": failed_torts,
         "unmatched_domains": list(domain_mapper.unmatched_domains)[:50],
+        "unmatched_names": list(domain_mapper.unmatched_names)[:50],
+        "matched_count": sum(1 for r in rows if r.get("advertiser_id")),
+        "unmatched_count": sum(1 for r in rows if not r.get("advertiser_id")),
     })
 
     count = _bulk_insert("ad_observations_raw", rows, skip_existing=True)

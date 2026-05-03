@@ -141,9 +141,15 @@ def _extract_ads_from_tiktok(response_data: dict, query: str, tort_slug: str,
         ad_id = ad.get("id", "")
         video_link = ad.get("video_link", "")
 
-        # TikTok ads may not have domains, use advertiser name as raw
+        # TikTok ads carry handles, not domains. Fuzzy-match the handle
+        # against canonical_name + aliases. Most TikTok content for
+        # plaintiff-recruitment keywords is *not* from registered law
+        # firms — those rows correctly land with advertiser_id=NULL and
+        # are filtered out downstream.
         advertiser_raw = advertiser_name or "Unknown"
-        advertiser_id = domain_mapper.match(advertiser_name) if advertiser_name else None
+        advertiser_id = (
+            domain_mapper.match_name(advertiser_name) if advertiser_name else None
+        )
 
         # Parse audience metrics
         raw_count = ad.get("estimated_audience_max") or ad.get("estimated_audience")
@@ -298,6 +304,9 @@ def step_fetch_raw(step) -> list[dict]:
         "per_tort_counts": per_tort_counts,
         "failed_torts": failed_torts,
         "unmatched_domains": list(domain_mapper.unmatched_domains)[:50],
+        "unmatched_names": list(domain_mapper.unmatched_names)[:50],
+        "matched_count": sum(1 for r in rows if r.get("advertiser_id")),
+        "unmatched_count": sum(1 for r in rows if not r.get("advertiser_id")),
     })
 
     count = _bulk_insert("ad_observations_raw", rows, skip_existing=True)
