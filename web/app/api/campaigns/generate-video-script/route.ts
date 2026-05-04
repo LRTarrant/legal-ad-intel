@@ -4,6 +4,7 @@ import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
 } from "@/lib/campaign-builder/entitlements";
+import { trackCall } from "@/lib/cost-tracking/tracker";
 
 interface VideoScriptRequest {
   duration: "15s" | "30s" | "60s";
@@ -319,6 +320,23 @@ export async function POST(req: NextRequest) {
           { status: 502 },
         );
       }
+
+      // Cost tracking (fire-and-forget). See radio-script for the same pattern.
+      void trackCall(supabase, {
+        user_id: user.id,
+        purpose: "mt_video_script",
+        provider: "openai",
+        model: "gpt-4o",
+        usage: {
+          input_tokens: data.usage?.prompt_tokens ?? 0,
+          output_tokens: data.usage?.completion_tokens ?? 0,
+        },
+        meta: {
+          tort_name: body.tort_name,
+          duration: body.duration,
+          platform: body.platform,
+        },
+      });
 
       // Parse the JSON response
       let parsed: VideoScriptResponse;
