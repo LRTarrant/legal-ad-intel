@@ -14,6 +14,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Mic, Play, Volume2 } from "lucide-react";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -138,7 +139,7 @@ export function PIRadioScriptGenerator({
     setVoicesLoading(true);
     setVoicesError(null);
     try {
-      const res = await fetch("/api/campaigns/voices");
+      const res = await fetchWithDemoMode("/api/campaigns/voices");
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? `Failed to load voices (${res.status})`);
@@ -158,7 +159,7 @@ export function PIRadioScriptGenerator({
     setAudioError(null);
     setAudio(null);
     try {
-      const res = await fetch("/api/campaigns/generate-pi-radio-spot", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-pi-radio-spot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ export function PIRadioScriptGenerator({
     setError(null);
     setGenerated(null);
     try {
-      const res = await fetch("/api/campaigns/generate-pi-radio-script", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-pi-radio-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

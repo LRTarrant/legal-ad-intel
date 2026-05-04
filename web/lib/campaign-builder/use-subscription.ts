@@ -19,11 +19,12 @@
  * and gate accordingly.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
   ClientSubscription,
   SubscriptionMeResponse,
 } from "@/app/api/subscription/me/route";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 
 export interface UseSubscriptionResult {
   subscription: ClientSubscription | null;
@@ -36,10 +37,12 @@ export function useSubscription(): UseSubscriptionResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    fetch("/api/subscription/me", { credentials: "same-origin" })
+    fetchWithDemoMode("/api/subscription/me", { credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) {
           throw new Error(`subscription fetch failed: ${res.status}`);
@@ -61,6 +64,16 @@ export function useSubscription(): UseSubscriptionResult {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => refresh(), [refresh]);
+
+  // Re-fetch when the demo-mode pill changes in this tab.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => refresh();
+    window.addEventListener("lmi:demo-mode-changed", handler);
+    return () => window.removeEventListener("lmi:demo-mode-changed", handler);
+  }, [refresh]);
 
   return { subscription, loading, error };
 }

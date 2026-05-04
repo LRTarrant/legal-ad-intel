@@ -20,6 +20,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import type { DMAMarket, ListDMAMarketsResponse } from "@/lib/campaign-builder/types";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 
 export interface SelectedDMA {
   dma_code: string;
@@ -58,7 +59,7 @@ export function DMASelector({
     setLoading(true);
     setError(null);
 
-    fetch(`/api/dma-markets?state=${encodeURIComponent(state)}`, {
+    fetchWithDemoMode(`/api/dma-markets?state=${encodeURIComponent(state)}`, {
       credentials: "same-origin",
     })
       .then(async (res) => {

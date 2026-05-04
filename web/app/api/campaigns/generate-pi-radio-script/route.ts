@@ -40,6 +40,10 @@ import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
 } from "@/lib/campaign-builder/entitlements";
+import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { routePracticeArea } from "@/lib/campaign-builder/practice-area-router";
 import type { PICategory } from "@/lib/campaign-builder/pi-templates/types";
@@ -106,6 +110,18 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  // Admin demo-mode override (super_admin only). Spoofed headers
+  // surface as 403; absent headers => real subscription path.
+  let demoMode;
+  try {
+    demoMode = await readDemoModeOverride(supabase, req, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
 
   // Entitlement gate: PI access required, geo scope must include the state.
   // is_create=false: this is compute-only (no row created here).
@@ -113,7 +129,7 @@ export async function POST(req: NextRequest) {
     practice_area: "personal_injury",
     state: body.state,
     is_create: false,
-  });
+  }, demoMode);
   if (!gate.ok) {
     const { body: errBody, status } = entitlementErrorBody(gate);
     return NextResponse.json(errBody, { status });

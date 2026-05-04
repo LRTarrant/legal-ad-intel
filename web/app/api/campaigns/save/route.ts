@@ -30,6 +30,10 @@ import {
   getSubscriptionForUser,
 } from "@/lib/campaign-builder/entitlements";
 import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
+import {
   ensureSelfFirmForLawFirm,
   getFirmForUser,
   listFirmsForUser,
@@ -63,6 +67,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Admin demo-mode override (super_admin only). Spoofed headers
+  // surface as 403; absent headers => real subscription path. Read
+  // here at top level so it's in scope for both the entitlement gate
+  // and the firm-resolution subscription lookup below.
+  let demoMode;
+  try {
+    demoMode = await readDemoModeOverride(supabase, req, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
   // Server-side entitlement gate. /save is the canonical "create" surface
   // for campaigns, so we set is_create=true when no id is supplied so the
   // monthly cap is enforced. Updates (id present) bypass the cap so users
@@ -72,7 +90,7 @@ export async function POST(req: NextRequest) {
       practice_area: body.practice_area,
       state: body.state ?? null,
       is_create: !body.id,
-    });
+    }, demoMode);
     if (!gate.ok) {
       const { body: errBody, status } = entitlementErrorBody(gate);
       return NextResponse.json(errBody, { status });
@@ -101,7 +119,7 @@ export async function POST(req: NextRequest) {
     resolvedFirmId = firm.id;
   } else if (!body.id) {
     // Create path with no firm_id supplied — fall back.
-    const sub = await getSubscriptionForUser(supabase, user.id);
+    const sub = await getSubscriptionForUser(supabase, user.id, demoMode);
     const buyerType = sub?.buyer_type ?? "law_firm";
     if (buyerType === "law_firm") {
       const selfFirm = await ensureSelfFirmForLawFirm(

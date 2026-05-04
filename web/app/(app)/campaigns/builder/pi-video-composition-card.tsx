@@ -24,6 +24,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Play, Video } from "lucide-react";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -155,7 +156,7 @@ export function PIVideoCompositionCard({
       setProgress("Generating video script\u2026");
       let storyboard = script;
       if (!storyboard) {
-        const res = await fetch("/api/campaigns/generate-pi-video-script", {
+        const res = await fetchWithDemoMode("/api/campaigns/generate-pi-video-script", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -196,7 +197,7 @@ export function PIVideoCompositionCard({
             : "1024x1792";
       const sceneImageUrls = await Promise.all(
         storyboard.scenes.map(async (scene) => {
-          const res = await fetch("/api/campaigns/generate-pi-scene-image", {
+          const res = await fetchWithDemoMode("/api/campaigns/generate-pi-scene-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -231,7 +232,7 @@ export function PIVideoCompositionCard({
         const fullVoiceover = storyboard.scenes
           .map((s) => s.voiceover)
           .join(" ");
-        const voRes = await fetch("/api/campaigns/generate-voiceover", {
+        const voRes = await fetchWithDemoMode("/api/campaigns/generate-voiceover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -255,7 +256,7 @@ export function PIVideoCompositionCard({
       // ── Step 4: render ─────────────────────────────────────────────
       setProgress("Composing video (this can take 30-60 seconds)\u2026");
       const resolution = PLATFORM_RESOLUTIONS[platform];
-      const renderRes = await fetch("/api/campaigns/render-video", {
+      const renderRes = await fetchWithDemoMode("/api/campaigns/render-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
