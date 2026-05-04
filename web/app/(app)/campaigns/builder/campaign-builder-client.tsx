@@ -39,6 +39,8 @@ import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import { VideoCompositionCard } from "./video-composition-card";
 import { PracticeAreaTabs, type PracticeArea } from "./practice-area-tabs";
 import { UpgradeModal, type UpgradeModalReason } from "./upgrade-modal";
+import { PIConfigForm, type PIPlanResult } from "./pi-config-form";
+import { PIScriptCard } from "./pi-script-card";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -297,6 +299,9 @@ export function CampaignBuilderClient() {
     }
     setUpgradeModal({ open: true, reason });
   };
+
+  // PI generation result (separate from mass tort plan state)
+  const [piResult, setPiResult] = useState<PIPlanResult | null>(null);
 
   // Form state
   const [tortNames, setTortNames] = useState<string[]>([]);
@@ -976,12 +981,15 @@ export function CampaignBuilderClient() {
             : "Configure Your PI Campaign"}
         </h2>
         {practiceArea === "personal_injury" && (
-          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            <strong>Personal Injury campaigns</strong> are coming soon. The
-            category dropdown, DMA selector, and severity modifiers will appear
-            here in the next release. For now, switch to Mass Tort to generate.
-          </div>
+          <PIConfigForm
+            firmName={firmName}
+            onFirmNameChange={setFirmName}
+            onGenerated={setPiResult}
+            accentColor={accentColor}
+          />
         )}
+        {practiceArea === "mass_tort" && (
+        <>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {/* Firm/Company Name */}
           <div>
@@ -1214,7 +1222,14 @@ export function CampaignBuilderClient() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
+
+      {/* PI script result */}
+      {practiceArea === "personal_injury" && piResult && (
+        <PIScriptCard result={piResult} accentColor={accentColor} />
+      )}
 
       {/* Error */}
       {error && (
