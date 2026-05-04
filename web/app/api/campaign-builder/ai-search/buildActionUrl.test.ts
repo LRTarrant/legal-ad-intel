@@ -167,3 +167,31 @@ test("unknown action_type returns null", () => {
   expect(buildActionUrl("nonexistent_page")).toBeNull();
   expect(buildActionUrl("campaign_builder")).toBeNull();
 });
+
+/* ── pi_builder ───────────────────────────────────────────────────────── */
+
+test("pi_builder with no params returns base PI builder URL", () => {
+  expect(buildActionUrl("pi_builder")).toBe(
+    "/campaigns/builder?practice_area=personal_injury",
+  );
+});
+
+test("pi_builder with state_name pre-selects state", () => {
+  expect(buildActionUrl("pi_builder", { state_name: "Alabama" })).toBe(
+    "/campaigns/builder?practice_area=personal_injury&state=alabama",
+  );
+});
+
+test("pi_builder with state_abbr pre-selects state", () => {
+  expect(buildActionUrl("pi_builder", { state_abbr: "AL" })).toBe(
+    "/campaigns/builder?practice_area=personal_injury&state=alabama",
+  );
+});
+
+test("pi_builder with unknown state falls back to base URL", () => {
+  // Wyoming isn't in the state catalog — should drop the state param
+  // rather than emit an invalid URL.
+  expect(buildActionUrl("pi_builder", { state_name: "Wyoming" })).toBe(
+    "/campaigns/builder?practice_area=personal_injury",
+  );
+});

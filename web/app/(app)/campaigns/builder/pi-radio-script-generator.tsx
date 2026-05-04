@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Mic, Play, Volume2 } from "lucide-react";
 import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
+import { VoicePicker } from "./voice-picker";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -375,6 +376,8 @@ export function PIRadioScriptGenerator({
             error={audioError}
             audio={audio}
             accentColor={accentColor}
+            previewSampleText={generated.script}
+            firmId={firmId}
           />
 
           {/* Suppress unused-prop warning when plan is read elsewhere by tests */}
@@ -418,6 +421,10 @@ interface AudioSectionProps {
   error: string | null;
   audio: GeneratedAudio | null;
   accentColor: string;
+  /** First sentence of this is used as the voice-preview sample. */
+  previewSampleText?: string;
+  /** Firm id for preview cost attribution. */
+  firmId?: string | null;
 }
 
 function AudioSection({
@@ -431,6 +438,8 @@ function AudioSection({
   error,
   audio,
   accentColor,
+  previewSampleText,
+  firmId,
 }: AudioSectionProps) {
   const sortedVoices = useMemo(() => {
     if (!voices) return [];
@@ -468,20 +477,19 @@ function AudioSection({
 
       {sortedVoices.length > 0 && (
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
-          <Field label="Voice">
-            <select
-              value={selectedVoiceId}
-              onChange={(e) => onSelectVoice(e.target.value)}
-              className="min-w-[16rem] rounded-md border border-cloud bg-white px-3 py-2 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-2 focus:ring-intelligence-teal/30"
-            >
-              {sortedVoices.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                  {v.description ? ` — ${v.description}` : ""}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div className="flex-1">
+            <Field label="Voice">
+              <VoicePicker
+                voices={sortedVoices}
+                selectedVoiceId={selectedVoiceId}
+                onSelectVoice={onSelectVoice}
+                previewSampleText={previewSampleText}
+                firmId={firmId}
+                practiceArea="personal_injury"
+                accentColor={accentColor}
+              />
+            </Field>
+          </div>
           <button
             type="button"
             onClick={onGenerate}

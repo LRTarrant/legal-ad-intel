@@ -75,12 +75,55 @@ function renderMarkdown(text: string) {
   return elements;
 }
 
-const SUGGESTED_QUERIES = [
+/**
+ * Suggested queries shown as chips below the search bar when there's no
+ * active result. We rotate a 4-chip subset on each render from a balanced
+ * pool that mixes:
+ *   - Mass tort prompts (legacy product surface)
+ *   - PI prompts (Phase 4 surface) — always at least one PI signal-driven
+ *     prompt visible so users discover the PI features
+ *   - Cross-cutting prompts (judicial, MDL, advertising spend) that work
+ *     regardless of practice area
+ *
+ * Each PI prompt is intentionally tied to a unique data signal we expose
+ * (FARS fatality density, NOAA storms, county-level rankings, etc.) so
+ * the chip itself hints at the value prop.
+ */
+const MASS_TORT_QUERIES = [
   "What states should I target for Paraquat?",
   "Who's advertising for Roundup?",
-  "What's the largest MDL right now?",
   "Tell me about Depo Provera litigation",
+  "Which torts have the largest MDLs right now?",
 ];
+
+const PI_QUERIES = [
+  "Top counties in Alabama for fatal car crashes",
+  "Where are the most truck accidents in Texas?",
+  "Which DMAs should I target for motorcycle PI?",
+  "Who's spending on PI ads in my market?",
+];
+
+/**
+ * Build a rotating chip set: 2 mass-tort + 2 PI prompts each render.
+ * Random selection keeps the chips fresh across visits without storing
+ * any per-user state. Stable within a single render so React doesn't
+ * shuffle on re-renders during typing.
+ */
+function pickRotatedSuggestions(): string[] {
+  function sample<T>(arr: readonly T[], n: number): T[] {
+    const copy = [...arr];
+    const out: T[] = [];
+    for (let i = 0; i < n && copy.length > 0; i++) {
+      const idx = Math.floor(Math.random() * copy.length);
+      out.push(copy.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+  return [
+    ...sample(MASS_TORT_QUERIES, 2),
+    ...sample(PI_QUERIES, 2),
+  ];
+}
 
 export function AiSearchBar() {
   const [query, setQuery] = useState("");
@@ -88,6 +131,11 @@ export function AiSearchBar() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Stable per-mount suggestion set so React doesn't reshuffle during
+  // typing. Rotates on next page load or when chips are cleared.
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    pickRotatedSuggestions(),
+  );
 
   const handleSearch = useCallback(
     async (searchQuery: string) => {
@@ -137,6 +185,8 @@ export function AiSearchBar() {
     setQuery("");
     setResult(null);
     setError(null);
+    // Rotate suggestions so the user gets a fresh set after each search.
+    setSuggestions(pickRotatedSuggestions());
     inputRef.current?.focus();
   }
 
@@ -183,7 +233,7 @@ export function AiSearchBar() {
       {/* Suggested Queries (shown when no result and no loading) */}
       {!result && !isLoading && !error && (
         <div className="mt-2 flex flex-wrap gap-2">
-          {SUGGESTED_QUERIES.map((q) => (
+          {suggestions.map((q) => (
             <button
               key={q}
               onClick={() => {

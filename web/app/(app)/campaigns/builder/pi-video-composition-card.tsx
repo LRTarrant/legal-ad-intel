@@ -223,9 +223,10 @@ export function PIVideoCompositionCard({
       // ── Step 3: voiceover (optional) ───────────────────────────────
       let voiceoverBase64: string | undefined;
       if (withVoiceover) {
-        if (!selectedVoiceId) {
+        const voiceForVideo = videoVoiceId || selectedVoiceId;
+        if (!voiceForVideo) {
           throw new Error(
-            "Pick a voice in the Audio section above before generating video with voiceover.",
+            "Pick a voice for the video before generating with voiceover.",
           );
         }
         setProgress("Synthesizing voiceover\u2026");
@@ -237,7 +238,7 @@ export function PIVideoCompositionCard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: fullVoiceover,
-            voiceId: selectedVoiceId,
+            voiceId: voiceForVideo,
             firm_id: firmId ?? undefined,
             practice_area: "personal_injury",
             pi_category: config.pi_category,
@@ -351,16 +352,53 @@ export function PIVideoCompositionCard({
         </Field>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-gray">
-        <input
-          type="checkbox"
-          checked={withVoiceover}
-          onChange={(e) => setWithVoiceover(e.target.checked)}
-          className="rounded border-cloud"
-        />
-        Include synthesized voiceover (uses the voice selected in the Audio
-        section above)
-      </label>
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm text-slate-gray">
+          <input
+            type="checkbox"
+            checked={withVoiceover}
+            onChange={(e) => setWithVoiceover(e.target.checked)}
+            className="rounded border-cloud"
+          />
+          Include synthesized voiceover
+        </label>
+
+        {withVoiceover && (
+          <div className="rounded-md border border-cloud bg-cloud/20 p-4 space-y-2">
+            <div
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: accentColor }}
+            >
+              Video voice
+            </div>
+            <p className="text-[11px] text-slate-gray">
+              Defaults to the voice picked in the Audio section. Change here to
+              use a different voice on the video.
+            </p>
+            {voicesLoading && (
+              <p className="text-sm text-slate-gray">Loading voice catalog\u2026</p>
+            )}
+            {voicesError && (
+              <p className="text-sm text-red-600">
+                Couldn&apos;t load voices: {voicesError}
+              </p>
+            )}
+            {!voicesLoading && voices.length > 0 && (
+              <VoicePicker
+                voices={voices}
+                selectedVoiceId={videoVoiceId}
+                onSelectVoice={setVideoVoiceId}
+                previewSampleText={
+                  script?.scenes?.[0]?.voiceover ?? script?.ctaHeadline ?? ""
+                }
+                firmId={firmId}
+                practiceArea="personal_injury"
+                accentColor={accentColor}
+              />
+            )}
+          </div>
+        )}
+      </div>
 
       <div>
         <button
