@@ -7,6 +7,10 @@
  *
  * Query params:
  *   practice_area  — optional filter ('mass_tort' | 'personal_injury')
+ *   firm_id        — optional filter by firm. When the caller manages
+ *                    multiple firms (agency / media co.), this drills
+ *                    into one client's history. RLS via getFirmForUser
+ *                    blocks firms the caller doesn't manage.
  *   status         — optional filter ('draft' | 'active' | 'archived')
  *   limit          — page size (1-100, default 25)
  *   cursor         — id of the last item from the previous page
@@ -25,6 +29,7 @@ import type {
   CampaignRow,
   ListCampaignsResponse,
 } from "@/lib/campaign-builder/types";
+import { getFirmForUser } from "@/lib/firms/server";
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -41,6 +46,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const practiceArea = url.searchParams.get("practice_area");
+  const firmId = url.searchParams.get("firm_id");
   const status = url.searchParams.get("status");
   const cursor = url.searchParams.get("cursor");
   const limitRaw = url.searchParams.get("limit");
@@ -72,6 +78,18 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Verify firm access before filtering. If the caller passed a firm_id
+  // they don't manage, return 403 — no "silent empty list" leak.
+  if (firmId) {
+    const firm = await getFirmForUser(supabase, user.id, firmId);
+    if (!firm) {
+      return NextResponse.json(
+        { error: "firm_id not found or you don't manage that firm" },
+        { status: 403 },
+      );
+    }
+  }
+
   // Cursor pagination: fetch one extra row to detect "more available".
   // If we get limit+1 rows, the last is dropped from the response and
   // its id becomes next_cursor.
@@ -87,6 +105,10 @@ export async function GET(req: NextRequest) {
 
   if (practiceArea) {
     query = query.eq("practice_area", practiceArea);
+  }
+
+  if (firmId) {
+    query = query.eq("firm_id", firmId);
   }
 
   if (status) {

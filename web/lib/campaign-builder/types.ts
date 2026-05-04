@@ -21,6 +21,13 @@ import type { PICategory, SeverityModifier } from "./pi-templates/types";
 export interface CampaignRow {
   id: string;
   user_id: string;
+  /**
+   * The firm this campaign was generated for. Survives manager changes
+   * — if an agency drops a client, the firm and its campaigns travel
+   * with the firm to the next manager. Backfilled to a self-firm for
+   * legacy rows in migration 20260505000001.
+   */
+  firm_id: string;
   practice_area: "mass_tort" | "personal_injury";
   tort_slug: string | null;
   pi_category: PICategory | null;
@@ -45,6 +52,12 @@ export interface CampaignRow {
  */
 export interface SaveCampaignRequest {
   id?: string;
+  /**
+   * Optional in the request: when omitted on a create, the server falls
+   * back to the caller's owner firm (or auto-creates one for law firm
+   * users). Required-by-the-server, optional-from-the-client.
+   */
+  firm_id?: string;
   practice_area: "mass_tort" | "personal_injury";
   tort_slug?: string;
   pi_category?: PICategory;
@@ -73,6 +86,11 @@ export interface SaveCampaignResponse {
  */
 export interface ListCampaignsParams {
   practice_area?: "mass_tort" | "personal_injury";
+  /**
+   * Filter to campaigns for one firm. Useful for agencies/media
+   * companies who manage many client firms and want to drill in.
+   */
+  firm_id?: string;
   status?: "draft" | "active" | "archived";
   limit?: number;
   cursor?: string;
@@ -117,6 +135,9 @@ export interface ValidationResult {
   errors: string[];
 }
 
+/** RFC-4122-ish UUID shape (relaxed but reject obvious garbage). */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function validateSaveCampaign(body: SaveCampaignRequest): ValidationResult {
   const errors: string[] = [];
 
@@ -124,6 +145,12 @@ export function validateSaveCampaign(body: SaveCampaignRequest): ValidationResul
     errors.push(
       `practice_area must be 'mass_tort' or 'personal_injury' (got ${JSON.stringify(body.practice_area)})`,
     );
+  }
+
+  // firm_id is optional from the client (server can fall back to the
+  // caller's owner firm), but if present it must be a UUID.
+  if (body.firm_id !== undefined && !UUID_RE.test(body.firm_id)) {
+    errors.push(`firm_id must be a UUID (got ${JSON.stringify(body.firm_id)})`);
   }
 
   if (body.practice_area === "mass_tort") {
