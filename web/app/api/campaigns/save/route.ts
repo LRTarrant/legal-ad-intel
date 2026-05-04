@@ -27,7 +27,13 @@ import {
 import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
+  getSubscriptionForUser,
 } from "@/lib/campaign-builder/entitlements";
+import {
+  ensureSelfFirmForLawFirm,
+  getFirmForUser,
+  listFirmsForUser,
+} from "@/lib/firms/server";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -73,11 +79,66 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Resolve firm_id ─────────────────────────────────────────────────────────────
+  // Three resolution rules:
+  //   1. If caller supplied firm_id, verify they manage it (any role).
+  //   2. Otherwise, fall back to their owner firm. For law firms,
+  //      auto-create one via ensureSelfFirmForLawFirm — keeps the UX
+  //      seamless on a brand-new account.
+  //   3. If still no firm and they manage zero, return 400 with a hint.
+  // For UPDATES (body.id present), we don't touch firm_id unless the
+  // caller explicitly passed a new one, so existing campaigns keep
+  // their firm assignment by default.
+  let resolvedFirmId: string | null = null;
+  if (body.firm_id) {
+    const firm = await getFirmForUser(supabase, user.id, body.firm_id);
+    if (!firm) {
+      return NextResponse.json(
+        { error: "firm_id not found or you don't manage that firm" },
+        { status: 403 },
+      );
+    }
+    resolvedFirmId = firm.id;
+  } else if (!body.id) {
+    // Create path with no firm_id supplied — fall back.
+    const sub = await getSubscriptionForUser(supabase, user.id);
+    const buyerType = sub?.buyer_type ?? "law_firm";
+    if (buyerType === "law_firm") {
+      const selfFirm = await ensureSelfFirmForLawFirm(
+        supabase,
+        user.id,
+        "law_firm",
+        // Use the user's email-prefix as a default label. The /save route
+        // doesn't have direct access to user metadata, but auth.users
+        // already has the email — we just don't fetch it here for v1.
+        // ensureSelfFirmForLawFirm will fall back to 'My Firm' if blank.
+        "",
+      );
+      resolvedFirmId = selfFirm?.id ?? null;
+    } else {
+      // Agency / media co. without a firm picked — use their first
+      // managed firm as a sensible default. UI should always pass
+      // firm_id explicitly post-Phase-0c, but we stay lenient.
+      const firms = await listFirmsForUser(supabase, user.id);
+      resolvedFirmId = firms[0]?.id ?? null;
+    }
+    if (!resolvedFirmId) {
+      return NextResponse.json(
+        {
+          error: "No firm available. Add a client firm before saving a campaign.",
+          code: "no_firm_available",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   // Build the row payload. Only include fields the caller actually sent
   // so updates can be partial (e.g. just changing the status to 'active').
   const payload: Record<string, unknown> = {
     practice_area: body.practice_area,
   };
+  if (resolvedFirmId !== null) payload.firm_id = resolvedFirmId;
   if (body.tort_slug !== undefined) payload.tort_slug = body.tort_slug;
   if (body.pi_category !== undefined) payload.pi_category = body.pi_category;
   if (body.state !== undefined) payload.state = body.state;

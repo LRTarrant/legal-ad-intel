@@ -173,3 +173,32 @@ test("validate works the same when id is provided (update path)", () => {
   });
   expect(r.ok).toBe(true);
 });
+
+/* ── firm_id ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+test("validate accepts a UUID firm_id", () => {
+  const r = validateSaveCampaign({
+    practice_area: "mass_tort",
+    tort_slug: "roundup",
+    firm_id: "550e8400-e29b-41d4-a716-446655440000",
+  });
+  expect(r.ok).toBe(true);
+});
+
+test("validate rejects non-UUID firm_id", () => {
+  const r = validateSaveCampaign({
+    practice_area: "mass_tort",
+    tort_slug: "roundup",
+    firm_id: "not-a-uuid",
+  });
+  expect(r.ok).toBe(false);
+  expect(r.errors.some((e) => e.includes("firm_id"))).toBe(true);
+});
+
+test("validate accepts request with no firm_id (server falls back)", () => {
+  const r = validateSaveCampaign({
+    practice_area: "mass_tort",
+    tort_slug: "roundup",
+  });
+  expect(r.ok).toBe(true);
+});
