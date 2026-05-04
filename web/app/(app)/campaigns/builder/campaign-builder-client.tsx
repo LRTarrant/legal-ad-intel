@@ -37,6 +37,13 @@ import { downloadCampaignZip } from "@/lib/campaign-export";
 import { trackCampaignBuilderOpened, trackCampaignBuilt } from "@/lib/analytics";
 import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import { VideoCompositionCard } from "./video-composition-card";
+import { PracticeAreaTabs, type PracticeArea } from "./practice-area-tabs";
+import { UpgradeModal, type UpgradeModalReason } from "./upgrade-modal";
+import {
+  useSubscription,
+  hasMassTortAccess,
+  hasPIAccess,
+} from "@/lib/campaign-builder/use-subscription";
 import {
   getQualificationCriteriaByName,
   type TortQualificationCriteria,
@@ -234,6 +241,62 @@ function channelLabel(ch: string): string {
 export function CampaignBuilderClient() {
   const tenant = useTenant();
   const accentColor = tenant.accentColor ?? "#1A8C96";
+
+  // ── Practice area tab state ───────────────────────────────────────────
+  const subscriptionResult = useSubscription();
+  const subscription = subscriptionResult.subscription;
+  const subscriptionLoading = subscriptionResult.loading;
+
+  // Active practice area tab. Default to mass_tort to match existing
+  // behavior; URL param + localStorage override are applied below.
+  const [practiceArea, setPracticeArea] = useState<PracticeArea>("mass_tort");
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    reason: UpgradeModalReason;
+  }>({ open: false, reason: "pi_locked" });
+
+  // Hydrate practice_area from URL ?practice_area=... or localStorage
+  // on first mount. URL takes precedence (deep links from tort/state
+  // pages will land here). localStorage is the fallback for return
+  // visits.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const fromUrl = url.searchParams.get("practice_area");
+    if (fromUrl === "mass_tort" || fromUrl === "personal_injury") {
+      setPracticeArea(fromUrl);
+      // Strip the param so the URL stays clean after first load
+      url.searchParams.delete("practice_area");
+      window.history.replaceState({}, "", url.toString());
+      return;
+    }
+    const fromStorage = window.localStorage.getItem("campaignBuilder.practiceArea");
+    if (fromStorage === "mass_tort" || fromStorage === "personal_injury") {
+      setPracticeArea(fromStorage);
+    }
+  }, []);
+
+  // Persist tab choice for next visit
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("campaignBuilder.practiceArea", practiceArea);
+    }
+  }, [practiceArea]);
+
+  const handleLockedTabClick = (locked: PracticeArea) => {
+    // Reason: which tab is locked relative to what they have access to
+    const hasMT = hasMassTortAccess(subscription);
+    const hasPI = hasPIAccess(subscription);
+    let reason: UpgradeModalReason;
+    if (!hasMT && !hasPI) {
+      reason = "no_access";
+    } else if (locked === "personal_injury") {
+      reason = "pi_locked";
+    } else {
+      reason = "mt_locked";
+    }
+    setUpgradeModal({ open: true, reason });
+  };
 
   // Form state
   const [tortNames, setTortNames] = useState<string[]>([]);
@@ -887,11 +950,38 @@ export function CampaignBuilderClient() {
 
   return (
     <div className="space-y-6">
+      {/* Practice area tabs */}
+      <PracticeAreaTabs
+        active={practiceArea}
+        onChange={setPracticeArea}
+        onLockedClick={handleLockedTabClick}
+        subscription={subscription}
+        loading={subscriptionLoading}
+        accentColor={accentColor}
+      />
+
+      <UpgradeModal
+        open={upgradeModal.open}
+        reason={upgradeModal.reason}
+        subscription={subscription}
+        onClose={() => setUpgradeModal((s) => ({ ...s, open: false }))}
+        accentColor={accentColor}
+      />
+
       {/* Input Panel */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-midnight-navy mb-4">
-          Configure Your Campaign
+          {practiceArea === "mass_tort"
+            ? "Configure Your Campaign"
+            : "Configure Your PI Campaign"}
         </h2>
+        {practiceArea === "personal_injury" && (
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <strong>Personal Injury campaigns</strong> are coming soon. The
+            category dropdown, DMA selector, and severity modifiers will appear
+            here in the next release. For now, switch to Mass Tort to generate.
+          </div>
+        )}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {/* Firm/Company Name */}
           <div>
