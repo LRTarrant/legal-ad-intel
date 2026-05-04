@@ -37,7 +37,7 @@ export async function getMarketHeatmapData(): Promise<MarketAdEvent[]> {
       impressions_estimate,
       estimated_reach,
       event_date,
-      firms!inner ( name ),
+      advertiser_firms!inner ( name ),
       mass_torts!inner ( name ),
       markets!inner ( market_name, state_code, region )
     `)
@@ -52,7 +52,7 @@ export async function getMarketHeatmapData(): Promise<MarketAdEvent[]> {
     impressions_estimate: Number(row.impressions_estimate) || 0,
     estimated_reach: Number(row.estimated_reach) || 0,
     event_date: row.event_date as string,
-    firm_name: (row.firms as Record<string, unknown>)?.name as string ?? "",
+    firm_name: (row.advertiser_firms as Record<string, unknown>)?.name as string ?? "",
     tort_name: (row.mass_torts as Record<string, unknown>)?.name as string ?? "",
     market_name: (row.markets as Record<string, unknown>)?.market_name as string ?? "",
     state_code: (row.markets as Record<string, unknown>)?.state_code as string ?? "",
@@ -69,7 +69,7 @@ export async function getMarketFilters(): Promise<MarketFilters> {
 
   const [eventsRes, firmsRes, tortsRes] = await Promise.all([
     sb.from("ad_events").select("channel"),
-    sb.from("firms").select("name").order("name"),
+    sb.from("advertiser_firms").select("name").order("name"),
     sb.from("mass_torts").select("name").order("name"),
   ]);
 
