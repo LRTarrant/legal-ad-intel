@@ -20,6 +20,7 @@
 
 import type { PITemplate, PITemplateVars, SeverityModifier } from "./pi-templates";
 import { getPITemplate, renderPITemplate } from "./pi-templates";
+import { applySeverityModifiers } from "./severity-modifiers";
 
 /**
  * Practice area discriminator — must match the CHECK constraint on
@@ -59,8 +60,14 @@ export interface CampaignContext {
  * mass tort directly. This router will be used by NEW PI flows first;
  * mass tort migration is a v2 cleanup task.)
  *
- * PI path: returns a rendered PITemplate plus active severity modifiers
- * the consumer should apply (severity-modifiers/* layer).
+ * PI path: returns a fully-prepared PITemplate — already rendered with
+ * variables AND with any severity modifiers applied. Downstream callers
+ * (radio script route, video script route) just consume the final
+ * template; they don't need to know about modifiers.
+ *
+ * The pre-modifier template is also returned in `baseTemplate` for
+ * debugging / analytics use cases (e.g. "how often does fatal modifier
+ * change the CTA?").
  */
 export type RouterResult =
   | {
@@ -72,7 +79,11 @@ export type RouterResult =
     }
   | {
       practice_area: "personal_injury";
+      /** Final template ready for prompt assembly (vars + modifiers applied). */
       template: PITemplate;
+      /** The rendered base template before severity modifiers were applied. */
+      baseTemplate: PITemplate;
+      /** Active severity modifiers (after validation). */
       severity_modifiers: SeverityModifier[];
     };
 
@@ -115,13 +126,17 @@ export function routePracticeArea(ctx: CampaignContext): RouterResult {
       firm_name: ctx.firm_name ?? "Our firm",
     };
 
+    const baseTemplate = renderPITemplate(template, vars);
+    const severityModifiers = (ctx.severity_modifiers ?? []).filter(
+      (m): m is SeverityModifier => m === "fatal" || m === "catastrophic",
+    );
+    const finalTemplate = applySeverityModifiers(baseTemplate, severityModifiers, vars);
+
     return {
       practice_area: "personal_injury",
-      template: renderPITemplate(template, vars),
-      severity_modifiers:
-        (ctx.severity_modifiers ?? []).filter(
-          (m): m is SeverityModifier => m === "fatal" || m === "catastrophic",
-        ),
+      template: finalTemplate,
+      baseTemplate,
+      severity_modifiers: severityModifiers,
     };
   }
 
