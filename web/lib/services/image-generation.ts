@@ -162,6 +162,38 @@ export async function getTortLibraryImage(
   }
 }
 
+/**
+ * PI version of getTortLibraryImage. Returns a random library image
+ * for the given pi_category, or null if there aren't enough curated
+ * PI images yet to skip the AI generation fallback.
+ *
+ * Same MIN_COUNT threshold as mass tort — we want enough variety
+ * before we skip AI generation entirely.
+ */
+export async function getPILibraryImage(
+  piCategory: string,
+  supabase: any,
+): Promise<string | null> {
+  try {
+    const { data: images, error } = await supabase
+      .from("tort_images")
+      .select("public_url")
+      .eq("practice_area", "personal_injury")
+      .eq("pi_category", piCategory)
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error || !images || images.length < TORT_IMAGE_LIBRARY_MIN_COUNT) {
+      return null;
+    }
+
+    const pick = images[Math.floor(Math.random() * images.length)];
+    return pick.public_url;
+  } catch {
+    return null;
+  }
+}
+
 export function createImageProviderWithFallback(): ImageGenerationProvider {
   const primary = createImageProvider();
   const openaiKey = process.env.OPENAI_API_KEY;

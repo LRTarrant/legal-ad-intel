@@ -24,9 +24,30 @@ const PRIORITY_TORTS = [
   "social-media-addiction",
 ];
 
+/**
+ * Personal Injury categories. Order matches the v1 priority shipped
+ * in the Campaign Builder PI flow (motorcycle/boating/car first,
+ * then the rest as Task 10 lands templates for them).
+ */
+const PI_CATEGORIES: { value: string; label: string }[] = [
+  { value: "car_accident", label: "Car Accident" },
+  { value: "truck_accident", label: "Truck Accident" },
+  { value: "motorcycle_accident", label: "Motorcycle Accident" },
+  { value: "boating_accident", label: "Boating Accident" },
+  { value: "slip_and_fall", label: "Slip and Fall" },
+  { value: "dog_bite", label: "Dog Bite" },
+  { value: "premises_liability", label: "Premises Liability" },
+  { value: "pedestrian_accident", label: "Pedestrian Accident" },
+  { value: "bicycle_accident", label: "Bicycle Accident" },
+];
+
+type PracticeArea = "mass_tort" | "personal_injury";
+
 interface TortImage {
   id: string;
   tort_slug: string;
+  practice_area: PracticeArea | null;
+  pi_category: string | null;
   storage_path: string;
   public_url: string;
   display_order: number;
@@ -36,6 +57,11 @@ interface TortImage {
   license_note: string | null;
   is_active: boolean;
   created_at: string;
+}
+
+function formatPICategory(value: string): string {
+  const found = PI_CATEGORIES.find((c) => c.value === value);
+  return found ? found.label : value;
 }
 
 function formatSlug(slug: string): string {
@@ -55,6 +81,18 @@ export function TortImagesAdmin() {
   const [selectedTort, setSelectedTort] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // ── Upload form state ─────────────────────────────────────────────────────────
+  // Practice area for the next upload — swaps the selector below
+  // between tort dropdown (mass_tort) and PI category dropdown.
+  const [uploadPracticeArea, setUploadPracticeArea] =
+    useState<PracticeArea>("mass_tort");
+  const [uploadTortSlug, setUploadTortSlug] = useState<string>(
+    PRIORITY_TORTS[0],
+  );
+  const [uploadPICategory, setUploadPICategory] = useState<string>(
+    PI_CATEGORIES[0]!.value,
+  );
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -109,15 +147,35 @@ export function TortImagesAdmin() {
     fetchImages();
   }, [fetchImages]);
 
-  async function handleUpload(files: FileList, tortSlug: string) {
+  async function handleUpload(
+    files: FileList,
+    practiceArea: PracticeArea,
+    tortSlug: string | null,
+    piCategory: string | null,
+  ) {
     setUploading(true);
     const supabase = createClient();
     let uploaded = 0;
 
+    // For PI uploads, use the pi_category as the storage folder so
+    // PI images live alongside tort images in the same bucket but in
+    // a separate prefix. Mass tort keeps its existing tort_slug folder.
+    const folderKey =
+      practiceArea === "personal_injury"
+        ? `pi_${piCategory ?? "unknown"}`
+        : tortSlug ?? "unknown";
+
+    // Same key is used for the row's display_order calculation
+    // (so PI images count among other images in the same category).
+    const matchingExisting = (i: TortImage) =>
+      practiceArea === "personal_injury"
+        ? i.pi_category === piCategory
+        : i.tort_slug === tortSlug && i.practice_area !== "personal_injury";
+
     for (const file of Array.from(files)) {
       const ext = file.name.split(".").pop() ?? "jpg";
       const timestamp = Date.now();
-      const storagePath = `${tortSlug}/${tortSlug}_${timestamp}.${ext}`;
+      const storagePath = `${folderKey}/${folderKey}_${timestamp}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("tort-images")
@@ -136,10 +194,12 @@ export function TortImagesAdmin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tort_slug: tortSlug,
+          practice_area: practiceArea,
+          tort_slug: practiceArea === "mass_tort" ? tortSlug : undefined,
+          pi_category: practiceArea === "personal_injury" ? piCategory : undefined,
           storage_path: storagePath,
           public_url: publicUrl,
-          display_order: images.filter((i) => i.tort_slug === tortSlug).length + uploaded,
+          display_order: images.filter(matchingExisting).length + uploaded,
         }),
       });
 
@@ -271,25 +331,89 @@ export function TortImagesAdmin() {
         <h2 className="mb-4 text-lg font-semibold text-charcoal">
           Upload Images
         </h2>
-        <div className="flex items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Tort
-            </label>
-            <select
-              id="upload-tort"
-              className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-              defaultValue={PRIORITY_TORTS[0]}
-            >
-              {(tortSlugs.length > 0 ? tortSlugs : PRIORITY_TORTS).map(
-                (slug) => (
-                  <option key={slug} value={slug}>
-                    {formatSlug(slug)}
-                  </option>
-                ),
-              )}
-            </select>
+
+        {/* Practice area toggle */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Practice Area
+          </label>
+          <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+            {([
+              { value: "mass_tort", label: "Mass Tort" },
+              { value: "personal_injury", label: "Personal Injury" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setUploadPracticeArea(opt.value)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  uploadPracticeArea === opt.value
+                    ? "text-white"
+                    : "text-slate-gray hover:text-charcoal"
+                }`}
+                style={
+                  uploadPracticeArea === opt.value
+                    ? { backgroundColor: accentColor }
+                    : undefined
+                }
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
+        </div>
+
+        <div className="flex items-end gap-4">
+          {uploadPracticeArea === "mass_tort" ? (
+            <div>
+              <label
+                htmlFor="upload-tort"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Tort
+              </label>
+              <select
+                id="upload-tort"
+                value={uploadTortSlug}
+                onChange={(e) => setUploadTortSlug(e.target.value)}
+                className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              >
+                {(tortSlugs.length > 0 ? tortSlugs : PRIORITY_TORTS)
+                  .filter(
+                    // Hide pseudo-tort_slug rows produced by PI uploads
+                    // (they live in the same column with values like
+                    // 'motorcycle_accident').
+                    (slug) => !PI_CATEGORIES.some((c) => c.value === slug),
+                  )
+                  .map((slug) => (
+                    <option key={slug} value={slug}>
+                      {formatSlug(slug)}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="upload-pi-category"
+                className="block text-sm font-medium text-slate-700"
+              >
+                PI Category
+              </label>
+              <select
+                id="upload-pi-category"
+                value={uploadPICategory}
+                onChange={(e) => setUploadPICategory(e.target.value)}
+                className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              >
+                {PI_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label
               htmlFor="file-upload"
@@ -310,18 +434,29 @@ export function TortImagesAdmin() {
               disabled={uploading}
               onChange={(e) => {
                 if (!e.target.files?.length) return;
-                const select = document.getElementById(
-                  "upload-tort",
-                ) as HTMLSelectElement;
-                handleUpload(e.target.files, select.value);
+                handleUpload(
+                  e.target.files,
+                  uploadPracticeArea,
+                  uploadPracticeArea === "mass_tort" ? uploadTortSlug : null,
+                  uploadPracticeArea === "personal_injury"
+                    ? uploadPICategory
+                    : null,
+                );
                 e.target.value = "";
               }}
             />
           </div>
         </div>
         <p className="mt-2 text-xs text-slate-400">
-          Accepts PNG, JPEG, WebP. Up to 5 MB per file. Select multiple files at
-          once.
+          Accepts PNG, JPEG, WebP. Up to 5 MB per file. Select multiple files
+          at once.
+          {uploadPracticeArea === "personal_injury" && (
+            <>
+              {" "}
+              PI images appear in the Personal Injury image picker for the
+              selected category.
+            </>
+          )}
         </p>
       </div>
 
@@ -342,17 +477,29 @@ export function TortImagesAdmin() {
             (a, b) => a.display_order - b.display_order,
           );
           const isPriority = PRIORITY_TORTS.includes(tort);
+          // A group is a PI category if any of its images are tagged as PI.
+          // (All images in a group should share practice_area, but we check
+          // .some() defensively for legacy data.)
+          const isPIGroup = tortImages.some(
+            (i) => i.practice_area === "personal_injury",
+          );
+          const groupLabel = isPIGroup ? formatPICategory(tort) : formatSlug(tort);
 
           return (
             <section key={tort}>
               <div className="mb-3 flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-charcoal">
-                  {formatSlug(tort)}
+                  {groupLabel}
                 </h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                   {tortImages.length} image{tortImages.length !== 1 ? "s" : ""}
                 </span>
-                {isPriority && (
+                {isPIGroup && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                    Personal Injury
+                  </span>
+                )}
+                {isPriority && !isPIGroup && (
                   <span
                     className="rounded-full px-2 py-0.5 text-xs font-medium"
                     style={{
