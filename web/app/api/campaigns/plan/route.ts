@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { routePracticeArea } from "@/lib/campaign-builder/practice-area-router";
+import type { PICategory, SeverityModifier } from "@/lib/campaign-builder/pi-templates/types";
 
 const CANCER_TORTS = ["Roundup", "Talcum Powder", "AFFF", "Paraquat"];
 const ACCIDENT_TORTS = ["Motor Vehicle", "Large Truck", "Motorcycle"];
 
 interface PlanRequest {
-  tort_name: string;
-  states: string[];
+  // Mass tort path (existing fields)
+  tort_name?: string;
+  states?: string[];
   monthly_budget?: number;
+
+  // PI path (new)
+  practice_area?: "mass_tort" | "personal_injury";
+  pi_category?: PICategory;
+  market_dma_code?: string;
+  market_display_name?: string;
+  state?: string;
+  state_full_name?: string;
+  firm_name?: string;
+  severity_modifiers?: SeverityModifier[];
 }
 
 export async function POST(req: NextRequest) {
@@ -22,6 +35,46 @@ export async function POST(req: NextRequest) {
     }
 
     const body: PlanRequest = await req.json();
+
+    // ── PI path ────────────────────────────────────────────────────────
+    // When practice_area=personal_injury, route through the new PI
+    // template system. Returns a different response shape than the
+    // mass tort path — callers (the campaign builder client) branch on
+    // `practice_area` in the response to render the right UI.
+    if (body.practice_area === "personal_injury") {
+      try {
+        const result = routePracticeArea({
+          practice_area: "personal_injury",
+          pi_category: body.pi_category,
+          market_display_name: body.market_display_name,
+          market_dma_code: body.market_dma_code,
+          state: body.state,
+          state_full_name: body.state_full_name,
+          firm_name: body.firm_name,
+          severity_modifiers: body.severity_modifiers,
+        });
+
+        if (result.practice_area !== "personal_injury") {
+          // Type narrowing for TS — router would have thrown otherwise.
+          throw new Error("Router returned unexpected practice_area");
+        }
+
+        return NextResponse.json({
+          practice_area: "personal_injury",
+          template: result.template,
+          base_template: result.baseTemplate,
+          severity_modifiers: result.severity_modifiers,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown PI routing error";
+        return NextResponse.json(
+          { error: "PI plan failed", details: message },
+          { status: 400 },
+        );
+      }
+    }
+
+    // ── Mass tort path (existing logic, unchanged below) ───────────────
     const { tort_name, states, monthly_budget } = body;
 
     if (!tort_name || !states || !Array.isArray(states) || states.length === 0) {
