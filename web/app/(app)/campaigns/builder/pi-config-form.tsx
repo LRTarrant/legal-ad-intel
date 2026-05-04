@@ -19,13 +19,14 @@
  * UX expands in Task 7.1).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import type { PICategory, PITemplate, SeverityModifier } from "@/lib/campaign-builder/pi-templates/types";
 import type { ComplianceFlag } from "@/lib/campaign-builder/compliance";
 import { PICategoryDropdown } from "./pi-category-dropdown";
 import { DMASelector, type SelectedDMA } from "./dma-selector";
 import { SeverityModifierCheckboxes } from "./severity-modifier-checkboxes";
+import { getAvailablePICategories } from "@/lib/campaign-builder/pi-templates";
 
 const US_STATES_FULL: Record<string, string> = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -42,6 +43,15 @@ const US_STATES_FULL: Record<string, string> = {
   WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 const US_STATE_CODES = Object.keys(US_STATES_FULL);
+
+/** Type guards used to validate optional deep-link defaults from URL params. */
+function isValidStateCode(code: string | undefined): code is string {
+  return Boolean(code) && Object.prototype.hasOwnProperty.call(US_STATES_FULL, code as string);
+}
+function isValidCategory(value: string | undefined): value is PICategory {
+  if (!value) return false;
+  return getAvailablePICategories().includes(value as PICategory);
+}
 
 export interface PIPlanResult {
   practice_area: "personal_injury";
@@ -62,6 +72,13 @@ interface PIConfigFormProps {
   onFirmNameChange: (next: string) => void;
   onGenerated: (result: PIPlanResult) => void;
   accentColor: string;
+  /**
+   * Optional deep-link defaults from URL params (state intelligence pages,
+   * etc.). Only applied on first render — user changes are not overwritten
+   * if the parent re-renders with the same prop.
+   */
+  initialState?: string;
+  initialCategory?: string;
 }
 
 export function PIConfigForm({
@@ -69,11 +86,33 @@ export function PIConfigForm({
   onFirmNameChange,
   onGenerated,
   accentColor,
+  initialState,
+  initialCategory,
 }: PIConfigFormProps) {
-  const [category, setCategory] = useState<PICategory | "">("");
-  const [state, setState] = useState<string>("");
+  const [category, setCategory] = useState<PICategory | "">(
+    isValidCategory(initialCategory) ? initialCategory : "",
+  );
+  const [state, setState] = useState<string>(
+    isValidStateCode(initialState) ? initialState : "",
+  );
   const [dma, setDma] = useState<SelectedDMA | null>(null);
   const [severity, setSeverity] = useState<SeverityModifier | null>(null);
+
+  // Apply deep-link defaults if they arrive AFTER mount (e.g. parent
+  // hydrates URL params async and passes them in a re-render). We only
+  // overwrite empty values — if the user has already picked something,
+  // we don't surprise them by changing it.
+  useEffect(() => {
+    if (initialCategory && !category && isValidCategory(initialCategory)) {
+      setCategory(initialCategory);
+    }
+  }, [initialCategory, category]);
+  useEffect(() => {
+    if (initialState && !state && isValidStateCode(initialState)) {
+      setState(initialState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialState]);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);

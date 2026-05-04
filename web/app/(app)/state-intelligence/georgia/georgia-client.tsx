@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -521,6 +522,11 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           Major metros: Atlanta, Augusta, Savannah, Columbus, and Macon.
           Population ~10.9M.
         </p>
+        <div className="mt-4">
+          <BuildCampaignLink
+            variant={{ kind: "personal_injury", stateCode: "GA", stateName: "Georgia" }}
+          />
+        </div>
       </div>
 
       {/* ============================================================ */}
