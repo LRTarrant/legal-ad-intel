@@ -213,6 +213,7 @@ export async function updateFirm(
   if (input.default_dma_codes !== undefined) payload.default_dma_codes = input.default_dma_codes;
   if (input.notes !== undefined) payload.notes = input.notes;
   if (input.extraction_source !== undefined) payload.extraction_source = input.extraction_source;
+  if (input.extracted_at !== undefined) payload.extracted_at = input.extracted_at;
 
   if (Object.keys(payload).length === 0) {
     // No-op: just return the existing row.
