@@ -39,6 +39,11 @@ import { BrandAssetsUpload, type BrandAsset } from "./brand-assets-upload";
 import { VideoCompositionCard } from "./video-composition-card";
 import { PracticeAreaTabs, type PracticeArea } from "./practice-area-tabs";
 import { UpgradeModal, type UpgradeModalReason } from "./upgrade-modal";
+import {
+  isEntitlementError,
+  reasonFromEntitlementError,
+  type UpgradeMeta,
+} from "@/lib/billing/upgrade-copy";
 import { PIConfigForm, type PIPlanResult } from "./pi-config-form";
 import { PIScriptCard } from "./pi-script-card";
 import {
@@ -255,6 +260,7 @@ export function CampaignBuilderClient() {
   const [upgradeModal, setUpgradeModal] = useState<{
     open: boolean;
     reason: UpgradeModalReason;
+    meta?: UpgradeMeta;
   }>({ open: false, reason: "pi_locked" });
 
   // Deep link payload from tort/state pages. Captured on first mount
@@ -782,7 +788,17 @@ export function CampaignBuilderClient() {
           language: language !== "en" ? language : undefined,
         }),
       });
-      if (!res.ok) throw new Error("Script generation failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (isEntitlementError(body)) {
+          const mapped = reasonFromEntitlementError(body, "mass_tort");
+          setUpgradeModal({ open: true, reason: mapped.reason, meta: mapped.meta });
+          setRadioError(body.error ?? "Upgrade required");
+          setRadioScriptLoading(false);
+          return;
+        }
+        throw new Error(body.error ?? "Script generation failed");
+      }
       const data = await res.json();
       if (data.script) {
         setRadioScript(data.script);
@@ -894,6 +910,14 @@ export function CampaignBuilderClient() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        // Entitlement denial → open upgrade modal with mass-tort context
+        if (isEntitlementError(body)) {
+          const mapped = reasonFromEntitlementError(body, "mass_tort");
+          setUpgradeModal({ open: true, reason: mapped.reason, meta: mapped.meta });
+          setError(body.error ?? "Upgrade required");
+          setLoading(false);
+          return;
+        }
         throw new Error(body.error ?? `Request failed (${res.status})`);
       }
 
@@ -1061,6 +1085,7 @@ export function CampaignBuilderClient() {
         open={upgradeModal.open}
         reason={upgradeModal.reason}
         subscription={subscription}
+        meta={upgradeModal.meta}
         onClose={() => setUpgradeModal((s) => ({ ...s, open: false }))}
         accentColor={accentColor}
       />
@@ -1080,6 +1105,9 @@ export function CampaignBuilderClient() {
             accentColor={accentColor}
             initialState={deepLink.state}
             initialCategory={deepLink.piCategory}
+            onEntitlementError={({ reason, meta }) =>
+              setUpgradeModal({ open: true, reason, meta })
+            }
           />
         )}
         {practiceArea === "mass_tort" && (

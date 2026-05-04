@@ -27,6 +27,12 @@ import { PICategoryDropdown } from "./pi-category-dropdown";
 import { DMASelector, type SelectedDMA } from "./dma-selector";
 import { SeverityModifierCheckboxes } from "./severity-modifier-checkboxes";
 import { getAvailablePICategories } from "@/lib/campaign-builder/pi-templates";
+import {
+  isEntitlementError,
+  reasonFromEntitlementError,
+  type UpgradeReason,
+  type UpgradeMeta,
+} from "@/lib/billing/upgrade-copy";
 
 const US_STATES_FULL: Record<string, string> = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -79,6 +85,15 @@ interface PIConfigFormProps {
    */
   initialState?: string;
   initialCategory?: string;
+  /**
+   * Called when the server returns a 403/429 entitlement denial. The
+   * parent uses this to open the buyer-type-specific upgrade modal
+   * instead of showing a generic error toast.
+   */
+  onEntitlementError?: (params: {
+    reason: UpgradeReason;
+    meta: UpgradeMeta;
+  }) => void;
 }
 
 export function PIConfigForm({
@@ -88,6 +103,7 @@ export function PIConfigForm({
   accentColor,
   initialState,
   initialCategory,
+  onEntitlementError,
 }: PIConfigFormProps) {
   const [category, setCategory] = useState<PICategory | "">(
     isValidCategory(initialCategory) ? initialCategory : "",
@@ -150,7 +166,21 @@ export function PIConfigForm({
       });
 
       if (!res.ok) {
-        const errBody = (await res.json().catch(() => null)) as
+        const rawBody = (await res.json().catch(() => null)) as unknown;
+
+        // Entitlement denial → open the buyer-type-specific upgrade modal
+        // via the parent callback instead of just showing a toast.
+        if (rawBody && isEntitlementError(rawBody) && onEntitlementError) {
+          const mapped = reasonFromEntitlementError(rawBody, "personal_injury");
+          onEntitlementError(mapped);
+          // Still surface a short inline error so the form's generate button
+          // doesn't look stuck. The modal is the primary UX; this is a fallback.
+          setError(rawBody.error ?? "Upgrade required");
+          setGenerating(false);
+          return;
+        }
+
+        const errBody = (rawBody ?? null) as
           | { error?: string; details?: string }
           | null;
         throw new Error(
