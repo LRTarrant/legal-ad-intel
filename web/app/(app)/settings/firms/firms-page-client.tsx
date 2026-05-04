@@ -18,6 +18,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import { useFirms } from "@/lib/firms/use-firms";
 import type { FirmWithRole, UpdateFirmInput } from "@/lib/firms/types";
 import { AutoFillPanel } from "./auto-fill-panel";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 
 export function FirmsPageClient() {
   const firmsResult = useFirms();
@@ -163,7 +164,7 @@ function FirmEditCard({ firm, onSaved }: FirmEditCardProps) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/firms/${firm.id}`, {
+      const res = await fetchWithDemoMode(`/api/firms/${firm.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -232,7 +233,7 @@ function FirmCreateCard({ onSaved, onCancel }: FirmCreateCardProps) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("/api/firms", {
+      const res = await fetchWithDemoMode("/api/firms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),

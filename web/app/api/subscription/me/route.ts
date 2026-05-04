@@ -14,8 +14,12 @@
  *   500 — DB error
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
 
 /**
  * Subset of the subscriptions table that's safe to expose to the client.
@@ -42,7 +46,7 @@ export interface SubscriptionMeResponse {
   subscription: ClientSubscription | null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   const {
@@ -50,6 +54,42 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Demo-mode override (admin-only). When active, we synthesize a
+  // ClientSubscription instead of querying the DB. Spoofing throws 403.
+  let demoMode;
+  try {
+    demoMode = await readDemoModeOverride(supabase, request, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
+  if (demoMode) {
+    const synthetic: ClientSubscription = {
+      buyer_type: demoMode.buyer_type,
+      // Fixed display values for demo mode — the UI treats these as
+      // strings only; no real billing implications.
+      subscription_tier: "demo",
+      billing_cycle: "monthly",
+      campaign_builder_mass_tort: demoMode.mt_access,
+      campaign_builder_pi: demoMode.pi_access,
+      campaign_builder_monthly_cap: demoMode.monthly_cap,
+      // Demo mode doesn't toggle these; reasonable defaults.
+      campaign_builder_white_label: demoMode.buyer_type === "media_company",
+      campaign_builder_api_access: false,
+      geo_scope_states: demoMode.geo_scope_states,
+      geo_scope_unlimited: demoMode.geo_scope_unlimited,
+      seats_included: 1,
+      seats_used: 1,
+      active_tort_addons: [],
+      status: "active",
+    };
+    const response: SubscriptionMeResponse = { subscription: synthetic };
+    return NextResponse.json(response);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

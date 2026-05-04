@@ -27,6 +27,7 @@ import { PICategoryDropdown } from "./pi-category-dropdown";
 import { DMASelector, type SelectedDMA } from "./dma-selector";
 import { SeverityModifierCheckboxes } from "./severity-modifier-checkboxes";
 import { getAvailablePICategories } from "@/lib/campaign-builder/pi-templates";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -162,7 +163,7 @@ export function PIConfigForm({
     setError(null);
 
     try {
-      const res = await fetch("/api/campaigns/plan", {
+      const res = await fetchWithDemoMode("/api/campaigns/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

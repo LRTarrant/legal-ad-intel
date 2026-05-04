@@ -4,6 +4,10 @@ import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
 } from "@/lib/campaign-builder/entitlements";
+import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 
 interface VideoScriptRequest {
@@ -222,11 +226,23 @@ export async function POST(req: NextRequest) {
         Array.isArray(body.states) && body.states.length === 1
           ? body.states[0]
           : null;
+  // Admin demo-mode override (super_admin only). Spoofed headers
+  // surface as 403; absent headers => real subscription path.
+  let demoMode;
+  try {
+    demoMode = await readDemoModeOverride(supabase, req, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
       const gate = await checkCampaignBuilderEntitlement(supabase, user.id, {
         practice_area: "mass_tort",
         state: stateForCheck,
         is_create: false,
-      });
+      }, demoMode);
       if (!gate.ok) {
         const { body: errBody, status } = entitlementErrorBody(gate);
         return NextResponse.json(errBody, { status });

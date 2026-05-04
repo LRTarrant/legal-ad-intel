@@ -22,6 +22,7 @@
 
 import { useState } from "react";
 import { Sparkles, Check, X, Loader2 } from "lucide-react";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   ALL_FIELDS,
   buildApplyPatch,
@@ -80,7 +81,7 @@ export function AutoFillPanel({ firm, draftUrl, onApplied }: AutoFillPanelProps)
       if (effectiveUrl && effectiveUrl !== firm.website_url) {
         body.website_url = effectiveUrl;
       }
-      const res = await fetch(`/api/firms/${firm.id}/extract-brand`, {
+      const res = await fetchWithDemoMode(`/api/firms/${firm.id}/extract-brand`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -126,7 +127,7 @@ export function AutoFillPanel({ firm, draftUrl, onApplied }: AutoFillPanelProps)
       selections: state.selections,
     });
     try {
-      const res = await fetch(`/api/firms/${firm.id}`, {
+      const res = await fetchWithDemoMode(`/api/firms/${firm.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),

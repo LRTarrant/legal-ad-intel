@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   Loader2,
   TrendingUp,
@@ -565,7 +566,7 @@ export function CampaignBuilderClient() {
       return;
     }
     setMarketsLoading(true);
-    fetch("/api/campaigns/recommended-markets", {
+    fetchWithDemoMode("/api/campaigns/recommended-markets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tort_name: selectedTort }),
@@ -578,7 +579,7 @@ export function CampaignBuilderClient() {
 
   // Check ElevenLabs availability on mount
   useEffect(() => {
-    fetch("/api/campaigns/voices/check")
+    fetchWithDemoMode("/api/campaigns/voices/check")
       .then((res) => res.json())
       .then((data: { available: boolean }) => setRadioSpotAvailable(data.available))
       .catch(() => setRadioSpotAvailable(false));
@@ -608,7 +609,7 @@ export function CampaignBuilderClient() {
     setAiError(false);
     setAiInsights(null);
 
-    fetch("/api/campaigns/ai-insights", {
+    fetchWithDemoMode("/api/campaigns/ai-insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -748,7 +749,7 @@ export function CampaignBuilderClient() {
     });
 
     try {
-      const res = await fetch("/api/campaigns/generate-creative", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-creative", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -796,7 +797,7 @@ export function CampaignBuilderClient() {
     if (radioVoices.length > 0) return;
     setRadioVoicesLoading(true);
     try {
-      const res = await fetch("/api/campaigns/voices");
+      const res = await fetchWithDemoMode("/api/campaigns/voices");
       if (!res.ok) throw new Error("Failed to fetch voices");
       const data = await res.json();
       setRadioVoices(data.voices);
@@ -823,7 +824,7 @@ export function CampaignBuilderClient() {
     setRadioScriptLoading(true);
     setRadioError(null);
     try {
-      const res = await fetch("/api/campaigns/generate-radio-script", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-radio-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -883,7 +884,7 @@ export function CampaignBuilderClient() {
     setRadioCooldown(true);
 
     try {
-      const res = await fetch("/api/campaigns/generate-radio-spot", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-radio-spot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -945,7 +946,7 @@ export function CampaignBuilderClient() {
     setVideoExpanded(false);
 
     try {
-      const res = await fetch("/api/campaigns/plan", {
+      const res = await fetchWithDemoMode("/api/campaigns/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -993,7 +994,7 @@ export function CampaignBuilderClient() {
     setActivePageTab("landing");
 
     try {
-      const res = await fetch("/api/campaigns/generate-landing-page", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-landing-page", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

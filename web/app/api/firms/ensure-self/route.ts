@@ -20,15 +20,19 @@
  * legacy law firm users (matches the entitlements module's bypass).
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   ensureSelfFirmForLawFirm,
   listFirmsForUser,
 } from "@/lib/firms/server";
 import { getSubscriptionForUser } from "@/lib/campaign-builder/entitlements";
+import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,8 +41,21 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Admin demo-mode: lets super_admin users impersonate a buyer_type
+  // without swapping their real subscription row. Throws if a non-admin
+  // tries to spoof headers — we surface that as a 403.
+  let demoMode;
   try {
-    const sub = await getSubscriptionForUser(supabase, user.id);
+    demoMode = await readDemoModeOverride(supabase, request, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
+  try {
+    const sub = await getSubscriptionForUser(supabase, user.id, demoMode);
     const buyerType = sub?.buyer_type ?? "law_firm";
 
     // Default label for law firm self-firm: email prefix ("jdoe" from

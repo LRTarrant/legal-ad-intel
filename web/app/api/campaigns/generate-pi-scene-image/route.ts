@@ -36,6 +36,10 @@ import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
 } from "@/lib/campaign-builder/entitlements";
+import {
+  DemoModeAccessDenied,
+  readDemoModeOverride,
+} from "@/lib/admin/demo-mode";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { getFirmForUser } from "@/lib/firms/server";
 import {
@@ -107,6 +111,18 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  // Admin demo-mode override (super_admin only). Spoofed headers
+  // surface as 403; absent headers => real subscription path.
+  let demoMode;
+  try {
+    demoMode = await readDemoModeOverride(supabase, req, user.id);
+  } catch (e) {
+    if (e instanceof DemoModeAccessDenied) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+
 
   // Entitlement gate \u2014 PI access required. State check only when a
   // state is supplied (this route is sometimes called from a flow
@@ -115,7 +131,7 @@ export async function POST(req: NextRequest) {
     practice_area: "personal_injury",
     state: body.state ?? null,
     is_create: false,
-  });
+  }, demoMode);
   if (!gate.ok) {
     const { body: errBody, status } = entitlementErrorBody(gate);
     return NextResponse.json(errBody, { status });

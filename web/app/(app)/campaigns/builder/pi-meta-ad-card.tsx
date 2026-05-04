@@ -19,6 +19,7 @@
  */
 
 import { useState } from "react";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   Loader2,
   Megaphone,
@@ -116,7 +117,7 @@ export function PIMetaAdCard({
     setImage(null); // reset image when text changes \u2014 they're paired
     setImageError(null);
     try {
-      const res = await fetch("/api/campaigns/generate-pi-meta-ad", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-pi-meta-ad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -158,7 +159,7 @@ export function PIMetaAdCard({
     setImageError(null);
     setImageGenerating(true);
     try {
-      const res = await fetch("/api/campaigns/generate-pi-scene-image", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-pi-scene-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

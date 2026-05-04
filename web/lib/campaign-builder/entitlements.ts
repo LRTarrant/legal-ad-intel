@@ -23,6 +23,10 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  synthesizeSubscription,
+  type DemoModeOverride,
+} from "@/lib/admin/demo-mode";
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Types                                                                    */
@@ -89,11 +93,23 @@ export type EntitlementResult = EntitlementOk | EntitlementDenied;
  * Look up the current user's subscription row. Returns null when no row
  * exists (legacy / internal users) — callers should treat that as "no
  * entitlements" except for the explicit mass-tort legacy bypass below.
+ *
+ * When `override` is supplied (admin demo-mode), the DB lookup is
+ * skipped and a synthesized ServerSubscription is returned instead.
+ * The real user_id stays attached so cost rows + firm_managers writes
+ * still target the admin's own row — we never silently impersonate.
+ * The override must be vetted by the caller (super_admin gate) BEFORE
+ * being passed in. This function trusts the override.
  */
 export async function getSubscriptionForUser(
   supabase: SupabaseClient,
   userId: string,
+  override?: DemoModeOverride | null,
 ): Promise<ServerSubscription | null> {
+  if (override) {
+    return synthesizeSubscription(userId, override);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
   const { data, error } = (await db
@@ -255,8 +271,9 @@ export async function checkCampaignBuilderEntitlement(
   supabase: SupabaseClient,
   userId: string,
   ctx: EntitlementCheckContext,
+  override?: DemoModeOverride | null,
 ): Promise<EntitlementResult> {
-  const sub = await getSubscriptionForUser(supabase, userId);
+  const sub = await getSubscriptionForUser(supabase, userId, override);
 
   // Legacy bypass: no subscription row → allow mass tort only.
   // This preserves access for internal/admin/grandfathered users from

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import {
   Film,
   Sparkles,
@@ -131,7 +132,7 @@ export function VideoCompositionCard({
     voicesFetchedRef.current = true;
     setVoicesLoading(true);
     try {
-      const res = await fetch("/api/campaigns/voices");
+      const res = await fetchWithDemoMode("/api/campaigns/voices");
       if (!res.ok) throw new Error("Failed to fetch voices");
       const data = await res.json();
       setVoices(data.voices ?? []);
@@ -207,7 +208,7 @@ export function VideoCompositionCard({
       const firstSentence = voiceoverScript.split(/[.!?]/)[0]?.trim();
       if (!firstSentence) return;
 
-      const res = await fetch("/api/campaigns/generate-voiceover", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-voiceover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: firstSentence + ".", voiceId: selectedVoiceId }),
@@ -244,7 +245,7 @@ export function VideoCompositionCard({
     setVoiceoverScript("");
 
     try {
-      const res = await fetch("/api/campaigns/generate-video-script", {
+      const res = await fetchWithDemoMode("/api/campaigns/generate-video-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -320,7 +321,7 @@ export function VideoCompositionCard({
         if (!scene.imagePrompt) return null;
 
         try {
-          const res = await fetch("/api/campaigns/generate-creative", {
+          const res = await fetchWithDemoMode("/api/campaigns/generate-creative", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -368,7 +369,7 @@ export function VideoCompositionCard({
       let voiceoverBase64: string | undefined;
       if (voiceoverEnabled && selectedVoiceId && voiceoverScript) {
         setRenderProgress("Generating voiceover...");
-        const voRes = await fetch("/api/campaigns/generate-voiceover", {
+        const voRes = await fetchWithDemoMode("/api/campaigns/generate-voiceover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -393,7 +394,7 @@ export function VideoCompositionCard({
 
       // Step 3: Send to server for rendering
       setRenderProgress("Rendering video... this may take 30–60 seconds");
-      const res = await fetch("/api/campaigns/render-video", {
+      const res = await fetchWithDemoMode("/api/campaigns/render-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

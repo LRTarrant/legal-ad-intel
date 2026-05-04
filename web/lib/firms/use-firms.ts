@@ -20,6 +20,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FirmWithRole } from "./types";
+import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 
 export type BuyerType = "law_firm" | "ad_agency" | "media_company";
 
@@ -49,7 +50,9 @@ export function useFirms(): UseFirmsResult {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/firms/ensure-self", { method: "POST" });
+      const res = await fetchWithDemoMode("/api/firms/ensure-self", {
+        method: "POST",
+      });
       if (!res.ok) {
         throw new Error(`firm fetch failed: ${res.status}`);
       }
@@ -66,6 +69,16 @@ export function useFirms(): UseFirmsResult {
 
   useEffect(() => {
     refresh();
+  }, [refresh]);
+
+  // Re-fetch when the demo-mode pill changes the override in this tab.
+  // (The storage event only fires across tabs; we dispatch a custom
+  // event in writeDemoModeStored() to cover same-tab updates.)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => refresh();
+    window.addEventListener("lmi:demo-mode-changed", handler);
+    return () => window.removeEventListener("lmi:demo-mode-changed", handler);
   }, [refresh]);
 
   return { firms, selfFirm, buyerType, loading, error, refresh };
