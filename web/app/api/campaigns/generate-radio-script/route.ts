@@ -4,6 +4,7 @@ import {
   checkCampaignBuilderEntitlement,
   entitlementErrorBody,
 } from "@/lib/campaign-builder/entitlements";
+import { trackCall } from "@/lib/cost-tracking/tracker";
 
 interface RadioScriptRequest {
   duration: "15s" | "30s" | "60s";
@@ -333,6 +334,26 @@ export async function POST(req: NextRequest) {
           { status: 502 },
         );
       }
+
+      // Cost tracking: fire-and-forget. We pass void so a slow insert
+      // can't add latency to the user response. The tracker logs on
+      // failure but never throws — see lib/cost-tracking/tracker.ts.
+      void trackCall(supabase, {
+        user_id: user.id,
+        purpose: "mt_radio_script",
+        provider: "openai",
+        model: "gpt-4o",
+        usage: {
+          input_tokens: data.usage?.prompt_tokens ?? 0,
+          output_tokens: data.usage?.completion_tokens ?? 0,
+        },
+        meta: {
+          tort_name: body.tort_name,
+          duration: body.duration,
+          format: body.format,
+          language: body.language ?? "en",
+        },
+      });
 
       return NextResponse.json({ script, voice_recommendation, audience_context });
     } catch (err) {
