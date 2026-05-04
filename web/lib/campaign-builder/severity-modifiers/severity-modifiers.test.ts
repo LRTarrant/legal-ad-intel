@@ -252,7 +252,13 @@ test("router applies catastrophic modifier end-to-end", () => {
   }
 });
 
-test("router with no modifiers leaves template unchanged", () => {
+test("router with no modifiers leaves creative content unchanged", () => {
+  // Note: as of Task 9, the router runs the state compliance pass
+  // even when no severity modifiers are active. That pass returns a
+  // NEW template object (so reference equality with baseTemplate is
+  // gone), but the creative copy — hook, problem, authority, cta —
+  // is identical. Only the disclaimer may differ between baseTemplate
+  // and template once compliance runs.
   const result = routePracticeArea({
     practice_area: "personal_injury",
     pi_category: "boating_accident",
@@ -261,7 +267,10 @@ test("router with no modifiers leaves template unchanged", () => {
     firm_name: "Acme Law",
   });
   if (result.practice_area === "personal_injury") {
-    expect(result.template).toBe(result.baseTemplate);
+    expect(result.template.hook).toBe(result.baseTemplate.hook);
+    expect(result.template.problem).toBe(result.baseTemplate.problem);
+    expect(result.template.authority).toBe(result.baseTemplate.authority);
+    expect(result.template.cta).toBe(result.baseTemplate.cta);
     expect(result.severity_modifiers).toEqual([]);
   }
 });

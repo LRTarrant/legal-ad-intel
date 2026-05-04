@@ -22,6 +22,7 @@
 import { useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import type { PICategory, PITemplate, SeverityModifier } from "@/lib/campaign-builder/pi-templates/types";
+import type { ComplianceFlag } from "@/lib/campaign-builder/compliance";
 import { PICategoryDropdown } from "./pi-category-dropdown";
 import { DMASelector, type SelectedDMA } from "./dma-selector";
 import { SeverityModifierCheckboxes } from "./severity-modifier-checkboxes";
@@ -47,6 +48,12 @@ export interface PIPlanResult {
   template: PITemplate;
   base_template: PITemplate;
   severity_modifiers: SeverityModifier[];
+  compliance: {
+    flags: ComplianceFlag[];
+    state: string;
+    state_name: string;
+    has_explicit_rules: boolean;
+  };
 }
 
 interface PIConfigFormProps {

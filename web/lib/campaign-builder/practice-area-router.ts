@@ -21,6 +21,7 @@
 import type { PITemplate, PITemplateVars, SeverityModifier } from "./pi-templates";
 import { getPITemplate, renderPITemplate } from "./pi-templates";
 import { applySeverityModifiers } from "./severity-modifiers";
+import { applyStateCompliance, type ComplianceFlag } from "./compliance";
 
 /**
  * Practice area discriminator — must match the CHECK constraint on
@@ -79,12 +80,24 @@ export type RouterResult =
     }
   | {
       practice_area: "personal_injury";
-      /** Final template ready for prompt assembly (vars + modifiers applied). */
+      /**
+       * Final template ready for prompt assembly. Has been rendered with
+       * vars, had severity modifiers applied, AND been through the state
+       * compliance pass (disclaimer adjusted).
+       */
       template: PITemplate;
       /** The rendered base template before severity modifiers were applied. */
       baseTemplate: PITemplate;
       /** Active severity modifiers (after validation). */
       severity_modifiers: SeverityModifier[];
+      /** Compliance flags surfaced for user review (warnings + review items). */
+      compliance_flags: ComplianceFlag[];
+      /** State that was used for the compliance check. */
+      compliance_state: string;
+      /** Display name of the compliance state (e.g. "New York"). */
+      compliance_state_name: string;
+      /** True when explicit rules existed for the state (top 10); false for fallback. */
+      compliance_has_explicit_rules: boolean;
     };
 
 /**
@@ -130,13 +143,23 @@ export function routePracticeArea(ctx: CampaignContext): RouterResult {
     const severityModifiers = (ctx.severity_modifiers ?? []).filter(
       (m): m is SeverityModifier => m === "fatal" || m === "catastrophic",
     );
-    const finalTemplate = applySeverityModifiers(baseTemplate, severityModifiers, vars);
+    const modifiedTemplate = applySeverityModifiers(baseTemplate, severityModifiers, vars);
+
+    // State compliance pass runs LAST so it can adjust disclaimers
+    // based on the final modified copy. Uses the two-letter state
+    // code (ctx.state) for rule lookup; falls back to generic rules
+    // when state is missing or not in the curated top-10 list.
+    const compliance = applyStateCompliance(modifiedTemplate, ctx.state);
 
     return {
       practice_area: "personal_injury",
-      template: finalTemplate,
+      template: compliance.template,
       baseTemplate,
       severity_modifiers: severityModifiers,
+      compliance_flags: compliance.flags,
+      compliance_state: compliance.state,
+      compliance_state_name: compliance.stateName,
+      compliance_has_explicit_rules: compliance.hasExplicitRules,
     };
   }
 

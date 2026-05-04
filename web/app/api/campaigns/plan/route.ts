@@ -64,6 +64,12 @@ export async function POST(req: NextRequest) {
           template: result.template,
           base_template: result.baseTemplate,
           severity_modifiers: result.severity_modifiers,
+          compliance: {
+            flags: result.compliance_flags,
+            state: result.compliance_state,
+            state_name: result.compliance_state_name,
+            has_explicit_rules: result.compliance_has_explicit_rules,
+          },
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown PI routing error";

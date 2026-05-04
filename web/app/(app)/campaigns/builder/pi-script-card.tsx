@@ -19,9 +19,12 @@
 
 import { useState } from "react";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronUp,
   FileText,
+  Info,
+  ShieldCheck,
   Sparkles,
   Volume2,
 } from "lucide-react";
@@ -124,12 +127,131 @@ export function PIScriptCard({ result, accentColor }: PIScriptCardProps) {
         )}
       </div>
 
+      {/* Compliance summary */}
+      <ComplianceSummary result={result} accentColor={accentColor} />
+
       <div className="rounded-md bg-slate-50 border border-slate-100 p-3 text-xs text-slate-gray leading-relaxed">
         <strong className="text-midnight-navy">What&apos;s next:</strong>{" "}
         Radio script, video script, voiceover, and asset rendering for PI
         campaigns ship in the next release. For now, copy these sections
         into your existing creative workflow.
       </div>
+    </div>
+  );
+}
+
+/**
+ * ComplianceSummary — surfaces state-specific advertising flags.
+ *
+ * Three visual states:
+ *   - Has 'review' flags: amber alert; user must take an extra step
+ *     (TX/FL pre-publication review, etc.)
+ *   - Has only 'warning' flags: subtle yellow callout; phrases to
+ *     review before publishing
+ *   - No flags: green check; "Compliance check passed" with the state
+ *     name. Doesn't claim the script is bar-compliant — just that the
+ *     automated scan didn't surface concerns.
+ *
+ * Always includes a short "this is not legal advice" disclaimer.
+ */
+function ComplianceSummary({
+  result,
+  accentColor,
+}: {
+  result: PIPlanResult;
+  accentColor: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const { compliance } = result;
+  const flags = compliance.flags;
+
+  const reviewFlags = flags.filter((f) => f.severity === "review");
+  const warningFlags = flags.filter((f) => f.severity === "warning");
+  const hasReview = reviewFlags.length > 0;
+  const hasWarnings = warningFlags.length > 0;
+  const stateLabel = compliance.state_name || "this state";
+
+  // Pick visual style based on the most severe flag
+  const tone = hasReview
+    ? {
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        text: "text-amber-900",
+        Icon: AlertTriangle,
+        iconColor: "text-amber-600",
+      }
+    : hasWarnings
+      ? {
+          bg: "bg-yellow-50",
+          border: "border-yellow-200",
+          text: "text-yellow-900",
+          Icon: Info,
+          iconColor: "text-yellow-600",
+        }
+      : {
+          bg: "bg-emerald-50",
+          border: "border-emerald-200",
+          text: "text-emerald-900",
+          Icon: ShieldCheck,
+          iconColor: "text-emerald-600",
+        };
+
+  const headline = hasReview
+    ? `${stateLabel} requires additional review before publication`
+    : hasWarnings
+      ? `${flags.length} compliance ${flags.length === 1 ? "item" : "items"} to review for ${stateLabel}`
+      : `Compliance scan passed for ${stateLabel}`;
+
+  return (
+    <div className={`rounded-md border ${tone.border} ${tone.bg} p-3`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className={`flex w-full items-center justify-between text-left text-sm font-medium ${tone.text}`}
+      >
+        <span className="flex items-center gap-2">
+          <tone.Icon className={`h-4 w-4 ${tone.iconColor}`} />
+          {headline}
+        </span>
+        {flags.length > 0 ? (
+          expanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )
+        ) : null}
+      </button>
+
+      {expanded && flags.length > 0 && (
+        <ul className={`mt-3 space-y-2 text-xs ${tone.text}`}>
+          {flags.map((f, idx) => (
+            <li key={idx} className="leading-relaxed">
+              <span className="font-semibold">{f.summary}</span>
+              {f.detail && (
+                <>
+                  {" — "}
+                  <span className="opacity-90">{f.detail}</span>
+                </>
+              )}
+              {f.section && (
+                <span className="ml-1 rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+                  {f.section}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className={`mt-3 text-[11px] italic opacity-75 ${tone.text}`}>
+        This is automated marketing-risk guidance, not legal review.
+        Verify your state&apos;s current bar rules and have ads cleared
+        by counsel before publication.
+      </p>
+      {/* accentColor is unused here intentionally — compliance uses
+          severity-specific colors so users learn the visual language
+          (amber = review, yellow = warning, green = clear). */}
+      <span className="hidden" data-accent={accentColor} />
     </div>
   );
 }
