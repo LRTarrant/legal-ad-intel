@@ -228,8 +228,8 @@ export function StateIntelligenceClient({
 }) {
   const TDOSHS = config.trafficStats;
   const BLS = config.workplaceStats;
-  // Reserved for future per-state customization:
-  // const COMMUTE = config.commuteStats; // TODO: surface in commute section once per-state narrative is extracted.
+  const COMMUTE = config.commuteStats;
+  const content = config.content ?? {};
   const features = config.features ?? {};
   const showInjuryTable =
     features.showInjuryTable ??
@@ -467,22 +467,20 @@ export function StateIntelligenceClient({
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            Tennessee
+            {config.stateName}
           </h1>
-          <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-600">
-            Modified Comparative (49% Bar)
-          </span>
+          {piData?.negligence_rule && (
+            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-600">
+              {formatNegligenceRule(piData.negligence_rule)}
+            </span>
+          )}
         </div>
         <p className="mt-1 text-lg text-slate-gray">
           State Intelligence Report
         </p>
         <p className="mt-1 text-sm text-slate-gray max-w-3xl">
-          Cross-signal intelligence for plaintiff firm advertising and case
-          acquisition in Tennessee &mdash; combining accident data, demographics,
-          judicial profiles, TN Safety crash dashboards, and market opportunity
-          signals across MVA, trucking, motorcycle, construction, and boating.
-          Major metros: Nashville, Memphis, Knoxville, and Chattanooga.
-          Population ~7.1M.
+          {content.heroSubtitle ??
+            `Cross-signal intelligence for plaintiff firm advertising and case acquisition in ${config.stateName} — combining accident data, demographics, judicial profiles, crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.`}
         </p>
       </div>
 
@@ -677,12 +675,8 @@ export function StateIntelligenceClient({
 
             <div className="rounded-md border-l-4 border-amber-500 bg-amber-50 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                Tennessee follows modified comparative negligence with a 49%
-                bar &mdash; plaintiffs who are 50% or more at fault are barred
-                from recovery. Tennessee caps non-economic damages in most PI
-                cases and has specific caps on punitive damages. The 1-year
-                statute of limitations is among the shortest in the nation and
-                requires aggressive, timely case acquisition.
+                {content.legalLandscape ??
+                  `${config.stateName} follows modified comparative negligence with a 49% bar — plaintiffs who are 50% or more at fault are barred from recovery. ${config.stateName} caps non-economic damages in most PI cases and has specific caps on punitive damages. The 1-year statute of limitations is among the shortest in the nation and requires aggressive, timely case acquisition.`}
               </p>
             </div>
           </>
@@ -750,22 +744,15 @@ export function StateIntelligenceClient({
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                Nashville metro (Davidson, Williamson, Rutherford) dominates
-                volume. Memphis (Shelby County) is the second largest market.
-                I-40 corridor across the state and I-24 (Nashville-Chattanooga)
-                are high-fatality routes. Tennessee&apos;s 79.8% drive-alone
-                commute rate exceeds the national average, generating high
-                exposure.
+                {content.autoAudience ??
+                  `${config.stateName} drivers see high crash exposure on the state's major interstate corridors and metro arterials. Drive-alone commuting rates (${COMMUTE.driveAlone}%) exceed the national average (${COMMUTE.nationalAvg}%), and rural counties generate disproportionate fatalities relative to population.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Digital + CTV in Nashville and Memphis metros. Billboard and
-                radio along I-40 (Memphis-Nashville-Knoxville), I-24
-                (Nashville-Chattanooga), and I-65 (Nashville-Alabama border).
-                Country music radio is an efficient reach vehicle in Middle
-                Tennessee.
+                {content.autoMedia ??
+                  `Digital + CTV in the state's primary metros. Billboard and radio along the highest-fatality interstate corridors. Geo-fenced mobile near top-county hot spots.`}
               </p>
             </div>
           </div>
@@ -805,20 +792,15 @@ export function StateIntelligenceClient({
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                Tennessee is a major freight hub &mdash; Nashville, Memphis
-                (FedEx), and Chattanooga sit at the intersection of I-40, I-65,
-                I-24, and I-75. Memphis is one of the largest logistics centers
-                in the country. Rural stretches of I-40 between Nashville and
-                Knoxville see heavy truck traffic and disproportionate fatalities.
+                {content.truckAudience ??
+                  `${config.stateName} sits on major freight corridors moving goods across the country. Long rural interstate stretches and metro logistics hubs concentrate truck-involved crashes. Target families of CDL holders as well as passenger-vehicle occupants involved in truck crashes.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Geo-fenced digital ads along I-40 and I-65 corridors. Truck stop
-                billboards at major rest areas. Target CDL holder families and
-                passenger vehicle occupants struck by trucks. Memphis market
-                reaches into Mississippi and Arkansas.
+                {content.truckMedia ??
+                  `Geo-fenced digital along major freight corridors. Truck-stop billboards at high-traffic rest areas. CDL family targeting via social. Spillover into adjacent state markets where regional metros span borders.`}
               </p>
             </div>
           </div>
@@ -860,21 +842,15 @@ export function StateIntelligenceClient({
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                Tennessee is a top motorcycle tourism state &mdash; the Tail of
-                the Dragon (US-129) and Natchez Trace Parkway draw riders
-                nationally. Davidson and Shelby counties lead in volume, while
-                East Tennessee mountain roads see higher severity crashes.
-                Tennessee has no helmet law for riders over 21.
+                {content.motorcycleAudience ??
+                  `Motorcycle riders in ${config.stateName} face elevated crash severity, especially during peak spring/summer riding season. Touring routes and scenic byways draw out-of-state riders. Helmet law specifics affect both crash outcomes and out-of-state visitor risk.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Seasonal spring/summer campaigns during peak riding season.
-                Social media + streaming targeting motorcycle interests. Events
-                sponsorship (motorcycle rallies). Digital geo-fencing near
-                popular riding routes in the Smoky Mountains and along the
-                Natchez Trace.
+                {content.motorcycleMedia ??
+                  `Seasonal spring/summer campaigns during peak riding season. Social and streaming targeting motorcycle interest segments. Event sponsorships at rallies. Geo-fencing near popular riding routes.`}
               </p>
             </div>
           </div>
@@ -914,20 +890,15 @@ export function StateIntelligenceClient({
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                Nashville&apos;s construction boom (driven by healthcare,
-                hospitality, and residential growth) creates a large at-risk
-                workforce. Chattanooga and Knoxville are also experiencing
-                significant development. Target construction workers, their
-                families, and workers&apos; comp attorneys.
+                {content.constructionAudience ??
+                  `${config.stateName}'s construction workforce concentrates in growing metros. Workers and families of injured workers represent a sizable, under-represented segment. Workers' comp + third-party liability is the wedge.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Job site proximity targeting via mobile in Nashville, Knoxville,
-                and Chattanooga. Workers&apos; comp and construction injury
-                keywords. Spanish-language digital and radio for growing
-                Hispanic workforce in Middle Tennessee construction.
+                {content.constructionMedia ??
+                  `Mobile job-site proximity targeting in major metros. Workers' comp and construction-injury keywords. Spanish-language digital and radio for the Hispanic share of the construction workforce.`}
               </p>
             </div>
           </div>
@@ -968,19 +939,15 @@ export function StateIntelligenceClient({
                 <span className="font-semibold text-midnight-navy">
                   Audience:
                 </span>{" "}
-                Tennessee has extensive lake and river recreation &mdash;
-                including Kentucky Lake, Norris Lake, Center Hill Lake, and the
-                Tennessee River system. Summer weekends drive peak accident
-                periods. Target boating enthusiasts and lake house vacation
-                demographics.
+                {content.boatingAudience ??
+                  `${config.stateName} has notable boating recreation and seasonal peak periods. Summer weekends drive most accident volume. Target boat owners and vacation/lakehouse demographics.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
               <p className="text-[11px] text-midnight-navy/70">
                 <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Seasonal spring/summer campaigns. Geo-targeted digital around
-                major lake communities. Local radio in lakeside counties. Marina
-                signage and outfitter partnerships.
+                {content.boatingMedia ??
+                  `Seasonal spring/summer campaigns. Geo-targeted digital around top boating counties. Local radio in lakeside / coastal markets. Marina partnerships.`}
               </p>
             </div>
           </div>
@@ -998,8 +965,7 @@ export function StateIntelligenceClient({
           </h2>
         </div>
         <p className="mb-4 text-sm text-slate-gray">
-          95 Tennessee counties &mdash; sortable by any column. Click headers to
-          sort.
+          {data.accidentSummary.length}{" "}{config.stateName} counties &mdash; sortable by any column. Click headers to sort.
         </p>
 
         <div className="mb-4 flex items-center gap-2">
@@ -1207,12 +1173,8 @@ export function StateIntelligenceClient({
 
             <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                Tennessee&apos;s rural counties have disproportionately high
-                fatality rates despite lower total crash counts. Rural
-                areas &mdash; especially in Appalachian East Tennessee &mdash;
-                have lower internet access and higher uninsured rates, limiting
-                digital-only advertising reach and increasing the severity of
-                untreated injuries.
+                {content.ruralUrbanContext ??
+                  `${config.stateName}'s rural counties have disproportionately high fatality rates despite lower total crash counts. Rural areas tend to have lower internet access and higher uninsured rates, limiting digital-only advertising reach and increasing the severity of untreated injuries.`}
               </p>
             </div>
           </>
@@ -1428,10 +1390,8 @@ export function StateIntelligenceClient({
 
             <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                Davidson County (Nashville) and Shelby County (Memphis) are the
-                two largest population centers. Filing venue selection in
-                Tennessee matters &mdash; judicial leanings can vary
-                significantly between urban and rural counties.
+                {content.judicialContext ??
+                  `Filing venue selection in ${config.stateName} matters — judicial leanings can vary significantly between urban and rural counties. Top metros concentrate population and case volume, but mid-size counties may have more favorable juries depending on the case type.`}
               </p>
             </div>
           </>
@@ -1503,11 +1463,8 @@ export function StateIntelligenceClient({
 
             <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
-                Tennessee&apos;s modified comparative negligence rule (49% bar)
-                and non-economic damage caps make it less plaintiff-friendly
-                than pure comparative states like Arizona. However, the short
-                1-year statute of limitations creates urgency that benefits
-                firms with aggressive case acquisition pipelines.
+                {content.legalLandscape ??
+                  `${config.stateName}'s negligence and damages-cap regime sets the boundaries of recoverable claims. Statute-of-limitations and comparative-fault rules drive both case-selection criteria and the urgency of intake. Firms with aggressive, fast intake pipelines have an edge in higher-urgency states.`}
               </p>
             </div>
           </>
@@ -1593,13 +1550,8 @@ export function StateIntelligenceClient({
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Tennessee&apos;s 1-year statute of limitations for personal injury
-              is among the shortest in the nation. This creates both a challenge
-              and an opportunity: firms with fast intake pipelines and immediate
-              digital response capabilities can capture cases that slower
-              competitors miss. Time-sensitive messaging (&quot;Act now &mdash;
-              Tennessee&apos;s filing deadline is only 1 year&quot;) resonates
-              strongly.
+              {content.solUrgencyTip ??
+                `${config.stateName}'s statute of limitations for personal injury defines how aggressive your intake pipeline needs to be. Firms with fast digital response and clear time-sensitive messaging capture cases that slower competitors miss.`}
             </p>
           </div>
 
@@ -1611,12 +1563,8 @@ export function StateIntelligenceClient({
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              East Tennessee&apos;s Appalachian counties have lower internet
-              access rates and higher uninsured populations. These areas also
-              have high fatality rates on mountain roads. Digital-only
-              advertising cannot reach these communities effectively. Radio,
-              community health centers, and local TV are necessary channels for
-              plaintiff firm outreach in the Smokies corridor.
+              {content.internetAccessTip ??
+                `Rural counties in ${config.stateName} typically have lower internet access and higher uninsured populations. Digital-only advertising cannot reach these communities effectively. Radio, community health centers, and local TV are necessary channels for plaintiff firm outreach in connectivity-gap areas.`}
             </p>
           </div>
 
@@ -1628,12 +1576,8 @@ export function StateIntelligenceClient({
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              The Tail of the Dragon (US-129, 318 curves in 11 miles) and the
-              Cherohala Skyway draw motorcycle tourists from across the country.
-              Out-of-state riders injured in Tennessee may not know local
-              attorneys. Geo-fenced digital ads at these routes plus
-              partnerships with motorcycle-adjacent businesses (hotels, gear
-              shops) can capture cases from this unique tourism segment.
+              {content.outOfStateTip ??
+                `Out-of-state riders or visitors injured in ${config.stateName} may not know local attorneys. Geo-fenced digital ads at popular tourism routes plus partnerships with adjacent businesses (hotels, gear shops, marinas) can capture cases from this segment that slip through traditional channels.`}
             </p>
           </div>
         </div>
@@ -1644,10 +1588,11 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       <AskAIPanel
         pageContext={{
-          pageName: "Tennessee State Intelligence",
+          pageName: content.askAiPageName ?? `${config.stateName} State Intelligence`,
           pageDescription:
-            "State-level intelligence for plaintiff firm advertising and case acquisition in Tennessee — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, TN Safety crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
-          dataSummary: `State: Tennessee. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')} (49% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 95. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction). Key corridors: I-40, I-65, I-24, I-75.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+            content.askAiPageContext ??
+            `State-level intelligence for plaintiff firm advertising and case acquisition in ${config.stateName} — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, state crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.`,
+          dataSummary: `State: ${config.stateName}. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: ${data.accidentSummary.length}. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction).${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
         }}
       />
 
@@ -1664,7 +1609,8 @@ export function StateIntelligenceClient({
         <div className="grid gap-2 sm:grid-cols-2">
           {[
             "FARS (NHTSA) \u2014 Fatal crash data 2019\u20132024",
-            "TN Dept. of Safety & Homeland Security Crash Dashboards",
+            content.footerSourcesLabel ??
+              `${config.stateName} state crash dashboards`,
             "ACS 5-Year Estimates 2023 (Census Bureau)",
             "BLS OES (Occupational Employment Statistics) May 2023",
             "BLS CFOI (Census of Fatal Occupational Injuries) 2023",
@@ -1692,7 +1638,7 @@ export function StateIntelligenceClient({
           constitute legal advice.
         </p>
         <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: FARS (NHTSA), TN Dept. of Safety &amp; Homeland Security
+          Data sources: FARS (NHTSA), {config.stateName} state agencies
           Dashboards, ACS 5-Year Estimates, BLS OES/CFOI, NOAA Storm Events,
           USCG Boating Accidents, Judicial Profile Data.
         </p>
