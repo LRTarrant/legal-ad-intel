@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -513,6 +514,11 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
           judicial profiles, and market opportunity signals across MVA, trucking,
           motorcycle, construction, and boating.
         </p>
+        <div className="mt-4">
+          <BuildCampaignLink
+            variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
+          />
+        </div>
       </div>
 
       {/* ============================================================ */}

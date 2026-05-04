@@ -257,24 +257,68 @@ export function CampaignBuilderClient() {
     reason: UpgradeModalReason;
   }>({ open: false, reason: "pi_locked" });
 
-  // Hydrate practice_area from URL ?practice_area=... or localStorage
-  // on first mount. URL takes precedence (deep links from tort/state
-  // pages will land here). localStorage is the fallback for return
-  // visits.
+  // Deep link payload from tort/state pages. Captured on first mount
+  // before URL params are stripped, then handed to downstream forms
+  // (mass tort → selectedTort, PI → PIConfigForm initial values).
+  const [deepLink, setDeepLink] = useState<{
+    tortName?: string;
+    piCategory?: string;
+    state?: string;
+  }>({});
+  // True when the practice_area was set from a URL param (vs. user click /
+  // localStorage). Used to auto-open the upgrade modal if the deep-linked
+  // practice area is locked for this subscription — so deep links never
+  // silently fail.
+  const [practiceAreaFromDeepLink, setPracticeAreaFromDeepLink] = useState(false);
+  const [deepLinkUpgradeChecked, setDeepLinkUpgradeChecked] = useState(false);
+
+  // Hydrate practice_area + deep-link payload from URL on first mount.
+  // Deep links from tort detail pages bring `tort_name`; deep links from
+  // state intelligence pages bring `state` (and optionally `pi_category`).
+  // URL takes precedence over localStorage. All recognized params are
+  // stripped after capture so the URL stays clean for sharing/bookmarks.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const fromUrl = url.searchParams.get("practice_area");
+    const tortNameParam = url.searchParams.get("tort_name");
+    const piCategoryParam = url.searchParams.get("pi_category");
+    const stateParam = url.searchParams.get("state");
+
+    let dirty = false;
     if (fromUrl === "mass_tort" || fromUrl === "personal_injury") {
       setPracticeArea(fromUrl);
-      // Strip the param so the URL stays clean after first load
+      setPracticeAreaFromDeepLink(true);
       url.searchParams.delete("practice_area");
-      window.history.replaceState({}, "", url.toString());
-      return;
+      dirty = true;
+    } else {
+      const fromStorage = window.localStorage.getItem("campaignBuilder.practiceArea");
+      if (fromStorage === "mass_tort" || fromStorage === "personal_injury") {
+        setPracticeArea(fromStorage);
+      }
     }
-    const fromStorage = window.localStorage.getItem("campaignBuilder.practiceArea");
-    if (fromStorage === "mass_tort" || fromStorage === "personal_injury") {
-      setPracticeArea(fromStorage);
+
+    const next: { tortName?: string; piCategory?: string; state?: string } = {};
+    if (tortNameParam) {
+      next.tortName = tortNameParam;
+      url.searchParams.delete("tort_name");
+      dirty = true;
+    }
+    if (piCategoryParam) {
+      next.piCategory = piCategoryParam;
+      url.searchParams.delete("pi_category");
+      dirty = true;
+    }
+    if (stateParam) {
+      next.state = stateParam.toUpperCase();
+      url.searchParams.delete("state");
+      dirty = true;
+    }
+    if (next.tortName || next.piCategory || next.state) {
+      setDeepLink(next);
+    }
+    if (dirty) {
+      window.history.replaceState({}, "", url.toString());
     }
   }, []);
 
@@ -284,6 +328,36 @@ export function CampaignBuilderClient() {
       window.localStorage.setItem("campaignBuilder.practiceArea", practiceArea);
     }
   }, [practiceArea]);
+
+  // If the user landed here via a deep link to a practice area they don't
+  // have entitlement for, surface the upgrade modal immediately rather
+  // than letting them sit on a locked-looking tab. Runs once after
+  // subscription loads.
+  useEffect(() => {
+    if (!practiceAreaFromDeepLink || subscriptionLoading || deepLinkUpgradeChecked) {
+      return;
+    }
+    const hasMT = hasMassTortAccess(subscription);
+    const hasPI = hasPIAccess(subscription);
+    setDeepLinkUpgradeChecked(true);
+    if (practiceArea === "personal_injury" && !hasPI) {
+      setUpgradeModal({
+        open: true,
+        reason: !hasMT && !hasPI ? "no_access" : "pi_locked",
+      });
+    } else if (practiceArea === "mass_tort" && !hasMT) {
+      setUpgradeModal({
+        open: true,
+        reason: !hasMT && !hasPI ? "no_access" : "mt_locked",
+      });
+    }
+  }, [
+    practiceAreaFromDeepLink,
+    subscriptionLoading,
+    deepLinkUpgradeChecked,
+    practiceArea,
+    subscription,
+  ]);
 
   const handleLockedTabClick = (locked: PracticeArea) => {
     // Reason: which tab is locked relative to what they have access to
@@ -412,6 +486,24 @@ export function CampaignBuilderClient() {
     }
     fetchTorts();
   }, []);
+
+  // Once tort names load, apply deep-linked tort_name if it matches.
+  // We do a tolerant case-insensitive match — the URL param may come
+  // from `tort.label` which can differ in punctuation/case from the
+  // `tort_cost_benchmarks.tort_name` list. If no match, we silently
+  // leave the dropdown unselected (graceful degradation).
+  useEffect(() => {
+    if (!deepLink.tortName || tortNames.length === 0 || selectedTort) return;
+    const target = deepLink.tortName.toLowerCase().trim();
+    const exact = tortNames.find((n) => n.toLowerCase() === target);
+    const fuzzy =
+      exact ??
+      tortNames.find(
+        (n) =>
+          n.toLowerCase().includes(target) || target.includes(n.toLowerCase()),
+      );
+    if (fuzzy) setSelectedTort(fuzzy);
+  }, [deepLink.tortName, tortNames, selectedTort]);
 
   // Fetch recommended markets when tort changes
   useEffect(() => {
@@ -986,6 +1078,8 @@ export function CampaignBuilderClient() {
             onFirmNameChange={setFirmName}
             onGenerated={setPiResult}
             accentColor={accentColor}
+            initialState={deepLink.state}
+            initialCategory={deepLink.piCategory}
           />
         )}
         {practiceArea === "mass_tort" && (

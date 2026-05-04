@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -528,6 +529,11 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
           Major metros: Nashville, Memphis, Knoxville, and Chattanooga.
           Population ~7.1M.
         </p>
+        <div className="mt-4">
+          <BuildCampaignLink
+            variant={{ kind: "personal_injury", stateCode: "TN", stateName: "Tennessee" }}
+          />
+        </div>
       </div>
 
       {/* ============================================================ */}

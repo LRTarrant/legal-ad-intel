@@ -21,6 +21,7 @@ import {
   Monitor,
 } from "lucide-react";
 import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
+import { BuildCampaignLink } from "../../components/build-campaign-link";
 import { TortViewTracker } from "../torts/[tortSlug]/tort-view-tracker";
 import type { TortAdvertisingData } from "../../components/tort-advertising-section";
 
@@ -325,6 +326,9 @@ export default async function TortAdvertisingCatchallPage({
 
       {/* Cross-links */}
       <div className="flex flex-wrap gap-3">
+        <BuildCampaignLink
+          variant={{ kind: "mass_tort", tortLabel: tort.label }}
+        />
         <Link
           href={`/advertising/saturation/${tortSlug}`}
           className="rounded-lg border-2 border-intelligence-teal px-5 py-2.5 text-sm font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white"
