@@ -56,6 +56,7 @@ import { PIScriptCard } from "./pi-script-card";
 import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
 import { PIVideoCompositionCard } from "./pi-video-composition-card";
 import { PIMetaAdCard } from "./pi-meta-ad-card";
+import { PIGoogleRSACard } from "./pi-google-rsa-card";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -1453,6 +1454,26 @@ export function CampaignBuilderClient() {
           firmId={selectedFirmId}
           firmName={firmName}
           config={piConfig}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+        />
+      )}
+
+      {/* PI Google search ad (Phase 4b) — RSA portfolio (15 headlines + 4
+          descriptions) for Google Search campaigns. Closes out the channel
+          stack: radio → video → Meta → Google. Default URL is pulled from
+          the selected firm's website if one is on file. */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIGoogleRSACard
+          firmId={selectedFirmId}
+          firmName={firmName}
+          config={piConfig}
+          defaultFinalUrl={
+            firmsResult.firms.find((f) => f.id === selectedFirmId)
+              ?.website_url ?? null
+          }
           accentColor={accentColor}
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
