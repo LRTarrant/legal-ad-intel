@@ -29,9 +29,17 @@ async function requireAdmin(supabase: any) {
 }
 
 /**
- * GET /api/admin/tort-images?tort_slug=roundup
+ * GET /api/admin/tort-images
+ *
  * Returns all images (active + inactive) for admin management.
- * Omit tort_slug to get all images grouped by tort.
+ *
+ * Query params (all optional, all stack):
+ *   tort_slug      — filter to one tort (legacy mass-tort filter)
+ *   practice_area  — 'mass_tort' | 'personal_injury'
+ *   pi_category    — PI category enum value
+ *
+ * Without filters, returns everything (admin grid groups by
+ * practice_area + tort/category client-side).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -42,6 +50,8 @@ export async function GET(req: NextRequest) {
     }
 
     const tortSlug = req.nextUrl.searchParams.get("tort_slug");
+    const practiceArea = req.nextUrl.searchParams.get("practice_area");
+    const piCategory = req.nextUrl.searchParams.get("pi_category");
     const serviceClient = getServiceClient();
 
     let query = serviceClient
@@ -52,6 +62,12 @@ export async function GET(req: NextRequest) {
 
     if (tortSlug) {
       query = query.eq("tort_slug", tortSlug);
+    }
+    if (practiceArea === "mass_tort" || practiceArea === "personal_injury") {
+      query = query.eq("practice_area", practiceArea);
+    }
+    if (piCategory) {
+      query = query.eq("pi_category", piCategory);
     }
 
     const { data, error } = await query;
@@ -87,6 +103,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       tort_slug,
+      practice_area,
+      pi_category,
       storage_path,
       public_url,
       tags,
@@ -96,18 +114,45 @@ export async function POST(req: NextRequest) {
       display_order,
     } = body;
 
-    if (!tort_slug || !storage_path || !public_url) {
+    if (!storage_path || !public_url) {
       return NextResponse.json(
-        { error: "tort_slug, storage_path, and public_url are required" },
+        { error: "storage_path and public_url are required" },
         { status: 400 },
       );
     }
+
+    // Determine practice_area. Legacy callers (no field) default to
+    // mass_tort to preserve current behavior; explicit values are honored.
+    const resolvedPracticeArea: "mass_tort" | "personal_injury" =
+      practice_area === "personal_injury" ? "personal_injury" : "mass_tort";
+
+    // Practice-area-specific validation
+    if (resolvedPracticeArea === "mass_tort" && !tort_slug) {
+      return NextResponse.json(
+        { error: "tort_slug is required for mass_tort images" },
+        { status: 400 },
+      );
+    }
+    if (resolvedPracticeArea === "personal_injury" && !pi_category) {
+      return NextResponse.json(
+        { error: "pi_category is required for personal_injury images" },
+        { status: 400 },
+      );
+    }
+
+    // For PI images we still write a `tort_slug` value so the legacy
+    // grouping/sort works in admin views — we use the pi_category
+    // string. Mass-tort images keep their original tort_slug.
+    const tortSlugForRow =
+      resolvedPracticeArea === "mass_tort" ? tort_slug : pi_category;
 
     const serviceClient = getServiceClient();
     const { data, error } = await serviceClient
       .from("tort_images")
       .insert({
-        tort_slug,
+        tort_slug: tortSlugForRow,
+        practice_area: resolvedPracticeArea,
+        pi_category: resolvedPracticeArea === "personal_injury" ? pi_category : null,
         storage_path,
         public_url,
         tags: tags ?? [],

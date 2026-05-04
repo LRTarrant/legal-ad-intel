@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * GET /api/tort-images?tort_slug=roundup&limit=5
+ * GET /api/tort-images
  *
- * Returns a randomized selection of active images for the given tort.
- * Used by the Campaign Builder image picker and the library-first
- * fallback logic in generate-creative.
+ * Returns a randomized selection of active images, scoped by either:
+ *   - tort_slug=roundup            (mass tort, legacy)
+ *   - practice_area=personal_injury&pi_category=motorcycle_accident  (PI)
+ *
+ * Either tort_slug OR (practice_area=personal_injury AND pi_category)
+ * is required. Used by the Campaign Builder image picker and the
+ * library-first fallback logic in generate-creative.
+ *
+ * Optional: limit (1-50, default 5).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -21,9 +27,23 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const tortSlug = searchParams.get("tort_slug");
-    if (!tortSlug) {
+    const practiceArea = searchParams.get("practice_area");
+    const piCategory = searchParams.get("pi_category");
+
+    // Caller must specify either tort_slug (mass tort) or PI scope.
+    const isPIQuery = practiceArea === "personal_injury";
+    if (!tortSlug && !isPIQuery) {
       return NextResponse.json(
-        { error: "tort_slug query parameter is required" },
+        {
+          error:
+            "Provide either tort_slug or (practice_area=personal_injury and pi_category).",
+        },
+        { status: 400 },
+      );
+    }
+    if (isPIQuery && !piCategory) {
+      return NextResponse.json(
+        { error: "pi_category is required when practice_area=personal_injury" },
         { status: 400 },
       );
     }
@@ -33,13 +53,26 @@ export async function GET(req: NextRequest) {
       50,
     );
 
-    // Fetch all active images for this tort, ordered by display_order
-    const { data: images, error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+    let query = db
       .from("tort_images")
       .select("public_url, tags, display_order, demographic_notes")
-      .eq("tort_slug", tortSlug)
       .eq("is_active", true)
       .order("display_order", { ascending: true });
+
+    if (isPIQuery) {
+      query = query
+        .eq("practice_area", "personal_injury")
+        .eq("pi_category", piCategory);
+    } else {
+      // Mass tort path. Be lenient with rows missing practice_area
+      // (legacy data): match on tort_slug only. Filter to mass_tort
+      // explicitly when the column has a value.
+      query = query.eq("tort_slug", tortSlug);
+    }
+
+    const { data: images, error } = await query;
 
     if (error) {
       console.error("tort_images query error:", error);
