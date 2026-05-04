@@ -13,6 +13,7 @@ import type {
   SeverityModifier,
 } from "@/lib/campaign-builder/pi-templates/types";
 import { getAvailablePICategories } from "@/lib/campaign-builder/pi-templates";
+import type { FirmBrandProfile } from "@/lib/firms/types";
 
 /* ── Public types (mirror route.ts) ─────────────────────────────────────── */
 
@@ -171,7 +172,7 @@ Rules:
 - Match the requested word count exactly
 - Preserve EVERY compliance disclaimer the template provides, verbatim, at the end
 - Use the firm name, market name, and state name exactly as the template provides them
-- Tone: urgent but trustworthy, authoritative but empathetic
+- Tone: urgent but trustworthy, authoritative but empathetic — BUT if the user provides a "Firm voice context" block, override these defaults to match the firm's described voice descriptors and weave their differentiators / signature phrases / attorney names in naturally (don't list them)
 - Do NOT use the word "lawsuit" — use "legal rights" or "compensation" instead
 - Do NOT invent injuries, percentages, or facts not present in the template
 - Format as a single block of script text — no stage directions, speaker labels, or markdown
@@ -187,7 +188,7 @@ Rules:
 - Match the requested word count exactly
 - Preserve EVERY compliance disclaimer the template provides, verbatim, at the end
 - Use the firm name, market name, and state name exactly as the template provides them
-- Tone: conversational, trustworthy, informative — like a host genuinely recommending something
+- Tone: conversational, trustworthy, informative — like a host genuinely recommending something — BUT if the user provides a "Firm voice context" block, override these defaults to match the firm's described voice descriptors and weave their differentiators / signature phrases / attorney names in naturally (don't list them)
 - Use contractions and natural phrasing; sound like a real person talking, not a commercial
 - Do NOT use the word "lawsuit" — use "legal rights" or "compensation" instead
 - Do NOT invent injuries, percentages, or facts not present in the template
@@ -196,9 +197,103 @@ Rules:
 
 Respond with ONLY the script text — no JSON, no commentary, no preamble.`;
 
+/**
+ * Subset of FirmBrandProfile that actually shapes the prompt. Fields
+ * not in this list are stored on the firm but don't influence script
+ * generation directly (e.g. social_handles — used by Phase 3 auto-
+ * extract, not by the LLM).
+ *
+ * Passing this as a separate input (rather than inlining FirmBrandProfile)
+ * keeps the prompt builder decoupled from the firms schema — future
+ * brand fields can be added to the table without touching this file
+ * until we want them in the prompt.
+ */
+export interface BrandPromptInputs {
+  /** Firm's brand-line, e.g. "We fight for what's right." */
+  tagline?: string | null;
+  /** Tone descriptors, e.g. ['empathetic', 'no-nonsense', 'local']. */
+  voice_descriptors?: string[];
+  /** Differentiators, e.g. ['20 years in Birmingham']. */
+  differentiators?: string[];
+  /** Attorney names the firm wants referenced. */
+  partner_names?: string[];
+  /** Phrases the firm consistently uses. */
+  signature_phrases?: string[];
+  /** Counties / cities / regions the firm serves. */
+  service_areas?: string[];
+}
+
+/**
+ * Adapter: convert a stored FirmBrandProfile into the prompt-input subset.
+ * Lets route.ts hand the full firm row in without manual destructuring.
+ */
+export function brandInputsFromFirm(
+  firm: Partial<FirmBrandProfile> & {
+    tagline?: string | null;
+    voice_descriptors?: string[] | null;
+    differentiators?: string[] | null;
+    partner_names?: string[] | null;
+    signature_phrases?: string[] | null;
+    service_areas?: string[] | null;
+  },
+): BrandPromptInputs {
+  return {
+    tagline: firm.tagline ?? null,
+    voice_descriptors: firm.voice_descriptors ?? [],
+    differentiators: firm.differentiators ?? [],
+    partner_names: firm.partner_names ?? [],
+    signature_phrases: firm.signature_phrases ?? [],
+    service_areas: firm.service_areas ?? [],
+  };
+}
+
+/**
+ * Render the brand profile into a prompt-friendly block. Returns null
+ * when nothing is populated — lets the prompt builder skip the section
+ * entirely so generic firms don't get a header with empty fields.
+ */
+export function renderBrandPromptSection(
+  brand: BrandPromptInputs | null | undefined,
+): string | null {
+  if (!brand) return null;
+
+  const lines: string[] = [];
+  if (brand.tagline?.trim()) {
+    lines.push(`TAGLINE: ${brand.tagline.trim()}`);
+  }
+  if (brand.voice_descriptors && brand.voice_descriptors.length > 0) {
+    lines.push(`VOICE: ${brand.voice_descriptors.join(", ")}`);
+  }
+  if (brand.differentiators && brand.differentiators.length > 0) {
+    // Cap at 5 — keeps the prompt short. Firms with more than 5
+    // differentiators probably haven't prioritized; LLM will get
+    // confused trying to weave them all in.
+    lines.push(
+      `DIFFERENTIATORS: ${brand.differentiators.slice(0, 5).join("; ")}`,
+    );
+  }
+  if (brand.partner_names && brand.partner_names.length > 0) {
+    lines.push(
+      `ATTORNEYS (reference naturally if it fits): ${brand.partner_names.slice(0, 3).join(", ")}`,
+    );
+  }
+  if (brand.signature_phrases && brand.signature_phrases.length > 0) {
+    // 3 max — same reasoning. Better to weave one well than pile in five.
+    lines.push(
+      `SIGNATURE PHRASES (use 1-2 if natural): ${brand.signature_phrases.slice(0, 3).join("; ")}`,
+    );
+  }
+  if (brand.service_areas && brand.service_areas.length > 0) {
+    lines.push(`SERVICE AREAS: ${brand.service_areas.slice(0, 5).join(", ")}`);
+  }
+
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
 export function buildPIRadioUserPrompt(
   body: PIRadioScriptRequest,
   template: PITemplate,
+  brand?: BrandPromptInputs | null,
 ): string {
   const words =
     WORD_COUNTS[body.duration][body.format === "podcast" ? "podcast" : "radio"];
@@ -215,15 +310,31 @@ export function buildPIRadioUserPrompt(
     .filter(Boolean)
     .join("\n");
 
-  return [
+  const lines = [
     `Category: ${template.displayName}`,
     `Spot length: ${body.duration} (${words})`,
     `Language: ${lang}`,
     `Firm: ${body.firm_name}`,
     `Market: ${body.market_display_name}`,
     `State: ${body.state}`,
-    "",
-    "Source material (polish into a broadcast-ready spot):",
-    sourceLines,
-  ].join("\n");
+  ];
+
+  // Brand profile section. Only included when the firm has populated
+  // at least one brand field — generic firms keep getting generic
+  // (high-quality) scripts; firms that invest in their profile see
+  // immediate quality lift.
+  const brandSection = renderBrandPromptSection(brand);
+  if (brandSection) {
+    lines.push("");
+    lines.push(
+      "Firm voice context (the script should sound like THIS firm — weave these signals in naturally; do not list them):",
+    );
+    lines.push(brandSection);
+  }
+
+  lines.push("");
+  lines.push("Source material (polish into a broadcast-ready spot):");
+  lines.push(sourceLines);
+
+  return lines.join("\n");
 }
