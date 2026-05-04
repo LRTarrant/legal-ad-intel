@@ -14,6 +14,7 @@ import {
   Building2,
   Car,
   CloudLightning,
+  Briefcase,
   Crosshair,
   DollarSign,
   Eye,
@@ -376,6 +377,7 @@ export function Sidebar() {
             </p>
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Campaign Builder", href: "/campaigns/builder", Icon: Crosshair })}
+              {renderNavLink({ label: "Firm Profile", href: "/settings/firms", Icon: Briefcase })}
             </div>
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">

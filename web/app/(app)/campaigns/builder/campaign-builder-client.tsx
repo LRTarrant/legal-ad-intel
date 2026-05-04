@@ -44,6 +44,8 @@ import {
   reasonFromEntitlementError,
   type UpgradeMeta,
 } from "@/lib/billing/upgrade-copy";
+import { useFirms } from "@/lib/firms/use-firms";
+import { FirmPicker } from "../../components/firm-picker";
 import { PIConfigForm, type PIPlanResult } from "./pi-config-form";
 import { PIScriptCard } from "./pi-script-card";
 import {
@@ -389,6 +391,24 @@ export function CampaignBuilderClient() {
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [monthlyBudget, setMonthlyBudget] = useState("");
   const [firmName, setFirmName] = useState("");
+
+  // Firms / MCC: selected firm_id flows into save + plan calls so every
+  // campaign is persisted under the right client. Law firms have one
+  // firm and never see the picker; agencies/media see a dropdown.
+  const firmsResult = useFirms();
+  const [selectedFirmId, setSelectedFirmId] = useState<string | null>(null);
+
+  // For law firms: auto-select their self-firm when it loads.
+  // For agencies/media: FirmPicker hydrates from localStorage.
+  useEffect(() => {
+    if (selectedFirmId) return;
+    if (firmsResult.buyerType === "law_firm" && firmsResult.selfFirm) {
+      setSelectedFirmId(firmsResult.selfFirm.id);
+      // Also pre-fill firmName from the self-firm label so existing
+      // mass-tort flows that send firm_name don't go blank.
+      if (!firmName) setFirmName(firmsResult.selfFirm.label);
+    }
+  }, [firmsResult.buyerType, firmsResult.selfFirm, selectedFirmId, firmName]);
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([]);
@@ -1071,6 +1091,16 @@ export function CampaignBuilderClient() {
 
   return (
     <div className="space-y-6">
+      {/* Firm picker (hidden for law firms; required for agencies/media) */}
+      {!firmsResult.loading && firmsResult.buyerType !== "law_firm" && (
+        <FirmPicker
+          firms={firmsResult.firms}
+          buyerType={firmsResult.buyerType}
+          value={selectedFirmId}
+          onChange={setSelectedFirmId}
+        />
+      )}
+
       {/* Practice area tabs */}
       <PracticeAreaTabs
         active={practiceArea}
