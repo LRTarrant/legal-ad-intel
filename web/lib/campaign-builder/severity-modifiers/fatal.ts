@@ -42,7 +42,7 @@ export const fatalModifier: SeverityModifierFn = (
 
     hook: renderTemplate(buildFatalHook(template), vars),
     problem: renderTemplate(buildFatalProblem(template), vars),
-    authority: buildFatalAuthority(template),
+    authority: renderTemplate(buildFatalAuthority(template), vars),
     // Strip socialProof — results-touting language is inappropriate
     // for wrongful death copy regardless of state bar rules.
     socialProof: undefined,
@@ -73,8 +73,22 @@ function buildFatalHook(template: PITemplate): string {
       return "Losing someone on the water is a different kind of loss. The legal questions are different too.";
     case "car_accident":
       return "Nothing brings them back. But the driver who took them from you should be held accountable.";
+    case "truck_accident":
+      return "Losing someone to a commercial truck crash isn't a routine claim. The trucking company already has a team working to limit what your family is owed.";
+    case "premises_liability":
+      return "Nothing brings them back. But the property owner who let this happen should be held accountable.";
+    case "pedestrian_accident":
+      return "Nothing brings them back. But the driver who hit them should answer for it.";
+    case "bicycle_accident":
+      return "Nothing brings them back. But the driver who hit them should answer for it.";
+    case "slip_and_fall":
+      return "Falls become fatal more often than people realize — especially when the property owner knew the hazard was there.";
+    case "dog_bite":
+      // Dog-bite fatalities are rare but real (typically severe attacks
+      // on children or elderly). Tone stays gentle.
+      return "Losing a loved one to a dog attack is a tragedy that didn't have to happen.";
     default:
-      // Fallback for v2 categories. Generic but still respectful.
+      // Fallback for any category we add later. Generic but still respectful.
       return "Nothing brings them back. But the people responsible should be held accountable.";
   }
 }
@@ -102,6 +116,46 @@ function buildFatalProblem(template: PITemplate): string {
         "payouts before families know what they're entitled to. They'll offer a quick settlement that " +
         "won't begin to cover what your family has lost — and what you'll need going forward."
       );
+    case "truck_accident":
+      return (
+        "After a fatal commercial truck crash near {market_display_name}, the trucking company's legal " +
+        "team is already working. Driver logs get overwritten, ECM data resets, dashcam footage gets " +
+        "deleted within days. Federal trucking regulations create real liability — if you can preserve " +
+        "the evidence in time. Your family shouldn't have to handle that alone."
+      );
+    case "premises_liability":
+      return (
+        "When a fatal injury happens on someone else's property in the {market_display_name} area, the " +
+        "owner's insurer immediately works to argue your loved one was at fault for being there. The " +
+        "case turns on whether the owner knew the danger existed and didn't address it — and that " +
+        "evidence disappears quickly."
+      );
+    case "pedestrian_accident":
+      return (
+        "After a fatal pedestrian crash in the {market_display_name} area, the driver's insurer " +
+        "immediately starts shifting fault to the person who was hit. \"They came out of nowhere.\" " +
+        "\"They weren't in the crosswalk.\" None of that changes who was driving the vehicle. {state} " +
+        "law has specific protections for pedestrians, including in fatal cases."
+      );
+    case "bicycle_accident":
+      return (
+        "After a fatal bicycle crash in the {market_display_name} area, the driver's insurer leans " +
+        "on cyclist bias to limit what your family is owed. {state} law has specific protections for " +
+        "cyclists — doored cyclists, right-hook crashes, intersection right-of-way — but you have to " +
+        "know how to use them."
+      );
+    case "slip_and_fall":
+      return (
+        "Fatal falls happen more often than people realize, especially with elderly family members. " +
+        "The property owner's insurer will argue the hazard was open and obvious — the only thing that " +
+        "beats that defense is evidence the owner knew about the hazard. That evidence disappears fast."
+      );
+    case "dog_bite":
+      return (
+        "Most fatal dog attacks involve children or elderly family members. The owner's homeowner's " +
+        "insurance is what covers these claims, and your family is entitled to compensation that " +
+        "helps you move forward. Most lawyers won't take fatal dog attack cases. We do."
+      );
     default:
       return (
         "Insurance companies move fast after a fatal accident to limit payouts before families know " +
@@ -114,28 +168,33 @@ function buildFatalAuthority(template: PITemplate): string {
   // Splice wrongful-death experience callout into the firm's existing
   // authority claim. We keep the firm name and state references intact
   // since renderPITemplate() has already substituted them.
-  switch (template.category) {
-    case "motorcycle_accident":
-      return template.authority.replace(
-        /\.$/,
-        ". We also handle wrongful death cases involving motorcycle riders — and we know what your family is owed.",
-      );
-    case "boating_accident":
-      return template.authority.replace(
-        /\.$/,
-        ". We also handle maritime wrongful death claims with the care your family deserves.",
-      );
-    case "car_accident":
-      return template.authority.replace(
-        /\.$/,
-        ". We also handle wrongful death claims arising from car crashes — and we know what your family is owed.",
-      );
-    default:
-      return template.authority.replace(
-        /\.$/,
-        ". We also handle wrongful death cases with the care your family deserves.",
-      );
-  }
+  const callout = ((): string => {
+    switch (template.category) {
+      case "motorcycle_accident":
+        return " We also handle wrongful death cases involving motorcycle riders — and we know what your family is owed.";
+      case "boating_accident":
+        return " We also handle maritime wrongful death claims with the care your family deserves.";
+      case "car_accident":
+        return " We also handle wrongful death claims arising from car crashes — and we know what your family is owed.";
+      case "truck_accident":
+        return " We also handle commercial trucking wrongful death claims and know how to preserve the federal-regulation evidence these cases turn on.";
+      case "premises_liability":
+        return " We also handle wrongful death cases arising from unsafe premises — and we know what evidence wins them.";
+      case "pedestrian_accident":
+        return " We also handle pedestrian wrongful death claims and the specific {state} laws that apply.";
+      case "bicycle_accident":
+        return " We also handle cyclist wrongful death claims with the {state}-specific framework these cases require.";
+      case "slip_and_fall":
+        return " We also handle wrongful death claims arising from fatal falls and know what evidence makes the case.";
+      case "dog_bite":
+        return " We handle the rare wrongful death cases arising from fatal dog attacks with the care your family deserves.";
+      default:
+        return " We also handle wrongful death cases with the care your family deserves.";
+    }
+  })();
+
+  // Splice the callout in before the trailing period.
+  return template.authority.replace(/\.$/, "." + callout);
 }
 
 /**

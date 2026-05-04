@@ -52,27 +52,58 @@ test("renderTemplate leaves text without placeholders unchanged", () => {
 
 /* ── PI templates registry ────────────────────────────────────────────── */
 
-test("v1 ships motorcycle, boating, and car_accident templates", () => {
+test("v1 ships all 9 PI category templates", () => {
+  // Task 10 added the remaining 6 to the original 3 from Tasks 2 + 3.
+  // Rideshare is intentionally absent (deferred to v2).
   expect(getAvailablePICategories().sort()).toEqual([
+    "bicycle_accident",
     "boating_accident",
     "car_accident",
+    "dog_bite",
     "motorcycle_accident",
+    "pedestrian_accident",
+    "premises_liability",
+    "slip_and_fall",
+    "truck_accident",
   ]);
 });
 
-test("getPITemplate returns the right template for known categories", () => {
-  expect(getPITemplate("car_accident")?.category).toBe("car_accident");
-  expect(getPITemplate("motorcycle_accident")?.category).toBe(
+test("getPITemplate returns the right template for every v1 category", () => {
+  // All 9 categories now resolve to a registered template.
+  for (const cat of [
+    "car_accident",
+    "truck_accident",
     "motorcycle_accident",
-  );
-  expect(getPITemplate("boating_accident")?.category).toBe("boating_accident");
+    "boating_accident",
+    "slip_and_fall",
+    "dog_bite",
+    "premises_liability",
+    "pedestrian_accident",
+    "bicycle_accident",
+  ] as const) {
+    expect(getPITemplate(cat)?.category).toBe(cat);
+  }
 });
 
-test("getPITemplate returns undefined for v2 categories not yet shipped", () => {
-  // These exist in the DB CHECK constraint but don't have templates yet.
-  expect(getPITemplate("truck_accident")).toBeUndefined();
-  expect(getPITemplate("dog_bite")).toBeUndefined();
-  expect(getPITemplate("slip_and_fall")).toBeUndefined();
+test("each category has a non-empty hook, problem, authority, and cta", () => {
+  for (const cat of [
+    "car_accident",
+    "truck_accident",
+    "motorcycle_accident",
+    "boating_accident",
+    "slip_and_fall",
+    "dog_bite",
+    "premises_liability",
+    "pedestrian_accident",
+    "bicycle_accident",
+  ] as const) {
+    const tpl = getPITemplate(cat);
+    expect(tpl?.hook.length).toBeGreaterThan(20);
+    expect(tpl?.problem.length).toBeGreaterThan(50);
+    expect(tpl?.authority.length).toBeGreaterThan(20);
+    expect(tpl?.cta.length).toBeGreaterThan(20);
+    expect(tpl?.toneHint.length).toBeGreaterThan(50);
+  }
 });
 
 test("every template's category field matches its registry key", () => {
@@ -204,16 +235,49 @@ test("router throws when PI campaign missing market_display_name", () => {
   ).toThrow(/requires market_display_name/);
 });
 
-test("router throws when PI category has no template registered", () => {
+test("router throws for an invented category not in the enum", () => {
+  // All 9 v1 categories are registered now. To exercise the
+  // "no template registered" path, we pass a fake enum value the
+  // type system would normally reject.
   expect(() =>
     routePracticeArea({
       practice_area: "personal_injury",
-      pi_category: "truck_accident", // valid enum, no template yet
+      pi_category: "hovercraft_accident" as never,
       market_display_name: "Birmingham",
       state_full_name: "Alabama",
       firm_name: "Acme Law",
     }),
   ).toThrow(/No PI template registered/);
+});
+
+test("router substitutes vars in every newly-shipped category", () => {
+  // Smoke-check Task 10 categories end-to-end.
+  for (const cat of [
+    "truck_accident",
+    "slip_and_fall",
+    "dog_bite",
+    "premises_liability",
+    "pedestrian_accident",
+    "bicycle_accident",
+  ] as const) {
+    const result = routePracticeArea({
+      practice_area: "personal_injury",
+      pi_category: cat,
+      market_display_name: "Birmingham",
+      state: "AL",
+      state_full_name: "Alabama",
+      firm_name: "Acme Law",
+    });
+    if (result.practice_area !== "personal_injury") throw new Error("wrong path");
+    // Every section should have substituted vars (no leftover {placeholders})
+    const allText = [
+      result.template.hook,
+      result.template.problem,
+      result.template.authority,
+      result.template.cta,
+    ].join(" ");
+    expect(allText).not.toMatch(/\{[a-z_]+\}/);
+  }
 });
 
 test("router filters out invalid severity modifiers", () => {
