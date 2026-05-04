@@ -72,11 +72,24 @@ export interface PIPlanResult {
   };
 }
 
+/**
+ * The submitted config that produced a PIPlanResult. Bubbled back up
+ * via onGenerated so the parent can stash it for downstream steps
+ * (radio script generator, video script generator) without re-asking
+ * the user for state/market/severity each time.
+ */
+export interface PISubmittedConfig {
+  pi_category: PICategory;
+  market_display_name: string;
+  state: string;
+  severity_modifiers: SeverityModifier[];
+}
+
 interface PIConfigFormProps {
   /** Initial firm name (shared with mass tort form). */
   firmName: string;
   onFirmNameChange: (next: string) => void;
-  onGenerated: (result: PIPlanResult) => void;
+  onGenerated: (result: PIPlanResult, config: PISubmittedConfig) => void;
   accentColor: string;
   /**
    * Optional deep-link defaults from URL params (state intelligence pages,
@@ -189,7 +202,12 @@ export function PIConfigForm({
       }
 
       const data = (await res.json()) as PIPlanResult;
-      onGenerated(data);
+      onGenerated(data, {
+        pi_category: category,
+        market_display_name: dma.display_name,
+        state,
+        severity_modifiers: severity ? [severity] : [],
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setError(message);

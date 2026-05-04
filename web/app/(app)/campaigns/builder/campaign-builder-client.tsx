@@ -46,8 +46,13 @@ import {
 } from "@/lib/billing/upgrade-copy";
 import { useFirms } from "@/lib/firms/use-firms";
 import { FirmPicker } from "../../components/firm-picker";
-import { PIConfigForm, type PIPlanResult } from "./pi-config-form";
+import {
+  PIConfigForm,
+  type PIPlanResult,
+  type PISubmittedConfig,
+} from "./pi-config-form";
 import { PIScriptCard } from "./pi-script-card";
+import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -384,6 +389,9 @@ export function CampaignBuilderClient() {
 
   // PI generation result (separate from mass tort plan state)
   const [piResult, setPiResult] = useState<PIPlanResult | null>(null);
+  // Track the config that produced piResult so the radio script
+  // generator below can re-use state/market/severity without re-asking.
+  const [piConfig, setPiConfig] = useState<PISubmittedConfig | null>(null);
 
   // Form state
   const [tortNames, setTortNames] = useState<string[]>([]);
@@ -1131,7 +1139,10 @@ export function CampaignBuilderClient() {
           <PIConfigForm
             firmName={firmName}
             onFirmNameChange={setFirmName}
-            onGenerated={setPiResult}
+            onGenerated={(result, config) => {
+              setPiResult(result);
+              setPiConfig(config);
+            }}
             accentColor={accentColor}
             initialState={deepLink.state}
             initialCategory={deepLink.piCategory}
@@ -1381,6 +1392,20 @@ export function CampaignBuilderClient() {
       {/* PI script result */}
       {practiceArea === "personal_injury" && piResult && (
         <PIScriptCard result={piResult} accentColor={accentColor} />
+      )}
+
+      {/* PI radio / podcast script generator (Phase 1) */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIRadioScriptGenerator
+          plan={piResult}
+          firmId={selectedFirmId}
+          firmName={firmName}
+          config={piConfig}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+        />
       )}
 
       {/* Error */}
