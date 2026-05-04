@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { routePracticeArea } from "@/lib/campaign-builder/practice-area-router";
 import type { PICategory, SeverityModifier } from "@/lib/campaign-builder/pi-templates/types";
+import {
+  checkCampaignBuilderEntitlement,
+  entitlementErrorBody,
+} from "@/lib/campaign-builder/entitlements";
 
 const CANCER_TORTS = ["Roundup", "Talcum Powder", "AFFF", "Paraquat"];
 const ACCIDENT_TORTS = ["Motor Vehicle", "Large Truck", "Motorcycle"];
@@ -35,6 +39,31 @@ export async function POST(req: NextRequest) {
     }
 
     const body: PlanRequest = await req.json();
+
+    // ── Server-side entitlement gate ───────────────────────────────────
+    // The UI gates practice_area tabs client-side, but we re-check here
+    // so a direct API call can't bypass. /plan does not create a campaign
+    // row — it only computes a plan — so we skip the monthly cap check
+    // (the cap counts rows in `campaigns`, enforced in /save).
+    {
+      const practiceArea =
+        body.practice_area === "personal_injury" ? "personal_injury" : "mass_tort";
+      const stateForCheck =
+        practiceArea === "personal_injury"
+          ? body.state ?? null
+          : Array.isArray(body.states) && body.states.length === 1
+            ? body.states[0]
+            : null;
+      const gate = await checkCampaignBuilderEntitlement(supabase, user.id, {
+        practice_area: practiceArea,
+        state: stateForCheck,
+        is_create: false,
+      });
+      if (!gate.ok) {
+        const { body: errBody, status } = entitlementErrorBody(gate);
+        return NextResponse.json(errBody, { status });
+      }
+    }
 
     // ── PI path ────────────────────────────────────────────────────────
     // When practice_area=personal_injury, route through the new PI

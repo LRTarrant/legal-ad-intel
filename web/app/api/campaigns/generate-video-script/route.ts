@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  checkCampaignBuilderEntitlement,
+  entitlementErrorBody,
+} from "@/lib/campaign-builder/entitlements";
 
 interface VideoScriptRequest {
   duration: "15s" | "30s" | "60s";
@@ -209,6 +213,23 @@ export async function POST(req: NextRequest) {
         { error: "tort_name, duration, and platform are required" },
         { status: 400 },
       );
+    }
+
+    // Server-side entitlement gate (see entitlements.ts). Mass-tort path.
+    {
+      const stateForCheck =
+        Array.isArray(body.states) && body.states.length === 1
+          ? body.states[0]
+          : null;
+      const gate = await checkCampaignBuilderEntitlement(supabase, user.id, {
+        practice_area: "mass_tort",
+        state: stateForCheck,
+        is_create: false,
+      });
+      if (!gate.ok) {
+        const { body: errBody, status } = entitlementErrorBody(gate);
+        return NextResponse.json(errBody, { status });
+      }
     }
 
     // Fetch audience profile and tort medical context in parallel

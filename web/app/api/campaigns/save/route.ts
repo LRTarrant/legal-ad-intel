@@ -24,6 +24,10 @@ import {
   type SaveCampaignRequest,
   type SaveCampaignResponse,
 } from "@/lib/campaign-builder/types";
+import {
+  checkCampaignBuilderEntitlement,
+  entitlementErrorBody,
+} from "@/lib/campaign-builder/entitlements";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -51,6 +55,22 @@ export async function POST(req: NextRequest) {
       { error: "Validation failed", errors: validation.errors },
       { status: 400 },
     );
+  }
+
+  // Server-side entitlement gate. /save is the canonical "create" surface
+  // for campaigns, so we set is_create=true when no id is supplied so the
+  // monthly cap is enforced. Updates (id present) bypass the cap so users
+  // at the cap can still edit existing rows.
+  {
+    const gate = await checkCampaignBuilderEntitlement(supabase, user.id, {
+      practice_area: body.practice_area,
+      state: body.state ?? null,
+      is_create: !body.id,
+    });
+    if (!gate.ok) {
+      const { body: errBody, status } = entitlementErrorBody(gate);
+      return NextResponse.json(errBody, { status });
+    }
   }
 
   // Build the row payload. Only include fields the caller actually sent
