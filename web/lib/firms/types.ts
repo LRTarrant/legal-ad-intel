@@ -88,6 +88,9 @@ export interface CreateFirmInput {
 export type UpdateFirmInput = Partial<CreateFirmInput> & {
   /** Allow flipping the source flag when a manual edit follows an auto-extract. */
   extraction_source?: "manual" | "auto" | "hybrid";
+  /** ISO timestamp of the most recent successful auto-extraction. Set
+   * by the /extract-brand route; UI may surface as "last refreshed". */
+  extracted_at?: string | null;
 };
 
 /* ── Validation helpers ─────────────────────────────────────────────────── */
