@@ -12,8 +12,8 @@
  * because the PIPlanResult is the result of that config).
  */
 
-import { useState } from "react";
-import { Loader2, Mic, Volume2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Mic, Play, Volume2 } from "lucide-react";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -53,6 +53,20 @@ interface GeneratedScript {
   cost_cents: number;
 }
 
+interface VoiceOption {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  previewUrl: string;
+}
+
+interface GeneratedAudio {
+  audioUrl: string;
+  cost_cents: number;
+  characters_synth: number;
+}
+
 export function PIRadioScriptGenerator({
   plan,
   firmId,
@@ -68,6 +82,94 @@ export function PIRadioScriptGenerator({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<GeneratedScript | null>(null);
+
+  // Audio rendering state — separate flow that fires after the script
+  // exists. Voices fetched lazily on first script success.
+  const [voices, setVoices] = useState<VoiceOption[] | null>(null);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [voicesError, setVoicesError] = useState<string | null>(null);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+
+  const [audioGenerating, setAudioGenerating] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [audio, setAudio] = useState<GeneratedAudio | null>(null);
+
+  // Pick a default voice once both voices and the script's voice
+  // recommendation are available. We match by gender + a heuristic on
+  // the voice's labels (description includes "warm" / "authoritative"
+  // / "calm" etc.). Fallback: first voice in the catalog.
+  useEffect(() => {
+    if (!voices || !generated || selectedVoiceId) return;
+    const wantGender = generated.voice.gender;
+    const wantKeywords = generated.voice.style.toLowerCase().split(/[\s,]+/);
+
+    const scored = voices
+      .map((v) => {
+        const desc = v.description.toLowerCase();
+        const genderMatch = desc.includes(wantGender) ? 10 : 0;
+        const keywordMatch = wantKeywords.reduce(
+          (acc, kw) => (kw.length > 2 && desc.includes(kw) ? acc + 1 : acc),
+          0,
+        );
+        return { v, score: genderMatch + keywordMatch };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const best = scored[0]?.v ?? voices[0];
+    if (best) setSelectedVoiceId(best.id);
+  }, [voices, generated, selectedVoiceId]);
+
+  async function fetchVoices() {
+    if (voices !== null || voicesLoading) return;
+    setVoicesLoading(true);
+    setVoicesError(null);
+    try {
+      const res = await fetch("/api/campaigns/voices");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `Failed to load voices (${res.status})`);
+      }
+      const data = (await res.json()) as { voices: VoiceOption[] };
+      setVoices(data.voices);
+    } catch (e) {
+      setVoicesError((e as Error).message);
+    } finally {
+      setVoicesLoading(false);
+    }
+  }
+
+  async function handleGenerateAudio() {
+    if (!generated || !selectedVoiceId) return;
+    setAudioGenerating(true);
+    setAudioError(null);
+    setAudio(null);
+    try {
+      const res = await fetch("/api/campaigns/generate-pi-radio-spot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script: generated.script,
+          voiceId: selectedVoiceId,
+          duration,
+          firm_id: firmId ?? undefined,
+          pi_category: config.pi_category,
+          state: config.state,
+          severity_modifiers: config.severity_modifiers,
+          language,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `Audio generation failed (${res.status})`);
+      }
+      const data = (await res.json()) as GeneratedAudio;
+      setAudio(data);
+    } catch (e) {
+      setAudioError((e as Error).message);
+    } finally {
+      setAudioGenerating(false);
+    }
+  }
 
   async function handleGenerate() {
     setGenerating(true);
@@ -119,6 +221,11 @@ export function PIRadioScriptGenerator({
         voice: data.voice_recommendation,
         cost_cents: data.cost_cents,
       });
+      // Reset audio state so the user can re-render against the new script.
+      setAudio(null);
+      setAudioError(null);
+      // Lazily fetch voices on first successful script.
+      void fetchVoices();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -237,9 +344,23 @@ export function PIRadioScriptGenerator({
 
           {generated.cost_cents > 0 && (
             <p className="text-xs text-slate-gray">
-              Generated for ${(generated.cost_cents / 100).toFixed(2)}
+              Script generated for ${(generated.cost_cents / 100).toFixed(2)}
             </p>
           )}
+
+          {/* Audio rendering section — voices + generate audio button */}
+          <AudioSection
+            voices={voices}
+            voicesLoading={voicesLoading}
+            voicesError={voicesError}
+            selectedVoiceId={selectedVoiceId}
+            onSelectVoice={setSelectedVoiceId}
+            onGenerate={handleGenerateAudio}
+            generating={audioGenerating}
+            error={audioError}
+            audio={audio}
+            accentColor={accentColor}
+          />
 
           {/* Suppress unused-prop warning when plan is read elsewhere by tests */}
           <span className="hidden" data-plan={plan.template.category} />
@@ -266,5 +387,133 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+/* ── Audio rendering subcomponent ───────────────────────────────────────────────────── */
+
+interface AudioSectionProps {
+  voices: VoiceOption[] | null;
+  voicesLoading: boolean;
+  voicesError: string | null;
+  selectedVoiceId: string;
+  onSelectVoice: (id: string) => void;
+  onGenerate: () => void;
+  generating: boolean;
+  error: string | null;
+  audio: GeneratedAudio | null;
+  accentColor: string;
+}
+
+function AudioSection({
+  voices,
+  voicesLoading,
+  voicesError,
+  selectedVoiceId,
+  onSelectVoice,
+  onGenerate,
+  generating,
+  error,
+  audio,
+  accentColor,
+}: AudioSectionProps) {
+  const sortedVoices = useMemo(() => {
+    if (!voices) return [];
+    // Premade first, then alphabetical — matches /api/campaigns/voices behavior.
+    return [...voices].sort((a, b) => {
+      if (a.category === "premade" && b.category !== "premade") return -1;
+      if (a.category !== "premade" && b.category === "premade") return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [voices]);
+
+  return (
+    <div className="space-y-3 rounded-md border border-cloud bg-cloud/20 p-4">
+      <div
+        className="text-xs font-semibold uppercase tracking-wider"
+        style={{ color: accentColor }}
+      >
+        Audio
+      </div>
+
+      {voicesLoading && (
+        <p className="text-sm text-slate-gray">Loading voice catalog…</p>
+      )}
+      {voicesError && (
+        <p className="text-sm text-red-600">
+          Couldn&apos;t load voices: {voicesError}
+        </p>
+      )}
+
+      {voices && voices.length === 0 && (
+        <p className="text-sm text-slate-gray">
+          No voices available in your ElevenLabs account.
+        </p>
+      )}
+
+      {sortedVoices.length > 0 && (
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <Field label="Voice">
+            <select
+              value={selectedVoiceId}
+              onChange={(e) => onSelectVoice(e.target.value)}
+              className="min-w-[16rem] rounded-md border border-cloud bg-white px-3 py-2 text-sm text-midnight-navy focus:border-intelligence-teal focus:outline-none focus:ring-2 focus:ring-intelligence-teal/30"
+            >
+              {sortedVoices.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                  {v.description ? ` — ${v.description}` : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={generating || !selectedVoiceId}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: accentColor }}
+          >
+            {generating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Rendering audio…
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Generate audio
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {audio && (
+        <div className="space-y-2">
+          <audio
+            controls
+            src={audio.audioUrl}
+            className="w-full"
+            preload="auto"
+          />
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-gray">
+            <a
+              href={audio.audioUrl}
+              download="pi-radio-spot.mp3"
+              className="font-semibold text-intelligence-teal hover:underline"
+            >
+              Download mp3
+            </a>
+            {audio.cost_cents > 0 && (
+              <span>Audio cost ${(audio.cost_cents / 100).toFixed(2)}</span>
+            )}
+            <span>{audio.characters_synth} characters synthesized</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
