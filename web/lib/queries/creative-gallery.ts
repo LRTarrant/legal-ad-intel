@@ -42,7 +42,7 @@ export async function getCreativeObservations(): Promise<CreativeObservation[]> 
       airings_count,
       estimated_reach,
       event_date,
-      firms!inner ( name ),
+      advertiser_firms!inner ( name ),
       mass_torts!inner ( name ),
       markets!inner ( market_name )
     `)
@@ -60,7 +60,7 @@ export async function getCreativeObservations(): Promise<CreativeObservation[]> 
     airings_count: row.airings_count != null ? Number(row.airings_count) : null,
     estimated_reach: Number(row.estimated_reach) || 0,
     event_date: row.event_date as string,
-    firm_name: (row.firms as Record<string, unknown>)?.name as string ?? "",
+    firm_name: (row.advertiser_firms as Record<string, unknown>)?.name as string ?? "",
     tort_name: (row.mass_torts as Record<string, unknown>)?.name as string ?? "",
     market_name: (row.markets as Record<string, unknown>)?.market_name as string ?? "",
   }));
@@ -75,7 +75,7 @@ export async function getCreativeFilters(): Promise<CreativeFilters> {
 
   const [eventsRes, firmsRes, tortsRes, marketsRes] = await Promise.all([
     sb.from("ad_events").select("channel"),
-    sb.from("firms").select("name").order("name"),
+    sb.from("advertiser_firms").select("name").order("name"),
     sb.from("mass_torts").select("name").order("name"),
     sb.from("markets").select("market_name").order("market_name"),
   ]);

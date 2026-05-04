@@ -1,32 +1,48 @@
+/**
+ * Queries against the COMPETITIVE-INTELLIGENCE advertiser firms table.
+ * (The law firms whose ads we track, joined to ad_events.) Originally
+ * called `firms`; renamed to `advertiser_firms` in Phase 0a to free up
+ * the `firms` name for MCC-style client firm management.
+ */
+
 import { getSupabase, type Tables } from "@/lib/supabase";
 
+// `advertiser_firms` is not yet in the generated Tables<...> map until
+// the next types regen; cast through the legacy 'firms' alias to keep
+// type safety with the underlying row shape (which is unchanged).
 export type Firm = Tables<"firms">;
 
 export async function getFirms(limit = 100): Promise<Firm[]> {
-  const { data, error } = await getSupabase()
-    .from("firms")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("advertiser_firms")
     .select("*")
     .order("name", { ascending: true })
     .limit(limit);
 
   if (error) throw new Error(`Failed to fetch firms: ${error.message}`);
-  return data;
+  return data as Firm[];
 }
 
 export async function getFirmById(id: string): Promise<Firm> {
-  const { data, error } = await getSupabase()
-    .from("firms")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb
+    .from("advertiser_firms")
     .select("*")
     .eq("id", id)
     .single();
 
   if (error) throw new Error(`Failed to fetch firm: ${error.message}`);
-  return data;
+  return data as Firm;
 }
 
 export async function getFirmCount(): Promise<number> {
-  const { count, error } = await getSupabase()
-    .from("firms")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { count, error } = await sb
+    .from("advertiser_firms")
     .select("*", { count: "exact", head: true });
 
   if (error) throw new Error(`Failed to count firms: ${error.message}`);
@@ -34,9 +50,11 @@ export async function getFirmCount(): Promise<number> {
 }
 
 async function fetchAllFirms(): Promise<Firm[]> {
-  const { data, error } = await getSupabase().from("firms").select("*");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = getSupabase() as any;
+  const { data, error } = await sb.from("advertiser_firms").select("*");
   if (error) throw new Error(`Failed to fetch firms: ${error.message}`);
-  return data;
+  return data as Firm[];
 }
 
 async function fetchAdEventsWithFirm(): Promise<Tables<"ad_events">[]> {
