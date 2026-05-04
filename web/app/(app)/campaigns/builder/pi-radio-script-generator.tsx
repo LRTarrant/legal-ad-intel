@@ -45,6 +45,12 @@ interface PIRadioScriptGeneratorProps {
     reason: UpgradeReason;
     meta: UpgradeMeta;
   }) => void;
+  /**
+   * Called whenever the user picks (or auto-pick selects) a voice. Lets
+   * the parent reuse the same voice for downstream steps like the PI
+   * video composition pipeline (Phase 2.1).
+   */
+  onVoiceSelected?: (voiceId: string | null) => void;
 }
 
 interface GeneratedScript {
@@ -74,6 +80,7 @@ export function PIRadioScriptGenerator({
   config,
   accentColor,
   onEntitlementError,
+  onVoiceSelected,
 }: PIRadioScriptGeneratorProps) {
   const [duration, setDuration] = useState<"15s" | "30s" | "60s">("30s");
   const [format, setFormat] = useState<"radio" | "podcast">("radio");
@@ -118,6 +125,13 @@ export function PIRadioScriptGenerator({
     const best = scored[0]?.v ?? voices[0];
     if (best) setSelectedVoiceId(best.id);
   }, [voices, generated, selectedVoiceId]);
+
+  // Bubble voice selection up to the parent so downstream steps (PI
+  // video composition) can reuse the same voice without re-asking.
+  useEffect(() => {
+    onVoiceSelected?.(selectedVoiceId || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVoiceId]);
 
   async function fetchVoices() {
     if (voices !== null || voicesLoading) return;

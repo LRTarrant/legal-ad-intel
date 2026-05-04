@@ -53,6 +53,7 @@ import {
 } from "./pi-config-form";
 import { PIScriptCard } from "./pi-script-card";
 import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
+import { PIVideoCompositionCard } from "./pi-video-composition-card";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -392,6 +393,10 @@ export function CampaignBuilderClient() {
   // Track the config that produced piResult so the radio script
   // generator below can re-use state/market/severity without re-asking.
   const [piConfig, setPiConfig] = useState<PISubmittedConfig | null>(null);
+  // Bubbled-up voice selection from PIRadioScriptGenerator's audio
+  // section, reused by PIVideoCompositionCard so the video voiceover
+  // matches the audio the user already heard.
+  const [piSelectedVoiceId, setPiSelectedVoiceId] = useState<string | null>(null);
 
   // Form state
   const [tortNames, setTortNames] = useState<string[]>([]);
@@ -1414,6 +1419,22 @@ export function CampaignBuilderClient() {
           firmId={selectedFirmId}
           firmName={firmName}
           config={piConfig}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+          onVoiceSelected={setPiSelectedVoiceId}
+        />
+      )}
+
+      {/* PI video composition (Phase 2.1) — mounts after the radio
+          generator so the user can pick a voice once and reuse it. */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIVideoCompositionCard
+          firmId={selectedFirmId}
+          firmName={firmName}
+          config={piConfig}
+          selectedVoiceId={piSelectedVoiceId}
           accentColor={accentColor}
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })

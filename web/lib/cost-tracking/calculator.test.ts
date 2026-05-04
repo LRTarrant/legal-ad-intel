@@ -109,6 +109,17 @@ test("Image: cheap model (Flux schnell) bills at least 1\u00a2 per call", () => 
   expect(cost).toBe(1);
 });
 
+test("Image: Imagen 4 Fast charged at 2\u00a2 per image", () => {
+  expect(calculateImageCost("google", "imagen-4-fast", 1)).toBe(2);
+  expect(calculateImageCost("google", "imagen-4-fast", 3)).toBe(6);
+});
+
+test("Image: internal library lookups always free even with count > 0", () => {
+  expect(calculateImageCost("internal", "pi_library", 1)).toBe(0);
+  expect(calculateImageCost("internal", "pi_library", 50)).toBe(0);
+  expect(calculateImageCost("internal", "tort_library", 10)).toBe(0);
+});
+
 test("Image: zero count returns 0", () => {
   const cost = calculateImageCost("openai", "dall-e-3", 0);
   expect(cost).toBe(0);

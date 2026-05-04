@@ -145,6 +145,13 @@ const IMAGE_PER_UNIT_CENTS: Record<string, number> = {
   "replicate:flux-pro": 6,        // ~$0.055
   "fal:flux-schnell": 0,
   "fal:flux-pro": 6,
+  // Google Imagen 4 Fast: ~$0.02/image at the time of writing
+  "google:imagen-4-fast": 2,
+  "google:imagen-4": 4,
+  // Internal library image lookups — zero external cost, but we record
+  // the call so analytics can distinguish library hits from AI generations.
+  "internal:pi_library": 0,
+  "internal:tort_library": 0,
 };
 
 export function calculateImageCost(
@@ -157,7 +164,10 @@ export function calculateImageCost(
     console.warn(`[cost-tracking] No image rate for ${provider}:${model}`);
     return 0;
   }
-  // Even "free" models cost something at scale; record at least 1\u00a2 per call.
+  // 'internal:*' providers are first-party library lookups (no external
+  // API call) — always free, even at scale. For external providers,
+  // record at least 1¢ per call so cheap models still show up in COGS.
+  if (provider === "internal") return 0;
   return Math.max(rate * count, count > 0 ? 1 : 0);
 }
 
