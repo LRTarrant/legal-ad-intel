@@ -22,9 +22,10 @@
  *     happening during the ~30-60s end-to-end pipeline.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Play, Video } from "lucide-react";
 import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
+import { VoicePicker, type VoicePickerOption } from "./voice-picker";
 import {
   isEntitlementError,
   reasonFromEntitlementError,
@@ -124,12 +125,61 @@ export function PIVideoCompositionCard({
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [withVoiceover, setWithVoiceover] = useState(true);
 
+  // Voice override state. Defaults to the radio's selectedVoiceId so the
+  // video matches the audio the user already heard. They can change it
+  // here without affecting the radio. Voices fetched once on mount.
+  const [videoVoiceId, setVideoVoiceId] = useState<string>(
+    selectedVoiceId ?? "",
+  );
+  const [voices, setVoices] = useState<VoicePickerOption[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [voicesError, setVoicesError] = useState<string | null>(null);
+  const voicesFetchedRef = useRef(false);
+
   // Pipeline state
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [script, setScript] = useState<PIVideoScriptResult | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+
+  // Fetch voices once when the card mounts. The radio card already does
+  // this on its own state, but the user might land on the video card
+  // first (e.g. they regenerated scenes and skipped audio).
+  useEffect(() => {
+    if (voicesFetchedRef.current) return;
+    voicesFetchedRef.current = true;
+    setVoicesLoading(true);
+    fetchWithDemoMode("/api/campaigns/voices")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          throw new Error(body.error ?? `Failed to load voices (${res.status})`);
+        }
+        const data = (await res.json()) as { voices: VoicePickerOption[] };
+        setVoices(data.voices ?? []);
+        // If we don't yet have a videoVoiceId (parent hadn't picked one),
+        // pick the first voice so the picker isn't blank.
+        if (!videoVoiceId && data.voices?.length > 0) {
+          setVideoVoiceId(data.voices[0].id);
+        }
+      })
+      .catch((e: Error) => setVoicesError(e.message))
+      .finally(() => setVoicesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If the parent's selectedVoiceId becomes available AFTER this card
+  // mounted (user picks a voice in the radio card later), and the user
+  // hasn't diverged here yet, follow the parent's pick.
+  useEffect(() => {
+    if (selectedVoiceId && !videoVoiceId) {
+      setVideoVoiceId(selectedVoiceId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVoiceId]);
 
   // Reset cached output when the config changes \u2014 stale script + stale
   // images would otherwise quietly mismatch the user's new selection.
