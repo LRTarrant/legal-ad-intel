@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { useFirms } from "@/lib/firms/use-firms";
 import type { FirmWithRole, UpdateFirmInput } from "@/lib/firms/types";
+import { AutoFillPanel } from "./auto-fill-panel";
 
 export function FirmsPageClient() {
   const firmsResult = useFirms();
@@ -191,6 +192,15 @@ function FirmEditCard({ firm, onSaved }: FirmEditCardProps) {
       draft={draft}
       onChange={setDraft}
       readOnly={isViewer}
+      autoFill={
+        !isViewer ? (
+          <AutoFillPanel
+            firm={firm}
+            draftUrl={draft.website_url ?? ""}
+            onApplied={onSaved}
+          />
+        ) : null
+      }
       footer={
         <div className="flex items-center justify-end gap-3">
           {error && <span className="text-sm text-red-600">{error}</span>}
@@ -278,10 +288,20 @@ interface FirmFormFieldsProps {
   draft: UpdateFirmInput;
   onChange: (next: UpdateFirmInput) => void;
   readOnly?: boolean;
+  /** Optional auto-fill panel slot. Rendered below the website URL
+   * field when present. Only the edit card passes this; the create
+   * card omits it because there's no firm.id to call the route with. */
+  autoFill?: React.ReactNode;
   footer: React.ReactNode;
 }
 
-function FirmFormFields({ draft, onChange, readOnly, footer }: FirmFormFieldsProps) {
+function FirmFormFields({
+  draft,
+  onChange,
+  readOnly,
+  autoFill,
+  footer,
+}: FirmFormFieldsProps) {
   const update = (patch: Partial<UpdateFirmInput>) =>
     onChange({ ...draft, ...patch });
 
@@ -320,6 +340,8 @@ function FirmFormFields({ draft, onChange, readOnly, footer }: FirmFormFieldsPro
           />
         </Field>
       </div>
+
+      {autoFill && <div>{autoFill}</div>}
 
       <Field label="Tagline" hint="One line. The firm's brand-line.">
         <input
