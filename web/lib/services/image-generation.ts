@@ -133,8 +133,13 @@ export function createImageProvider(): ImageGenerationProvider {
  * callers can fall back to AI generation.
  * ────────────────────────────────────────────────────────────────────── */
 
+// Threshold below which we skip the library and fall back to AI
+// generation. Default 1 = use the library if there's at least one
+// active image for the tort/category. Was 3 — too conservative for
+// early users seeding their library; new users would see all-AI
+// images even after uploading their first curated photo.
 const TORT_IMAGE_LIBRARY_MIN_COUNT = parseInt(
-  process.env.TORT_IMAGE_LIBRARY_MIN_COUNT ?? "3",
+  process.env.TORT_IMAGE_LIBRARY_MIN_COUNT ?? "1",
   10,
 );
 
