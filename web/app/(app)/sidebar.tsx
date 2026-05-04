@@ -369,6 +369,7 @@ export function Sidebar() {
               {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
               {renderNavLink({ label: "Georgia", href: "/state-intelligence/georgia", Icon: MapPin })}
               {renderNavLink({ label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin })}
+              {renderNavLink({ label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin })}
             </div>
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">
