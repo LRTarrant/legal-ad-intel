@@ -9,6 +9,7 @@ type Intent =
   | "tort_overview"
   | "advertiser_lookup"
   | "mdl_lookup"
+  | "personal_injury"
   | "general";
 
 interface IntentResult {
@@ -36,7 +37,8 @@ type ActionType =
   | "planner"
   | "judicial_profiles"
   | "storm_events"
-  | "markets_index";
+  | "markets_index"
+  | "pi_builder";
 
 interface LLMActionChip {
   label: string;
@@ -148,6 +150,17 @@ export function buildActionUrl(
       return "/storm-events";
     case "markets_index":
       return "/markets";
+    case "pi_builder":
+      // PI campaign builder. Optional state pre-fill is supported on the
+      // campaign builder via query string. State name is normalized through
+      // the same helper so abbreviations and full names both work.
+      {
+        const stateRaw = params?.state_name ?? params?.state_abbr ?? "";
+        const stateSlug = normalizeStateName(stateRaw);
+        return stateSlug
+          ? `/campaigns/builder?practice_area=personal_injury&state=${encodeURIComponent(stateSlug)}`
+          : `/campaigns/builder?practice_area=personal_injury`;
+      }
     default:
       return null;
   }
@@ -176,7 +189,7 @@ function checkRateLimit(userId: string): boolean {
 const INTENT_SYSTEM_PROMPT = `You are an intent classifier for a legal advertising intelligence platform.
 
 Given a user question, extract:
-1. intent — one of: "state_targeting", "tort_overview", "advertiser_lookup", "mdl_lookup", "general"
+1. intent — one of: "state_targeting", "tort_overview", "advertiser_lookup", "mdl_lookup", "personal_injury", "general"
 2. entities — any tort name, state, or advertiser mentioned
 
 Rules:
@@ -184,6 +197,7 @@ Rules:
 - "tort_overview": user asks about a specific tort (litigation status, settlements, CPA, trends, news)
 - "advertiser_lookup": user asks about who is advertising, ad spend, competitor activity
 - "mdl_lookup": user asks about MDL cases, pending actions, largest MDLs, litigation stats
+- "personal_injury": user asks about non-mass-tort PI matters — car accidents, truck accidents, motorcycle, slip and fall, dog bites, fatal crashes, FARS data, premises liability, county-level PI targeting, PI ad spend, PI campaigns, PI lawyer marketing
 - "general": anything else (legal questions, general marketing, off-topic)
 
 Respond with ONLY valid JSON. No markdown, no explanation.
@@ -227,8 +241,10 @@ Rules for actions:
   - "judicial_profiles" — no params needed
   - "storm_events" — no params needed
   - "markets_index" — no params needed
+  - "pi_builder" — opens the Personal Injury campaign builder. Optional params.state_name or params.state_abbr to pre-select state. Use this for any PI question (car/truck/motorcycle accidents, fatal crashes, county targeting, PI ad campaigns).
 - Do NOT invent action_type values outside this list
 - Only suggest state_market for AL, AZ, CA, FL — omit chips for other states
+- For "personal_injury" intent: ALWAYS include a "pi_builder" chip and (when relevant) a state_market chip. Do NOT include tort_detail / mdl_detail chips for PI questions — those are for mass tort only.
 - If the user's question is general/off-topic, still provide a helpful answer but use fewer or no action chips`;
 }
 
@@ -565,6 +581,7 @@ export async function POST(req: NextRequest) {
       "tort_overview",
       "advertiser_lookup",
       "mdl_lookup",
+      "personal_injury",
       "general",
     ];
     if (!validIntents.includes(parsed.intent)) {
@@ -599,6 +616,13 @@ export async function POST(req: NextRequest) {
 
       case "mdl_lookup":
         groundingData = await fetchMdlGrounding(db);
+        break;
+
+      case "personal_injury":
+        // No DB grounding yet for PI — the answer comes from the LLM, but
+        // we will still inject a "pi_builder" action chip so users can
+        // click through. Future PR D will add FARS / state-level PI
+        // grounding so PI answers carry real data.
         break;
 
       case "general":
