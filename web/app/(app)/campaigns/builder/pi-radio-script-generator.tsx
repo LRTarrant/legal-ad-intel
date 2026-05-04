@@ -137,7 +137,16 @@ export function PIRadioScriptGenerator({
 
       <p className="text-sm text-slate-gray">
         Polish the structured PI script above into a broadcast-ready spot.
-        The compliance disclaimer is preserved verbatim.
+        The compliance disclaimer is preserved verbatim. Your firm&apos;s brand profile
+        (voice, tagline, differentiators) shapes the wording —
+        {" "}
+        <a
+          href="/settings/firms"
+          className="font-semibold text-intelligence-teal hover:underline"
+        >
+          edit it in Settings
+        </a>
+        .
       </p>
 
       <div className="grid gap-4 md:grid-cols-3">

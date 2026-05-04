@@ -47,9 +47,11 @@ import { getFirmForUser } from "@/lib/firms/server";
 import {
   PI_PODCAST_SYSTEM_PROMPT,
   PI_RADIO_SYSTEM_PROMPT,
+  brandInputsFromFirm,
   buildPIRadioUserPrompt,
   recommendPIVoice,
   validatePIRadioRequest,
+  type BrandPromptInputs,
   type PIRadioScriptRequest,
 } from "./testable";
 
@@ -117,9 +119,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(errBody, { status });
   }
 
-  // If a firm_id is supplied, verify the user manages it before
-  // attributing cost to it. Lets agencies generate-for-client cleanly.
+  // If a firm_id is supplied, verify the user manages it AND fetch the
+  // brand profile so the LLM prompt can reflect the firm's voice. The
+  // brand fields are optional — firms that haven't filled them out yet
+  // get a clean (template-only) prompt, same as Phase 1.
   let resolvedFirmId: string | null = null;
+  let brandInputs: BrandPromptInputs | null = null;
   if (body.firm_id) {
     const firm = await getFirmForUser(supabase, user.id, body.firm_id);
     if (!firm) {
@@ -129,6 +134,7 @@ export async function POST(req: NextRequest) {
       );
     }
     resolvedFirmId = firm.id;
+    brandInputs = brandInputsFromFirm(firm);
   }
 
   // Route through the practice-area router so we get the rendered PI
@@ -177,7 +183,7 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt =
     body.format === "podcast" ? PI_PODCAST_SYSTEM_PROMPT : PI_RADIO_SYSTEM_PROMPT;
-  const userPrompt = buildPIRadioUserPrompt(body, template);
+  const userPrompt = buildPIRadioUserPrompt(body, template, brandInputs);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -239,6 +245,9 @@ export async function POST(req: NextRequest) {
         format: body.format ?? "radio",
         language: body.language ?? "en",
         severity_modifiers: body.severity_modifiers ?? [],
+        // Tag whether brand profile shaped this generation. Useful for
+        // measuring brand-aware uptake + correlating quality signals.
+        brand_aware: brandInputs !== null && hasAnyBrandSignal(brandInputs),
       },
     });
 
@@ -278,4 +287,20 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+/**
+ * Returns true if at least one brand profile field is non-empty.
+ * Used to tag generation_costs.meta.brand_aware so we can later measure
+ * uptake and correlate with quality signals.
+ */
+function hasAnyBrandSignal(b: BrandPromptInputs): boolean {
+  return Boolean(
+    b.tagline?.trim() ||
+      (b.voice_descriptors && b.voice_descriptors.length > 0) ||
+      (b.differentiators && b.differentiators.length > 0) ||
+      (b.partner_names && b.partner_names.length > 0) ||
+      (b.signature_phrases && b.signature_phrases.length > 0) ||
+      (b.service_areas && b.service_areas.length > 0),
+  );
 }

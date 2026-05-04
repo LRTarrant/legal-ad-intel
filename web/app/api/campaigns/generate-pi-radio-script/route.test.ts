@@ -24,6 +24,8 @@ import {
   validatePIRadioRequest,
   recommendPIVoice,
   buildPIRadioUserPrompt,
+  brandInputsFromFirm,
+  renderBrandPromptSection,
 } from "./testable";
 
 /* ──────────────────────────────────────────────────────────────────────── */
@@ -241,4 +243,117 @@ test("buildUserPrompt uses provided firm + market + state", () => {
   expect(prompt).toContain("Smith & Jones LLP");
   expect(prompt).toContain("Birmingham");
   expect(prompt).toContain("AL");
+});
+
+/* ── Brand profile (Phase 1.5) ─────────────────────────────────────────────────────────── */
+
+test("buildUserPrompt with no brand input matches Phase 1 baseline (no brand section)", () => {
+  const prompt = buildPIRadioUserPrompt(baseRequest(), sampleTemplate, null);
+  expect(prompt).not.toContain("Firm voice context");
+  expect(prompt).not.toContain("VOICE:");
+  expect(prompt).not.toContain("DIFFERENTIATORS:");
+});
+
+test("buildUserPrompt with empty-but-present brand still skips the section", () => {
+  const prompt = buildPIRadioUserPrompt(baseRequest(), sampleTemplate, {
+    tagline: "",
+    voice_descriptors: [],
+    differentiators: [],
+    partner_names: [],
+    signature_phrases: [],
+    service_areas: [],
+  });
+  expect(prompt).not.toContain("Firm voice context");
+});
+
+test("buildUserPrompt with full brand profile includes voice context block", () => {
+  const prompt = buildPIRadioUserPrompt(baseRequest(), sampleTemplate, {
+    tagline: "We fight for what's right.",
+    voice_descriptors: ["empathetic", "local", "no-nonsense"],
+    differentiators: ["20 years in Birmingham", "former insurance defense"],
+    partner_names: ["Maria Smith", "David Jones"],
+    signature_phrases: ["You deserve answers.", "We don't back down."],
+    service_areas: ["Jefferson County", "Shelby County"],
+  });
+  expect(prompt).toContain("Firm voice context");
+  expect(prompt).toContain("TAGLINE: We fight for what's right.");
+  expect(prompt).toContain("empathetic, local, no-nonsense");
+  expect(prompt).toContain("20 years in Birmingham");
+  expect(prompt).toContain("Maria Smith");
+  expect(prompt).toContain("You deserve answers.");
+  expect(prompt).toContain("Jefferson County");
+});
+
+test("renderBrandPromptSection caps differentiators at 5", () => {
+  const section = renderBrandPromptSection({
+    differentiators: ["a", "b", "c", "d", "e", "f", "g"],
+  });
+  expect(section).not.toBeUndefined();
+  // 'g' should not appear, 'e' should
+  expect(section!.includes("e")).toBe(true);
+  expect(section!.includes("g")).toBe(false);
+});
+
+test("renderBrandPromptSection caps partner_names at 3", () => {
+  const section = renderBrandPromptSection({
+    partner_names: ["A", "B", "C", "D", "E"],
+  });
+  expect(section).not.toBeUndefined();
+  expect(section!.includes("C")).toBe(true);
+  expect(section!.includes("D")).toBe(false);
+});
+
+test("renderBrandPromptSection caps signature_phrases at 3", () => {
+  const section = renderBrandPromptSection({
+    signature_phrases: ["one", "two", "three", "four"],
+  });
+  expect(section).not.toBeUndefined();
+  expect(section!.includes("three")).toBe(true);
+  expect(section!.includes("four")).toBe(false);
+});
+
+test("renderBrandPromptSection returns null when nothing populated", () => {
+  const section = renderBrandPromptSection({});
+  expect(section).toBe(null);
+});
+
+test("renderBrandPromptSection returns null for null input", () => {
+  const section = renderBrandPromptSection(null);
+  expect(section).toBe(null);
+});
+
+test("renderBrandPromptSection ignores whitespace-only tagline", () => {
+  const section = renderBrandPromptSection({ tagline: "   " });
+  expect(section).toBe(null);
+});
+
+test("brandInputsFromFirm normalizes nullable arrays to empty arrays", () => {
+  const inputs = brandInputsFromFirm({
+    tagline: null,
+    voice_descriptors: null,
+    differentiators: null,
+    partner_names: null,
+    signature_phrases: null,
+    service_areas: null,
+  });
+  expect(inputs.tagline).toBe(null);
+  expect(inputs.voice_descriptors).toEqual([]);
+  expect(inputs.differentiators).toEqual([]);
+  expect(inputs.partner_names).toEqual([]);
+  expect(inputs.signature_phrases).toEqual([]);
+  expect(inputs.service_areas).toEqual([]);
+});
+
+test("brandInputsFromFirm preserves populated values", () => {
+  const inputs = brandInputsFromFirm({
+    tagline: "Hi.",
+    voice_descriptors: ["empathetic"],
+    differentiators: ["local"],
+    partner_names: ["Smith"],
+    signature_phrases: ["You deserve answers."],
+    service_areas: ["Birmingham"],
+  });
+  expect(inputs.tagline).toBe("Hi.");
+  expect(inputs.voice_descriptors).toEqual(["empathetic"]);
+  expect(inputs.differentiators).toEqual(["local"]);
 });

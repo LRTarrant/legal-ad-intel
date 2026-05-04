@@ -417,6 +417,19 @@ export function CampaignBuilderClient() {
       if (!firmName) setFirmName(firmsResult.selfFirm.label);
     }
   }, [firmsResult.buyerType, firmsResult.selfFirm, selectedFirmId, firmName]);
+
+  // When the agency / media user switches firm in the picker, sync the
+  // firmName field to the selected firm's label — saves them retyping
+  // and keeps the LLM prompt aligned with the brand profile we'll fetch
+  // server-side. Skipped when no selection or firmName already matches.
+  useEffect(() => {
+    if (!selectedFirmId) return;
+    const selected = firmsResult.firms.find((f) => f.id === selectedFirmId);
+    if (selected && selected.label && firmName !== selected.label) {
+      setFirmName(selected.label);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFirmId, firmsResult.firms]);
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   const [stateSearch, setStateSearch] = useState("");
   const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([]);
