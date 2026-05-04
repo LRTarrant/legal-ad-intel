@@ -69,11 +69,64 @@ export interface CrashEmbed {
   description?: string;
 }
 
+/**
+ * State-specific narrative blocks rendered in the page UI.
+ * Each block is short prose that lives in a specific section of the page.
+ * Falls back to generic text when omitted.
+ */
 export interface StateContent {
-  /** Optional override for the hero subtitle. Falls back to a generic one. */
+  /** Hero section subtitle / lede paragraph. */
   heroSubtitle?: string;
-  /** 1-2 paragraph state-specific narrative. Auto-generated for bulk launches; hand-written for top tiers. */
-  massTortClimate?: string;
+
+  /** Section: Legal landscape. Negligence rule, SOL, damages caps. ~3-5 sentences. */
+  legalLandscape?: string;
+
+  /** Auto card: audience description. */
+  autoAudience?: string;
+  /** Auto card: recommended media mix. */
+  autoMedia?: string;
+
+  /** Truck card: audience description. */
+  truckAudience?: string;
+  /** Truck card: recommended media mix. */
+  truckMedia?: string;
+
+  /** Motorcycle card: audience description. */
+  motorcycleAudience?: string;
+  /** Motorcycle card: recommended media mix. */
+  motorcycleMedia?: string;
+
+  /** Construction card: audience description. */
+  constructionAudience?: string;
+  /** Construction card: recommended media mix. */
+  constructionMedia?: string;
+
+  /** Boating card: audience description. */
+  boatingAudience?: string;
+  /** Boating card: recommended media mix. */
+  boatingMedia?: string;
+
+  /** Section: Rural/urban divide. Why rural fatalities matter. */
+  ruralUrbanContext?: string;
+
+  /** Section: Judicial profile mix. State-specific commentary on bench. */
+  judicialContext?: string;
+
+  /** Section: SOL urgency tip. Used in cross-signal insights. */
+  solUrgencyTip?: string;
+
+  /** Section: Internet access tip. Used in cross-signal insights. */
+  internetAccessTip?: string;
+
+  /** Section: Out-of-state riders / visitors tip. Used in cross-signal insights. */
+  outOfStateTip?: string;
+
+  /** AskAI / footer pageName — e.g. "Texas State Intelligence". */
+  askAiPageName?: string;
+  askAiPageContext?: string;
+  askAiSourcesAvailable?: string[];
+  footerSourcesLabel?: string;
+
   /** Bullet list of 3-5 key takeaways. Optional. */
   keyTakeaways?: string[];
 }

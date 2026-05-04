@@ -1,4 +1,5 @@
 import { tennesseeConfig } from "./tennessee";
+import { texasConfig } from "./texas";
 import type { StateConfig } from "./_types";
 
 /**
@@ -10,6 +11,7 @@ import type { StateConfig } from "./_types";
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
   tennessee: tennesseeConfig,
+  texas: texasConfig,
 };
 
 export const STATE_SLUGS = Object.keys(STATE_CONFIGS);
