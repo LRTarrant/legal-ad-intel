@@ -432,17 +432,57 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Return the rendered video ──────────────────────────────────────
+    // ── Upload + return URL ────────────────────────────────────────────
+    //
+    // We upload the rendered mp4 to Supabase Storage and return a JSON
+    // body with { videoUrl }. This matches the contract the client
+    // (pi-video-composition-card.tsx) expects — it does
+    // `await renderRes.json()` and reads `.videoUrl` to set the
+    // <video src=> attribute. Streaming the raw mp4 body back from
+    // here would cause Safari's JSON parser to throw
+    // "The string did not match the expected pattern" on the binary
+    // bytes, breaking the whole video flow.
+    //
+    // Mirrors the audio upload pattern in /generate-pi-radio-spot:
+    //   1. Upload to campaign-assets/<user>/pi-videos/<timestamp>.mp4
+    //   2. On success, return the public URL
+    //   3. On upload failure, fall back to a base64 data URL so the
+    //      user still sees their video even if storage is misconfigured
     const outputPath = join(workDir, "output.mp4");
     const videoBuffer = readFileSync(outputPath);
 
-    return new NextResponse(videoBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "video/mp4",
-        "Content-Disposition": "inline; filename=video.mp4",
-        "Content-Length": String(videoBuffer.length),
-      },
+    const timestamp = Date.now();
+    const filePath = `${user.id}/pi-videos/${timestamp}.mp4`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("campaign-assets")
+      .upload(filePath, videoBuffer, {
+        contentType: "video/mp4",
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Video upload to storage failed:", uploadError);
+      // Base64 fallback. ~33% larger than the binary so this is heavy
+      // (a 30s video is ~3-5MB → ~5-7MB base64), but it lets the user
+      // still see their video. Once we identify the upload glitch we
+      // can stop relying on this path.
+      const base64 = videoBuffer.toString("base64");
+      return NextResponse.json({
+        videoUrl: `data:video/mp4;base64,${base64}`,
+        storagePath: null,
+        warning: "Stored as data URL because Supabase upload failed.",
+      });
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("campaign-assets").getPublicUrl(filePath);
+
+    return NextResponse.json({
+      videoUrl: publicUrl,
+      storagePath: filePath,
     });
   } catch (err) {
     console.error("Video render error:", err);
