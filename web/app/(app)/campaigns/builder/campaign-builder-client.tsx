@@ -54,6 +54,7 @@ import {
 import { PIScriptCard } from "./pi-script-card";
 import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
 import { PIVideoCompositionCard } from "./pi-video-composition-card";
+import { PIMetaAdCard } from "./pi-meta-ad-card";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -1435,6 +1436,22 @@ export function CampaignBuilderClient() {
           firmName={firmName}
           config={piConfig}
           selectedVoiceId={piSelectedVoiceId}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+        />
+      )}
+
+      {/* PI Meta ad creative (Phase 4a) — text + image for a Facebook /
+          Instagram feed ad. Mounts after the video card so the page reads
+          radio → video → social, mirroring how plaintiff firms typically
+          stack their channels. */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIMetaAdCard
+          firmId={selectedFirmId}
+          firmName={firmName}
+          config={piConfig}
           accentColor={accentColor}
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
