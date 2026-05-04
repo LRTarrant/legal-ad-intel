@@ -13,9 +13,15 @@
  *   4. Add tests covering hook variable substitution
  */
 
+import { bicycleAccidentTemplate } from "./bicycle_accident";
 import { boatingAccidentTemplate } from "./boating_accident";
 import { carAccidentTemplate } from "./car_accident";
+import { dogBiteTemplate } from "./dog_bite";
 import { motorcycleAccidentTemplate } from "./motorcycle_accident";
+import { pedestrianAccidentTemplate } from "./pedestrian_accident";
+import { premisesLiabilityTemplate } from "./premises_liability";
+import { slipAndFallTemplate } from "./slip_and_fall";
+import { truckAccidentTemplate } from "./truck_accident";
 import type { PICategory, PITemplate } from "./types";
 
 export type { PICategory, PITemplate, PITemplateVars, SeverityModifier } from "./types";
@@ -24,14 +30,23 @@ export { renderPITemplate, renderTemplate } from "./types";
 /**
  * Map of all v1 PI category templates.
  *
- * v1 ships with 3 categories (motorcycle, boating, car) — seasonal priority.
- * Remaining 6 (truck, slip_and_fall, dog_bite, premises_liability,
- * pedestrian_accident, bicycle_accident) ship in Task 9.
+ * Tasks 2 + 3 shipped motorcycle, boating, and car (seasonal priority).
+ * Task 10 (this file's most recent change) adds the remaining 6:
+ * truck, slip & fall, dog bite, premises liability, pedestrian, bicycle.
+ *
+ * All 9 v1 PI categories now have registered templates. Rideshare
+ * remains deferred to v2 per SPEC §8.
  */
 export const PI_TEMPLATES: Partial<Record<PICategory, PITemplate>> = {
   car_accident: carAccidentTemplate,
+  truck_accident: truckAccidentTemplate,
   motorcycle_accident: motorcycleAccidentTemplate,
   boating_accident: boatingAccidentTemplate,
+  slip_and_fall: slipAndFallTemplate,
+  dog_bite: dogBiteTemplate,
+  premises_liability: premisesLiabilityTemplate,
+  pedestrian_accident: pedestrianAccidentTemplate,
+  bicycle_accident: bicycleAccidentTemplate,
 };
 
 /**

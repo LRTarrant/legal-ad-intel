@@ -252,6 +252,60 @@ test("router applies catastrophic modifier end-to-end", () => {
   }
 });
 
+/* ── Task 10: severity modifiers on the newly-added categories ─────────────────────────────────────────────────────── */
+
+test("fatal modifier preserves truck-specific framing", () => {
+  const truck = renderPITemplate(PI_TEMPLATES.truck_accident!, VARS);
+  const out = fatalModifier(truck, VARS);
+  expect(out.problem.toLowerCase()).toMatch(/(truck|trucking|commercial)/);
+  expect(out.problem).toContain("Birmingham");
+  expect(out.authority.toLowerCase()).toContain("wrongful death");
+});
+
+test("catastrophic modifier preserves pedestrian-specific framing and substitutes state", () => {
+  const ped = renderPITemplate(PI_TEMPLATES.pedestrian_accident!, VARS);
+  const out = catastrophicModifier(ped, VARS);
+  expect(out.problem.toLowerCase()).toMatch(/(pedestrian|walking|struck)/);
+  // Catastrophic pedestrian problem references {state} — verify it was rendered
+  expect(out.problem).toContain("Alabama");
+  expect(out.problem).not.toMatch(/\{state\}/);
+});
+
+test("fatal modifier renders {state} placeholder in pedestrian authority callout", () => {
+  // Regression: Task 10 added {state} placeholders inside the spliced
+  // authority callout for pedestrian and bicycle categories. They must
+  // be rendered, not appear literally in the output.
+  const ped = renderPITemplate(PI_TEMPLATES.pedestrian_accident!, VARS);
+  const out = fatalModifier(ped, VARS);
+  expect(out.authority).not.toMatch(/\{state\}/);
+  expect(out.authority).toContain("Alabama");
+});
+
+test("catastrophic on bicycle: state placeholder rendered in authority", () => {
+  const bike = renderPITemplate(PI_TEMPLATES.bicycle_accident!, VARS);
+  const out = catastrophicModifier(bike, VARS);
+  expect(out.authority).not.toMatch(/\{state\}/);
+  expect(out.authority).toContain("Alabama");
+});
+
+test("every Task 10 category supports both modifiers without leftover placeholders", () => {
+  const cats = [
+    "truck_accident",
+    "slip_and_fall",
+    "dog_bite",
+    "premises_liability",
+    "pedestrian_accident",
+    "bicycle_accident",
+  ] as const;
+  for (const cat of cats) {
+    const base = renderPITemplate(PI_TEMPLATES[cat]!, VARS);
+    for (const out of [fatalModifier(base, VARS), catastrophicModifier(base, VARS)]) {
+      const allText = [out.hook, out.problem, out.authority, out.cta].join(" ");
+      expect(allText).not.toMatch(/\{[a-z_]+\}/);
+    }
+  }
+});
+
 test("router with no modifiers leaves creative content unchanged", () => {
   // Note: as of Task 9, the router runs the state compliance pass
   // even when no severity modifiers are active. That pass returns a
