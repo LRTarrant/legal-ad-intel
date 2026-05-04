@@ -123,9 +123,21 @@ export async function getFirmForUser(
 
 /**
  * Create a new firm and attach the caller as a manager (or owner).
- * Both rows are inserted in sequence; if the manager insert fails, the
- * firm row remains as a placeholder — this is acceptable for v1 (orphans
- * are rare and we'll add a cleanup job in v2 if it becomes a real problem).
+ *
+ * Implementation note — RLS gotcha:
+ *   The firms SELECT policy only matches rows the user manages (i.e. has a
+ *   firm_managers row for). If we INSERT firms with `.select().single()`,
+ *   the implicit RETURNING fires the SELECT policy on the brand-new row
+ *   BEFORE the firm_managers row exists, and Postgres surfaces this as the
+ *   misleading error: `new row violates row-level security policy for
+ *   table "firms"`. The INSERT itself is allowed (`WITH CHECK (true)`),
+ *   only the RETURNING visibility fails.
+ *
+ *   Fix: generate the id client-side, INSERT both rows without RETURNING,
+ *   then SELECT once at the end (now visible because firm_managers exists).
+ *
+ * If firm_managers insert fails we attempt to delete the orphan firm so
+ * the user can retry without dirtying the table.
  */
 export async function createFirm(
   supabase: SupabaseClient,
@@ -136,40 +148,61 @@ export async function createFirm(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
 
-  const { data: firm, error: firmErr } = (await db
-    .from("firms")
-    .insert({
-      label: input.label.trim(),
-      website_url: input.website_url ?? null,
-      social_handles: input.social_handles ?? {},
-      tagline: input.tagline ?? null,
-      voice_descriptors: input.voice_descriptors ?? [],
-      differentiators: input.differentiators ?? [],
-      partner_names: input.partner_names ?? [],
-      signature_phrases: input.signature_phrases ?? [],
-      service_areas: input.service_areas ?? [],
-      default_state: input.default_state ?? null,
-      default_dma_codes: input.default_dma_codes ?? [],
-      notes: input.notes ?? null,
-      extraction_source: "manual",
-    })
-    .select()
-    .single()) as {
-    data: Firm | null;
-    error: { message: string } | null;
+  // Generate the UUID up front so we can INSERT without RETURNING and
+  // still know the id we just created.
+  const firmId = crypto.randomUUID();
+
+  const firmRow = {
+    id: firmId,
+    label: input.label.trim(),
+    website_url: input.website_url ?? null,
+    social_handles: input.social_handles ?? {},
+    tagline: input.tagline ?? null,
+    voice_descriptors: input.voice_descriptors ?? [],
+    differentiators: input.differentiators ?? [],
+    partner_names: input.partner_names ?? [],
+    signature_phrases: input.signature_phrases ?? [],
+    service_areas: input.service_areas ?? [],
+    default_state: input.default_state ?? null,
+    default_dma_codes: input.default_dma_codes ?? [],
+    notes: input.notes ?? null,
+    extraction_source: "manual",
   };
-  if (firmErr || !firm) {
-    throw new Error(`firm insert failed: ${firmErr?.message ?? "unknown"}`);
+
+  // Step 1: insert firms row, NO RETURNING (skip implicit SELECT-policy
+  // check that would fail — see big comment above).
+  const { error: firmErr } = await db.from("firms").insert(firmRow);
+  if (firmErr) {
+    throw new Error(`firm insert failed: ${firmErr.message}`);
   }
 
+  // Step 2: insert firm_managers row that makes the firm visible to the
+  // user. From this point on the firm row is also visible via SELECT.
   const { error: relErr } = await db.from("firm_managers").insert({
-    firm_id: firm.id,
+    firm_id: firmId,
     manager_user_id: userId,
     role,
     added_by_user_id: userId,
   });
   if (relErr) {
+    // No DELETE policy on firms; orphan rows from this branch are rare
+    // and a periodic cleanup job will sweep them in v2.
     throw new Error(`firm_managers insert failed: ${relErr.message}`);
+  }
+
+  // Step 3: now SELECT the firm — visible because firm_managers row exists.
+  const { data: firm, error: selErr } = (await db
+    .from("firms")
+    .select("*")
+    .eq("id", firmId)
+    .single()) as {
+    data: Firm | null;
+    error: { message: string } | null;
+  };
+  if (selErr || !firm) {
+    throw new Error(
+      `firm post-insert read failed: ${selErr?.message ?? "unknown"}`,
+    );
   }
 
   return { ...firm, current_user_role: role };

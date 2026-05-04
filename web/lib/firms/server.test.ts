@@ -286,6 +286,20 @@ test("createFirm passes brand profile fields through", async () => {
   expect(stores.firms[0].extraction_source).toBe("manual");
 });
 
+test("createFirm returns a row with the same id that landed in the store (regression: RLS RETURNING bug)", async () => {
+  // Regression for the bug where createFirm used .insert().select().single().
+  // The implicit RETURNING clause failed the firms SELECT policy because
+  // the firm_managers row didn't exist yet, surfacing as a confusing
+  // "new row violates row-level security policy for table firms" error.
+  // The new flow inserts both rows first, then SELECTs once — the returned
+  // row's id MUST equal the row stored in firms (no double-insert).
+  const { client, stores } = makeFakeSupabase();
+  const result = await createFirm(client, "user-x", { label: "Regression LLP" });
+  expect(stores.firms.length).toBe(1);
+  expect(result.id).toBe(stores.firms[0].id);
+  expect(stores.firm_managers[0].firm_id).toBe(result.id);
+});
+
 /* ──────────────────────────────────────────────────────────────────────── */
 /* updateFirm                                                               */
 /* ──────────────────────────────────────────────────────────────────────── */
