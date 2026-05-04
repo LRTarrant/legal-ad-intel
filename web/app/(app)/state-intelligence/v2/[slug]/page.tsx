@@ -126,8 +126,13 @@ export function generateStaticParams() {
   return STATE_SLUGS.map((slug) => ({ slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
-  const config = getStateConfig(params.slug);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const config = getStateConfig(slug);
   if (!config) return {};
   return {
     title: config.metadata.title,
@@ -214,11 +219,10 @@ async function fetchStormCount(stateName: string): Promise<number> {
 export default async function StateIntelligencePage({
   params,
 }: {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  // Next.js 15 makes params a Promise; older versions pass it directly.
-  const resolved = await Promise.resolve(params);
-  const config = getStateConfig(resolved.slug);
+  const { slug } = await params;
+  const config = getStateConfig(slug);
   if (!config) notFound();
 
   const { stateCode, stateName } = config;
