@@ -17,7 +17,11 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { PronunciationOverride } from "./pronunciation";
+import {
+  applyPronunciationOverrides,
+  type PronunciationOverride,
+} from "./pronunciation";
+import { getFirmForUser } from "@/lib/firms/server";
 
 interface CacheEntry {
   overrides: PronunciationOverride[];
@@ -112,4 +116,80 @@ export function mergePronunciationLayers(
     out.push(ov);
   }
   return out;
+}
+
+/* ── One-call helper for TTS routes ───────────────────────────────────── */
+
+/**
+ * Apply per-firm + global pronunciation overrides to TTS-bound text.
+ *
+ * One-stop helper for any route that calls ElevenLabs directly. Loads
+ * the per-firm overrides if firmId is supplied AND the user manages
+ * the firm (RLS-checked via getFirmForUser), merges with the cached
+ * global dictionary, and returns the substituted text.
+ *
+ * Failure mode: NEVER throws and NEVER returns null. If anything goes
+ * wrong (firm fetch fails, dictionary fetch fails, malformed rows),
+ * we fall back to the original text. Voiceover generation is the
+ * critical path; pronunciation is best-effort enrichment.
+ *
+ * Use this from every TTS-calling route (currently three:
+ * /generate-voiceover, /generate-radio-spot, /generate-pi-radio-spot)
+ * so adding a new term to the dictionary affects every channel.
+ */
+export interface ApplyPronunciationResult {
+  /** Text to send to ElevenLabs. Original text on any failure. */
+  text: string;
+  /** How many per-firm overrides were applied (for analytics). */
+  firmOverridesApplied: number;
+  /** How many global dictionary entries were available (for analytics). */
+  globalOverridesAvailable: number;
+}
+
+export async function applyPronunciationToText(
+  supabase: SupabaseClient,
+  userId: string,
+  text: string,
+  firmId: string | null | undefined,
+): Promise<ApplyPronunciationResult> {
+  // Per-firm overrides (best-effort).
+  let firmOverrides: PronunciationOverride[] = [];
+  if (firmId) {
+    try {
+      const firm = await getFirmForUser(supabase, userId, firmId);
+      // The generated firms type doesn't yet include pronunciation_overrides
+      // (column added by migration 20260505000008); cast through any to read.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw = (firm as any)?.pronunciation_overrides;
+      if (Array.isArray(raw)) {
+        firmOverrides = raw.filter(
+          (o: unknown): o is PronunciationOverride =>
+            !!o &&
+            typeof o === "object" &&
+            typeof (o as PronunciationOverride).written === "string" &&
+            typeof (o as PronunciationOverride).spoken === "string",
+        );
+      }
+    } catch (err) {
+      // Don't block TTS on firm lookup failure.
+      console.error(
+        "applyPronunciationToText: firm fetch failed, ignoring per-firm overrides:",
+        err,
+      );
+    }
+  }
+
+  // Global dictionary (cached, fail-soft to []).
+  const globalDictionary = await getGlobalPronunciationDictionary(
+    supabase,
+  ).catch(() => [] as PronunciationOverride[]);
+
+  const merged = mergePronunciationLayers(firmOverrides, globalDictionary);
+  const out = applyPronunciationOverrides(text, merged);
+
+  return {
+    text: out,
+    firmOverridesApplied: firmOverrides.length,
+    globalOverridesAvailable: globalDictionary.length,
+  };
 }

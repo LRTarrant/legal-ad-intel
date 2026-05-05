@@ -32,6 +32,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { getFirmForUser } from "@/lib/firms/server";
+import { applyPronunciationToText } from "@/lib/voice/pronunciation-dictionary";
 
 interface PIRadioSpotRequest {
   /** The polished PI script to synthesize. */
@@ -110,6 +111,17 @@ export async function POST(req: NextRequest) {
     resolvedFirmId = firm.id;
   }
 
+  // Apply pronunciation overrides (per-firm + global dictionary). Uses
+  // resolvedFirmId so per-firm overrides only apply when the caller has
+  // verified access. Best-effort — falls back to original script on any
+  // failure (TTS itself is the critical path).
+  const pronunciation = await applyPronunciationToText(
+    supabase,
+    user.id,
+    body.script,
+    resolvedFirmId,
+  );
+
   // Voice selection in ElevenLabs is the same model whether the language
   // is English or Spanish; eleven_multilingual_v2 handles both. We pass
   // it through unconditionally and rely on the script text language.
@@ -123,7 +135,7 @@ export async function POST(req: NextRequest) {
         Accept: "audio/mpeg",
       },
       body: JSON.stringify({
-        text: body.script,
+        text: pronunciation.text,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
           // Stability 0.5 + similarity 0.75 matches mass tort's defaults.
@@ -149,7 +161,8 @@ export async function POST(req: NextRequest) {
   }
 
   const audioBuffer = await ttsResponse.arrayBuffer();
-  const characters_synth = body.script.length;
+  // Bill on post-substitution length, since that's what ElevenLabs charges.
+  const characters_synth = pronunciation.text.length;
 
   // Cost tracking. We await so cost makes it into the response payload.
   // trackCall never throws on DB failure \u2014 it's observability, not txn.
@@ -167,6 +180,8 @@ export async function POST(req: NextRequest) {
       state: body.state,
       severity_modifiers: body.severity_modifiers ?? [],
       language: body.language ?? "en",
+      firm_overrides_applied: pronunciation.firmOverridesApplied,
+      global_overrides_available: pronunciation.globalOverridesAvailable,
     },
   });
 
