@@ -309,8 +309,21 @@ export default async function StateIntelligencePage({
     fetchStormCount(stateName),
   ]);
 
-  if (results[0].status === "fulfilled") accidentSummary = results[0].value;
-  else
+  if (results[0].status === "fulfilled") {
+    // Drop any rows with a null county; they crash client-side .toLowerCase()
+    // calls in sort/filter/judicial-merge useMemos. Texas's RPC returns one
+    // such row (a statewide-aggregate or unmapped FIPS); not useful in the
+    // county table anyway.
+    accidentSummary = results[0].value.filter(
+      (r) => r.county !== null && r.county !== undefined,
+    );
+    const dropped = results[0].value.length - accidentSummary.length;
+    if (dropped > 0) {
+      console.log(
+        `[v2/state-intel] Dropped ${dropped} accident_summary rows with null county for ${stateCode}`,
+      );
+    }
+  } else
     console.error(
       `[${stateCode}] fetchAccidentSummary failed:`,
       results[0].reason,
