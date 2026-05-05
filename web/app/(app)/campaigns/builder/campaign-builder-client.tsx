@@ -59,6 +59,10 @@ import { PIGeoSummaryCard } from "./pi-geo-summary-card";
 import { PIVideoCompositionCard } from "./pi-video-composition-card";
 import { PIMetaAdCard } from "./pi-meta-ad-card";
 import { PIGoogleRSACard } from "./pi-google-rsa-card";
+import { PIExportCard } from "./pi-export-card";
+import type { PIMetaAdResponse } from "@/app/api/campaigns/generate-pi-meta-ad/testable";
+import type { PIGoogleRSAResponse } from "@/app/api/campaigns/generate-pi-google-rsa/testable";
+import type { GeoTargetingReport } from "@/app/api/pi/geo-targeting/testable";
 import {
   useSubscription,
   hasMassTortAccess,
@@ -402,6 +406,21 @@ export function CampaignBuilderClient() {
   // section, reused by PIVideoCompositionCard so the video voiceover
   // matches the audio the user already heard.
   const [piSelectedVoiceId, setPiSelectedVoiceId] = useState<string | null>(null);
+
+  // Bubbled-up artifacts that feed the bulk-upload export card. We hold
+  // these here in the parent so PIExportCard can compose them into the
+  // Meta + Google CSVs without forcing the child cards to share state.
+  const [piMetaAdResult, setPiMetaAdResult] = useState<
+    (PIMetaAdResponse & { imageUrl?: string }) | null
+  >(null);
+  const [piGoogleRsaResult, setPiGoogleRsaResult] =
+    useState<PIGoogleRSAResponse | null>(null);
+  const [piVideoUrl, setPiVideoUrl] = useState<string | null>(null);
+  const [piFinalUrl, setPiFinalUrl] = useState<string>("");
+  // PIGeoSummaryCard fetches the geo report; we capture it here so the
+  // export can use top metros/counties as Google location rows.
+  const [piGeoReport, setPiGeoReport] =
+    useState<GeoTargetingReport | null>(null);
 
   // Form state
   const [tortNames, setTortNames] = useState<string[]>([]);
@@ -1443,6 +1462,7 @@ export function CampaignBuilderClient() {
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
           }
+          onReportLoaded={setPiGeoReport}
         />
       )}
 
@@ -1473,6 +1493,7 @@ export function CampaignBuilderClient() {
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
           }
+          onVideoUrlChange={setPiVideoUrl}
         />
       )}
 
@@ -1489,6 +1510,7 @@ export function CampaignBuilderClient() {
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
           }
+          onResult={(result) => setPiMetaAdResult(result)}
         />
       )}
 
@@ -1509,6 +1531,33 @@ export function CampaignBuilderClient() {
           onEntitlementError={({ reason, meta }) =>
             setUpgradeModal({ open: true, reason, meta })
           }
+          onResult={(result) => setPiGoogleRsaResult(result)}
+          onFinalUrlChange={setPiFinalUrl}
+        />
+      )}
+
+      {/* PI bulk-upload export (PR E) — Meta Ads Manager + Google Ads
+          Editor CSVs assembled from whichever artifacts the user has
+          generated. Disabled buttons surface a hint about what's missing. */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIExportCard
+          inputs={{
+            firm_name: firmName,
+            pi_category: piConfig.pi_category,
+            state: piConfig.state,
+            market_display_name: piConfig.market_display_name,
+            final_url:
+              piFinalUrl ||
+              firmsResult.firms.find((f) => f.id === selectedFirmId)
+                ?.website_url ||
+              null,
+            metaAd: piMetaAdResult,
+            metaImageUrl: piMetaAdResult?.imageUrl ?? null,
+            googleRsa: piGoogleRsaResult,
+            videoUrl: piVideoUrl,
+            geoReport: piGeoReport,
+          }}
+          accentColor={accentColor}
         />
       )}
 
