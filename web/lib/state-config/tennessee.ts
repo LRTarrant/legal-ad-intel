@@ -92,12 +92,15 @@ export const tennesseeConfig: StateConfig = {
     judicialContext:
       "Davidson County (Nashville) and Shelby County (Memphis) are the two largest population centers. Filing venue selection in Tennessee matters — judicial leanings can vary significantly between urban and rural counties.",
 
+    solUrgencyTitle: "1-Year SOL Urgency",
     solUrgencyTip:
       "Tennessee’s 1-year statute of limitations for personal injury is among the shortest in the nation. This creates both a challenge and an opportunity: firms with fast intake pipelines and immediate digital response capabilities can capture cases that slower competitors miss. Time-sensitive messaging (\u201CAct now — Tennessee’s filing deadline is only 1 year\u201D) resonates strongly.",
 
+    internetAccessTitle: "Appalachian Connectivity Gap",
     internetAccessTip:
       "East Tennessee’s Appalachian counties have lower internet access rates and higher uninsured populations. These areas also have high fatality rates on mountain roads. Digital-only advertising cannot reach these communities effectively. Radio, community health centers, and local TV are necessary channels for plaintiff firm outreach in the Smokies corridor.",
 
+    outOfStateTitle: "Motorcycle Tourism Opportunity",
     outOfStateTip:
       "The Tail of the Dragon (US-129, 318 curves in 11 miles) and the Cherohala Skyway draw motorcycle tourists from across the country. Out-of-state riders injured in Tennessee may not know local attorneys. Geo-fenced digital ads at these routes plus partnerships with motorcycle-adjacent businesses (hotels, gear shops) can capture cases from this unique tourism segment.",
 
