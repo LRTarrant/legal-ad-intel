@@ -180,7 +180,38 @@ async function fetchCensusDemographics(
     .eq("state_abbr", stateCode)
     .order("total_population", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as CensusDemographicsRow[];
+  // Same string-from-PostgREST issue as MSA; coerce numerics defensively.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    fips_full: r.fips_full,
+    state_abbr: r.state_abbr,
+    county_name: r.county_name,
+    total_population: toNum(r.total_population) ?? 0,
+    median_age: toNum(r.median_age),
+    pct_white: toNum(r.pct_white),
+    pct_black: toNum(r.pct_black),
+    pct_hispanic: toNum(r.pct_hispanic),
+    median_household_income: toNum(r.median_household_income),
+    per_capita_income: toNum(r.per_capita_income),
+    pct_poverty: toNum(r.pct_poverty),
+    pct_uninsured: toNum(r.pct_uninsured),
+    pct_employed: toNum(r.pct_employed),
+    pct_with_internet: toNum(r.pct_with_internet),
+    pct_disability: toNum(r.pct_disability),
+    pct_veterans: toNum(r.pct_veterans),
+  })) as CensusDemographicsRow[];
+}
+
+/**
+ * Coerce a value to number-or-null. The msa_demographics table stores some
+ * numeric columns as text/numeric (PostgREST hands them back as strings),
+ * which crashes downstream toFixed() calls. Normalize here so the client
+ * component can trust the types.
+ */
+function toNum(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 async function fetchMSADemographics(
@@ -194,7 +225,16 @@ async function fetchMSADemographics(
     .like("cbsa_title", `%, ${stateCode}%`)
     .order("total_population", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as MSADemographicsRow[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    cbsa_code: r.cbsa_code,
+    cbsa_title: r.cbsa_title,
+    total_population: toNum(r.total_population) ?? 0,
+    median_household_income: toNum(r.median_household_income),
+    pct_poverty: toNum(r.pct_poverty),
+    pct_uninsured: toNum(r.pct_uninsured),
+    pct_employed: toNum(r.pct_employed),
+  })) as MSADemographicsRow[];
 }
 
 async function fetchStormCount(stateName: string): Promise<number> {
