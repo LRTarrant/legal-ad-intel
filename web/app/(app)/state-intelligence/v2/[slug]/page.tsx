@@ -218,16 +218,23 @@ export default async function StateIntelligencePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  console.log(`[v2/state-intel] Request for slug: ${slug}`);
-  const config = getStateConfig(slug);
+  console.log(`[v2/state-intel] [START] slug=${slug}`);
+
+  let config;
+  try {
+    config = getStateConfig(slug);
+  } catch (e) {
+    console.error(`[v2/state-intel] [ERR] getStateConfig threw:`, e);
+    throw e;
+  }
   if (!config) {
     console.log(
-      `[v2/state-intel] No config found for slug: ${slug}. Available: ${STATE_SLUGS.join(", ")}`,
+      `[v2/state-intel] [404] No config for slug=${slug}. Available: ${STATE_SLUGS.join(", ")}`,
     );
     notFound();
   }
   console.log(
-    `[v2/state-intel] Loaded config for ${config.stateName}, fetching data...`,
+    `[v2/state-intel] [CFG] Loaded ${config.stateName} config. injuryData rows=${config.injuryData?.rows.length ?? 0}, crashEmbeds=${config.crashEmbeds?.length ?? 0}`,
   );
 
   const { stateCode, stateName } = config;
@@ -337,6 +344,10 @@ export default async function StateIntelligencePage({
     judicialProfiles: judicialRows,
     stormCount,
   };
+
+  console.log(
+    `[v2/state-intel] [DONE] ${config.stateName} pageData rows: accident=${pageData.accidentSummary.length} ruralUrban=${pageData.ruralUrban.length} census=${pageData.censusDemographics.length} judicial=${pageData.judicialProfiles.length}`,
+  );
 
   return <StateIntelligenceClient config={config} data={pageData} />;
 }
