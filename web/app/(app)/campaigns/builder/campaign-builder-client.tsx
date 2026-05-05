@@ -1494,6 +1494,10 @@ export function CampaignBuilderClient() {
             setUpgradeModal({ open: true, reason, meta })
           }
           onVideoUrlChange={setPiVideoUrl}
+          firmLogoUrl={
+            firmsResult.firms.find((f) => f.id === selectedFirmId)?.logo_url ??
+            null
+          }
         />
       )}
 

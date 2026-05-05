@@ -249,6 +249,8 @@ export async function updateFirm(
   if (input.notes !== undefined) payload.notes = input.notes;
   if (input.extraction_source !== undefined) payload.extraction_source = input.extraction_source;
   if (input.extracted_at !== undefined) payload.extracted_at = input.extracted_at;
+  if (input.logo_url !== undefined) payload.logo_url = input.logo_url;
+  if (input.logo_path !== undefined) payload.logo_path = input.logo_path;
 
   if (Object.keys(payload).length === 0) {
     // No-op: just return the existing row.

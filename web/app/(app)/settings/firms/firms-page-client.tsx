@@ -18,6 +18,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import { useFirms } from "@/lib/firms/use-firms";
 import type { FirmWithRole, UpdateFirmInput } from "@/lib/firms/types";
 import { AutoFillPanel } from "./auto-fill-panel";
+import { FirmLogoUpload } from "./firm-logo-upload";
 import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 
 export function FirmsPageClient() {
@@ -203,6 +204,15 @@ function FirmEditCard({ firm, onSaved }: FirmEditCardProps) {
           />
         ) : null
       }
+      logoUpload={
+        <FirmLogoUpload
+          firmId={firm.id}
+          logoUrl={firm.logo_url}
+          logoPath={firm.logo_path}
+          onChange={onSaved}
+          readOnly={isViewer}
+        />
+      }
       footer={
         <div className="flex items-center justify-end gap-3">
           {error && <span className="text-sm text-red-600">{error}</span>}
@@ -294,6 +304,10 @@ interface FirmFormFieldsProps {
    * field when present. Only the edit card passes this; the create
    * card omits it because there's no firm.id to call the route with. */
   autoFill?: React.ReactNode;
+  /** Optional logo-upload slot (PR F). Rendered below the auto-fill
+   * panel. Same rationale as autoFill: requires firm.id, so only the
+   * edit card passes it. */
+  logoUpload?: React.ReactNode;
   footer: React.ReactNode;
 }
 
@@ -302,6 +316,7 @@ function FirmFormFields({
   onChange,
   readOnly,
   autoFill,
+  logoUpload,
   footer,
 }: FirmFormFieldsProps) {
   const update = (patch: Partial<UpdateFirmInput>) =>
@@ -344,6 +359,7 @@ function FirmFormFields({
       </div>
 
       {autoFill && <div>{autoFill}</div>}
+      {logoUpload && <div>{logoUpload}</div>}
 
       <Field label="Tagline" hint="One line. The firm's brand-line.">
         <input
