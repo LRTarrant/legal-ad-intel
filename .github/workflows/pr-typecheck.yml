@@ -1,0 +1,114 @@
+name: PR TypeScript check
+
+# Runs on every PR to catch type errors that next.config's
+# typescript.ignoreBuildErrors=true would otherwise let through.
+#
+# Strategy: count net-new TS errors (current branch - main) in production
+# files. We don't fail on the 100+ pre-existing errors (admin/users,
+# trial-gate, recharts tooltips, etc.) — those need a dedicated cleanup
+# PR. We DO fail if a PR introduces a new error in production code.
+#
+# Test files are excluded because the project uses an unusual harness
+# pattern where `test` and `expect` are global runtime imports without
+# matching @types — that produces ~150 noise errors that aren't real.
+#
+# To clean up the baseline and flip ignoreBuildErrors=false, run a
+# dedicated typing-cleanup PR.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/pr-typecheck.yml"
+
+jobs:
+  typecheck:
+    name: Compare TypeScript errors vs main
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install deps
+        working-directory: web
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Count TS errors on this PR
+        id: pr_errors
+        working-directory: web
+        run: |
+          set +e
+          ./node_modules/.bin/tsc --noEmit 2>&1 \
+            | grep -E "error TS" \
+            | grep -v "\.test\." \
+            > /tmp/pr-errors.txt || true
+          set -e
+          PR_COUNT=$(wc -l < /tmp/pr-errors.txt | tr -d ' ')
+          echo "pr_count=$PR_COUNT" >> $GITHUB_OUTPUT
+          echo "Production TS errors on this PR: $PR_COUNT"
+
+      - name: Count TS errors on main (baseline)
+        id: main_errors
+        working-directory: web
+        run: |
+          # Use a clean checkout of main to compare against. We do this by
+          # fetching origin/main and running tsc against that tree in a
+          # sibling worktree to avoid disturbing the PR checkout.
+          set +e
+          git fetch origin main --depth=1
+          git worktree add ../main-tree origin/main
+          cd ../main-tree/web
+          npm ci --prefer-offline --no-audit --no-fund > /dev/null 2>&1
+          ./node_modules/.bin/tsc --noEmit 2>&1 \
+            | grep -E "error TS" \
+            | grep -v "\.test\." \
+            > /tmp/main-errors.txt || true
+          set -e
+          MAIN_COUNT=$(wc -l < /tmp/main-errors.txt | tr -d ' ')
+          echo "main_count=$MAIN_COUNT" >> $GITHUB_OUTPUT
+          echo "Production TS errors on main: $MAIN_COUNT"
+
+      - name: Fail if PR introduces net-new errors
+        run: |
+          PR_COUNT=${{ steps.pr_errors.outputs.pr_count }}
+          MAIN_COUNT=${{ steps.main_errors.outputs.main_count }}
+          DELTA=$((PR_COUNT - MAIN_COUNT))
+
+          echo "================================================="
+          echo "TypeScript error budget"
+          echo "  main:  $MAIN_COUNT"
+          echo "  PR:    $PR_COUNT"
+          echo "  delta: $DELTA"
+          echo "================================================="
+
+          if [ "$DELTA" -gt 0 ]; then
+            echo ""
+            echo "❌ This PR introduces $DELTA NEW TypeScript error(s):"
+            echo ""
+            # Show errors that exist in PR but not main.
+            comm -23 \
+              <(sort /tmp/pr-errors.txt) \
+              <(sort /tmp/main-errors.txt) \
+              | head -50
+            echo ""
+            echo "Fix these before merging. (Pre-existing errors are not blocked.)"
+            exit 1
+          fi
+
+          if [ "$DELTA" -lt 0 ]; then
+            echo "✅ This PR REDUCES TypeScript errors by ${DELTA#-}. Nice."
+          else
+            echo "✅ No net-new TypeScript errors."
+          fi

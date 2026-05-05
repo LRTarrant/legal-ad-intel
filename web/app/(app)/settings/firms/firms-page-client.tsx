@@ -153,6 +153,7 @@ function FirmEditCard({ firm, onSaved }: FirmEditCardProps) {
     partner_names: firm.partner_names,
     signature_phrases: firm.signature_phrases,
     service_areas: firm.service_areas,
+    pronunciation_overrides: firm.pronunciation_overrides,
     default_state: firm.default_state ?? "",
     notes: firm.notes ?? "",
   });
@@ -400,6 +401,12 @@ function FirmFormFields({
         placeholder="Add a region"
       />
 
+      <PronunciationField
+        values={draft.pronunciation_overrides ?? []}
+        onChange={(values) => update({ pronunciation_overrides: values })}
+        readOnly={readOnly}
+      />
+
       <Field label="Internal notes" hint="Free-form. Not used in scripts.">
         <textarea
           value={draft.notes ?? ""}
@@ -510,6 +517,162 @@ function ChipsField({
           placeholder={placeholder}
           className={`${baseInputCls} mt-2`}
         />
+      )}
+    </Field>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/* PronunciationField                                                       */
+/*                                                                          */
+/* Two-column rows (written → spoken) for per-firm TTS pronunciation       */
+/* overrides. Spoken accepts either plain respelling ("BURR-ming-ham") or  */
+/* IPA ("ˈbɝː.mɪŋ.hæm") — auto-detected at apply time. Up to 50 rows.     */
+/*                                                                          */
+/* Why a custom field instead of reusing ChipsField: pronunciation rows    */
+/* are PAIRS, not single tokens. A chips control would force users to      */
+/* invent a delimiter, which is fragile.                                   */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+interface PronunciationRow {
+  written: string;
+  spoken: string;
+}
+
+interface PronunciationFieldProps {
+  values: PronunciationRow[];
+  onChange: (next: PronunciationRow[]) => void;
+  readOnly?: boolean;
+}
+
+function PronunciationField({
+  values,
+  onChange,
+  readOnly,
+}: PronunciationFieldProps) {
+  const [draftWritten, setDraftWritten] = useState("");
+  const [draftSpoken, setDraftSpoken] = useState("");
+
+  const MAX_ROWS = 50;
+  const atCap = values.length >= MAX_ROWS;
+
+  function add() {
+    const w = draftWritten.trim();
+    const s = draftSpoken.trim();
+    if (!w || !s) return;
+    if (atCap) return;
+    // Reject case-insensitive duplicates client-side; server validates again.
+    const lower = w.toLowerCase();
+    if (values.some((v) => v.written.toLowerCase() === lower)) return;
+    onChange([...values, { written: w, spoken: s }]);
+    setDraftWritten("");
+    setDraftSpoken("");
+  }
+
+  function remove(idx: number) {
+    onChange(values.filter((_, i) => i !== idx));
+  }
+
+  function updateRow(idx: number, field: "written" | "spoken", v: string) {
+    onChange(values.map((row, i) => (i === idx ? { ...row, [field]: v } : row)));
+  }
+
+  return (
+    <Field
+      label="Pronunciation overrides"
+      hint={
+        "Tell ElevenLabs how to say tricky words: firm name, partners, local " +
+        "city names. Spoken value can be a respelling like “BURR-ming-ham” or " +
+        "IPA like “ˈbɝː.mɪŋ.hæm” — we auto-detect."
+      }
+    >
+      {/* Existing rows */}
+      {values.length > 0 && (
+        <div className="mb-2 space-y-2">
+          {values.map((row, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]"
+            >
+              <input
+                type="text"
+                value={row.written}
+                onChange={(e) => updateRow(i, "written", e.target.value)}
+                disabled={readOnly}
+                placeholder="Written"
+                className={baseInputCls}
+                aria-label={`Pronunciation row ${i + 1} written form`}
+              />
+              <input
+                type="text"
+                value={row.spoken}
+                onChange={(e) => updateRow(i, "spoken", e.target.value)}
+                disabled={readOnly}
+                placeholder="Spoken"
+                className={baseInputCls}
+                aria-label={`Pronunciation row ${i + 1} spoken form`}
+              />
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  className="inline-flex items-center justify-center rounded-md border border-cloud bg-white px-2 py-2 text-slate-gray transition hover:bg-cloud/30 hover:text-red-600"
+                  aria-label={`Remove pronunciation row ${i + 1}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add row */}
+      {!readOnly && !atCap && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <input
+            type="text"
+            value={draftWritten}
+            onChange={(e) => setDraftWritten(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add();
+              }
+            }}
+            placeholder="Birmingham"
+            className={baseInputCls}
+            aria-label="New pronunciation written form"
+          />
+          <input
+            type="text"
+            value={draftSpoken}
+            onChange={(e) => setDraftSpoken(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add();
+              }
+            }}
+            placeholder="BURR-ming-ham"
+            className={baseInputCls}
+            aria-label="New pronunciation spoken form"
+          />
+          <button
+            type="button"
+            onClick={add}
+            disabled={!draftWritten.trim() || !draftSpoken.trim()}
+            className="inline-flex items-center justify-center rounded-md bg-intelligence-teal px-3 py-2 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90 disabled:opacity-50"
+          >
+            Add
+          </button>
+        </div>
+      )}
+
+      {atCap && (
+        <p className="mt-1 text-xs text-amber-700">
+          Reached the {MAX_ROWS}-row limit. Remove a row to add another.
+        </p>
       )}
     </Field>
   );

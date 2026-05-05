@@ -35,6 +35,13 @@ export interface FirmBrandProfile {
   service_areas: string[];
   extraction_source: "manual" | "auto" | "hybrid";
   extracted_at: string | null;
+  /**
+   * Per-firm TTS pronunciation overrides (Phase B). Applied at
+   * /api/campaigns/generate-voiceover before the script is sent to
+   * ElevenLabs. Each row: written form -> spoken form (plain respelling
+   * or IPA, auto-detected). See lib/voice/pronunciation.ts.
+   */
+  pronunciation_overrides: Array<{ written: string; spoken: string }>;
 }
 
 /* ── Full row types ─────────────────────────────────────────────────────── */
@@ -83,6 +90,7 @@ export interface CreateFirmInput {
   default_state?: string;
   default_dma_codes?: string[];
   notes?: string;
+  pronunciation_overrides?: Array<{ written: string; spoken: string }>;
 }
 
 export type UpdateFirmInput = Partial<CreateFirmInput> & {
@@ -142,11 +150,34 @@ export function validateCreateFirm(input: CreateFirmInput): ValidationResult {
     ["partner_names", 50],
     ["signature_phrases", 30],
     ["service_areas", 50],
+    ["pronunciation_overrides", 50],
   ];
   for (const [field, cap] of arrayCaps) {
     const value = input[field];
     if (Array.isArray(value) && value.length > cap) {
       errors.push(`${field} cannot have more than ${cap} entries`);
+    }
+  }
+
+  // Per-row sanity for pronunciation_overrides (the deeper validation
+  // happens in lib/voice/pronunciation.ts at write time; here we just
+  // catch shape errors that would crash the row).
+  if (input.pronunciation_overrides) {
+    if (!Array.isArray(input.pronunciation_overrides)) {
+      errors.push("pronunciation_overrides must be an array");
+    } else {
+      for (const [i, row] of input.pronunciation_overrides.entries()) {
+        if (
+          !row ||
+          typeof row.written !== "string" ||
+          typeof row.spoken !== "string"
+        ) {
+          errors.push(
+            `pronunciation_overrides[${i}] must be { written: string, spoken: string }`,
+          );
+          break;
+        }
+      }
     }
   }
 
