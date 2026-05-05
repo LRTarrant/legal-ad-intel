@@ -112,6 +112,14 @@ export interface StateContent {
   /** Section: Judicial profile mix. State-specific commentary on bench. */
   judicialContext?: string;
 
+  /** Cross-signal insight: market saturation card. */
+  marketSaturationTitle?: string;
+  marketSaturationTip?: string;
+
+  /** Cross-signal insight: freight / trucking corridor card. */
+  freightCorridorTitle?: string;
+  freightCorridorTip?: string;
+
   /** Section: SOL urgency tip. Used in cross-signal insights. */
   solUrgencyTitle?: string;
   solUrgencyTip?: string;

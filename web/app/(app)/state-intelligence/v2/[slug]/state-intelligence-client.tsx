@@ -1513,18 +1513,14 @@ export function StateIntelligenceClient({
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">🎵</span>
+              <span className="text-lg">🎯</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Nashville PI Market Saturation
+                {content.marketSaturationTitle ?? "Market Saturation"}
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Nashville&apos;s rapid population growth (+21% since 2010) has
-              attracted national PI firms (Morgan &amp; Morgan, Cellino),
-              creating one of the most competitive advertising markets in the
-              Southeast. However, surrounding counties (Williamson, Rutherford,
-              Wilson) are growing even faster with less advertising saturation.
-              Satellite-metro targeting offers better cost-per-case economics.
+              {content.marketSaturationTip ??
+                `${config.stateName}'s top metros tend to attract national PI advertisers, increasing competitive density and driving up cost-per-acquired-case. Surrounding satellite counties often offer better economics with similar case volume per dollar.`}
             </p>
           </div>
 
@@ -1532,15 +1528,12 @@ export function StateIntelligenceClient({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🚛</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Memphis Freight Corridor
+                {content.freightCorridorTitle ?? "Freight Corridor Exposure"}
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
-              Memphis is home to FedEx&apos;s global hub, making it one of the
-              busiest freight corridors in the U.S. I-40 and I-55 through
-              Shelby County see extreme truck traffic volumes. Combined with
-              cross-state reach into Mississippi and Arkansas, Memphis-market
-              truck accident campaigns have unusually broad geographic impact.
+              {content.freightCorridorTip ??
+                `${config.stateName}'s major interstate corridors carry significant truck and freight traffic. Counties along these routes see disproportionate truck-involved crash exposure relative to their population, opening targeting opportunities for trucking-PI campaigns.`}
             </p>
           </div>
 

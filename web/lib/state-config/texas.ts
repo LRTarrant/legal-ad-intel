@@ -105,6 +105,14 @@ export const texasConfig: StateConfig = {
     judicialContext:
       "Filing venue in Texas matters significantly. Harris (Houston), Dallas, Bexar (San Antonio), and Travis (Austin) counties tend to have larger and more diverse jury pools. Border counties like Hidalgo and Cameron have historically been plaintiff-friendly. Mid-size and rural counties can swing in either direction depending on the case type and local elected judiciary.",
 
+    marketSaturationTitle: "DFW & Houston Saturation vs. Satellite Metros",
+    marketSaturationTip:
+      "Dallas–Fort Worth and Houston are among the most competitive PI advertising markets in the U.S., with national firms (Morgan & Morgan, Witherite, Thomas J. Henry) anchoring spend. Surrounding satellite counties (Collin, Denton, Fort Bend, Montgomery, Williamson, Hays) are growing fast with materially lower advertising saturation — better cost-per-case economics for firms willing to target outside the metro core.",
+
+    freightCorridorTitle: "I-35 / Laredo Freight Corridor",
+    freightCorridorTip:
+      "The I-35 corridor between Laredo (largest U.S.–Mexico land port) and the DFW metroplex is one of the deadliest freight routes in the country. I-10 (Houston–San Antonio–El Paso) and I-45 (Houston–Dallas) also carry heavy truck volume. Permian Basin oilfield trucking concentrates truck-crash exposure in West Texas counties. Trucking-PI campaigns along these routes have unusually broad geographic reach.",
+
     solUrgencyTitle: "2-Year SOL Urgency",
     solUrgencyTip:
       "Texas’s 2-year statute of limitations for personal injury is more generous than some states but still demands fast intake — evidence preservation, scene investigation, and witness recollection all degrade quickly. For commercial-vehicle and trucking cases, ELD and dashcam evidence must be subpoenaed within 6 months to avoid spoliation.",
