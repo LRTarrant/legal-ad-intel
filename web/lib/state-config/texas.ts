@@ -105,12 +105,15 @@ export const texasConfig: StateConfig = {
     judicialContext:
       "Filing venue in Texas matters significantly. Harris (Houston), Dallas, Bexar (San Antonio), and Travis (Austin) counties tend to have larger and more diverse jury pools. Border counties like Hidalgo and Cameron have historically been plaintiff-friendly. Mid-size and rural counties can swing in either direction depending on the case type and local elected judiciary.",
 
+    solUrgencyTitle: "2-Year SOL Urgency",
     solUrgencyTip:
       "Texas’s 2-year statute of limitations for personal injury is more generous than some states but still demands fast intake — evidence preservation, scene investigation, and witness recollection all degrade quickly. For commercial-vehicle and trucking cases, ELD and dashcam evidence must be subpoenaed within 6 months to avoid spoliation.",
 
+    internetAccessTitle: "South Texas & Trans-Pecos Connectivity Gap",
     internetAccessTip:
       "South Texas border counties, the Trans-Pecos, and rural North Texas have lower broadband penetration and higher uninsured populations. These same areas have high fatality rates. Digital-only advertising cannot reach these communities effectively — Spanish-language radio, community health partnerships, and local TV are necessary channels.",
 
+    outOfStateTitle: "Hill Country / Rally Tourism Opportunity",
     outOfStateTip:
       "Texas draws significant out-of-state riders to the Hill Country, Big Bend, and the Lone Star Rally. Out-of-state visitors injured in Texas may not know local attorneys or the 51% comparative-fault rule. Geo-fenced digital ads at these routes plus partnerships with motels, gear shops, and rally hosts can capture cases that slip through traditional channels.",
 

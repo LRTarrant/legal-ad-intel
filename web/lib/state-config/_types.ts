@@ -113,12 +113,15 @@ export interface StateContent {
   judicialContext?: string;
 
   /** Section: SOL urgency tip. Used in cross-signal insights. */
+  solUrgencyTitle?: string;
   solUrgencyTip?: string;
 
   /** Section: Internet access tip. Used in cross-signal insights. */
+  internetAccessTitle?: string;
   internetAccessTip?: string;
 
   /** Section: Out-of-state riders / visitors tip. Used in cross-signal insights. */
+  outOfStateTitle?: string;
   outOfStateTip?: string;
 
   /** AskAI / footer pageName — e.g. "Texas State Intelligence". */

@@ -1548,7 +1548,7 @@ export function StateIntelligenceClient({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">⏰</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                1-Year SOL Urgency
+                {content.solUrgencyTitle ?? "Statute-of-Limitations Urgency"}
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
@@ -1561,7 +1561,7 @@ export function StateIntelligenceClient({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🏔️</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Appalachian Connectivity Gap
+                {content.internetAccessTitle ?? "Rural Connectivity Gap"}
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
@@ -1574,7 +1574,7 @@ export function StateIntelligenceClient({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🏍️</span>
               <h3 className="text-sm font-bold text-midnight-navy">
-                Motorcycle Tourism Opportunity
+                {content.outOfStateTitle ?? "Out-of-State Visitor Opportunity"}
               </h3>
             </div>
             <p className="text-[11px] text-midnight-navy/70">
