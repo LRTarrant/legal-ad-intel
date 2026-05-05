@@ -92,6 +92,14 @@ export const tennesseeConfig: StateConfig = {
     judicialContext:
       "Davidson County (Nashville) and Shelby County (Memphis) are the two largest population centers. Filing venue selection in Tennessee matters — judicial leanings can vary significantly between urban and rural counties.",
 
+    marketSaturationTitle: "Nashville PI Market Saturation",
+    marketSaturationTip:
+      "Nashville’s rapid population growth (+21% since 2010) has attracted national PI firms (Morgan & Morgan, Cellino), creating one of the most competitive advertising markets in the Southeast. However, surrounding counties (Williamson, Rutherford, Wilson) are growing even faster with less advertising saturation. Satellite-metro targeting offers better cost-per-case economics.",
+
+    freightCorridorTitle: "Memphis Freight Corridor",
+    freightCorridorTip:
+      "Memphis is home to FedEx’s global hub, making it one of the busiest freight corridors in the U.S. I-40 and I-55 through Shelby County see extreme truck traffic volumes. Combined with cross-state reach into Mississippi and Arkansas, Memphis-market truck accident campaigns have unusually broad geographic impact.",
+
     solUrgencyTitle: "1-Year SOL Urgency",
     solUrgencyTip:
       "Tennessee’s 1-year statute of limitations for personal injury is among the shortest in the nation. This creates both a challenge and an opportunity: firms with fast intake pipelines and immediate digital response capabilities can capture cases that slower competitors miss. Time-sensitive messaging (\u201CAct now — Tennessee’s filing deadline is only 1 year\u201D) resonates strongly.",
