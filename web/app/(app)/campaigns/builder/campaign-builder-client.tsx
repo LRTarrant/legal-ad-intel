@@ -55,6 +55,7 @@ import {
 import { PIScriptCard } from "./pi-script-card";
 import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
 import { PIStrategicBriefCard } from "./pi-strategic-brief-card";
+import { PIGeoSummaryCard } from "./pi-geo-summary-card";
 import { PIVideoCompositionCard } from "./pi-video-composition-card";
 import { PIMetaAdCard } from "./pi-meta-ad-card";
 import { PIGoogleRSACard } from "./pi-google-rsa-card";
@@ -1423,6 +1424,20 @@ export function CampaignBuilderClient() {
       {practiceArea === "personal_injury" && piResult && piConfig && (
         <PIStrategicBriefCard
           firmName={firmName}
+          config={piConfig}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+        />
+      )}
+
+      {/* PI geo targeting summary (PR D) — slim 5-row top counties +
+          metros, with deep link to /pi-geo-targeting/[state]/[category]
+          for the full sortable tables + CSV export. Auto-hides when the
+          chosen PI category isn't a motor-vehicle one (no FARS coverage). */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIGeoSummaryCard
           config={piConfig}
           accentColor={accentColor}
           onEntitlementError={({ reason, meta }) =>
