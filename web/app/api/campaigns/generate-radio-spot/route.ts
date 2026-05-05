@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { applyPronunciationToText } from "@/lib/voice/pronunciation-dictionary";
 
 interface RadioSpotRequest {
   script: string;
   voiceId: string;
   duration: "30s" | "60s";
+  /**
+   * Optional firm attribution — currently the mass-tort radio flow
+   * doesn't pass it, but accepting it here lets a future caller route
+   * per-firm pronunciation overrides through this endpoint without
+   * another schema bump.
+   */
+  firm_id?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -33,6 +41,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Apply pronunciation overrides (per-firm + global dictionary).
+    // Best-effort — falls back to original script on any failure.
+    const pronunciation = await applyPronunciationToText(
+      supabase,
+      user.id,
+      body.script,
+      body.firm_id ?? null,
+    );
+
     // Call ElevenLabs TTS API
     const ttsResponse = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${body.voiceId}`,
@@ -44,7 +61,7 @@ export async function POST(req: NextRequest) {
           Accept: "audio/mpeg",
         },
         body: JSON.stringify({
-          text: body.script,
+          text: pronunciation.text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: 0.5,
