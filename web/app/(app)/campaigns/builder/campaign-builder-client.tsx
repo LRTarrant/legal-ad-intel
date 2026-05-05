@@ -54,6 +54,7 @@ import {
 } from "./pi-config-form";
 import { PIScriptCard } from "./pi-script-card";
 import { PIRadioScriptGenerator } from "./pi-radio-script-generator";
+import { PIStrategicBriefCard } from "./pi-strategic-brief-card";
 import { PIVideoCompositionCard } from "./pi-video-composition-card";
 import { PIMetaAdCard } from "./pi-meta-ad-card";
 import { PIGoogleRSACard } from "./pi-google-rsa-card";
@@ -1413,6 +1414,21 @@ export function CampaignBuilderClient() {
       {/* PI script result */}
       {practiceArea === "personal_injury" && piResult && (
         <PIScriptCard result={piResult} accentColor={accentColor} />
+      )}
+
+      {/* PI strategic brief (PR C) — data-grounded recommendations from
+          FARS / NOAA / BLS / pi_viability_scores. Renders right after the
+          plan card so users see the differentiation signals before any
+          production work. */}
+      {practiceArea === "personal_injury" && piResult && piConfig && (
+        <PIStrategicBriefCard
+          firmName={firmName}
+          config={piConfig}
+          accentColor={accentColor}
+          onEntitlementError={({ reason, meta }) =>
+            setUpgradeModal({ open: true, reason, meta })
+          }
+        />
       )}
 
       {/* PI radio / podcast script generator (Phase 1) */}
