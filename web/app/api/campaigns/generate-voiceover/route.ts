@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { getFirmForUser } from "@/lib/firms/server";
+import {
+  applyPronunciationOverrides,
+  type PronunciationOverride,
+} from "@/lib/voice/pronunciation";
+import {
+  getGlobalPronunciationDictionary,
+  mergePronunciationLayers,
+} from "@/lib/voice/pronunciation-dictionary";
 
 export const maxDuration = 30;
 
@@ -46,6 +54,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Pronunciation overrides ────────────────────────────────────────
+    // Resolve the firm BEFORE the TTS call so we can:
+    //   1. Apply per-firm pronunciation overrides (firm name, partners,
+    //      local cities like Birmingham → "BURR-ming-ham")
+    //   2. Merge with the global pronunciation_dictionary (tort + product
+    //      names every firm wants pronounced correctly — Depo-Provera,
+    //      Paraquat, Talc, etc.)
+    //
+    // Firm overrides take precedence on overlapping written keys. If
+    // anything in this block fails, we fall through to the original
+    // text — pronunciation is best-effort, never blocks audio.
+    let resolvedFirmId: string | null = null;
+    let firmOverrides: PronunciationOverride[] = [];
+    if (body.firm_id) {
+      const firm = await getFirmForUser(supabase, user.id, body.firm_id).catch(
+        () => null,
+      );
+      resolvedFirmId = firm?.id ?? null;
+      // The generated firms type doesn't yet include pronunciation_overrides
+      // (column added by migration 20260505000008); cast through any to read.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw = (firm as any)?.pronunciation_overrides;
+      if (Array.isArray(raw)) {
+        firmOverrides = raw.filter(
+          (o: unknown): o is PronunciationOverride =>
+            !!o &&
+            typeof o === "object" &&
+            typeof (o as PronunciationOverride).written === "string" &&
+            typeof (o as PronunciationOverride).spoken === "string",
+        );
+      }
+    }
+
+    const globalDictionary = await getGlobalPronunciationDictionary(
+      supabase,
+    ).catch(() => [] as PronunciationOverride[]);
+    const mergedOverrides = mergePronunciationLayers(
+      firmOverrides,
+      globalDictionary,
+    );
+    const ttsText = applyPronunciationOverrides(body.text, mergedOverrides);
+
+    // ── ElevenLabs TTS ─────────────────────────────────────────────────
+    // ttsText has any matching pronunciation overrides already
+    // substituted (plain respelling) or wrapped in <phoneme alphabet="ipa">
+    // tags. eleven_multilingual_v2 honors phoneme tags.
     const ttsResponse = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(body.voiceId)}`,
       {
@@ -56,7 +110,7 @@ export async function POST(req: NextRequest) {
           Accept: "audio/mpeg",
         },
         body: JSON.stringify({
-          text: body.text,
+          text: ttsText,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: 0.5,
@@ -77,29 +131,23 @@ export async function POST(req: NextRequest) {
 
     const audioBuffer = await ttsResponse.arrayBuffer();
 
-    // Cost tracking. Firm verification is best-effort — if the supplied
-    // firm_id doesn't match a firm the caller manages, we fall back to
-    // null attribution rather than failing the audio response (the audio
-    // is already generated and the user is waiting on it).
-    let resolvedFirmId: string | null = null;
-    if (body.firm_id) {
-      const firm = await getFirmForUser(supabase, user.id, body.firm_id).catch(
-        () => null,
-      );
-      resolvedFirmId = firm?.id ?? null;
-    }
+    // ── Cost tracking (fire-and-forget) ────────────────────────────────
+    // Bill on the actual TTS-input length (post-substitution) since
+    // ElevenLabs charges by characters synthesized.
     void trackCall(supabase, {
       user_id: user.id,
       firm_id: resolvedFirmId,
       purpose: "voiceover",
       provider: "elevenlabs",
       model: "eleven_multilingual_v2",
-      usage: { characters_synth: body.text.length },
+      usage: { characters_synth: ttsText.length },
       meta: {
         voice_id: body.voiceId,
         practice_area: body.practice_area,
         pi_category: body.pi_category,
         scene_number: body.scene_number,
+        firm_overrides_applied: firmOverrides.length,
+        global_overrides_available: globalDictionary.length,
       },
     });
 

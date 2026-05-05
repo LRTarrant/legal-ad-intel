@@ -163,6 +163,7 @@ export async function createFirm(
     partner_names: input.partner_names ?? [],
     signature_phrases: input.signature_phrases ?? [],
     service_areas: input.service_areas ?? [],
+    pronunciation_overrides: input.pronunciation_overrides ?? [],
     default_state: input.default_state ?? null,
     default_dma_codes: input.default_dma_codes ?? [],
     notes: input.notes ?? null,
@@ -242,6 +243,7 @@ export async function updateFirm(
   if (input.partner_names !== undefined) payload.partner_names = input.partner_names;
   if (input.signature_phrases !== undefined) payload.signature_phrases = input.signature_phrases;
   if (input.service_areas !== undefined) payload.service_areas = input.service_areas;
+  if (input.pronunciation_overrides !== undefined) payload.pronunciation_overrides = input.pronunciation_overrides;
   if (input.default_state !== undefined) payload.default_state = input.default_state;
   if (input.default_dma_codes !== undefined) payload.default_dma_codes = input.default_dma_codes;
   if (input.notes !== undefined) payload.notes = input.notes;
