@@ -55,12 +55,19 @@ interface PIGeoSummaryCardProps {
     reason: UpgradeReason;
     meta: UpgradeMeta;
   }) => void;
+  /**
+   * Optional callback fired with the loaded geo report so the parent
+   * builder can include top metros/counties in the bulk-upload export.
+   * Fires null when the category is unsupported or fetch errors.
+   */
+  onReportLoaded?: (report: GeoTargetingReport | null) => void;
 }
 
 export function PIGeoSummaryCard({
   config,
   accentColor,
   onEntitlementError,
+  onReportLoaded,
 }: PIGeoSummaryCardProps) {
   const [report, setReport] = useState<GeoTargetingReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,6 +78,7 @@ export function PIGeoSummaryCard({
   useEffect(() => {
     if (!SUPPORTED.has(config.pi_category)) {
       setReport(null);
+      onReportLoaded?.(null);
       return;
     }
     let alive = true;
@@ -93,7 +101,9 @@ export function PIGeoSummaryCard({
                 : `Request failed (${res.status})`),
           );
         }
-        setReport(json as GeoTargetingReport);
+        const r = json as GeoTargetingReport;
+        setReport(r);
+        onReportLoaded?.(r);
       })
       .catch((e: Error) => {
         if (alive) setError(e.message);

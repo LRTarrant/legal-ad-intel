@@ -57,6 +57,17 @@ interface PIGoogleRSACardProps {
     reason: UpgradeReason;
     meta: UpgradeMeta;
   }) => void;
+  /**
+   * Optional callback fired whenever a fresh RSA is generated so the
+   * parent (campaign builder) can keep its export-bundle state in sync.
+   */
+  onResult?: (result: GeneratedRSA | null) => void;
+  /**
+   * Optional callback fired when the user types into Final URL so the
+   * parent's bulk-upload export can use the same value. Debouncing is
+   * the parent's concern; we just forward each change.
+   */
+  onFinalUrlChange?: (url: string) => void;
 }
 
 interface GeneratedRSA extends PIGoogleRSAResponse {
@@ -80,6 +91,8 @@ export function PIGoogleRSACard({
   defaultFinalUrl,
   accentColor,
   onEntitlementError,
+  onResult,
+  onFinalUrlChange,
 }: PIGoogleRSACardProps) {
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [finalUrl, setFinalUrl] = useState<string>(defaultFinalUrl ?? "");
@@ -124,6 +137,7 @@ export function PIGoogleRSACard({
         );
       }
       setAd(json as GeneratedRSA);
+      onResult?.(json as GeneratedRSA);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -190,7 +204,10 @@ export function PIGoogleRSACard({
             inputMode="url"
             placeholder="https://your-firm.com/personal-injury"
             value={finalUrl}
-            onChange={(e) => setFinalUrl(e.target.value)}
+            onChange={(e) => {
+              setFinalUrl(e.target.value);
+              onFinalUrlChange?.(e.target.value);
+            }}
             className="w-full rounded-md border border-cloud bg-white px-3 py-1.5 text-sm text-midnight-navy placeholder:text-slate-gray focus:border-intelligence-teal focus:outline-none"
           />
         </Field>

@@ -58,6 +58,13 @@ interface PIMetaAdCardProps {
     reason: UpgradeReason;
     meta: UpgradeMeta;
   }) => void;
+  /**
+   * Optional callback fired whenever a fresh ad is generated so the
+   * parent (campaign builder) can keep its export-bundle state in sync.
+   * Receives the full result including imageUrl. Pass null on regenerate-
+   * to-empty (currently never happens, but reserved).
+   */
+  onResult?: (result: GeneratedAd | null) => void;
 }
 
 interface GeneratedAd extends PIMetaAdResponse {
@@ -95,6 +102,7 @@ export function PIMetaAdCard({
   config,
   accentColor,
   onEntitlementError,
+  onResult,
 }: PIMetaAdCardProps) {
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [aspectRatio, setAspectRatio] =
@@ -147,6 +155,7 @@ export function PIMetaAdCard({
         );
       }
       setAd(json as GeneratedAd);
+      onResult?.(json as GeneratedAd);
     } catch (e) {
       setError((e as Error).message);
     } finally {

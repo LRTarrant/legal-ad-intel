@@ -81,6 +81,12 @@ interface PIVideoCompositionCardProps {
     reason: UpgradeReason;
     meta: UpgradeMeta;
   }) => void;
+  /**
+   * Optional callback that fires when a render completes (and on null
+   * on regenerate-clear) so the parent campaign builder can include the
+   * video URL in the bulk-upload export.
+   */
+  onVideoUrlChange?: (videoUrl: string | null) => void;
 }
 
 /* ── Platform → resolution map ────────────────────────────────────────── */
@@ -119,6 +125,7 @@ export function PIVideoCompositionCard({
   selectedVoiceId,
   accentColor,
   onEntitlementError,
+  onVideoUrlChange,
 }: PIVideoCompositionCardProps) {
   const [duration, setDuration] = useState<"15s" | "30s" | "60s">("30s");
   const [platform, setPlatform] = useState<VideoPlatform>("youtube_ad");
@@ -186,7 +193,12 @@ export function PIVideoCompositionCard({
   useEffect(() => {
     setScript(null);
     setVideoUrl(null);
+    onVideoUrlChange?.(null);
     setError(null);
+    // Note: onVideoUrlChange is intentionally omitted from deps below;
+    // we only want this effect to fire on config changes, not when
+    // the parent recreates the callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     config.pi_category,
     config.market_display_name,
@@ -200,6 +212,7 @@ export function PIVideoCompositionCard({
     setRunning(true);
     setError(null);
     setVideoUrl(null);
+    onVideoUrlChange?.(null);
 
     try {
       // ── Step 1: storyboard ─────────────────────────────────────────
@@ -338,6 +351,7 @@ export function PIVideoCompositionCard({
       const renderData = (await renderRes.json()) as { videoUrl?: string };
       if (!renderData.videoUrl) throw new Error("Render returned no videoUrl");
       setVideoUrl(renderData.videoUrl);
+      onVideoUrlChange?.(renderData.videoUrl);
       setProgress(null);
     } catch (e) {
       setError((e as Error).message);
