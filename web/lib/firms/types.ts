@@ -52,6 +52,12 @@ export interface Firm extends FirmBrandProfile {
   default_state: string | null;
   default_dma_codes: string[];
   notes: string | null;
+  /** Public URL of the firm's brand logo (PR F). Used as default
+   *  watermark on rendered videos and as logo on landing pages. */
+  logo_url: string | null;
+  /** Storage path inside brand-assets (used to delete/replace the
+   *  previous logo). Internal-only; not surfaced in the UI. */
+  logo_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +105,10 @@ export type UpdateFirmInput = Partial<CreateFirmInput> & {
   /** ISO timestamp of the most recent successful auto-extraction. Set
    * by the /extract-brand route; UI may surface as "last refreshed". */
   extracted_at?: string | null;
+  /** Public URL of an uploaded brand logo (PR F). */
+  logo_url?: string | null;
+  /** Storage path of the uploaded logo inside brand-assets. */
+  logo_path?: string | null;
 };
 
 /* ── Validation helpers ─────────────────────────────────────────────────── */

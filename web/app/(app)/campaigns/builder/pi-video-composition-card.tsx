@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Play, Video } from "lucide-react";
+import { Image as ImageIcon, Loader2, Play, Video } from "lucide-react";
 import { fetchWithDemoMode } from "@/lib/admin/demo-mode-client";
 import { VoicePicker, type VoicePickerOption } from "./voice-picker";
 import {
@@ -87,7 +87,18 @@ interface PIVideoCompositionCardProps {
    * video URL in the bulk-upload export.
    */
   onVideoUrlChange?: (videoUrl: string | null) => void;
+  /**
+   * Optional firm-level logo URL (from firms.logo_url). When provided,
+   * the user can toggle a brand watermark onto the rendered MP4.
+   */
+  firmLogoUrl?: string | null;
 }
+
+type WatermarkPosition =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left";
 
 /* ── Platform → resolution map ────────────────────────────────────────── */
 
@@ -126,11 +137,24 @@ export function PIVideoCompositionCard({
   accentColor,
   onEntitlementError,
   onVideoUrlChange,
+  firmLogoUrl,
 }: PIVideoCompositionCardProps) {
   const [duration, setDuration] = useState<"15s" | "30s" | "60s">("30s");
   const [platform, setPlatform] = useState<VideoPlatform>("youtube_ad");
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [withVoiceover, setWithVoiceover] = useState(true);
+
+  // Watermark controls (PR F). Default ON when the firm has a logo;
+  // user can toggle off and tweak position/size/opacity per render.
+  const [wmEnabled, setWmEnabled] = useState<boolean>(!!firmLogoUrl);
+  const [wmPosition, setWmPosition] = useState<WatermarkPosition>("bottom-right");
+  const [wmSizePct, setWmSizePct] = useState<number>(12);
+  const [wmOpacity, setWmOpacity] = useState<number>(0.7);
+
+  // If the firm logo arrives async after mount, default the toggle ON.
+  useEffect(() => {
+    if (firmLogoUrl) setWmEnabled(true);
+  }, [firmLogoUrl]);
 
   // Voice override state. Defaults to the radio's selectedVoiceId so the
   // video matches the audio the user already heard. They can change it
@@ -340,6 +364,15 @@ export function PIVideoCompositionCard({
           resolution: { w: resolution.w, h: resolution.h },
           voiceoverBase64,
           backgroundMusic: null,
+          watermark:
+            wmEnabled && firmLogoUrl
+              ? {
+                  logoUrl: firmLogoUrl,
+                  position: wmPosition,
+                  sizePct: wmSizePct,
+                  opacity: wmOpacity,
+                }
+              : null,
         }),
       });
       if (!renderRes.ok) {
@@ -426,6 +459,67 @@ export function PIVideoCompositionCard({
           />
           Include synthesized voiceover
         </label>
+
+        {/* Brand watermark (PR F) */}
+        {firmLogoUrl ? (
+          <div className="rounded-md border border-cloud bg-cloud/20 p-4 space-y-3">
+            <label className="flex items-center gap-2 text-sm text-slate-gray">
+              <input
+                type="checkbox"
+                checked={wmEnabled}
+                onChange={(e) => setWmEnabled(e.target.checked)}
+                className="rounded border-cloud"
+              />
+              <ImageIcon className="h-4 w-4" style={{ color: accentColor }} />
+              Bake firm logo onto the rendered video
+            </label>
+            {wmEnabled && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <Field label="Position">
+                  <select
+                    value={wmPosition}
+                    onChange={(e) =>
+                      setWmPosition(e.target.value as WatermarkPosition)
+                    }
+                    className={selectCls}
+                  >
+                    <option value="bottom-right">Bottom right</option>
+                    <option value="bottom-left">Bottom left</option>
+                    <option value="top-right">Top right</option>
+                    <option value="top-left">Top left</option>
+                  </select>
+                </Field>
+                <Field label={`Size: ${wmSizePct}% of width`}>
+                  <input
+                    type="range"
+                    min={5}
+                    max={30}
+                    step={1}
+                    value={wmSizePct}
+                    onChange={(e) => setWmSizePct(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </Field>
+                <Field label={`Opacity: ${Math.round(wmOpacity * 100)}%`}>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={1}
+                    step={0.05}
+                    value={wmOpacity}
+                    onChange={(e) => setWmOpacity(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-gray italic">
+            Tip: upload a firm logo in Settings → Firms to bake a brand
+            watermark onto rendered videos.
+          </p>
+        )}
 
         {withVoiceover && (
           <div className="rounded-md border border-cloud bg-cloud/20 p-4 space-y-2">

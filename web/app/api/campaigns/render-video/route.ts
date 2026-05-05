@@ -6,6 +6,12 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
+import {
+  buildWatermarkFilter,
+  logoExtFromUrl,
+  normalizeWatermark,
+  type WatermarkConfig,
+} from "@/lib/video/watermark";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -35,6 +41,9 @@ interface RenderRequest {
   resolution: { w: number; h: number };
   voiceoverBase64?: string;
   backgroundMusic?: BackgroundMusic | null;
+  /** Optional brand-logo watermark (PR F). When omitted, no overlay
+   *  pass runs and behavior is identical to before. */
+  watermark?: WatermarkConfig | null;
 }
 
 /* ── Audio config ─────────────────────────────────────────────────────── */
@@ -226,7 +235,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { scenes, cta, resolution, voiceoverBase64, backgroundMusic } = body;
+  const { scenes, cta, resolution, voiceoverBase64, backgroundMusic, watermark } = body;
+  const normalizedWm = normalizeWatermark(watermark);
 
   if (!scenes?.length || !cta || !resolution?.w || !resolution?.h) {
     return NextResponse.json(
@@ -432,6 +442,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Watermark overlay (PR F) ──────────────────────────────────────
+    // If a brand logo was provided, run one extra ffmpeg pass to
+    // composite it onto the finished video. Failure here is non-fatal:
+    // we log and ship the un-watermarked video so the user always gets
+    // something.
+    let finalOutputName = "output.mp4";
+    if (normalizedWm) {
+      try {
+        const logoExt = logoExtFromUrl(normalizedWm.logoUrl);
+        const logoPath = join(workDir, `logo${logoExt}`);
+        const ok = await downloadFile(normalizedWm.logoUrl, logoPath);
+        if (!ok) {
+          console.warn("[render-video] watermark logo download failed; skipping overlay");
+        } else {
+          const filterGraph = buildWatermarkFilter(normalizedWm, w);
+          ffmpeg(
+            [
+              "-i", "output.mp4",
+              "-i", logoPath,
+              "-filter_complex", filterGraph,
+              "-map", "[out]",
+              "-map", "0:a?",
+              "-c:v", "libx264",
+              "-pix_fmt", "yuv420p",
+              "-preset", "ultrafast",
+              "-c:a", "copy",
+              "-movflags", "+faststart",
+              "-y", "output_wm.mp4",
+            ],
+            workDir,
+          );
+          finalOutputName = "output_wm.mp4";
+        }
+      } catch (e) {
+        console.error("[render-video] watermark overlay failed; using un-watermarked output", e);
+      }
+    }
+
     // ── Upload + return URL ────────────────────────────────────────────
     //
     // We upload the rendered mp4 to Supabase Storage and return a JSON
@@ -448,7 +496,7 @@ export async function POST(req: NextRequest) {
     //   2. On success, return the public URL
     //   3. On upload failure, fall back to a base64 data URL so the
     //      user still sees their video even if storage is misconfigured
-    const outputPath = join(workDir, "output.mp4");
+    const outputPath = join(workDir, finalOutputName);
     const videoBuffer = readFileSync(outputPath);
 
     const timestamp = Date.now();
