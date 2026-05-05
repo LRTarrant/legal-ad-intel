@@ -123,34 +123,41 @@ CREATE POLICY pronunciation_dictionary_super_admin_write
 -- on `written` only.
 ------------------------------------------------------------------------
 
+-- IMPORTANT: respellings use MIXED CASE, not all-caps. ElevenLabs (and
+-- most modern TTS) reads sequences of capital letters as initialisms
+-- ("DEP" -> "D-E-P"). To indicate the stressed syllable, capitalize
+-- ONLY its first letter ("Deh" not "DEH", "Pee" not "PEE"). Acronyms
+-- that genuinely read as letters keep their letter-spaced form ("A F F F").
 INSERT INTO public.pronunciation_dictionary (written, spoken, category, notes) VALUES
   -- Mass tort drug + product names (most common TTS errors)
-  ('Depo-Provera',  'DEP-oh proh-VEH-rah', 'mass_tort', 'Common error: ElevenLabs reads as "deepo" instead of "dep-o"'),
-  ('Depo Provera',  'DEP-oh proh-VEH-rah', 'mass_tort', 'No-hyphen variant'),
-  ('Paraquat',      'PAIR-uh-kwat',        'mass_tort', 'Common error: stress on wrong syllable'),
-  ('Roundup',       'ROUND-up',            'mass_tort', NULL),
-  ('Tylenol',       'TY-leh-nol',          'mass_tort', NULL),
-  ('Talc',          'TALK',                'mass_tort', 'Common error: pronounced "talse"'),
-  ('Talcum',        'TAL-kum',             'mass_tort', NULL),
-  ('Hair Relaxer',  'hair ree-LAX-er',     'mass_tort', NULL),
-  ('Tepezza',       'teh-PEZ-uh',          'mass_tort', NULL),
-  ('Ozempic',       'oh-ZEM-pik',          'mass_tort', NULL),
-  ('Mounjaro',      'mownt-JAR-oh',        'mass_tort', NULL),
+  ('Depo-Provera',  'Deh-poh proh-Veh-ruh', 'mass_tort', 'Common error: reads as "deepo". Mixed-case respelling avoids letter-spelling.'),
+  ('Depo Provera',  'Deh-poh proh-Veh-ruh', 'mass_tort', 'No-hyphen variant'),
+  ('Paraquat',      'Pair-uh-kwat',         'mass_tort', 'Stress on first syllable'),
+  ('Roundup',       'Round-up',             'mass_tort', NULL),
+  ('Tylenol',       'Tie-leh-nol',          'mass_tort', NULL),
+  ('Talc',          'Tawk',                 'mass_tort', 'Common error: pronounced "talse"'),
+  ('Talcum',        'Tal-kum',              'mass_tort', NULL),
+  ('Hair Relaxer',  'hair ree-Lax-er',      'mass_tort', NULL),
+  ('Tepezza',       'teh-Pez-uh',           'mass_tort', NULL),
+  ('Ozempic',       'oh-Zem-pik',           'mass_tort', NULL),
+  ('Mounjaro',      'mown-Jar-oh',          'mass_tort', NULL),
 
-  -- Acronyms that should be spelled out
-  ('AFFF',          'A F F F',             'acronym',  'Spell as letters, not "aff" or "afef"'),
-  ('PFAS',          'PEE-fass',            'acronym',  'Common pronunciation in mass tort comms'),
-  ('MDL',           'M D L',               'acronym',  'Spell as letters, not "middle"'),
-  ('TCPA',          'T C P A',             'acronym',  NULL),
-  ('NHTSA',         'NIT-suh',             'acronym',  'Industry-standard pronunciation'),
-  ('CTV',           'C T V',               'acronym',  NULL),
-  ('LSA',           'L S A',               'acronym',  NULL),
-  ('DMA',           'D M A',               'acronym',  NULL),
+  -- Acronyms that read as letter-by-letter (KEEP letter-spaced format)
+  ('AFFF',          'A F F F',              'acronym',  'Spell as letters'),
+  ('MDL',           'M D L',                'acronym',  'Spell as letters, not "middle"'),
+  ('TCPA',          'T C P A',              'acronym',  NULL),
+  ('CTV',           'C T V',                'acronym',  NULL),
+  ('LSA',           'L S A',                'acronym',  NULL),
+  ('DMA',           'D M A',                'acronym',  NULL),
 
-  -- PI / litigation general terms (less common but still mispronounced)
-  ('voir dire',     'vwar DEER',           'litigation','French legal term'),
-  ('plaintiff',     'PLAYN-tiff',          'litigation', NULL),
-  ('subpoena',      'suh-PEE-nuh',         'litigation', NULL)
+  -- Acronyms that read as a single word
+  ('NHTSA',         'Nit-suh',              'acronym',  'Industry pronunciation'),
+  ('PFAS',          'Pee-fass',             'acronym',  'Industry pronunciation'),
+
+  -- PI / litigation general terms
+  ('voir dire',     'vwar Deer',            'litigation','French legal term'),
+  ('plaintiff',     'Plain-tiff',           'litigation', NULL),
+  ('subpoena',      'suh-Pee-nuh',          'litigation', NULL)
 ON CONFLICT ((lower(written))) DO UPDATE
   SET spoken   = EXCLUDED.spoken,
       category = EXCLUDED.category,
