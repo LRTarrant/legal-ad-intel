@@ -370,6 +370,12 @@ export function Sidebar() {
               {renderNavLink({ label: "Georgia", href: "/state-intelligence/georgia", Icon: MapPin })}
               {renderNavLink({ label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin })}
               {renderNavLink({ label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin })}
+              {renderNavLink({ label: "New York", href: "/state-intelligence/v2/new-york", Icon: MapPin })}
+              {renderNavLink({ label: "Pennsylvania", href: "/state-intelligence/v2/pennsylvania", Icon: MapPin })}
+              {renderNavLink({ label: "Illinois", href: "/state-intelligence/v2/illinois", Icon: MapPin })}
+              {renderNavLink({ label: "Ohio", href: "/state-intelligence/v2/ohio", Icon: MapPin })}
+              {renderNavLink({ label: "North Carolina", href: "/state-intelligence/v2/north-carolina", Icon: MapPin })}
+              {renderNavLink({ label: "Michigan", href: "/state-intelligence/v2/michigan", Icon: MapPin })}
             </div>
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">

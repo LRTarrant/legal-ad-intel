@@ -1,3 +1,9 @@
+import { illinoisConfig } from "./illinois";
+import { michiganConfig } from "./michigan";
+import { newYorkConfig } from "./new-york";
+import { northCarolinaConfig } from "./north-carolina";
+import { ohioConfig } from "./ohio";
+import { pennsylvaniaConfig } from "./pennsylvania";
 import { tennesseeConfig } from "./tennessee";
 import { texasConfig } from "./texas";
 import type { StateConfig } from "./_types";
@@ -10,6 +16,12 @@ import type { StateConfig } from "./_types";
  * /app/(app)/state-intelligence/{slug}/ during the migration period.
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
+  illinois: illinoisConfig,
+  michigan: michiganConfig,
+  "new-york": newYorkConfig,
+  "north-carolina": northCarolinaConfig,
+  ohio: ohioConfig,
+  pennsylvania: pennsylvaniaConfig,
   tennessee: tennesseeConfig,
   texas: texasConfig,
 };
