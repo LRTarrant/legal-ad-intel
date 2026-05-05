@@ -32,7 +32,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { getFirmForUser } from "@/lib/firms/server";
-import { applyPronunciationToText } from "@/lib/voice/pronunciation-dictionary";
+import { polishScriptForTTS } from "@/lib/voice/polish-script";
 
 interface PIRadioSpotRequest {
   /** The polished PI script to synthesize. */
@@ -111,11 +111,11 @@ export async function POST(req: NextRequest) {
     resolvedFirmId = firm.id;
   }
 
-  // Apply pronunciation overrides (per-firm + global dictionary). Uses
-  // resolvedFirmId so per-firm overrides only apply when the caller has
-  // verified access. Best-effort — falls back to original script on any
-  // failure (TTS itself is the critical path).
-  const pronunciation = await applyPronunciationToText(
+  // LLM-driven script polishing for TTS-friendly pronunciation. Uses
+  // resolvedFirmId so per-firm trouble words apply only when the
+  // caller has verified access. Falls back to direct dictionary
+  // substitution on any failure; never blocks audio generation.
+  const polish = await polishScriptForTTS(
     supabase,
     user.id,
     body.script,
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         Accept: "audio/mpeg",
       },
       body: JSON.stringify({
-        text: pronunciation.text,
+        text: polish.text,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
           // Stability 0.5 + similarity 0.75 matches mass tort's defaults.
@@ -161,8 +161,8 @@ export async function POST(req: NextRequest) {
   }
 
   const audioBuffer = await ttsResponse.arrayBuffer();
-  // Bill on post-substitution length, since that's what ElevenLabs charges.
-  const characters_synth = pronunciation.text.length;
+  // Bill on post-polish length, since that's what ElevenLabs charges.
+  const characters_synth = polish.text.length;
 
   // Cost tracking. We await so cost makes it into the response payload.
   // trackCall never throws on DB failure \u2014 it's observability, not txn.
@@ -180,8 +180,10 @@ export async function POST(req: NextRequest) {
       state: body.state,
       severity_modifiers: body.severity_modifiers ?? [],
       language: body.language ?? "en",
-      firm_overrides_applied: pronunciation.firmOverridesApplied,
-      global_overrides_available: pronunciation.globalOverridesAvailable,
+      polish_source: polish.source,
+      polish_changed: polish.changed,
+      polish_trouble_words: polish.troubleWordsCount,
+      polish_warnings: polish.warnings.length > 0 ? polish.warnings : undefined,
     },
   });
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { getFirmForUser } from "@/lib/firms/server";
-import { applyPronunciationToText } from "@/lib/voice/pronunciation-dictionary";
+import { polishScriptForTTS } from "@/lib/voice/polish-script";
 
 export const maxDuration = 30;
 
@@ -60,10 +60,11 @@ export async function POST(req: NextRequest) {
       resolvedFirmId = firm?.id ?? null;
     }
 
-    // ── Pronunciation overrides ────────────────────────────────────────
-    // Single helper handles per-firm + global dictionary + merge. Never
-    // throws; falls through to the original text on any failure.
-    const pronunciation = await applyPronunciationToText(
+    // ── Script polishing for TTS ──────────────────────────────────────
+    // LLM rewrites trouble words from the per-firm + global dictionary
+    // into TTS-friendly spellings. Falls back to direct dictionary
+    // substitution on any failure. Never throws; never returns empty.
+    const polish = await polishScriptForTTS(
       supabase,
       user.id,
       body.text,
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
           Accept: "audio/mpeg",
         },
         body: JSON.stringify({
-          text: pronunciation.text,
+          text: polish.text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: 0.5,
@@ -114,14 +115,16 @@ export async function POST(req: NextRequest) {
       purpose: "voiceover",
       provider: "elevenlabs",
       model: "eleven_multilingual_v2",
-      usage: { characters_synth: pronunciation.text.length },
+      usage: { characters_synth: polish.text.length },
       meta: {
         voice_id: body.voiceId,
         practice_area: body.practice_area,
         pi_category: body.pi_category,
         scene_number: body.scene_number,
-        firm_overrides_applied: pronunciation.firmOverridesApplied,
-        global_overrides_available: pronunciation.globalOverridesAvailable,
+        polish_source: polish.source,
+        polish_changed: polish.changed,
+        polish_trouble_words: polish.troubleWordsCount,
+        polish_warnings: polish.warnings.length > 0 ? polish.warnings : undefined,
       },
     });
 

@@ -118,24 +118,22 @@ export function mergePronunciationLayers(
   return out;
 }
 
-/* ── One-call helper for TTS routes ───────────────────────────────────── */
+/* ── One-call helper for TTS routes (DICTIONARY ONLY) ─────────────────── */
 
 /**
- * Apply per-firm + global pronunciation overrides to TTS-bound text.
+ * Apply per-firm + global pronunciation overrides to TTS-bound text
+ * using the dictionary substitution path.
  *
- * One-stop helper for any route that calls ElevenLabs directly. Loads
- * the per-firm overrides if firmId is supplied AND the user manages
- * the firm (RLS-checked via getFirmForUser), merges with the cached
- * global dictionary, and returns the substituted text.
+ * NOTE: As of the LLM-polish layer (lib/voice/polish-script.ts), TTS
+ * routes prefer polishScriptForTTS() which handles trouble words via
+ * a small LLM rewrite. This helper still exists for two reasons:
+ *   1. It's the fallback when the LLM call fails.
+ *   2. Tests and analytics paths use it directly.
  *
  * Failure mode: NEVER throws and NEVER returns null. If anything goes
  * wrong (firm fetch fails, dictionary fetch fails, malformed rows),
  * we fall back to the original text. Voiceover generation is the
  * critical path; pronunciation is best-effort enrichment.
- *
- * Use this from every TTS-calling route (currently three:
- * /generate-voiceover, /generate-radio-spot, /generate-pi-radio-spot)
- * so adding a new term to the dictionary affects every channel.
  */
 export interface ApplyPronunciationResult {
   /** Text to send to ElevenLabs. Original text on any failure. */
