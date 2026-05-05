@@ -514,7 +514,7 @@ export function StateIntelligenceClient({
             {fmtNum(TDOSHS.totalFatalities)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            TDOSHS 2023
+            {TDOSHS.sourceLabel}
           </p>
         </div>
 
@@ -527,7 +527,7 @@ export function StateIntelligenceClient({
           </div>
           <p className="text-3xl font-bold text-midnight-navy">46%</p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            of TDOSHS fatalities
+            of {TDOSHS.sourceLabel} fatalities
           </p>
         </div>
 
@@ -542,7 +542,9 @@ export function StateIntelligenceClient({
             {piData?.composite_score ?? "\u2014"}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            Modified comparative (49%)
+            {piData?.negligence_rule
+              ? formatNegligenceRule(piData.negligence_rule)
+              : "—"}
           </p>
         </div>
 
@@ -557,7 +559,7 @@ export function StateIntelligenceClient({
             {BLS.totalWorkplaceFatalities}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            {BLS.constructionFatalities} construction &middot; BLS CFOI 2023
+            {BLS.constructionFatalities} construction &middot; BLS CFOI {BLS.reportYear}
           </p>
         </div>
 
@@ -727,13 +729,13 @@ export function StateIntelligenceClient({
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Speed-Related Fatalities (2023)</span>
+                <span className="text-slate-gray">Speed-Related Fatalities ({TDOSHS.reportYear})</span>
                 <span className="font-semibold text-midnight-navy">
                   {TDOSHS.speedRelatedFatalities} ({TDOSHS.speedRelatedPct}%)
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Alcohol-Related Fatalities (2023)</span>
+                <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.reportYear})</span>
                 <span className="font-semibold text-midnight-navy">
                   {TDOSHS.alcoholRelatedFatalities} ({TDOSHS.alcoholRelatedPct}%)
                 </span>
@@ -824,7 +826,7 @@ export function StateIntelligenceClient({
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">
-                  TDOSHS 2023 Motorcycle Fatalities
+                  {TDOSHS.sourceLabel} Motorcycle Fatalities
                 </span>
                 <span className="font-semibold text-midnight-navy">
                   {TDOSHS.motorcycleFatalities}
@@ -865,7 +867,7 @@ export function StateIntelligenceClient({
             </div>
             <div className="space-y-2 mb-3">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Construction Fatalities (2023)</span>
+                <span className="text-slate-gray">Construction Fatalities ({BLS.reportYear})</span>
                 <span className="font-semibold text-midnight-navy">
                   {BLS.constructionFatalities} ({BLS.constructionPctTotal}% of all workplace deaths)
                 </span>
@@ -881,7 +883,7 @@ export function StateIntelligenceClient({
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Total Workplace Fatalities</span>
                 <span className="font-medium text-midnight-navy">
-                  {BLS.totalWorkplaceFatalities} (BLS CFOI 2023)
+                  {BLS.totalWorkplaceFatalities} (BLS CFOI {BLS.reportYear})
                 </span>
               </div>
             </div>
