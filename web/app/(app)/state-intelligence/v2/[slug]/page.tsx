@@ -122,10 +122,6 @@ export interface StateIntelligencePageData {
 /*  Static params + metadata                                           */
 /* ------------------------------------------------------------------ */
 
-export function generateStaticParams() {
-  return STATE_SLUGS.map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -222,8 +218,17 @@ export default async function StateIntelligencePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  console.log(`[v2/state-intel] Request for slug: ${slug}`);
   const config = getStateConfig(slug);
-  if (!config) notFound();
+  if (!config) {
+    console.log(
+      `[v2/state-intel] No config found for slug: ${slug}. Available: ${STATE_SLUGS.join(", ")}`,
+    );
+    notFound();
+  }
+  console.log(
+    `[v2/state-intel] Loaded config for ${config.stateName}, fetching data...`,
+  );
 
   const { stateCode, stateName } = config;
 
