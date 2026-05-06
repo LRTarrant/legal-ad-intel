@@ -376,6 +376,16 @@ export function Sidebar() {
               {renderNavLink({ label: "Ohio", href: "/state-intelligence/v2/ohio", Icon: MapPin })}
               {renderNavLink({ label: "North Carolina", href: "/state-intelligence/v2/north-carolina", Icon: MapPin })}
               {renderNavLink({ label: "Michigan", href: "/state-intelligence/v2/michigan", Icon: MapPin })}
+              {renderNavLink({ label: "Colorado", href: "/state-intelligence/v2/colorado", Icon: MapPin })}
+              {renderNavLink({ label: "Indiana", href: "/state-intelligence/v2/indiana", Icon: MapPin })}
+              {renderNavLink({ label: "Kentucky", href: "/state-intelligence/v2/kentucky", Icon: MapPin })}
+              {renderNavLink({ label: "Louisiana", href: "/state-intelligence/v2/louisiana", Icon: MapPin })}
+              {renderNavLink({ label: "Maryland", href: "/state-intelligence/v2/maryland", Icon: MapPin })}
+              {renderNavLink({ label: "Massachusetts", href: "/state-intelligence/v2/massachusetts", Icon: MapPin })}
+              {renderNavLink({ label: "Minnesota", href: "/state-intelligence/v2/minnesota", Icon: MapPin })}
+              {renderNavLink({ label: "Missouri", href: "/state-intelligence/v2/missouri", Icon: MapPin })}
+              {renderNavLink({ label: "South Carolina", href: "/state-intelligence/v2/south-carolina", Icon: MapPin })}
+              {renderNavLink({ label: "Wisconsin", href: "/state-intelligence/v2/wisconsin", Icon: MapPin })}
             </div>
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">

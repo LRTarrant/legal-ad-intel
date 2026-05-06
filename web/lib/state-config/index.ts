@@ -1,11 +1,21 @@
+import { coloradoConfig } from "./colorado";
 import { illinoisConfig } from "./illinois";
+import { indianaConfig } from "./indiana";
+import { kentuckyConfig } from "./kentucky";
+import { louisianaConfig } from "./louisiana";
+import { massachusettsConfig } from "./massachusetts";
+import { marylandConfig } from "./maryland";
 import { michiganConfig } from "./michigan";
+import { minnesotaConfig } from "./minnesota";
+import { missouriConfig } from "./missouri";
 import { newYorkConfig } from "./new-york";
 import { northCarolinaConfig } from "./north-carolina";
 import { ohioConfig } from "./ohio";
 import { pennsylvaniaConfig } from "./pennsylvania";
+import { southCarolinaConfig } from "./south-carolina";
 import { tennesseeConfig } from "./tennessee";
 import { texasConfig } from "./texas";
+import { wisconsinConfig } from "./wisconsin";
 import type { StateConfig } from "./_types";
 
 /**
@@ -16,14 +26,24 @@ import type { StateConfig } from "./_types";
  * /app/(app)/state-intelligence/{slug}/ during the migration period.
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
+  colorado: coloradoConfig,
   illinois: illinoisConfig,
+  indiana: indianaConfig,
+  kentucky: kentuckyConfig,
+  louisiana: louisianaConfig,
+  maryland: marylandConfig,
+  massachusetts: massachusettsConfig,
   michigan: michiganConfig,
+  minnesota: minnesotaConfig,
+  missouri: missouriConfig,
   "new-york": newYorkConfig,
   "north-carolina": northCarolinaConfig,
   ohio: ohioConfig,
   pennsylvania: pennsylvaniaConfig,
+  "south-carolina": southCarolinaConfig,
   tennessee: tennesseeConfig,
   texas: texasConfig,
+  wisconsin: wisconsinConfig,
 };
 
 export const STATE_SLUGS = Object.keys(STATE_CONFIGS);
