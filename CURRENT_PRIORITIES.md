@@ -94,32 +94,42 @@ These are important but explicitly **not** in scope for the current week:
 
 ---
 
-## 5. State Intelligence Pages — Cleanup Arc (closed)
+## 5. State Intelligence Pages — Cleanup Arc
 
 Closed in this arc:
 - NC, MI, NY narrative / cross-signal cards audited and cleaned (pass 1)
 - Placeholder-zero pattern eliminated for visible fields across MI, NC, IL, PA, OH
   (speedRelatedFatalities, alcoholRelatedFatalities, truckTransportFatalities, speedRelatedPct)
   → established convention: 0-as-no-data → null → existing "unavailable" render path
-- OH alcohol-fatality denominator mismatch corrected: replaced OSHP 2024 OVI-related
-  figures (589 / 50.95%) with FARS 2023 alcohol-impaired figures (455 / 36.6%) for
+- ruralFatalities / urbanFatalities widened to `number | null`; client guard converted
+  from `> 0` short-circuit to standard `!= null` convention; NC, MI, PA, IL set to null
+- OH alcohol-fatality denominator mismatch corrected: replaced OSHP OVI-related figures
+  (589 / 50.95%) with NHTSA FARS 2023 alcohol-impaired figures (455 / 36.6%) for
   cross-state methodological consistency
 - OH constructionPctTotal precision normalized (19.512 → 19.5)
 - Cross-state alcohol sourcing audited: no other states had OVI-style denominator
   mismatches; NC/NY/IL/MI/PA all in the 22–37% FARS-comparable range
+- NC data fill: speedRelatedFatalities 389 → 426 (NCDOT 2022), speedRelatedPct 23.1 →
+  25.3%, unrestrainedFatalities 504 → 562 (NCDOT 2022); dual-citation footer added
+- PA, OH, IL state-specific narrative content blocks added (v1 demo depth)
 
 Queue (next data-fill pass):
 - NC, MI rural/urban fatalities (currently render as "—")
-- MI, NC, OH unrestrainedFatalities (placeholder zeros, not currently rendered)
+- MI, NC unrestrainedFatalities (placeholder zeros, not currently rendered)
+- OH unrestrainedFatalities — investigated 2026-05-06; no clean public FARS 2023
+  state table or ODPS publication with FARS-equivalent definition found; deferred
+  pending direct FARS state-table query
+- OH speedRelatedFatalities — same status as above; deferred pending direct FARS
+  state-table query
 - IL, PA, OH distractedDrivingFatalCrashes (placeholder zeros, not currently rendered)
-- PA rural/urban fatalities (placeholder zeros)
-- PA, OH, IL state-specific narrative content depth
+- PA rural/urban fatalities (placeholder zeros, now typeable as null)
 
 Parked (cosmetic / non-blocking):
 - NY totalCrashes rounded vs exact
 - MAJOR_METROS dead variable in state-intelligence-client.tsx
 - Per-field year labels (currently single reportYear, mixed-vintage documented inline)
 - Cross-state QCEW employment rounding consistency
+- BLS CFOI footer citations for PA/OH/IL (currently only traffic crash source cited)
 
 ---
 
