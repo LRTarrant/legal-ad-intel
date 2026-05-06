@@ -13,6 +13,7 @@ import {
   Biohazard,
   Building2,
   Car,
+  ChevronDown,
   CloudLightning,
   Briefcase,
   Crosshair,
@@ -134,38 +135,88 @@ const dataModules: NavGroup[] = [
         items: [
           { label: "Mass Tort Overview", href: "/mass-tort-overview", Icon: Newspaper },
           { label: "MDL Tracker", href: "/mdl-tracker", Icon: Gavel },
-          { label: "Depo-Provera", href: "/advertising/depo-provera", Icon: Syringe },
-          { label: "Roundup", href: "/advertising/roundup", Icon: Leaf },
-          { label: "Hair Relaxer", href: "/advertising/hair-relaxer", Icon: Scissors },
-          { label: "Talcum Powder", href: "/advertising/talcum-powder", Icon: Droplets },
-          { label: "Paraquat", href: "/advertising/paraquat", Icon: Tractor },
-          { label: "AFFF / Firefighter Foam", href: "/advertising/afff-firefighting-foam", Icon: FlameKindling },
-          { label: "Social Media Addiction", href: "/advertising/social-media-addiction", Icon: Smartphone },
-          { label: "Roblox Abuse", href: "/advertising/roblox-abuse", Icon: Gamepad2 },
-          { label: "GLP-1 Gastroparesis", href: "/advertising/glp1-gastroparesis", Icon: Pill },
-          { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
-          { label: "Bard PowerPort", href: "/advertising/bard-powerport", Icon: Activity },
-          { label: "Bair Hugger", href: "/advertising/bair-hugger", Icon: Stethoscope },
-          { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
-          { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
-        ],
-      },
-      {
-        heading: "Emerging Torts",
-        items: [
-          { label: "Recall Watchlist", href: "/advertising/recall-watchlist", Icon: Thermometer },
-          { label: "Olympus Scopes (Pre-MDL)", href: "/advertising/olympus-scopes", Icon: Stethoscope },
-          { label: "AI Suicide / Self-Harm (Pre-MDL)", href: "/advertising/ai-suicide", Icon: ShieldAlert },
         ],
       },
     ],
   },
 ];
 
+// Alphabetized emerging tort pages (moved out of Advertising Research accordion)
+const EMERGING_TORTS: NavItem[] = [
+  { label: "AI Suicide / Self-Harm (Pre-MDL)", href: "/advertising/ai-suicide", Icon: ShieldAlert },
+  { label: "Olympus Scopes (Pre-MDL)", href: "/advertising/olympus-scopes", Icon: Stethoscope },
+  { label: "Recall Watchlist", href: "/advertising/recall-watchlist", Icon: Thermometer },
+];
+
+// Alphabetized active MDL tort pages (moved out of Advertising Research accordion)
+const ACTIVE_MDLS: NavItem[] = [
+  { label: "AFFF / Firefighter Foam", href: "/advertising/afff-firefighting-foam", Icon: FlameKindling },
+  { label: "Bair Hugger", href: "/advertising/bair-hugger", Icon: Stethoscope },
+  { label: "Bard PowerPort", href: "/advertising/bard-powerport", Icon: Activity },
+  { label: "Depo-Provera", href: "/advertising/depo-provera", Icon: Syringe },
+  { label: "GLP-1 Gastroparesis", href: "/advertising/glp1-gastroparesis", Icon: Pill },
+  { label: "GLP-1 Vision Loss", href: "/advertising/glp1-vision-loss", Icon: EyeOff },
+  { label: "Hair Relaxer", href: "/advertising/hair-relaxer", Icon: Scissors },
+  { label: "Lyft Sexual Assault", href: "/mdl-tracker/lyft-sexual-assault", Icon: CarFront },
+  { label: "Paraquat", href: "/advertising/paraquat", Icon: Tractor },
+  { label: "Roblox Abuse", href: "/advertising/roblox-abuse", Icon: Gamepad2 },
+  { label: "Roundup", href: "/advertising/roundup", Icon: Leaf },
+  { label: "Social Media Addiction", href: "/advertising/social-media-addiction", Icon: Smartphone },
+  { label: "Talcum Powder", href: "/advertising/talcum-powder", Icon: Droplets },
+  { label: "Uber Sexual Assault", href: "/mdl-tracker/uber-sexual-assault", Icon: Car },
+];
+
+// All live state pages alphabetized, preserving existing route paths
+const STATE_PROFILES: NavItem[] = [
+  { label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin },
+  { label: "Arizona", href: "/state-intelligence/arizona", Icon: MapPin },
+  { label: "California", href: "/state-intelligence/california", Icon: MapPin },
+  { label: "Colorado", href: "/state-intelligence/v2/colorado", Icon: MapPin },
+  { label: "Florida", href: "/state-intelligence/florida", Icon: MapPin },
+  { label: "Georgia", href: "/state-intelligence/georgia", Icon: MapPin },
+  { label: "Illinois", href: "/state-intelligence/v2/illinois", Icon: MapPin },
+  { label: "Indiana", href: "/state-intelligence/v2/indiana", Icon: MapPin },
+  { label: "Kentucky", href: "/state-intelligence/v2/kentucky", Icon: MapPin },
+  { label: "Louisiana", href: "/state-intelligence/v2/louisiana", Icon: MapPin },
+  { label: "Maryland", href: "/state-intelligence/v2/maryland", Icon: MapPin },
+  { label: "Massachusetts", href: "/state-intelligence/v2/massachusetts", Icon: MapPin },
+  { label: "Michigan", href: "/state-intelligence/v2/michigan", Icon: MapPin },
+  { label: "Minnesota", href: "/state-intelligence/v2/minnesota", Icon: MapPin },
+  { label: "Missouri", href: "/state-intelligence/v2/missouri", Icon: MapPin },
+  { label: "New York", href: "/state-intelligence/v2/new-york", Icon: MapPin },
+  { label: "North Carolina", href: "/state-intelligence/v2/north-carolina", Icon: MapPin },
+  { label: "Ohio", href: "/state-intelligence/v2/ohio", Icon: MapPin },
+  { label: "Pennsylvania", href: "/state-intelligence/v2/pennsylvania", Icon: MapPin },
+  { label: "South Carolina", href: "/state-intelligence/v2/south-carolina", Icon: MapPin },
+  { label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin },
+  { label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin },
+  { label: "Wisconsin", href: "/state-intelligence/v2/wisconsin", Icon: MapPin },
+];
+
+type StateGroupKey = "A-C" | "D-H" | "I-M" | "N-Z";
+
+const STATE_GROUPS: Record<StateGroupKey, NavItem[]> = {
+  "A-C": STATE_PROFILES.filter(s => /^[A-C]/i.test(s.label)),
+  "D-H": STATE_PROFILES.filter(s => /^[D-H]/i.test(s.label)),
+  "I-M": STATE_PROFILES.filter(s => /^[I-M]/i.test(s.label)),
+  "N-Z": STATE_PROFILES.filter(s => /^[N-Z]/i.test(s.label)),
+};
+
+const STATE_GROUP_KEYS: StateGroupKey[] = ["A-C", "D-H", "I-M", "N-Z"];
+
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [alertUnreadCount, setAlertUnreadCount] = useState(0);
+  const [emergingTortsOpen, setEmergingTortsOpen] = useState(true);
+  const [activeMdlsOpen, setActiveMdlsOpen] = useState(true);
+  const [stateProfilesOpen, setStateProfilesOpen] = useState(true);
+  const [stateGroupOpen, setStateGroupOpen] = useState<Record<StateGroupKey, boolean>>({
+    "A-C": true,
+    "D-H": false,
+    "I-M": false,
+    "N-Z": false,
+  });
   const pathname = usePathname();
   const router = useRouter();
   const tenant = useTenant();
@@ -358,35 +409,77 @@ export function Sidebar() {
             ))}
           </div>
 
+          {/* Emerging Torts */}
           <div className="mt-4 border-t border-white/10 pt-4">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-              State Intelligence
-            </p>
-            <div className="flex flex-col gap-0.5 pl-2">
-              {renderNavLink({ label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin })}
-              {renderNavLink({ label: "Arizona", href: "/state-intelligence/arizona", Icon: MapPin })}
-              {renderNavLink({ label: "California", href: "/state-intelligence/california", Icon: MapPin })}
-              {renderNavLink({ label: "Florida", href: "/state-intelligence/florida", Icon: MapPin })}
-              {renderNavLink({ label: "Georgia", href: "/state-intelligence/georgia", Icon: MapPin })}
-              {renderNavLink({ label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin })}
-              {renderNavLink({ label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin })}
-              {renderNavLink({ label: "New York", href: "/state-intelligence/v2/new-york", Icon: MapPin })}
-              {renderNavLink({ label: "Pennsylvania", href: "/state-intelligence/v2/pennsylvania", Icon: MapPin })}
-              {renderNavLink({ label: "Illinois", href: "/state-intelligence/v2/illinois", Icon: MapPin })}
-              {renderNavLink({ label: "Ohio", href: "/state-intelligence/v2/ohio", Icon: MapPin })}
-              {renderNavLink({ label: "North Carolina", href: "/state-intelligence/v2/north-carolina", Icon: MapPin })}
-              {renderNavLink({ label: "Michigan", href: "/state-intelligence/v2/michigan", Icon: MapPin })}
-              {renderNavLink({ label: "Colorado", href: "/state-intelligence/v2/colorado", Icon: MapPin })}
-              {renderNavLink({ label: "Indiana", href: "/state-intelligence/v2/indiana", Icon: MapPin })}
-              {renderNavLink({ label: "Kentucky", href: "/state-intelligence/v2/kentucky", Icon: MapPin })}
-              {renderNavLink({ label: "Louisiana", href: "/state-intelligence/v2/louisiana", Icon: MapPin })}
-              {renderNavLink({ label: "Maryland", href: "/state-intelligence/v2/maryland", Icon: MapPin })}
-              {renderNavLink({ label: "Massachusetts", href: "/state-intelligence/v2/massachusetts", Icon: MapPin })}
-              {renderNavLink({ label: "Minnesota", href: "/state-intelligence/v2/minnesota", Icon: MapPin })}
-              {renderNavLink({ label: "Missouri", href: "/state-intelligence/v2/missouri", Icon: MapPin })}
-              {renderNavLink({ label: "South Carolina", href: "/state-intelligence/v2/south-carolina", Icon: MapPin })}
-              {renderNavLink({ label: "Wisconsin", href: "/state-intelligence/v2/wisconsin", Icon: MapPin })}
-            </div>
+            <button
+              onClick={() => setEmergingTortsOpen(!emergingTortsOpen)}
+              className="flex w-full items-center justify-between px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40 hover:text-white/60 transition-colors"
+            >
+              <span>Emerging Torts</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${emergingTortsOpen ? "" : "-rotate-90"}`} />
+            </button>
+            {emergingTortsOpen && (
+              <div className="flex flex-col gap-0.5 pl-2">
+                {EMERGING_TORTS.map((item) => renderNavLink(item))}
+              </div>
+            )}
+          </div>
+
+          {/* Active MDLs */}
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <button
+              onClick={() => setActiveMdlsOpen(!activeMdlsOpen)}
+              className="flex w-full items-center justify-between px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40 hover:text-white/60 transition-colors"
+            >
+              <span>Active MDLs</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${activeMdlsOpen ? "" : "-rotate-90"}`} />
+            </button>
+            {activeMdlsOpen && (
+              <div className="flex flex-col gap-0.5 pl-2">
+                {ACTIVE_MDLS.map((item) => renderNavLink(item))}
+              </div>
+            )}
+          </div>
+
+          {/* State Profiles */}
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <button
+              onClick={() => setStateProfilesOpen(!stateProfilesOpen)}
+              className="flex w-full items-center justify-between px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40 hover:text-white/60 transition-colors"
+            >
+              <span>State Profiles</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${stateProfilesOpen ? "" : "-rotate-90"}`} />
+            </button>
+            {stateProfilesOpen && (
+              <div className="flex flex-col gap-1 pl-2">
+                {STATE_GROUP_KEYS.map((groupKey) => {
+                  const groupItems = STATE_GROUPS[groupKey];
+                  if (groupItems.length === 0) return null;
+                  const isGroupOpen = stateGroupOpen[groupKey];
+                  return (
+                    <div key={groupKey}>
+                      <button
+                        onClick={() =>
+                          setStateGroupOpen((prev) => ({
+                            ...prev,
+                            [groupKey]: !prev[groupKey],
+                          }))
+                        }
+                        className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-medium text-white/50 hover:bg-white/5 hover:text-white/70 transition-colors"
+                      >
+                        <span>{groupKey} ({groupItems.length})</span>
+                        <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${isGroupOpen ? "" : "-rotate-90"}`} />
+                      </button>
+                      {isGroupOpen && (
+                        <div className="flex flex-col gap-0.5 pl-2">
+                          {groupItems.map((item) => renderNavLink(item))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="mt-4 border-t border-white/10 pt-4">
             <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
