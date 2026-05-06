@@ -1,4 +1,5 @@
 import { illinoisConfig } from "./illinois";
+import { massachusettsConfig } from "./massachusetts";
 import { michiganConfig } from "./michigan";
 import { newYorkConfig } from "./new-york";
 import { northCarolinaConfig } from "./north-carolina";
@@ -17,6 +18,7 @@ import type { StateConfig } from "./_types";
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
   illinois: illinoisConfig,
+  massachusetts: massachusettsConfig,
   michigan: michiganConfig,
   "new-york": newYorkConfig,
   "north-carolina": northCarolinaConfig,
