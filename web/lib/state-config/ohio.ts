@@ -12,15 +12,18 @@ export const ohioConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Ohio — combining state DOT crash and injury data, demographics, judicial profiles, and market opportunity signals across Cleveland, Columbus, Cincinnati, Toledo, Akron.",
   },
 
-  // Source: state DOT annual crash report (2024).
+  // Traffic totals, motorcycle, urban/rural, speed: OSHP 2024.
+  // Alcohol-impaired fatalities: NHTSA FARS 2023 (driver BAC >= 0.08, 455/1242).
+  //   OSHP "OVI-related" (589) uses a different denominator and is not comparable
+  //   to the BAC >= 0.08 figures used by other states in this system.
   trafficStats: {
     totalCrashes: 252623,
     totalFatalities: 1156,
     motorcycleFatalities: 220,
     speedRelatedFatalities: null, // not broken out in OSHP 2024 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 589,
-    alcoholRelatedPct: 50.952,
+    alcoholRelatedFatalities: 455, // NHTSA FARS 2023 — driver BAC >= 0.08
+    alcoholRelatedPct: 36.6,       // 455 / 1242 FARS total; comparable to other states
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
     urbanFatalities: 588,
