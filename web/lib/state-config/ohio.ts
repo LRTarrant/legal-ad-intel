@@ -38,7 +38,7 @@ export const ohioConfig: StateConfig = {
     qcewCoveredEmployment: 5397409,
     totalWorkplaceFatalities: 164,
     constructionFatalities: 32,
-    constructionPctTotal: 19.512,
+    constructionPctTotal: 19.5,
     transportWarehouseFatalities: 19,
     truckTransportFatalities: null, // not broken out in BLS CFOI 2023 OH state tables
     fallsSlipsTrips: 28,
