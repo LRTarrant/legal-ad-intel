@@ -16,8 +16,10 @@ export interface TrafficStatsBlock {
   alcoholRelatedPct: number | null;
   unrestrainedFatalities: number;
   distractedDrivingFatalCrashes: number;
-  urbanFatalities: number;
-  ruralFatalities: number;
+  /** null = not reported / unavailable in source data for this state */
+  urbanFatalities: number | null;
+  /** null = not reported / unavailable in source data for this state */
+  ruralFatalities: number | null;
   /** Year of source data (e.g. 2024 means "TDOSHS 2024 report") */
   reportYear: number;
   /** Source label shown in footnotes, e.g. "TDOSHS 2024" or "TxDOT CRIS 2024" */

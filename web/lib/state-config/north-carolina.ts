@@ -25,8 +25,8 @@ export const northCarolinaConfig: StateConfig = {
     alcoholRelatedPct: 22.4,
     unrestrainedFatalities: 562, // NCDOT 2022 Crash Facts — "Unbelted Persons Killed"
     distractedDrivingFatalCrashes: 132,
-    urbanFatalities: 0,
-    ruralFatalities: 0,
+    urbanFatalities: null,
+    ruralFatalities: null,
     reportYear: 2023,
     sourceLabel: "NCDMV 2023",
   },

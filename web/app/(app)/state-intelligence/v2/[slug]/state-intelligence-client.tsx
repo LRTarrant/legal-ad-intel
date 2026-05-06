@@ -230,7 +230,7 @@ export function StateIntelligenceClient({
   const BLS = config.workplaceStats;
   const COMMUTE = config.commuteStats;
   const ruralFatalSharePct =
-    TDOSHS.ruralFatalities > 0 && TDOSHS.totalFatalities > 0
+    TDOSHS.ruralFatalities != null && TDOSHS.totalFatalities > 0
       ? Math.round((TDOSHS.ruralFatalities / TDOSHS.totalFatalities) * 100)
       : null;
   const content = config.content ?? {};
