@@ -37,7 +37,7 @@ export const illinoisConfig: StateConfig = {
     constructionFatalities: 30,
     constructionPctTotal: 20.7,
     transportWarehouseFatalities: 40,
-    truckTransportFatalities: 0,
+    truckTransportFatalities: null, // not broken out in BLS CFOI 2023 IL state tables
     fallsSlipsTrips: 25,
     transportationIncidents: 55,
     reportYear: 2023,

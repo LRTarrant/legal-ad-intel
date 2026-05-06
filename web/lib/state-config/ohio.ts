@@ -17,8 +17,8 @@ export const ohioConfig: StateConfig = {
     totalCrashes: 252623,
     totalFatalities: 1156,
     motorcycleFatalities: 220,
-    speedRelatedFatalities: 0,
-    speedRelatedPct: 0,
+    speedRelatedFatalities: null, // not broken out in OSHP 2024 summary tables
+    speedRelatedPct: null,
     alcoholRelatedFatalities: 589,
     alcoholRelatedPct: 50.952,
     unrestrainedFatalities: 0,
@@ -37,7 +37,7 @@ export const ohioConfig: StateConfig = {
     constructionFatalities: 32,
     constructionPctTotal: 19.512,
     transportWarehouseFatalities: 19,
-    truckTransportFatalities: 0,
+    truckTransportFatalities: null, // not broken out in BLS CFOI 2023 OH state tables
     fallsSlipsTrips: 28,
     transportationIncidents: 51,
     reportYear: 2023,

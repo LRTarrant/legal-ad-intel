@@ -37,7 +37,7 @@ export const pennsylvaniaConfig: StateConfig = {
     constructionFatalities: 30,
     constructionPctTotal: 18.0,
     transportWarehouseFatalities: 28,
-    truckTransportFatalities: 0,
+    truckTransportFatalities: null, // not broken out in BLS CFOI 2023 PA state tables
     fallsSlipsTrips: 43,
     transportationIncidents: 50,
     reportYear: 2023,
