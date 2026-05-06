@@ -12,19 +12,21 @@ export const northCarolinaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in North Carolina — combining state DOT crash and injury data, demographics, judicial profiles, and market opportunity signals across Charlotte, Raleigh-Durham, Greensboro, Winston-Salem, Asheville.",
   },
 
-  // Source: state DOT annual crash report (2023).
+  // Traffic totals, alcohol, motorcycle, distracted: NCDMV 2023.
+  // Speed-related and unrestrained fatalities: NCDOT 2022 Traffic Crash Facts
+  //   (best single-source tabulation available; narrower speed definition than FARS).
   trafficStats: {
     totalCrashes: 284157,
     totalFatalities: 1686,
     motorcycleFatalities: 202,
-    speedRelatedFatalities: 389,
-    speedRelatedPct: 23.1,
+    speedRelatedFatalities: 426, // NCDOT 2022 Crash Facts — "Speed – Fatalities" (exceeding limit or unsafe for conditions)
+    speedRelatedPct: 25.3,       // 426 / 1686 (2023 total); NCDOT 2022 source-matched pct to be verified
     alcoholRelatedFatalities: 377,
     alcoholRelatedPct: 22.4,
-    unrestrainedFatalities: 504,
+    unrestrainedFatalities: 562, // NCDOT 2022 Crash Facts — "Unbelted Persons Killed"
     distractedDrivingFatalCrashes: 132,
-    urbanFatalities: 0,
-    ruralFatalities: 0,
+    urbanFatalities: null,
+    ruralFatalities: null,
     reportYear: 2023,
     sourceLabel: "NCDMV 2023",
   },
@@ -98,7 +100,7 @@ export const northCarolinaConfig: StateConfig = {
       "The Blue Ridge Parkway and Appalachian foothills draw significant out-of-state visitors and riders. Out-of-state visitors injured in NC may not know local attorneys or the state's strict contributory negligence rule. Geo-fenced digital along tourism corridors and partnerships with Blue Ridge-area accommodations can capture cases from this segment.",
 
     footerSourcesLabel:
-      "NCDMV Traffic Crash Statistics Report 2023 — North Carolina Division of Motor Vehicles",
+      "NCDMV Traffic Crash Statistics Report 2023 — North Carolina Division of Motor Vehicles; NCDOT 2022 Traffic Crash Facts — North Carolina Department of Transportation",
   },
 
   // No injuryData yet; add when state-specific deep crash data is integrated.

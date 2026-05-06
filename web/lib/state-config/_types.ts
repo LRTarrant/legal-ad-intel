@@ -6,14 +6,20 @@ export interface TrafficStatsBlock {
   totalCrashes: number;
   totalFatalities: number;
   motorcycleFatalities: number;
-  speedRelatedFatalities: number;
-  speedRelatedPct: number;
-  alcoholRelatedFatalities: number;
-  alcoholRelatedPct: number;
+  /** null = not reported / unavailable in source data for this state */
+  speedRelatedFatalities: number | null;
+  /** null when speedRelatedFatalities is null */
+  speedRelatedPct: number | null;
+  /** null = not reported / unavailable in source data for this state */
+  alcoholRelatedFatalities: number | null;
+  /** null when alcoholRelatedFatalities is null */
+  alcoholRelatedPct: number | null;
   unrestrainedFatalities: number;
   distractedDrivingFatalCrashes: number;
-  urbanFatalities: number;
-  ruralFatalities: number;
+  /** null = not reported / unavailable in source data for this state */
+  urbanFatalities: number | null;
+  /** null = not reported / unavailable in source data for this state */
+  ruralFatalities: number | null;
   /** Year of source data (e.g. 2024 means "TDOSHS 2024 report") */
   reportYear: number;
   /** Source label shown in footnotes, e.g. "TDOSHS 2024" or "TxDOT CRIS 2024" */
@@ -27,7 +33,8 @@ export interface WorkplaceStatsBlock {
   constructionFatalities: number;
   constructionPctTotal: number;
   transportWarehouseFatalities: number;
-  truckTransportFatalities: number;
+  /** null = not reported / unavailable in BLS CFOI state breakout for this state */
+  truckTransportFatalities: number | null;
   fallsSlipsTrips: number;
   transportationIncidents: number;
   reportYear: number;

@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -94,7 +94,36 @@ These are important but explicitly **not** in scope for the current week:
 
 ---
 
-## 5. How AI tools should use this file
+## 5. State Intelligence Pages — Cleanup Arc (closed)
+
+Closed in this arc:
+- NC, MI, NY narrative / cross-signal cards audited and cleaned (pass 1)
+- Placeholder-zero pattern eliminated for visible fields across MI, NC, IL, PA, OH
+  (speedRelatedFatalities, alcoholRelatedFatalities, truckTransportFatalities, speedRelatedPct)
+  → established convention: 0-as-no-data → null → existing "unavailable" render path
+- OH alcohol-fatality denominator mismatch corrected: replaced OSHP 2024 OVI-related
+  figures (589 / 50.95%) with FARS 2023 alcohol-impaired figures (455 / 36.6%) for
+  cross-state methodological consistency
+- OH constructionPctTotal precision normalized (19.512 → 19.5)
+- Cross-state alcohol sourcing audited: no other states had OVI-style denominator
+  mismatches; NC/NY/IL/MI/PA all in the 22–37% FARS-comparable range
+
+Queue (next data-fill pass):
+- NC, MI rural/urban fatalities (currently render as "—")
+- MI, NC, OH unrestrainedFatalities (placeholder zeros, not currently rendered)
+- IL, PA, OH distractedDrivingFatalCrashes (placeholder zeros, not currently rendered)
+- PA rural/urban fatalities (placeholder zeros)
+- PA, OH, IL state-specific narrative content depth
+
+Parked (cosmetic / non-blocking):
+- NY totalCrashes rounded vs exact
+- MAJOR_METROS dead variable in state-intelligence-client.tsx
+- Per-field year labels (currently single reportYear, mixed-vintage documented inline)
+- Cross-state QCEW employment rounding consistency
+
+---
+
+## 6. How AI tools should use this file
 
 - **Claude:** Treat this as the source of truth for what features are “in play” this week; don’t start work outside these items unless explicitly asked. [file:32][cite:60]
 - **Perplexity Computer:** Use this to decide what’s high-value when orchestrating multi-step tasks; everything else belongs in backlog. [file:32]

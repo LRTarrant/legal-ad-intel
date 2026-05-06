@@ -230,7 +230,7 @@ export function StateIntelligenceClient({
   const BLS = config.workplaceStats;
   const COMMUTE = config.commuteStats;
   const ruralFatalSharePct =
-    TDOSHS.ruralFatalities > 0 && TDOSHS.totalFatalities > 0
+    TDOSHS.ruralFatalities != null && TDOSHS.totalFatalities > 0
       ? Math.round((TDOSHS.ruralFatalities / TDOSHS.totalFatalities) * 100)
       : null;
   const content = config.content ?? {};
@@ -736,7 +736,7 @@ export function StateIntelligenceClient({
                   {top5MVA.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              {TDOSHS.speedRelatedFatalities > 0 && (
+              {TDOSHS.speedRelatedFatalities != null && (
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-gray">Speed-Related Fatalities ({TDOSHS.reportYear})</span>
                   <span className="font-semibold text-midnight-navy">
@@ -744,7 +744,7 @@ export function StateIntelligenceClient({
                   </span>
                 </div>
               )}
-              {TDOSHS.alcoholRelatedFatalities > 0 && (
+              {TDOSHS.alcoholRelatedFatalities != null && (
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.reportYear})</span>
                   <span className="font-semibold text-midnight-navy">
@@ -794,7 +794,7 @@ export function StateIntelligenceClient({
                   {top5Truck.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              {BLS.truckTransportFatalities > 0 && (
+              {BLS.truckTransportFatalities != null && (
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
                   <span className="font-medium text-midnight-navy">
