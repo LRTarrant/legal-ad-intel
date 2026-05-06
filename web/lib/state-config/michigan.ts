@@ -17,8 +17,8 @@ export const michiganConfig: StateConfig = {
     totalCrashes: 287953,
     totalFatalities: 1095,
     motorcycleFatalities: 165,
-    speedRelatedFatalities: 0,
-    speedRelatedPct: 0,
+    speedRelatedFatalities: null, // not broken out in MSP CJIC 2023 summary tables
+    speedRelatedPct: null,
     alcoholRelatedFatalities: 297,
     alcoholRelatedPct: 27.1,
     unrestrainedFatalities: 0,
@@ -37,7 +37,7 @@ export const michiganConfig: StateConfig = {
     constructionFatalities: 39,
     constructionPctTotal: 23.5,
     transportWarehouseFatalities: 13,
-    truckTransportFatalities: 0,
+    truckTransportFatalities: null, // not broken out in BLS CFOI 2023 MI state tables
     fallsSlipsTrips: 22,
     transportationIncidents: 55,
     reportYear: 2023,

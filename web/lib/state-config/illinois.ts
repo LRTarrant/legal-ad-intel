@@ -17,10 +17,10 @@ export const illinoisConfig: StateConfig = {
     totalCrashes: 303913,
     totalFatalities: 1178,
     motorcycleFatalities: 144,
-    speedRelatedFatalities: 0,
-    speedRelatedPct: 0,
-    alcoholRelatedFatalities: 0,
-    alcoholRelatedPct: 0,
+    speedRelatedFatalities: null, // not broken out in IDOT 2024 summary tables
+    speedRelatedPct: null,
+    alcoholRelatedFatalities: null, // not broken out in IDOT 2024 summary tables
+    alcoholRelatedPct: null,
     unrestrainedFatalities: 255,
     distractedDrivingFatalCrashes: 0,
     urbanFatalities: 0,
