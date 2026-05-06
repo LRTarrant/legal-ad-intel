@@ -229,6 +229,10 @@ export function StateIntelligenceClient({
   const TDOSHS = config.trafficStats;
   const BLS = config.workplaceStats;
   const COMMUTE = config.commuteStats;
+  const ruralFatalSharePct =
+    TDOSHS.ruralFatalities > 0 && TDOSHS.totalFatalities > 0
+      ? Math.round((TDOSHS.ruralFatalities / TDOSHS.totalFatalities) * 100)
+      : null;
   const content = config.content ?? {};
   const features = config.features ?? {};
   const showInjuryTable =
@@ -525,9 +529,13 @@ export function StateIntelligenceClient({
               Rural Fatal Share
             </p>
           </div>
-          <p className="text-3xl font-bold text-midnight-navy">46%</p>
+          <p className="text-3xl font-bold text-midnight-navy">
+            {ruralFatalSharePct != null ? `${ruralFatalSharePct}%` : "—"}
+          </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            of {TDOSHS.sourceLabel} fatalities
+            {ruralFatalSharePct != null
+              ? `of ${TDOSHS.sourceLabel} fatalities`
+              : "rural share not reported"}
           </p>
         </div>
 
@@ -678,7 +686,7 @@ export function StateIntelligenceClient({
             <div className="rounded-md border-l-4 border-amber-500 bg-amber-50 px-4 py-3">
               <p className="text-sm text-midnight-navy/80">
                 {content.legalLandscape ??
-                  `${config.stateName} follows modified comparative negligence with a 49% bar — plaintiffs who are 50% or more at fault are barred from recovery. ${config.stateName} caps non-economic damages in most PI cases and has specific caps on punitive damages. The 1-year statute of limitations is among the shortest in the nation and requires aggressive, timely case acquisition.`}
+                  `${config.stateName}'s negligence rule, damages caps, and statute of limitations define the boundaries of recoverable claims and the urgency of case intake. Comparative-fault rules, non-economic caps, and punitive exposure vary significantly by state and drive both case-selection criteria and advertising positioning.`}
               </p>
             </div>
           </>
@@ -728,18 +736,22 @@ export function StateIntelligenceClient({
                   {top5MVA.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Speed-Related Fatalities ({TDOSHS.reportYear})</span>
-                <span className="font-semibold text-midnight-navy">
-                  {TDOSHS.speedRelatedFatalities} ({TDOSHS.speedRelatedPct}%)
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.reportYear})</span>
-                <span className="font-semibold text-midnight-navy">
-                  {TDOSHS.alcoholRelatedFatalities} ({TDOSHS.alcoholRelatedPct}%)
-                </span>
-              </div>
+              {TDOSHS.speedRelatedFatalities > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">Speed-Related Fatalities ({TDOSHS.reportYear})</span>
+                  <span className="font-semibold text-midnight-navy">
+                    {TDOSHS.speedRelatedFatalities} ({TDOSHS.speedRelatedPct}%)
+                  </span>
+                </div>
+              )}
+              {TDOSHS.alcoholRelatedFatalities > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.reportYear})</span>
+                  <span className="font-semibold text-midnight-navy">
+                    {TDOSHS.alcoholRelatedFatalities} ({TDOSHS.alcoholRelatedPct}%)
+                  </span>
+                </div>
+              )}
             </div>
             <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
               <p className="text-[11px] text-midnight-navy/70">
@@ -747,7 +759,7 @@ export function StateIntelligenceClient({
                   Audience:
                 </span>{" "}
                 {content.autoAudience ??
-                  `${config.stateName} drivers see high crash exposure on the state's major interstate corridors and metro arterials. Drive-alone commuting rates (${COMMUTE.driveAlone}%) exceed the national average (${COMMUTE.nationalAvg}%), and rural counties generate disproportionate fatalities relative to population.`}
+                  `${config.stateName} drivers see high crash exposure on the state's major interstate corridors and metro arterials. Drive-alone commuting rates stand at ${COMMUTE.driveAlone}% (national avg: ${COMMUTE.nationalAvg}%), and rural counties generate disproportionate fatalities relative to population.`}
               </p>
             </div>
             <div className="rounded-md bg-cloud/60 p-3">
@@ -782,12 +794,14 @@ export function StateIntelligenceClient({
                   {top5Truck.map((r) => r.county).join(", ")}
                 </span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
-                <span className="font-medium text-midnight-navy">
-                  {BLS.truckTransportFatalities} (BLS CFOI)
-                </span>
-              </div>
+              {BLS.truckTransportFatalities > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">Truck Transport Workplace Fatalities</span>
+                  <span className="font-medium text-midnight-navy">
+                    {BLS.truckTransportFatalities} (BLS CFOI)
+                  </span>
+                </div>
+              )}
             </div>
             <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
               <p className="text-[11px] text-midnight-navy/70">
