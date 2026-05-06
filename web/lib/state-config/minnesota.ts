@@ -57,7 +57,7 @@ export const minnesotaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Minnesota — combining MnDOT crash data, demographics, judicial profiles, and market opportunity signals across Minneapolis, Saint Paul, Rochester, Duluth, and Saint Cloud. Population ~5.7M.",
 
     legalLandscape:
-      "Minnesota uses modified comparative fault with a 51% bar — plaintiffs whose fault exceeds 50% cannot recover (Minn. Stat. § 604.01). The personal injury statute of limitations is two years from the date of injury (Minn. Stat. § 541.07). Minnesota is a no-fault auto insurance state: personal injury protection (PIP) coverage must be exhausted before a tort claim can proceed for most injuries. A tort threshold must be met to bring suit; plaintiff firms should verify current threshold requirements.",
+      "Minnesota uses modified comparative fault with a 51% bar — plaintiffs whose fault exceeds 50% cannot recover (Minn. Stat. § 604.01). The personal injury statute of limitations is six years from the date of injury (Minn. Stat. § 541.05, subd. 1(5)) — one of the longest general PI deadlines in the country. Minnesota is a no-fault auto insurance state: personal injury protection (PIP) coverage must be exhausted before a tort claim can proceed for most injuries. A tort threshold must be met to bring suit; plaintiff firms should verify current threshold requirements.",
 
     autoAudience:
       "Minnesota's road network is anchored by I-94 running east–west through the Twin Cities, I-35 splitting into I-35W (Minneapolis) and I-35E (Saint Paul), and I-90 along the southern border. The Minneapolis–Saint Paul metro is the dominant population center; Rochester, Duluth, and Saint Cloud are major secondary markets. Minnesota's no-fault PIP requirement means intake messaging must be calibrated for threshold-crossing cases.",
@@ -85,9 +85,9 @@ export const minnesotaConfig: StateConfig = {
     freightCorridorTip:
       "I-94 runs east–west through Minneapolis and Saint Paul connecting the Dakotas to Wisconsin. I-35 runs north–south connecting the Twin Cities to Iowa, splitting into I-35W and I-35E through the metro. Commercial-vehicle cases on these routes may involve out-of-state carriers and multi-state insurance structures.",
 
-    solUrgencyTitle: "2-Year SOL + No-Fault Threshold Urgency",
+    solUrgencyTitle: "6-Year SOL + No-Fault Threshold Considerations",
     solUrgencyTip:
-      "Minnesota's two-year statute of limitations is relatively short, and the no-fault PIP threshold adds a second intake filter: cases that don't meet the tort threshold cannot proceed. Early intake must confirm both the deadline and threshold-crossing injuries. Firms that move fast on intake avoid spending time on cases that won't clear the threshold before the SOL runs.",
+      "Minnesota's six-year statute of limitations (Minn. Stat. § 541.05, subd. 1(5)) is one of the longest general PI deadlines in the country, giving plaintiff firms substantial runway for case development. The more significant intake filter is Minnesota's no-fault PIP requirement: cases that don't meet the tort threshold cannot proceed to suit regardless of the SOL. Early intake should confirm threshold-crossing injuries rather than focusing on deadline pressure.",
 
     internetAccessTitle: "Rural Minnesota Media Mix",
     internetAccessTip:
