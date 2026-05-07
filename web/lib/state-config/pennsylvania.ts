@@ -19,12 +19,12 @@ export const pennsylvaniaConfig: StateConfig = {
     motorcycleFatalities: 219,
     speedRelatedFatalities: 263,
     speedRelatedPct: 23.3,
-    alcoholRelatedFatalities: 244,
-    alcoholRelatedPct: 22.0,
+    alcoholRelatedFatalities: 275, // FARS 2024
+    alcoholRelatedPct: 24.4, // 275 / 1127 FARS 2024
     unrestrainedFatalities: 522,
     distractedDrivingFatalCrashes: 49,
-    urbanFatalities: null,
-    ruralFatalities: null,
+    urbanFatalities: 684, // FARS 2024
+    ruralFatalities: 438, // FARS 2024
     reportYear: 2024,
     sourceLabel: "PennDOT 2024",
   },

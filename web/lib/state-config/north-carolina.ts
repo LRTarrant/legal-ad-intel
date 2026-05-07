@@ -17,16 +17,16 @@ export const northCarolinaConfig: StateConfig = {
   //   (best single-source tabulation available; narrower speed definition than FARS).
   trafficStats: {
     totalCrashes: 284157,
-    totalFatalities: 1686,
+    totalFatalities: 1619, // FARS 2024
     motorcycleFatalities: 202,
     speedRelatedFatalities: 426, // NCDOT 2022 Crash Facts — "Speed – Fatalities" (exceeding limit or unsafe for conditions)
     speedRelatedPct: 25.3,       // 426 / 1686 (2023 total); NCDOT 2022 source-matched pct to be verified
-    alcoholRelatedFatalities: 377,
-    alcoholRelatedPct: 22.4,
+    alcoholRelatedFatalities: 344, // FARS 2024
+    alcoholRelatedPct: 21.2, // 344 / 1619 FARS 2024
     unrestrainedFatalities: 562, // NCDOT 2022 Crash Facts — "Unbelted Persons Killed"
     distractedDrivingFatalCrashes: 132,
-    urbanFatalities: null,
-    ruralFatalities: null,
+    urbanFatalities: 604, // FARS 2024
+    ruralFatalities: 1009, // FARS 2024
     reportYear: 2023,
     sourceLabel: "NCDMV 2023",
   },

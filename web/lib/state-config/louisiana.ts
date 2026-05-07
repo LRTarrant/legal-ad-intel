@@ -15,18 +15,18 @@ export const louisianaConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/LaDOTD figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
+    totalFatalities: 752, // FARS 2024
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 220, // FARS 2024
+    alcoholRelatedPct: 29.3, // 220 / 752 FARS 2024
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "LaDOTD 2023",
+    urbanFatalities: 414, // FARS 2024
+    ruralFatalities: 336, // FARS 2024
+    reportYear: 2024,
+    sourceLabel: "FARS 2024",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

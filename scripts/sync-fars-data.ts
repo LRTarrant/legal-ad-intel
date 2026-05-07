@@ -16,18 +16,18 @@
  * Labels are written as "FARS {year}" without final/preliminary qualifier.
  * A follow-up PR should add a `is_final` boolean to the table.
  *
- * Usage (run from web/ so @supabase/supabase-js resolves via web/node_modules):
- *   cd web
+ * Uses native fetch (Node 18+) — no SDK dependency, runs from repo root.
+ *
+ * Usage:
  *   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npx tsx ../scripts/sync-fars-data.ts
- *   npx tsx ../scripts/sync-fars-data.ts --dry-run
+ *     npx tsx scripts/sync-fars-data.ts
+ *   npx tsx scripts/sync-fars-data.ts --dry-run
  *
  * Env vars:
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
  */
 
-import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync, readdirSync } from "fs";
 import { join, basename, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -99,31 +99,35 @@ async function fetchFarsData(): Promise<Record<string, FarsRow>> {
     process.exit(1);
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false },
+  const targetCodes = Object.values(SLUG_TO_CODE);
+  const cols = "state_code,year,total_fatalities,rural_fatalities,urban_fatalities,alcohol_related_fatalities";
+
+  // Supabase PostgREST — native fetch, no SDK needed
+  const url = new URL(`${supabaseUrl}/rest/v1/state_crash_statistics`);
+  url.searchParams.set("select", cols);
+  url.searchParams.set("state_code", `in.(${targetCodes.join(",")})`);
+  url.searchParams.set("total_fatalities", "not.is.null");
+  url.searchParams.set("order", "state_code.asc,year.desc");
+
+  const resp = await fetch(url.toString(), {
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      Accept: "application/json",
+    },
   });
 
-  const targetCodes = Object.values(SLUG_TO_CODE);
-
-  // Fetch all rows for target states (will deduplicate to most-recent year below)
-  const { data, error } = await supabase
-    .from("state_crash_statistics")
-    .select(
-      "state_code, year, total_fatalities, rural_fatalities, urban_fatalities, alcohol_related_fatalities",
-    )
-    .in("state_code", targetCodes)
-    .not("total_fatalities", "is", null)
-    .order("state_code", { ascending: true })
-    .order("year", { ascending: false });
-
-  if (error) {
-    console.error("Supabase query error:", error.message);
+  if (!resp.ok) {
+    const body = await resp.text();
+    console.error(`Supabase REST error ${resp.status}: ${body}`);
     process.exit(1);
   }
 
-  // Take only the most-recent year per state
+  const rows: FarsRow[] = await resp.json();
+
+  // Take only the most-recent year per state (rows already ordered year DESC)
   const byState: Record<string, FarsRow> = {};
-  for (const row of (data ?? []) as FarsRow[]) {
+  for (const row of rows) {
     if (!byState[row.state_code]) {
       byState[row.state_code] = row;
     }

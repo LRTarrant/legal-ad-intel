@@ -15,18 +15,18 @@ export const coloradoConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/CDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
+    totalFatalities: 689, // FARS 2024
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 220, // FARS 2024
+    alcoholRelatedPct: 31.9, // 220 / 689 FARS 2024
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "CDOT 2023",
+    urbanFatalities: 454, // FARS 2024
+    ruralFatalities: 235, // FARS 2024
+    reportYear: 2024,
+    sourceLabel: "FARS 2024",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

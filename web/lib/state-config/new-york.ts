@@ -15,16 +15,16 @@ export const newYorkConfig: StateConfig = {
   // Source: state DOT annual crash report (2023).
   trafficStats: {
     totalCrashes: 382000,
-    totalFatalities: 1104,
+    totalFatalities: 1101, // FARS 2024
     motorcycleFatalities: 120,
     speedRelatedFatalities: 350,
     speedRelatedPct: 32.0,
-    alcoholRelatedFatalities: 300,
-    alcoholRelatedPct: 27.0,
+    alcoholRelatedFatalities: 157, // FARS 2024
+    alcoholRelatedPct: 14.3, // 157 / 1101 FARS 2024
     unrestrainedFatalities: 250,
     distractedDrivingFatalCrashes: 80,
-    urbanFatalities: 800,
-    ruralFatalities: 304,
+    urbanFatalities: 812, // FARS 2024
+    ruralFatalities: 283, // FARS 2024
     reportYear: 2023,
     sourceLabel: "ITSMR NY 2023",
   },

@@ -15,18 +15,18 @@ export const missouriConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/MoDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
+    totalFatalities: 955, // FARS 2024
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 252, // FARS 2024
+    alcoholRelatedPct: 26.4, // 252 / 955 FARS 2024
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "MoDOT 2023",
+    urbanFatalities: 468, // FARS 2024
+    ruralFatalities: 452, // FARS 2024
+    reportYear: 2024,
+    sourceLabel: "FARS 2024",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

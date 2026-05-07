@@ -15,18 +15,18 @@ export const massachusettsConfig: StateConfig = {
   // Source: MassDOT 2023 crash data — placeholder values; to be filled with real FARS/MassDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
+    totalFatalities: 363, // FARS 2024
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 98, // FARS 2024
+    alcoholRelatedPct: 27.0, // 98 / 363 FARS 2024
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "MassDOT 2023",
+    urbanFatalities: 332, // FARS 2024
+    ruralFatalities: 30, // FARS 2024
+    reportYear: 2024,
+    sourceLabel: "FARS 2024",
   },
 
   // Source: BLS CFOI — Massachusetts 2023 — placeholder values; to be filled.
