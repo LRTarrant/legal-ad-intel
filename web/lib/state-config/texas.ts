@@ -36,6 +36,7 @@ export const texasConfig: StateConfig = {
     ruralFatalities: 1494, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "TxDOT 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Texas 2023

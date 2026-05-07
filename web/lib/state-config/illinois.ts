@@ -27,6 +27,7 @@ export const illinoisConfig: StateConfig = {
     ruralFatalities: 376, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "IDOT 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Illinois 2023.

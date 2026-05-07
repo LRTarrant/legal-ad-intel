@@ -31,6 +31,7 @@ export const tennesseeConfig: StateConfig = {
     ruralFatalities: 483, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "TDOSHS 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   workplaceStats: {

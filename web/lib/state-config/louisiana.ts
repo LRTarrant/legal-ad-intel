@@ -16,7 +16,7 @@ export const louisianaConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 752, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 220, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const louisianaConfig: StateConfig = {
     internetAccessTitle: "Rural Louisiana Media Mix",
     internetAccessTip:
       "Rural Louisiana — particularly the northern parishes, Cajun country, and coastal areas — has lower population density and more limited broadband infrastructure than the major metro areas. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

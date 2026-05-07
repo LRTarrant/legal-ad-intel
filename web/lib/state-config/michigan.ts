@@ -27,6 +27,8 @@ export const michiganConfig: StateConfig = {
     ruralFatalities: 449, // FARS 2024 (preliminary)
     reportYear: 2023,
     sourceLabel: "MSP CJIC 2023",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesReportYear: 2024,
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Michigan 2023.

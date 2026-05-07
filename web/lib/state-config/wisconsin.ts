@@ -16,7 +16,7 @@ export const wisconsinConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 595, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 202, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const wisconsinConfig: StateConfig = {
     internetAccessTitle: "Rural Wisconsin Media Mix",
     internetAccessTip:
       "Rural Wisconsin — particularly the north-central and northern counties — has lower population density and more limited broadband infrastructure than the Milwaukee–Madison corridor. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

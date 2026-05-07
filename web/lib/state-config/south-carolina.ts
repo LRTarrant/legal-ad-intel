@@ -16,7 +16,7 @@ export const southCarolinaConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 1038, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 344, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const southCarolinaConfig: StateConfig = {
     internetAccessTitle: "Rural South Carolina Media Mix",
     internetAccessTip:
       "Rural South Carolina — particularly the Pee Dee region, the Lowcountry outside of Charleston, and western counties — has lower population density and more limited broadband infrastructure than the major metro areas. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

@@ -16,7 +16,7 @@ export const massachusettsConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 363, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 98, // FARS 2024 (preliminary)
@@ -93,5 +93,9 @@ export const massachusettsConfig: StateConfig = {
     internetAccessTip:
       "Western Massachusetts (Berkshire, Franklin, and Hampshire counties) has lower population density than the Boston metro. PI firms targeting these areas should consider a broader media mix — local broadcast radio and regional outdoor in addition to digital — to reach lower-density rural communities.",
 
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };
