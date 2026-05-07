@@ -15,16 +15,16 @@ export const illinoisConfig: StateConfig = {
   // Source: state DOT annual crash report (2024).
   trafficStats: {
     totalCrashes: 303913,
-    totalFatalities: 1177, // FARS 2024
+    totalFatalities: 1177, // FARS 2024 (preliminary)
     motorcycleFatalities: 144,
     speedRelatedFatalities: null, // not broken out in IDOT 2024 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 285, // FARS 2024
-    alcoholRelatedPct: 24.2, // 285 / 1177 FARS 2024
+    alcoholRelatedFatalities: 285, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 24.2, // 285 / 1177 FARS 2024 (preliminary)
     unrestrainedFatalities: 255,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 799, // FARS 2024
-    ruralFatalities: 376, // FARS 2024
+    urbanFatalities: 799, // FARS 2024 (preliminary)
+    ruralFatalities: 376, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "IDOT 2024",
   },

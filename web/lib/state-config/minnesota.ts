@@ -15,18 +15,18 @@ export const minnesotaConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/MnDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 477, // FARS 2024
+    totalFatalities: 477, // FARS 2024 (preliminary)
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 130, // FARS 2024
-    alcoholRelatedPct: 27.3, // 130 / 477 FARS 2024
+    alcoholRelatedFatalities: 130, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 27.3, // 130 / 477 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 180, // FARS 2024
-    ruralFatalities: 279, // FARS 2024
+    urbanFatalities: 180, // FARS 2024 (preliminary)
+    ruralFatalities: 279, // FARS 2024 (preliminary)
     reportYear: 2024,
-    sourceLabel: "FARS 2024",
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

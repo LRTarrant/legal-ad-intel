@@ -18,16 +18,16 @@ export const ohioConfig: StateConfig = {
   //   to the BAC >= 0.08 figures used by other states in this system.
   trafficStats: {
     totalCrashes: 252623,
-    totalFatalities: 1157, // FARS 2024
+    totalFatalities: 1157, // FARS 2024 (preliminary)
     motorcycleFatalities: 220,
     speedRelatedFatalities: null, // not broken out in OSHP 2024 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 342, // FARS 2024
-    alcoholRelatedPct: 29.6, // 342 / 1157 FARS 2024
+    alcoholRelatedFatalities: 342, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 29.6, // 342 / 1157 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 661, // FARS 2024
-    ruralFatalities: 493, // FARS 2024
+    urbanFatalities: 661, // FARS 2024 (preliminary)
+    ruralFatalities: 493, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "OSHP 2024",
   },

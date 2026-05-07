@@ -15,18 +15,18 @@ export const marylandConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/MDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 578, // FARS 2024
+    totalFatalities: 578, // FARS 2024 (preliminary)
     motorcycleFatalities: 0,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 163, // FARS 2024
-    alcoholRelatedPct: 28.2, // 163 / 578 FARS 2024
+    alcoholRelatedFatalities: 163, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 28.2, // 163 / 578 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 474, // FARS 2024
-    ruralFatalities: 102, // FARS 2024
+    urbanFatalities: 474, // FARS 2024 (preliminary)
+    ruralFatalities: 102, // FARS 2024 (preliminary)
     reportYear: 2024,
-    sourceLabel: "FARS 2024",
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

@@ -12,16 +12,19 @@
  *
  * Re-runnable: a second run with no Supabase changes produces a no-op diff.
  *
- * SCHEMA NOTE: state_crash_statistics has no is_final / vintage column.
- * Labels are written as "FARS {year}" without final/preliminary qualifier.
- * A follow-up PR should add a `is_final` boolean to the table.
+ * VINTAGE LABELING:
+ *   Reads is_preliminary from state_crash_statistics.
+ *   is_preliminary = true  → inline comment "// FARS {year} (preliminary)"
+ *                            Tier 2 sourceLabel: "FARS {year} (preliminary)"
+ *   is_preliminary = false → inline comment "// FARS {year}"
+ *                            Tier 2 sourceLabel: "FARS {year}"
+ *   Flip is_preliminary to false in Supabase once NHTSA publishes final tables.
  *
  * Uses native fetch (Node 18+) — no SDK dependency, runs from repo root.
  *
  * Usage:
  *   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npx tsx scripts/sync-fars-data.ts
- *   npx tsx scripts/sync-fars-data.ts --dry-run
+ *     npx tsx scripts/sync-fars-data.ts [--dry-run] [--skip CO,PA]
  *
  * Env vars:
  *   NEXT_PUBLIC_SUPABASE_URL
@@ -36,6 +39,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const DRY_RUN = process.argv.includes("--dry-run");
+
+// --skip CO,PA  →  skip these state codes entirely (verification holds, etc.)
+const SKIP_CODES: Set<string> = (() => {
+  const idx = process.argv.indexOf("--skip");
+  if (idx === -1) return new Set<string>();
+  const raw = process.argv[idx + 1] ?? "";
+  return new Set(raw.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
+})();
+
 // Resolve config dir relative to this script's location (safe vs cwd)
 const CONFIG_DIR = join(__dirname, "../web/lib/state-config");
 
@@ -81,6 +93,7 @@ const TIER2_CODES = new Set<string>([
 interface FarsRow {
   state_code: string;
   year: number;
+  is_preliminary: boolean;
   total_fatalities: number;
   rural_fatalities: number | null;
   urban_fatalities: number | null;
@@ -100,7 +113,7 @@ async function fetchFarsData(): Promise<Record<string, FarsRow>> {
   }
 
   const targetCodes = Object.values(SLUG_TO_CODE);
-  const cols = "state_code,year,total_fatalities,rural_fatalities,urban_fatalities,alcohol_related_fatalities";
+  const cols = "state_code,year,is_preliminary,total_fatalities,rural_fatalities,urban_fatalities,alcohol_related_fatalities";
 
   // Supabase PostgREST — native fetch, no SDK needed
   const url = new URL(`${supabaseUrl}/rest/v1/state_crash_statistics`);
@@ -142,7 +155,7 @@ async function fetchFarsData(): Promise<Record<string, FarsRow>> {
 
 interface ReplaceResult {
   content: string;
-  /** null = value unchanged (no-op) or field not found */
+  /** null = value+comment unchanged (no-op) or field not found */
   logLine: string | null;
   /** true if field regex didn't match at all */
   notFound?: boolean;
@@ -157,7 +170,8 @@ interface ReplaceResult {
  * Replacement:
  *   <indent>fieldName: <newValue>, // <comment>
  *
- * Returns original content if the value is already correct (idempotent).
+ * Returns original content if both value AND comment are already correct
+ * (idempotent across re-runs, including comment-only changes).
  */
 function replaceField(
   content: string,
@@ -181,8 +195,11 @@ function replaceField(
   }
 
   const oldVal = m[2].replace(/_/g, ""); // strip numeric separators for comparison
-  if (oldVal === newValue) {
-    // Value is already correct — skip rewrite to avoid whitespace churn
+  const existingTail = m[3].replace(/\s+/g, " ").trim(); // normalize whitespace
+  const desiredTail  = `, // ${comment}`;
+
+  if (oldVal === newValue && existingTail === desiredTail) {
+    // Value and comment are already correct — no-op
     return { content, logLine: null };
   }
 
@@ -209,7 +226,8 @@ function processFile(
 ): FileResult {
   let content = readFileSync(filePath, "utf-8");
   const log: string[] = [];
-  const yearLabel = `FARS ${row.year}`;
+  const qualifier  = row.is_preliminary ? " (preliminary)" : "";
+  const yearLabel  = `FARS ${row.year}${qualifier}`;
 
   // ── Downgrade guard ───────────────────────────────────────────────────────
   // For original states (non-Tier-2), check that Supabase data isn't older.
@@ -273,11 +291,12 @@ function processFile(
     }
 
     // sourceLabel (unique to trafficStats)
+    const desiredLabel = `FARS ${row.year}${qualifier}`;
     const slPat = /^([ \t]+sourceLabel:\s*)"([^"]*)"(,\s*(?:\/\/[^\n]*)?)$/m;
     const slMatch = content.match(slPat);
-    if (slMatch && slMatch[2] !== `FARS ${row.year}`) {
-      content = content.replace(slPat, `$1"FARS ${row.year}",`);
-      log.push(`  sourceLabel: "${slMatch[2]}" → "FARS ${row.year}"`);
+    if (slMatch && slMatch[2] !== desiredLabel) {
+      content = content.replace(slPat, `$1"${desiredLabel}",`);
+      log.push(`  sourceLabel: "${slMatch[2]}" → "${desiredLabel}"`);
     }
   }
 
@@ -294,7 +313,7 @@ function processFile(
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  console.log(`\nsync-fars-data${DRY_RUN ? " [DRY RUN]" : ""}\n`);
+  console.log(`\nsync-fars-data${DRY_RUN ? " [DRY RUN]" : ""}${SKIP_CODES.size ? ` [skip: ${[...SKIP_CODES].join(",")}]` : ""}\n`);
 
   console.log("Fetching state_crash_statistics from Supabase...");
   const farsByState = await fetchFarsData();
@@ -318,6 +337,12 @@ async function main(): Promise<void> {
 
     if (!stateCode) {
       warnings.push(`${file}: no slug→code mapping — skipping`);
+      skipped++;
+      continue;
+    }
+
+    if (SKIP_CODES.has(stateCode)) {
+      console.log(`${stateCode} (${file}): skipped via --skip`);
       skipped++;
       continue;
     }
@@ -363,28 +388,31 @@ async function main(): Promise<void> {
   // FOLLOW_UPS summary
   console.log(`
 FOLLOW_UPS:
-  1. No is_final/vintage column in state_crash_statistics. Labels written as
-     "FARS {year}" without final/preliminary qualifier. Recommend adding
-     is_final BOOLEAN to the table and re-running this script to add labels.
+  1. is_preliminary column added to state_crash_statistics (DEFAULT true).
+     Flip rows to is_preliminary = false once NHTSA publishes final FARS tables
+     for that year, then re-run this script — labels update automatically.
   2. Original states (IL, MI, NC, NY, OH, PA, TN, TX) retain their existing
      sourceLabel (state DOT source) because those blocks contain non-FARS fields
      (totalCrashes, motorcycleFatalities, speedRelated, etc.). The 4 FARS fields
-     are identified by inline // FARS {year} comments instead.
+     are identified by inline // FARS {year} [qualifier] comments instead.
   3. Tier 2 placeholder block comments ("to be filled with real FARS/X figures")
      were not removed — clean those up in a follow-up pass.
   4. Displaced non-FARS sources for the 4 fields:
-     - NC alcoholRelatedFatalities: 377 (NCDMV 2023) → FARS 2024
-     - NC totalFatalities: 1686 (NCDMV 2023) → FARS 2024
-     - MI alcoholRelatedFatalities: 297 (MSP CJIC 2023) → FARS 2024
-     - NY all 4 fields (ITSMR NY 2023) → FARS 2024
-     - OH totalFatalities/rural/urban (OSHP 2024) → FARS 2024
-     - PA alcoholRelatedFatalities: 244 (PennDOT 2024) → FARS 2024
-     - TN all 4 fields (TDOSHS 2024) → FARS 2024
-     - TX all 4 fields (TxDOT 2024) → FARS 2024
+     - NC alcoholRelatedFatalities: 377 (NCDMV 2023) → FARS 2024 (preliminary)
+     - NC totalFatalities: 1686 (NCDMV 2023) → FARS 2024 (preliminary)
+     - MI alcoholRelatedFatalities: 297 (MSP CJIC 2023) → FARS 2024 (preliminary)
+     - NY all 4 fields (ITSMR NY 2023) → FARS 2024 (preliminary)
+     - OH totalFatalities/rural/urban (OSHP 2024) → FARS 2024 (preliminary)
+     - TN all 4 fields (TDOSHS 2024) → FARS 2024 (preliminary)
+     - TX all 4 fields (TxDOT 2024) → FARS 2024 (preliminary)
      Prior values preserved in git history.
   5. TX/TN rural/urban methodology note: FARS uses federal urban/rural classification
      (urbanized area boundaries); TxDOT and TDOSHS use different definitions.
      The large rural/urban delta vs. prior values is expected, not a data error.
+  6. PA held back (--skip PA): alcoholRelatedFatalities direction inconsistent with
+     typical state-vs-FARS gap (PennDOT 244 → proposed FARS 275 — FARS should be
+     lower than or comparable to state DOT for BAC>=0.08). Pending NHTSA 2024 final
+     release and methodology reconciliation.
 `);
 }
 
