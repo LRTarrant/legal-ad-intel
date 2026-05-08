@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-05-06
+Last updated: 2026-05-08
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -112,24 +112,40 @@ Closed in this arc:
 - NC data fill: speedRelatedFatalities 389 → 426 (NCDOT 2022), speedRelatedPct 23.1 →
   25.3%, unrestrainedFatalities 504 → 562 (NCDOT 2022); dual-citation footer added
 - PA, OH, IL state-specific narrative content blocks added (v1 demo depth)
+- 2026-05-08: State-pages attribution + Tier 2 zero-cleanup arc closed.
+  Per-tile FARS source attribution landed for IL, MI, NC, NY, OH, TN, TX via two new
+  optional `TrafficStatsBlock` fields (`fatalitiesSourceLabel`, `fatalitiesReportYear`).
+  Motorcycle null-widening + `showWorkplaceSection` feature flag landed for 10 Tier 2
+  states (CO, IN, KY, LA, MA, MD, MN, MO, SC, WI). PA correctly held back pending
+  FARS 2024 final. `is_preliminary` column added to `state_crash_statistics`; codegen
+  script gains `--skip` arg and idempotency fix. All 18 demo-set state pages now render
+  with honestly-labeled data and no placeholder zeros.
 
 Queue (next data-fill pass):
-- NC, MI rural/urban fatalities (currently render as "—")
-- MI, NC unrestrainedFatalities (placeholder zeros, not currently rendered)
-- OH unrestrainedFatalities — investigated 2026-05-06; no clean public FARS 2023
-  state table or ODPS publication with FARS-equivalent definition found; deferred
-  pending direct FARS state-table query
-- OH speedRelatedFatalities — same status as above; deferred pending direct FARS
-  state-table query
-- IL, PA, OH distractedDrivingFatalCrashes (placeholder zeros, not currently rendered)
-- PA rural/urban fatalities (placeholder zeros, now typeable as null)
+- BLS CFOI ingestion for 10 Tier 2 states (CO, IN, KY, LA, MA, MD, MN, MO, SC, WI).
+  Workplace section is currently hidden via `showWorkplaceSection: false` feature flag.
+  Restoration is a manual per-state data load from BLS CFOI state tables + flag flip.
+  No ingest pipeline exists yet.
+- Person-level FARS for Tier 2 (motorcycle, pedestrian, unrestrained, speeding).
+  Currently NULL in `state_crash_statistics`. Codegen would need extending to write
+  these fields once Supabase has the rows. Bundles naturally with the FARS 2024 final
+  release relabeling work below.
+- PA FARS verification — pending NHTSA final state-level 2024 release. Resolve
+  PennDOT 244 vs proposed FARS 275 alcohol direction at that time; then add PA row
+  to `state_crash_statistics` and re-run codegen.
+- FARS 2024 (preliminary) → final relabeling — when NHTSA ships final state tables
+  (expected late 2026 / early 2027): `UPDATE state_crash_statistics SET is_preliminary
+  = false WHERE year = 2024` and re-run `sync-fars-data.ts`. Labels drop the
+  "(preliminary)" qualifier automatically. Single-row update + script re-run.
 
-Parked (cosmetic / non-blocking):
+Parked (no action unless conditions change):
+- WorkplaceStatsBlock sourceLabel symmetry — "BLS CFOI" is hardcoded in the v2 client.
+  Add a `sourceLabel?` field to `WorkplaceStatsBlock` only if a non-BLS workplace
+  source is ever introduced.
 - NY totalCrashes rounded vs exact
 - MAJOR_METROS dead variable in state-intelligence-client.tsx
-- Per-field year labels (currently single reportYear, mixed-vintage documented inline)
 - Cross-state QCEW employment rounding consistency
-- BLS CFOI footer citations for PA/OH/IL (currently only traffic crash source cited)
+- TX stale block comment referencing old TxDOT rural figures (2,080 rural)
 
 ---
 
