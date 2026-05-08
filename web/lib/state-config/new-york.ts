@@ -27,6 +27,8 @@ export const newYorkConfig: StateConfig = {
     ruralFatalities: 283, // FARS 2024 (preliminary)
     reportYear: 2023,
     sourceLabel: "ITSMR NY 2023",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesReportYear: 2024,
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — New York 2023.

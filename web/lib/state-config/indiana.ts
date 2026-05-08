@@ -16,7 +16,7 @@ export const indianaConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 832, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 185, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const indianaConfig: StateConfig = {
     internetAccessTitle: "Rural Indiana Media Mix",
     internetAccessTip:
       "Rural Indiana — particularly the south-central and southwestern counties — has lower population density and more limited broadband infrastructure than the Indianapolis metro. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

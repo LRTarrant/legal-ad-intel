@@ -16,7 +16,7 @@ export const coloradoConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 689, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 220, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const coloradoConfig: StateConfig = {
     internetAccessTitle: "Rural Colorado Media Mix",
     internetAccessTip:
       "Rural Colorado — particularly the Western Slope, the San Luis Valley, and the eastern plains — has lower population density and more limited broadband infrastructure than the Denver–Front Range corridor. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

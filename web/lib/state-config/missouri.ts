@@ -16,7 +16,7 @@ export const missouriConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 955, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 252, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const missouriConfig: StateConfig = {
     internetAccessTitle: "Rural Missouri Media Mix",
     internetAccessTip:
       "Rural Missouri — particularly the Ozarks and southern counties — has lower population density and more limited broadband infrastructure than the Kansas City and St. Louis metros. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

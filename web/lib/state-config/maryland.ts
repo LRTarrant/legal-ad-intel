@@ -16,7 +16,7 @@ export const marylandConfig: StateConfig = {
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 578, // FARS 2024 (preliminary)
-    motorcycleFatalities: 0,
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 163, // FARS 2024 (preliminary)
@@ -92,5 +92,9 @@ export const marylandConfig: StateConfig = {
     internetAccessTitle: "Western Maryland / Eastern Shore Media Mix",
     internetAccessTip:
       "Western Maryland (Garrett, Allegany, Washington counties) and parts of the Eastern Shore have lower population density than the Baltimore–DC corridor. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital given lower population density in non-metro counties.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

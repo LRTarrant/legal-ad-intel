@@ -30,6 +30,7 @@ export const ohioConfig: StateConfig = {
     ruralFatalities: 493, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "OSHP 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Ohio 2023.

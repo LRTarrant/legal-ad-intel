@@ -29,6 +29,8 @@ export const northCarolinaConfig: StateConfig = {
     ruralFatalities: 1009, // FARS 2024 (preliminary)
     reportYear: 2023,
     sourceLabel: "NCDMV 2023",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesReportYear: 2024,
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — North Carolina 2023.

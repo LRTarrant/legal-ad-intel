@@ -5,7 +5,8 @@ import type {
 export interface TrafficStatsBlock {
   totalCrashes: number;
   totalFatalities: number;
-  motorcycleFatalities: number;
+  /** null = not reported / unavailable in source data for this state */
+  motorcycleFatalities: number | null;
   /** null = not reported / unavailable in source data for this state */
   speedRelatedFatalities: number | null;
   /** null when speedRelatedFatalities is null */
@@ -24,6 +25,19 @@ export interface TrafficStatsBlock {
   reportYear: number;
   /** Source label shown in footnotes, e.g. "TDOSHS 2024" or "TxDOT CRIS 2024" */
   sourceLabel: string;
+  /**
+   * Override source label for the fatality tiles (Annual Fatalities, Rural
+   * Share, Alcohol-Related). Set when fatality fields come from a different
+   * source than the rest of the block (e.g. FARS preliminary on a state-DOT
+   * block). Falls back to sourceLabel when absent.
+   */
+  fatalitiesSourceLabel?: string;
+  /**
+   * Override report year for the fatality tiles. Set when FARS year differs
+   * from the block-level reportYear (e.g. FARS 2024 on a 2023 state-DOT
+   * block). Falls back to reportYear when absent.
+   */
+  fatalitiesReportYear?: number;
 }
 
 export interface WorkplaceStatsBlock {
@@ -151,6 +165,7 @@ export interface StateContent {
 
 export interface StateFeatureFlags {
   /** All default to true. Set to false to hide a section. */
+  showWorkplaceSection?: boolean;
   showStormSummary?: boolean;
   showBoatingSummary?: boolean;
   showJudicialProfiles?: boolean;
