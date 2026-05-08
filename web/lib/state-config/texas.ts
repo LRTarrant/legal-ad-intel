@@ -20,23 +20,23 @@ export const texasConfig: StateConfig = {
   // Source: TxDOT Texas Motor Vehicle Crash Facts CY 2024 (https://www.txdot.gov/data-maps/crash-reports-records/motor-vehicle-crash-statistics.html)
   trafficStats: {
     totalCrashes: 554_146,
-    totalFatalities: 4_150,
+    totalFatalities: 4160, // FARS 2024 (preliminary)
     motorcycleFatalities: 585,
     // 2024 TxDOT facts didn't break out a speed-related-fatalities count in the headline tables.
     // 2023 figure used as best-available (TxDOT 2023 crash facts).
     speedRelatedFatalities: 1_385,
     speedRelatedPct: 32.3,
-    alcoholRelatedFatalities: 1_053,
-    alcoholRelatedPct: 25.4,
-    // Of persons killed in vehicles where restraint usage was applicable and known
+    alcoholRelatedFatalities: 1059, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 25.5, // 1059 / 4160 FARS 2024 (preliminary)
     // in 2024, 45.34% were unrestrained. Applied to occupant-applicable subset (~2,640).
     unrestrainedFatalities: 1_197,
     distractedDrivingFatalCrashes: 380,
     // 2024: rural fatalities 2,080 (50.12% of total). Urban = 4,150 - 2,080 = 2,070.
-    urbanFatalities: 2_070,
-    ruralFatalities: 2_080,
+    urbanFatalities: 2661, // FARS 2024 (preliminary)
+    ruralFatalities: 1494, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "TxDOT 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Texas 2023

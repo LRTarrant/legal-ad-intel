@@ -15,18 +15,18 @@ export const marylandConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/MDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
-    motorcycleFatalities: 0,
+    totalFatalities: 578, // FARS 2024 (preliminary)
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 163, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 28.2, // 163 / 578 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "MDOT SHA 2023",
+    urbanFatalities: 474, // FARS 2024 (preliminary)
+    ruralFatalities: 102, // FARS 2024 (preliminary)
+    reportYear: 2024,
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.
@@ -92,5 +92,9 @@ export const marylandConfig: StateConfig = {
     internetAccessTitle: "Western Maryland / Eastern Shore Media Mix",
     internetAccessTip:
       "Western Maryland (Garrett, Allegany, Washington counties) and parts of the Eastern Shore have lower population density than the Baltimore–DC corridor. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital given lower population density in non-metro counties.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

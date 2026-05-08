@@ -518,7 +518,7 @@ export function StateIntelligenceClient({
             {fmtNum(TDOSHS.totalFatalities)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
-            {TDOSHS.sourceLabel}
+            {TDOSHS.fatalitiesSourceLabel ?? TDOSHS.sourceLabel}
           </p>
         </div>
 
@@ -534,7 +534,7 @@ export function StateIntelligenceClient({
           </p>
           <p className="mt-0.5 text-[11px] text-slate-gray">
             {ruralFatalSharePct != null
-              ? `of ${TDOSHS.sourceLabel} fatalities`
+              ? `of ${TDOSHS.fatalitiesSourceLabel ?? TDOSHS.sourceLabel} fatalities`
               : "rural share not reported"}
           </p>
         </div>
@@ -556,20 +556,22 @@ export function StateIntelligenceClient({
           </p>
         </div>
 
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <HardHat className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Workplace Fatalities
+        {features.showWorkplaceSection !== false && (
+          <div className="rounded-lg bg-white p-4 shadow-sm border">
+            <div className="flex items-center gap-1.5 mb-2">
+              <HardHat className="w-3.5 h-3.5 text-intelligence-teal" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                Workplace Fatalities
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-midnight-navy">
+              {BLS.totalWorkplaceFatalities}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-gray">
+              {BLS.constructionFatalities} construction &middot; BLS CFOI {BLS.reportYear}
             </p>
           </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {BLS.totalWorkplaceFatalities}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            {BLS.constructionFatalities} construction &middot; BLS CFOI {BLS.reportYear}
-          </p>
-        </div>
+        )}
 
         <div className="rounded-lg bg-white p-4 shadow-sm border">
           <div className="flex items-center gap-1.5 mb-2">
@@ -746,7 +748,7 @@ export function StateIntelligenceClient({
               )}
               {TDOSHS.alcoholRelatedFatalities != null && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.reportYear})</span>
+                  <span className="text-slate-gray">Alcohol-Related Fatalities ({TDOSHS.fatalitiesReportYear ?? TDOSHS.reportYear})</span>
                   <span className="font-semibold text-midnight-navy">
                     {TDOSHS.alcoholRelatedFatalities} ({TDOSHS.alcoholRelatedPct}%)
                   </span>
@@ -838,6 +840,7 @@ export function StateIntelligenceClient({
                   {fmtNum(totalMotoDeaths)}
                 </span>
               </div>
+              {TDOSHS.motorcycleFatalities != null && (
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">
                   {TDOSHS.sourceLabel} Motorcycle Fatalities
@@ -846,6 +849,7 @@ export function StateIntelligenceClient({
                   {TDOSHS.motorcycleFatalities}
                 </span>
               </div>
+              )}
               <div className="flex justify-between text-xs">
                 <span className="text-slate-gray">Top Counties</span>
                 <span className="font-medium text-midnight-navy text-right">
@@ -872,6 +876,7 @@ export function StateIntelligenceClient({
           </div>
 
           {/* Construction Card */}
+          {features.showWorkplaceSection !== false && (
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <HardHat className="w-5 h-5 text-intelligence-teal" />
@@ -918,6 +923,7 @@ export function StateIntelligenceClient({
               </p>
             </div>
           </div>
+          )}
 
           {/* Boating Card */}
           <div className="rounded-lg border bg-white p-5 shadow-sm">

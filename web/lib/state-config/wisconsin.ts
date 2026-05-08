@@ -15,18 +15,18 @@ export const wisconsinConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/WisDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
-    motorcycleFatalities: 0,
+    totalFatalities: 595, // FARS 2024 (preliminary)
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 202, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 33.9, // 202 / 595 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "WisDOT 2023",
+    urbanFatalities: 254, // FARS 2024 (preliminary)
+    ruralFatalities: 341, // FARS 2024 (preliminary)
+    reportYear: 2024,
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.
@@ -92,5 +92,9 @@ export const wisconsinConfig: StateConfig = {
     internetAccessTitle: "Rural Wisconsin Media Mix",
     internetAccessTip:
       "Rural Wisconsin — particularly the north-central and northern counties — has lower population density and more limited broadband infrastructure than the Milwaukee–Madison corridor. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

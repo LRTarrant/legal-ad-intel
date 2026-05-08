@@ -15,18 +15,18 @@ export const massachusettsConfig: StateConfig = {
   // Source: MassDOT 2023 crash data — placeholder values; to be filled with real FARS/MassDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
-    motorcycleFatalities: 0,
+    totalFatalities: 363, // FARS 2024 (preliminary)
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 98, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 27.0, // 98 / 363 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "MassDOT 2023",
+    urbanFatalities: 332, // FARS 2024 (preliminary)
+    ruralFatalities: 30, // FARS 2024 (preliminary)
+    reportYear: 2024,
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS CFOI — Massachusetts 2023 — placeholder values; to be filled.
@@ -93,5 +93,9 @@ export const massachusettsConfig: StateConfig = {
     internetAccessTip:
       "Western Massachusetts (Berkshire, Franklin, and Hampshire counties) has lower population density than the Boston metro. PI firms targeting these areas should consider a broader media mix — local broadcast radio and regional outdoor in addition to digital — to reach lower-density rural communities.",
 
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };

@@ -15,18 +15,20 @@ export const michiganConfig: StateConfig = {
   // Source: state DOT annual crash report (2023).
   trafficStats: {
     totalCrashes: 287953,
-    totalFatalities: 1095,
+    totalFatalities: 1098, // FARS 2024 (preliminary)
     motorcycleFatalities: 165,
     speedRelatedFatalities: null, // not broken out in MSP CJIC 2023 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 297,
-    alcoholRelatedPct: 27.1,
+    alcoholRelatedFatalities: 299, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 27.2, // 299 / 1098 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 56,
-    urbanFatalities: null,
-    ruralFatalities: null,
+    urbanFatalities: 636, // FARS 2024 (preliminary)
+    ruralFatalities: 449, // FARS 2024 (preliminary)
     reportYear: 2023,
     sourceLabel: "MSP CJIC 2023",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesReportYear: 2024,
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Michigan 2023.

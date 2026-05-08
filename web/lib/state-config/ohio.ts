@@ -18,18 +18,19 @@ export const ohioConfig: StateConfig = {
   //   to the BAC >= 0.08 figures used by other states in this system.
   trafficStats: {
     totalCrashes: 252623,
-    totalFatalities: 1156,
+    totalFatalities: 1157, // FARS 2024 (preliminary)
     motorcycleFatalities: 220,
     speedRelatedFatalities: null, // not broken out in OSHP 2024 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 455, // NHTSA FARS 2023 — driver BAC >= 0.08
-    alcoholRelatedPct: 36.6,       // 455 / 1242 FARS total; comparable to other states
+    alcoholRelatedFatalities: 342, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 29.6, // 342 / 1157 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 588,
-    ruralFatalities: 568,
+    urbanFatalities: 661, // FARS 2024 (preliminary)
+    ruralFatalities: 493, // FARS 2024 (preliminary)
     reportYear: 2024,
     sourceLabel: "OSHP 2024",
+    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Ohio 2023.

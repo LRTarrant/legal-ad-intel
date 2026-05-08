@@ -15,18 +15,18 @@ export const missouriConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/MoDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 0,
-    motorcycleFatalities: 0,
+    totalFatalities: 955, // FARS 2024 (preliminary)
+    motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
+    alcoholRelatedFatalities: 252, // FARS 2024 (preliminary)
+    alcoholRelatedPct: 26.4, // 252 / 955 FARS 2024 (preliminary)
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: null,
-    ruralFatalities: null,
-    reportYear: 2023,
-    sourceLabel: "MoDOT 2023",
+    urbanFatalities: 468, // FARS 2024 (preliminary)
+    ruralFatalities: 452, // FARS 2024 (preliminary)
+    reportYear: 2024,
+    sourceLabel: "FARS 2024 (preliminary)",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.
@@ -92,5 +92,9 @@ export const missouriConfig: StateConfig = {
     internetAccessTitle: "Rural Missouri Media Mix",
     internetAccessTip:
       "Rural Missouri — particularly the Ozarks and southern counties — has lower population density and more limited broadband infrastructure than the Kansas City and St. Louis metros. PI firms targeting these areas should consider a broader media mix including local broadcast radio and regional outdoor alongside digital.",
+  },
+
+  features: {
+    showWorkplaceSection: false,
   },
 };
