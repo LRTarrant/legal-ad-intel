@@ -28,10 +28,58 @@ on:
         type: string
 
 jobs:
+  # --------------------------------------------------------------------------
+  # Job 1: FDA device recall ingest
+  # Refreshes public.recalls from openFDA before CourtListener case-matching
+  # runs, so any newly registered recalls are already in place for matching.
+  #
+  # continue-on-error: true — FDA API flakiness must NOT block the downstream
+  # litigation-tracking jobs.  A failed FDA ingest is logged and alerted
+  # separately; CourtListener and thermometer-score run regardless.
+  # --------------------------------------------------------------------------
+  openfda-recalls:
+    name: FDA device recall ingest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # FDA API flakiness must not block litigation tracking downstream.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run openfda_device_recalls
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+          PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "Running in DRY-RUN mode"
+            python -m pipelines.openfda_device_recalls --dry-run
+          else
+            python -m pipelines.openfda_device_recalls
+          fi
+
   courtlistener-search:
     name: CourtListener case search
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # Wait for FDA ingest to complete first (fresh recalls in place before
+    # case-matching).  continue-on-error on openfda-recalls means this job
+    # runs even if the FDA step failed.
+    needs: [openfda-recalls]
 
     steps:
       - uses: actions/checkout@v4
