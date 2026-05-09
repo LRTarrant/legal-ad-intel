@@ -69,6 +69,7 @@ def compute_stage(
     specialty_firm_count: int,
     mdl_petition_filed: bool,
     mdl_formed: bool,
+    has_class_i: bool = False,
 ) -> int:
     if mdl_formed:
         return 5
@@ -82,7 +83,8 @@ def compute_stage(
         return 3
     if case_count >= 1:
         return 2
-    return 1
+    # Class I recall severity floors at Stage 2 (Warming) even with zero litigation.
+    return 2 if has_class_i else 1
 
 
 def reason_for_change(
@@ -94,6 +96,7 @@ def reason_for_change(
     new_specialty_count: int,
     mdl_petition_filed: bool,
     mdl_formed: bool,
+    has_class_i: bool = False,
 ) -> str:
     if mdl_formed and prev_stage < 5:
         return "mdl_formed"
@@ -103,6 +106,8 @@ def reason_for_change(
         return "specialty_firm"
     if new_case_count > prev_case_count:
         return "new_case"
+    if has_class_i and new_stage >= 2 and prev_stage < 2:
+        return "class_i_severity"
     return "recompute"
 
 
@@ -218,7 +223,7 @@ def main() -> int:
             recall_params: dict[str, str] = {
                 "select": ("id,stage,stage_label,case_count,state_count,"
                            "specialty_firm_count,mdl_petition_filed,mdl_formed,"
-                           "first_case_filed_at,last_case_filed_at"),
+                           "first_case_filed_at,last_case_filed_at,recall_class"),
             }
             if args.recall_id:
                 recall_params["id"] = f"eq.{args.recall_id}"
@@ -242,8 +247,9 @@ def main() -> int:
                 new_spc = a["specialty_count"]
                 mdl_pet = bool(r.get("mdl_petition_filed"))
                 mdl_frm = bool(r.get("mdl_formed"))
+                has_class_i = r.get("recall_class") == "Class I"
 
-                new_stage = compute_stage(new_cc, new_sc, new_spc, mdl_pet, mdl_frm)
+                new_stage = compute_stage(new_cc, new_sc, new_spc, mdl_pet, mdl_frm, has_class_i)
                 new_label = STAGE_LABELS[new_stage]
                 prev_stage = int(r.get("stage") or 1)
                 prev_label = r.get("stage_label") or STAGE_LABELS[prev_stage]
@@ -273,6 +279,7 @@ def main() -> int:
                             int(r.get("case_count") or 0), new_cc,
                             int(r.get("specialty_firm_count") or 0), new_spc,
                             mdl_pet, mdl_frm,
+                            has_class_i,
                         ),
                     })
 
