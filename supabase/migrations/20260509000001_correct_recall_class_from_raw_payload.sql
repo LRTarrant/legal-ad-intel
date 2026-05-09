@@ -1,5 +1,5 @@
 -- ============================================================================
--- Correct recall_class taxonomy — document + no-op migration
+-- Correct recall_class taxonomy — document + COMMENT ON COLUMN
 --
 -- Background
 -- ----------
@@ -24,8 +24,8 @@
 -- -----------------------------------------------
 -- ALL 3,929 existing rows in public.recalls (source = 'openfda_device') have
 -- raw_payload = NULL.  The initial data load did not store the raw API
--- response.  Therefore, the planned UPDATE … FROM raw_payload cannot be
--- applied — there is nothing to read.
+-- response.  Therefore, a purely SQL-driven correction from stored data is
+-- not feasible.
 --
 -- Correction path
 -- ---------------
@@ -35,29 +35,16 @@
 -- correct severity class read from event.get("classification"), and
 -- raw_payload will be populated for the first time.
 --
--- This migration therefore contains NO data-modifying statements.  Its
--- purpose is to document the taxonomy fix and ensure the migration log
--- records this correction event.  Apply it before or after the first script
--- run — order does not matter for data correctness.
---
--- Validation query (run manually after first script execution)
--- ------------------------------------------------------------
--- SELECT
---   recall_class,
---   COUNT(*) AS row_count
--- FROM public.recalls
--- WHERE source = 'openfda_device'
--- GROUP BY recall_class
--- ORDER BY recall_class;
---
--- Expected post-correction distribution (approximate, per FDA recall data):
---   Class I     ~25-35% of rows  (most serious — e.g. Philips CPAP foam)
---   Class II    ~60-70% of rows  (moderate severity)
---   Class III   ~2-5% of rows   (minimal harm)
---   Unclassified < 1% of rows   (pending FDA classification)
+-- See docs/recalls/recall-class-taxonomy-correction.md for the full
+-- before/after delta report including Philips CPAP confirmation.
 -- ============================================================================
 
--- No DDL or DML statements — this is a documentation-only migration.
--- The actual recall_class correction is applied by the first run of
--- openfda_device_recalls.py after this PR merges.
-select 'recall_class taxonomy correction documented — no DDL/DML; correction applied by next openfda_device_recalls.py run' as migration_note;
+COMMENT ON COLUMN public.recalls.recall_class IS
+  'FDA recall severity class (Class I = most serious risk of injury/death,
+Class II = may cause temporary health problems,
+Class III = unlikely to cause adverse health reactions).
+Source: top-level classification field from openFDA /device/recall.json.
+NOTE: rows ingested before 2026-05-09 were mislabeled with device regulatory
+class (openfda.device_class) instead of recall severity. Corrected via
+openfda_device_recalls.py taxonomy fix on 2026-05-09.
+See docs/recalls/recall-class-taxonomy-correction.md.';
