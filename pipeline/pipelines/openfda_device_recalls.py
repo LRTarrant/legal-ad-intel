@@ -3,9 +3,14 @@
 openFDA device-recall ingestion for the Recall Watchlist.
 
 Pulls from https://api.fda.gov/device/recall.json (no API key required; rate
-limit is 1,000 req/hr without key, 240/min with). We only ingest Class I + II
-recalls initiated within the last 5 years — these are the severity tiers that
-actually drive mass-tort activity.
+limit is 1,000 req/hr without key, 240/min with). We ingest all three recall
+severity classes (I, II, III) initiated within the last 5 years.
+
+Recall severity class comes from the top-level ``classification`` field of
+each recall record — NOT from ``openfda.device_class``, which is the device's
+FDA regulatory class (an orthogonal taxonomy).  Class I = most serious (risk
+of serious injury or death); Class II = may cause temporary health problems;
+Class III = unlikely to cause adverse health reactions.
 
 Usage:
     python -m pipelines.openfda_device_recalls
@@ -51,12 +56,12 @@ MAX_PAGES = 200           # safety cap (~20k recalls)
 REQUEST_DELAY = 0.25      # polite pacing
 DEFAULT_LOOKBACK_DAYS = 5 * 365
 
-# openFDA returns device_class as string digits: "1", "2", "3". Map to our
-# check-constraint labels.
+# openFDA returns recall severity in the top-level ``classification`` field as
+# "Class I", "Class II", "Class III".  Map to our check-constraint labels.
+# NOTE: do NOT use openfda.device_class (device regulatory class) here — that
+# is a different taxonomy (1/2/3 for general/special/PMA controls) and was
+# the source of the historical mislabeling this script previously committed.
 CLASS_MAP = {
-    "1":   "Class I",
-    "2":   "Class II",
-    "3":   "Class III",
     "Class I":   "Class I",
     "Class II":  "Class II",
     "Class III": "Class III",
@@ -114,11 +119,17 @@ def _fetch_page(search: str, skip: int, limit: int) -> tuple[list[dict], int]:
 
 
 def _event_class_label(event: dict) -> str:
-    """Pull the device class out of openfda.device_class and normalize."""
-    dc = (event.get("openfda") or {}).get("device_class")
-    if isinstance(dc, list):
-        dc = dc[0] if dc else None
-    return CLASS_MAP.get(str(dc) if dc is not None else "", "Unclassified")
+    """Return the recall severity class from the top-level classification field.
+
+    openFDA returns this as "Class I", "Class II", or "Class III".  Falls back
+    to "Unclassified" when the field is absent or unrecognised.
+
+    IMPORTANT: we read ``event.get("classification")``, NOT
+    ``openfda.device_class``.  The latter is the device's FDA regulatory class
+    (an orthogonal taxonomy) and was the source of historical mislabeling.
+    """
+    raw = (event.get("classification") or "").strip()
+    return CLASS_MAP.get(raw, "Unclassified")
 
 
 def fetch_recalls(since: str, classes: list[str]) -> list[dict]:
@@ -276,7 +287,9 @@ def build_recall_row(event: dict, manufacturer_id: str | None) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--since", help="ISO date YYYY-MM-DD. Default = 5 years ago.")
-    parser.add_argument("--classes", default="Class I,Class II", help="Comma-separated classes.")
+    parser.add_argument("--classes", default="Class I,Class II,Class III",
+                        help="Comma-separated recall severity classes to ingest. "
+                             "Default is all three so nothing is silently filtered out.")
     parser.add_argument("--limit", type=int, default=None, help="Cap total events inserted (for testing).")
     parser.add_argument("--dry-run", action="store_true", help="Alias for DRY_RUN=true.")
     args = parser.parse_args()
