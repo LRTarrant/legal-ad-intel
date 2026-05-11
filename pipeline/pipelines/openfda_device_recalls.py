@@ -69,6 +69,10 @@ MAX_PAGES = 200              # recall endpoint safety cap (~20k records)
 ENFORCEMENT_MAX_PAGES = 500  # enforcement has ~38k total records; 500×100 = 50k cap
 REQUEST_DELAY = 0.25         # polite pacing between pages
 DEFAULT_LOOKBACK_DAYS = 5 * 365
+# Recalls rows are wide (JSONB raw_payload + many text columns). Smaller chunks
+# reduce the risk of Supabase statement timeouts on upsert. Override via env var
+# if 200 still times out (tune down) or proves too conservative (tune up).
+RECALLS_UPSERT_CHUNK_SIZE = int(os.environ.get("RECALLS_UPSERT_CHUNK_SIZE", "200"))
 
 # Valid recall severity values — must exactly match CHECK constraint on
 # public.recalls.recall_class.
@@ -449,6 +453,7 @@ def main() -> int:
                 normalized,
                 on_conflict="source,external_id",
                 resolution="merge-duplicates",
+                chunk_size=RECALLS_UPSERT_CHUNK_SIZE,
             )
             step.set_counts(rows_in=len(normalized), rows_out=sent)
 
