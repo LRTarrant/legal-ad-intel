@@ -26,6 +26,11 @@ on:
         required: false
         default: ''
         type: string
+      backfill_since:
+        description: 'Optional: ISO date (YYYY-MM-DD) to override the 5-year lookback. Leave blank for normal weekly behavior.'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   # --------------------------------------------------------------------------
@@ -65,12 +70,14 @@ jobs:
           OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
         run: |
+          ARGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "Running in DRY-RUN mode"
-            python -m pipelines.openfda_device_recalls --dry-run
-          else
-            python -m pipelines.openfda_device_recalls
+            ARGS="$ARGS --dry-run"
           fi
+          if [ -n "${{ inputs.backfill_since }}" ]; then
+            ARGS="$ARGS --backfill-since ${{ inputs.backfill_since }}"
+          fi
+          python -m pipelines.openfda_device_recalls $ARGS
 
   courtlistener-search:
     name: CourtListener case search
