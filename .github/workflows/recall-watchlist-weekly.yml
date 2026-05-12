@@ -69,6 +69,10 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+          # Halve the default 200-row chunk to shrink per-request payload and
+          # reduce the surface for Cloudflare 502s during upsert_recalls. See
+          # PR widening _bulk_insert retries/timeouts.
+          RECALLS_UPSERT_CHUNK_SIZE: '100'
         run: |
           ARGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
