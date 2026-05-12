@@ -4,6 +4,7 @@ import type { GLP1GastroparesisPageData } from "./glp1-gastroparesis-client";
 
 const GLP1GastroparesisClient = nextDynamic(() => import("./glp1-gastroparesis-client").then((m) => m.GLP1GastroparesisClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -294,6 +295,7 @@ export default async function GLP1GastroparesisPage() {
   return (
     <>
       <GLP1GastroparesisClient data={pageData} />
+      <NewLandingPagesCard tortSlug="glp1-gastroparesis" tortLabel="GLP-1 Gastroparesis" />
       <AskAIPanel
         tortContext={{
           tortName: "GLP-1 Gastroparesis",

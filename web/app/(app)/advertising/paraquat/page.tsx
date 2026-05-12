@@ -20,6 +20,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -1849,6 +1850,7 @@ export default async function ParaquatPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="paraquat" tortLabel="Paraquat" />
       <AskAIPanel tortContext={PARAQUAT_TORT_CONTEXT} />
     </div>
   );

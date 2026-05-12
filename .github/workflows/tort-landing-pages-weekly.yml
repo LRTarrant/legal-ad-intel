@@ -1,0 +1,52 @@
+name: Tort Landing Pages Weekly DMA Scan
+
+on:
+  schedule:
+    # Sundays at 03:00 UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no DB writes)'
+        required: false
+        default: 'false'
+        type: boolean
+      dma_count:
+        description: 'Override TORT_LANDING_PAGES_DMA_COUNT (default 25)'
+        required: false
+        default: ''
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run tort_landing_pages_weekly pipeline
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TORT_LANDING_PAGES_DMA_COUNT: ${{ inputs.dma_count }}
+          PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python -m pipelines.tort_landing_pages_weekly --dry-run
+          else
+            python -m pipelines.tort_landing_pages_weekly
+          fi

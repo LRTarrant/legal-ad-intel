@@ -19,6 +19,7 @@ import {
   Database,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -1869,6 +1870,7 @@ export default async function DepoProveraPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="depo-provera" tortLabel="Depo-Provera" />
       <AskAIPanel tortContext={DEPO_TORT_CONTEXT} />
     </div>
   );

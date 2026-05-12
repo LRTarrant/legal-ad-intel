@@ -21,6 +21,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -2287,6 +2288,7 @@ export default async function RoundupPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="roundup" tortLabel="Roundup" />
       <AskAIPanel tortContext={ROUNDUP_TORT_CONTEXT} />
     </div>
   );

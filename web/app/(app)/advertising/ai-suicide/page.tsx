@@ -4,6 +4,7 @@ import type { AiSuicidePageData } from "./ai-suicide-client";
 
 const AiSuicideClient = nextDynamic(() => import("./ai-suicide-client").then((m) => m.AiSuicideClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -315,6 +316,7 @@ export default async function AiSuicidePage() {
   return (
     <>
       <AiSuicideClient data={pageData} />
+      <NewLandingPagesCard tortSlug="ai-suicide" tortLabel="AI Suicide / Self-Harm" />
       <AskAIPanel
         tortContext={{
           tortName: "AI Suicide / Self-Harm (Pre-MDL)",
