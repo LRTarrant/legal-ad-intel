@@ -4,6 +4,7 @@ import type { RobloxPageData } from "./roblox-client";
 
 const RobloxClient = nextDynamic(() => import("./roblox-client").then((m) => m.RobloxClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -317,6 +318,7 @@ export default async function RobloxAbusePage() {
   return (
     <>
       <RobloxClient data={pageData} />
+      <NewLandingPagesCard tortSlug="roblox-abuse" tortLabel="Roblox Abuse" />
       <AskAIPanel
         tortContext={{
           tortName: "Roblox Child Exploitation",

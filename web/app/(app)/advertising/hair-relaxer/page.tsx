@@ -21,6 +21,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import { PageTour } from "../../components/page-tour";
 import {
   getSegmentSummary,
@@ -2000,6 +2001,7 @@ export default async function HairRelaxerPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="hair-relaxer" tortLabel="Hair Relaxer" />
       <AskAIPanel tortContext={HAIR_RELAXER_TORT_CONTEXT} />
     </div>
   );

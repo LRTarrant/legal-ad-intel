@@ -21,6 +21,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -2071,6 +2072,7 @@ export default async function AfffPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="afff-firefighting-foam" tortLabel="AFFF / Firefighter Foam" />
       <AskAIPanel tortContext={AFFF_TORT_CONTEXT} />
     </div>
   );

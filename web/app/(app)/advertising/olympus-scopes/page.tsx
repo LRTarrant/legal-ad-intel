@@ -4,6 +4,7 @@ import type { OlympusScopesPageData } from "./olympus-scopes-client";
 
 const OlympusScopesClient = nextDynamic(() => import("./olympus-scopes-client").then((m) => m.OlympusScopesClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -313,6 +314,7 @@ export default async function OlympusScopesPage() {
   return (
     <>
       <OlympusScopesClient data={pageData} />
+      <NewLandingPagesCard tortSlug="olympus-scopes" tortLabel="Olympus Scopes" />
       <AskAIPanel
         tortContext={{
           tortName: "Olympus Scopes (pre-MDL)",

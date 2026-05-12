@@ -20,6 +20,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -1992,6 +1993,7 @@ export default async function BairHuggerPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="bair-hugger" tortLabel="Bair Hugger" />
       <AskAIPanel tortContext={BAIR_HUGGER_TORT_CONTEXT} />
     </div>
   );

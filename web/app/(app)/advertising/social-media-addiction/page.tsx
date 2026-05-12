@@ -4,6 +4,7 @@ import type { SocialMediaPageData } from "./social-media-client";
 
 const SocialMediaClient = nextDynamic(() => import("./social-media-client").then((m) => m.SocialMediaClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -310,6 +311,7 @@ export default async function SocialMediaAddictionPage() {
   return (
     <>
       <SocialMediaClient data={pageData} />
+      <NewLandingPagesCard tortSlug="social-media-addiction" tortLabel="Social Media Addiction" />
       <AskAIPanel
         tortContext={{
           tortName: "Social Media Addiction",

@@ -5,6 +5,13 @@
  * pill in MDL_TORT_NAMES with hasFullProfile: true, or in the PRE_MDL_TORTS
  * watchlist).
  *
+ * When SUPABASE_URL + a Supabase key (service-role or anon) are available in
+ * the environment, additionally asserts that the same filesystem set matches
+ * `SELECT slug, advertising_page_slug FROM mass_torts WHERE has_advertising_page=true`.
+ * This catches drift between the filesystem, the overview page, and the DB
+ * column that the tort_landing_pages pipeline filters on. The DB check is a
+ * no-op when env is missing so local dev without `.env.local` still works.
+ *
  * Run via `npm run check:tort-registry` or automatically as a `prebuild` hook.
  *
  * To opt a route out (non-tort tooling pages, dynamic segments, sub-tools that
@@ -85,7 +92,53 @@ function extractRegisteredHrefs(source) {
   return hrefs;
 }
 
-function main() {
+async function checkDbDrift(filesystemTortSlugs) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    console.log(
+      "  (DB drift check skipped: SUPABASE_URL / key not set in env)"
+    );
+    return { skipped: true };
+  }
+
+  const endpoint = `${url}/rest/v1/mass_torts?select=slug,advertising_page_slug&has_advertising_page=eq.true`;
+  let rows;
+  try {
+    const resp = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+    }
+    rows = await resp.json();
+  } catch (e) {
+    console.error(`\u2717 DB drift check failed to query mass_torts: ${e.message}`);
+    return { ok: false, fatal: true };
+  }
+
+  // Filesystem set: directories that aren't tooling pages.
+  const dbSlugs = new Set(
+    rows.map((r) => r.advertising_page_slug ?? r.slug).filter(Boolean)
+  );
+  const fsSet = new Set(filesystemTortSlugs);
+
+  const inFsNotDb = [...fsSet].filter((s) => !dbSlugs.has(s));
+  const inDbNotFs = [...dbSlugs].filter((s) => !fsSet.has(s));
+
+  if (inFsNotDb.length === 0 && inDbNotFs.length === 0) {
+    console.log(
+      `  \u2713 DB drift check: ${dbSlugs.size} mass_torts rows match filesystem`
+    );
+    return { ok: true };
+  }
+  return { ok: false, inFsNotDb, inDbNotFs };
+}
+
+async function main() {
   const routes = listAdvertisingRoutes();
   const overviewSource = readOverviewSource();
   const registered = extractRegisteredHrefs(overviewSource);
@@ -97,8 +150,10 @@ function main() {
   //   (a) NON_TORT_ROUTES (tooling)
   //   (b) SUB_TOOL_ALIASES (parent's pill represents it)
   //   (c) directly registered with an /advertising/<slug> href
+  const tortSlugs = [];
   for (const slug of routes) {
     if (NON_TORT_ROUTES.has(slug)) continue;
+    tortSlugs.push(slug);
     if (slug in SUB_TOOL_ALIASES) {
       const parent = SUB_TOOL_ALIASES[slug];
       if (!registered.has(parent)) {
@@ -119,7 +174,13 @@ function main() {
     if (!routeExists) orphaned.push(slug);
   }
 
-  if (missing.length === 0 && orphaned.length === 0) {
+  const dbResult = await checkDbDrift(tortSlugs);
+
+  if (
+    missing.length === 0 &&
+    orphaned.length === 0 &&
+    (dbResult.skipped || dbResult.ok)
+  ) {
     console.log(
       `\u2713 Tort profile registry in sync (${routes.length} routes, ${registered.size} registered hrefs)`
     );
@@ -148,8 +209,39 @@ function main() {
     );
     for (const slug of orphaned) console.error(`  - /advertising/${slug}`);
   }
+  if (dbResult && dbResult.ok === false && !dbResult.skipped) {
+    if (dbResult.fatal) {
+      console.error(
+        "\nDB drift check could not query mass_torts (see error above)."
+      );
+    } else {
+      if (dbResult.inFsNotDb && dbResult.inFsNotDb.length > 0) {
+        console.error(
+          "\nFilesystem tort folders missing has_advertising_page=true in mass_torts:"
+        );
+        for (const slug of dbResult.inFsNotDb)
+          console.error(`  - ${slug}`);
+        console.error(
+          "\nFix by setting has_advertising_page=true (and advertising_page_slug if the db slug differs) on the relevant row."
+        );
+      }
+      if (dbResult.inDbNotFs && dbResult.inDbNotFs.length > 0) {
+        console.error(
+          "\nmass_torts rows with has_advertising_page=true but no /advertising/<slug>/page.tsx:"
+        );
+        for (const slug of dbResult.inDbNotFs)
+          console.error(`  - ${slug}`);
+        console.error(
+          "\nFix by creating the page directory, or by setting has_advertising_page=false."
+        );
+      }
+    }
+  }
   console.error("");
   process.exit(1);
 }
 
-main();
+main().catch((e) => {
+  console.error(`Unexpected error: ${e?.stack ?? e}`);
+  process.exit(2);
+});
