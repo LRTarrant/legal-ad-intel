@@ -317,18 +317,16 @@ If the user pastes a task plan from anywhere, follow it and keep scope to that p
 
 ## 12. Sibling-doc audit
 
-These referenced docs sit next to CLAUDE.md / under `docs/`. Status as of 2026-05-12:
+These referenced docs sit next to CLAUDE.md / under `docs/`. Status as of 2026-05-12, after the sibling-doc cleanup pass landed:
 
-| Doc | Status | Recommendation |
+| Doc | Status | Notes |
 |---|---|---|
-| `PROJECT_BRIEF.md` | Current; mostly accurate. | Keep. Renamed to drop trailing U+2009 in this PR. |
-| `CURRENT_PRIORITIES.md` | Current; updated 2026-05-08 with state-pages arc + queue. | Keep. Strip `[cite:XX]` / `[file:XX]` markers next time it's edited. |
-| `README.md` | Stale — describes 10 tables and a 5-line repo layout; reality has ~189 migrations and dozens of features. | Trim to a 30-line README that points at CLAUDE.md, PROJECT_BRIEF.md, and `docs/state-onboarding.md`. Don't keep the recommended-repo-structure block — it's fiction now. |
-| `SCHEMA.md` (referenced by CLAUDE.md §4) | **Missing** — no file by that name; only `docs/schema.md` exists. | Either (a) remove the reference, or (b) treat `web/lib/database.types.ts` (regenerated via `supabase gen types`) as the source of truth and delete `SCHEMA.md` from the navigation list. Recommended: (b). |
-| `ARCHITECTURE.md` (referenced by CLAUDE.md §4) | **Missing**. | This file now covers the architecture surface (tech stack, repo layout, feature map, workflows). Drop the reference. |
-| `docs/schema.md` | Stale — claims 10 tables centered on `ad_events`; reality is ~189 migrations including recall watchlist, MDL stack, state-crash, PI viability, channel-fit, etc. | **Regenerate from the live DB** (`supabase db pull` or a `pg_dump --schema-only`), then trim to a high-level overview that points at `web/lib/database.types.ts` for full column-level types. |
-| `docs/roadmap.md` | Stale — Phase 1/2 fiction; doesn't match current PI-states + recall-watchlist + Campaign Builder reality. | Replace with a thin file that points at `CURRENT_PRIORITIES.md`, or delete and consolidate into CLAUDE.md §1. |
-| `docs/data-sources.md` | Stale — generic; predates almost all real ingestion. | Replace with a table generated from §6 Feature Map (external API + pipeline + table mapping). Lower priority. |
+| `PROJECT_BRIEF.md` | Current. | Keep. |
+| `CURRENT_PRIORITIES.md` | Current; `[cite:XX]` / `[file:XX]` markers stripped. | Keep updating weekly. |
+| `README.md` | Current — thin, ~25 lines, points at CLAUDE.md / PROJECT_BRIEF / state-onboarding / schema / data-sources. | Keep thin. Don't reintroduce a repo-structure block — it rots. |
+| `docs/schema.md` | Current — regenerated as a domain map from `supabase/migrations/` + `web/lib/database.types.ts`. | `web/lib/database.types.ts` is the source of truth for column-level types. Refresh this doc when major schema changes land. |
+| `docs/roadmap.md` | Removed. | Roadmap lives in `CURRENT_PRIORITIES.md`. |
+| `docs/data-sources.md` | Current — mirrors the §6 Feature Map as a single table (Feature · External APIs · Pipelines · Workflow + schedule · Supabase tables). | Update when a new source, pipeline, or workflow lands. |
 | `docs/state-onboarding.md` | Current and useful runbook. | Keep as-is. |
 | `docs/recalls/recall-class-taxonomy-correction.md` | Current PR delta report; useful audit trail. | Keep. |
 

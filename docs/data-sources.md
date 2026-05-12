@@ -1,59 +1,17 @@
 # Data sources
 
-This document tracks the main source categories the platform is designed to support. It is intentionally high-level for now so the ingest architecture can stay flexible while the project is still being organized.
+Each user-facing feature is wired to one or more external data sources via the pipelines and workflows below. This table mirrors the feature map in CLAUDE.md §6 — update it when a new source, pipeline, or workflow lands. Schedules are UTC.
 
-## Advertising sources
+| Feature | External APIs | Pipelines | Workflow + schedule | Supabase tables |
+|---|---|---|---|---|
+| Recall Watchlist | openFDA `device/recall.json` + `device/enforcement.json`; CourtListener REST v4 | `openfda_device_recalls`, `courtlistener_recall_cases`, `courtlistener_recall_case_parties`, `recall_thermometer` | `recall-watchlist-weekly.yml` — Mon 12:00 | `recalls`, `recall_manufacturers`, `recall_cases`, `recall_stage_history`, `recall_specialty_firms`, `manufacturer_tort_map`, `recall_manufacturer_allow_list` |
+| Ad Intel Daily | Searchapi.io, Apify | `ad_intel_daily` | `ad-intel-daily.yml` — daily 11:00 | `ad_events`, `advertiser_entities`, `ad_aggregates_*`, `firms`, `advertiser_firms` |
+| Google Ads / TikTok / Trends / SERP / PI Search | Searchapi.io, Apify, TikTok CCL | `google_ads_daily`, `tiktok_ads_daily`, `google_trends_daily`, `serp_intel_daily`, `pi_search_daily`, `advertiser_rematch_daily` | `google-ads-daily.yml` 11:30; `tiktok-ads-daily.yml` 14:30; `google-trends-daily.yml` 08:00; `serp-intel-daily.yml` 12:00; `pi-search-daily.yml` 12:00; `advertiser-rematch-daily.yml` 16:00 | `serp_*`, `google_trends_*`, `tiktok_*`, `pi_search_*`, `geo_targets`, `advertiser_entities`, `meta_ad_library_source` |
+| MDL Tracker | JPML public reports; CourtListener REST v4 | `jpml_monthly`, `courtlistener_attorneys`, `courtlistener_mdl_attorneys` | `jpml-monthly.yml` — days 2–5 monthly 15:00; `courtlistener-attorneys.yml` — daily 14:00; `courtlistener-mdl-attorneys.yml` — manual | `mdls`, `mdl_stats_monthly`, `mdl_jpml_snapshots`, `dockets`, `docket_events`, `mdl_developments`, attorney/firm tables |
+| Mass-tort / PI surfaces | Google News, RSS feeds, OpenAI (classification) | `ingest_google_news_legal`, `ingest_rss_developments`, `load_cancer_incidence` | `ingest-google-news.yml` — daily 11:30 (+ Mon 05:00 tort backfill); `ingest-rss.yml` — daily 12:00 | `mass_torts`, `tort_recommended_markets`, `tort_traction`, `pi_viability_*`, `cancer_incidence_*`, `mdl_developments`, `manufacturer_tort_map` |
+| State Intelligence | NOAA Storm Events, NHTSA FARS, state-published PDFs (manual) | `scripts/load_fars.py`, `scripts/load_fars_vehicles.py`, `scripts/load_storm_events.py`, `scripts/load_boating.py`, `scripts/load_cancer_incidence.py`, `scripts/load_judicial.py`, `scripts/load_mdl.py`, `scripts/parse_state_injury_pdf.py`, `scripts/sync-fars-data.ts` (codegen) | `load-storm-events.yml` — monthly 5th 06:00 | `state_crash_statistics`, `state_data_sources`, `state_rollout`, `tort_traction`, `fatalities`, `storms`, `boating_*`, `construction_*`, `cancer_incidence`, `geo_targets`, `dma_markets` |
+| Campaign Builder | OpenAI, Google Vertex AI (Gemini), ElevenLabs, Resend | runtime AI generation only | none | `campaigns`, `campaign_assets` (Storage), `tort_images`, `tort_recommended_markets`, `dma_markets`, `geo_targets`, `firms`, `pronunciation_dictionary`, `generation_costs` |
+| Broadcast Intel | On-demand via `web/app/api/broadcast/sync` | none scheduled | none | `broadcast_stations`, `broadcast_market_intel`, related media-outlet tables |
+| Admin / Auth / Subscriptions | Resend (transactional email); GA4 (analytics) | n/a | cron-secret-gated `/api/alerts/check` for alerts | `profiles`, `firms`, `firm_managers`, `subscriptions`, `invites`, `tenant_branding`, `activity_log`, `alerts`, `pipeline_runs` |
 
-Potential source families for `ad_events`:
-
-- Meta ads
-- Google ads
-- TV ad monitoring
-- CTV ad monitoring
-- Radio ad monitoring
-- Vendor exports such as MediaRadar or iSpot
-
-Typical fields to preserve:
-
-- source identifiers
-- advertiser and campaign naming
-- event dates and air times
-- spend and impression estimates
-- platform and channel labels
-- market, state, or DMA clues
-
-## Litigation sources
-
-Potential source families for MDL and docket intelligence:
-
-- CourtListener
-- JPML / federal court publications
-- district court dockets
-- manually curated MDL reference data
-
-Likely targets:
-
-- `mdls`
-- `mdl_stats_monthly`
-- `dockets`
-- `docket_events`
-
-## Enrichment sources
-
-Potential source families for market overlays:
-
-- NOAA storm data
-- FARS or state fatality data
-- geographic market reference files
-
-Likely targets:
-
-- `storms`
-- `fatalities`
-- `markets`
-
-## Ingestion guidance
-
-- Keep raw source identifiers where possible for traceability.
-- Prefer append-oriented ingest plus dedupe on `(source, source_event_id)` or equivalent natural keys.
-- Normalize into dimension tables only after preserving source-native fields needed for audits and reprocessing.
+For environment variables and secrets, see CLAUDE.md §7. For workflow timeouts, retry behavior, and `continue-on-error` rules, see CLAUDE.md §8.
