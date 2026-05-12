@@ -1,7 +1,7 @@
 """Tests for _bulk_insert chunk sizing and per-chunk retry logic."""
 import os
 import sys
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
@@ -100,18 +100,28 @@ def test_404_raises_immediately_no_retry():
 # 5xx: retry with backoff
 # ---------------------------------------------------------------------------
 
+def _sleep_args(mock_sleep) -> list[float]:
+    """Return the positional float arg passed to each time.sleep call."""
+    return [c.args[0] for c in mock_sleep.call_args_list]
+
+
+def _assert_jittered(actual: float, base: int) -> None:
+    """Each retry sleeps `base + uniform(0, 0.25 * base)` seconds."""
+    assert base <= actual <= base * 1.25 + 1e-6, (
+        f"expected ~{base}s (+25% jitter), got {actual}s"
+    )
+
+
 def test_500_retries_exhausted_then_raises():
-    """Four 500 responses (1 initial + 3 retries) → raises after all attempts."""
+    """1 initial + len(delays) retries on persistent 500 → raises."""
     err = _make_response(500, "internal server error")
     with patch("lib.pipeline.httpx.post", return_value=err), \
          patch("lib.pipeline.time.sleep") as mock_sleep:
         with pytest.raises(httpx.HTTPStatusError):
             _bulk_insert("test_table", _rows(3), chunk_size=10)
-    # Should sleep before each retry: 1s, 4s, 16s
     assert mock_sleep.call_count == len(_BULK_CHUNK_RETRY_DELAYS)
-    mock_sleep.assert_any_call(1)
-    mock_sleep.assert_any_call(4)
-    mock_sleep.assert_any_call(16)
+    for actual, base in zip(_sleep_args(mock_sleep), _BULK_CHUNK_RETRY_DELAYS):
+        _assert_jittered(actual, base)
 
 
 def test_500_retries_total_post_count():
@@ -145,10 +155,9 @@ def test_chunk_fails_twice_then_succeeds():
         result = _bulk_insert("test_table", _rows(3), chunk_size=10)
     assert result == 3
     assert mock_post.call_count == 3
-    # Sleep before retry 1 (1s) and retry 2 (4s)
     assert mock_sleep.call_count == 2
-    mock_sleep.assert_any_call(1)
-    mock_sleep.assert_any_call(4)
+    for actual, base in zip(_sleep_args(mock_sleep), _BULK_CHUNK_RETRY_DELAYS[:2]):
+        _assert_jittered(actual, base)
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +192,7 @@ def test_network_error_then_success():
     assert result == 3
     assert mock_post.call_count == 2
     assert mock_sleep.call_count == 1
-    mock_sleep.assert_called_once_with(1)
+    _assert_jittered(_sleep_args(mock_sleep)[0], _BULK_CHUNK_RETRY_DELAYS[0])
 
 
 # ---------------------------------------------------------------------------
@@ -191,13 +200,16 @@ def test_network_error_then_success():
 # ---------------------------------------------------------------------------
 
 def test_retry_delay_sequence():
-    """Backoff delays are applied in order: 1s before retry 1, 4s before retry 2."""
+    """Backoff delays follow _BULK_CHUNK_RETRY_DELAYS in order, with jitter."""
     err = _make_response(500)
     ok = _make_response(201)
-    with patch("lib.pipeline.httpx.post", side_effect=[err, err, err, ok]), \
+    responses = [err] * len(_BULK_CHUNK_RETRY_DELAYS) + [ok]
+    with patch("lib.pipeline.httpx.post", side_effect=responses), \
          patch("lib.pipeline.time.sleep") as mock_sleep:
         _bulk_insert("test_table", _rows(1), chunk_size=10)
-    assert mock_sleep.call_args_list == [call(1), call(4), call(16)]
+    assert mock_sleep.call_count == len(_BULK_CHUNK_RETRY_DELAYS)
+    for actual, base in zip(_sleep_args(mock_sleep), _BULK_CHUNK_RETRY_DELAYS):
+        _assert_jittered(actual, base)
 
 
 # ---------------------------------------------------------------------------

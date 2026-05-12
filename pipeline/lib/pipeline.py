@@ -26,6 +26,7 @@ Environment variables:
 from __future__ import annotations
 
 import os
+import random
 import sys
 import time
 import traceback
@@ -110,6 +111,40 @@ def _get(table: str, params: dict) -> list[dict]:
     return resp.json()
 
 
+# Backoff (seconds) for the initial pipeline_configs read in PipelineRun.__init__.
+# Guards against a sibling job's crash leaving Supabase briefly degraded — without
+# this, the next job dies on its very first read and the whole chain unravels.
+_CONFIG_GET_RETRY_DELAYS: tuple[int, ...] = (5, 15, 30)
+
+
+def _get_with_retry(table: str, params: dict) -> list[dict]:
+    """`_get` with bounded retries for transient 5xx / network errors.
+
+    Only retries server-side / network failures; 4xx propagates immediately.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    last_exc: Exception | None = None
+    for attempt in range(len(_CONFIG_GET_RETRY_DELAYS) + 1):
+        if attempt > 0:
+            delay = _CONFIG_GET_RETRY_DELAYS[attempt - 1]
+            logger.warning(
+                "Retrying GET %s (attempt %d/%d) in ~%ds",
+                table, attempt, len(_CONFIG_GET_RETRY_DELAYS), delay,
+            )
+            _retry_sleep(delay)
+        try:
+            return _get(table, params)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code < 500:
+                raise
+            last_exc = exc
+        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError) as exc:
+            last_exc = exc
+    assert last_exc is not None
+    raise last_exc
+
+
 def _delete(table: str, params: dict) -> None:
     """Delete rows matching filter. In dry-run mode, logs instead."""
     if DRY_RUN:
@@ -123,8 +158,20 @@ def _delete(table: str, params: dict) -> None:
 BULK_CHUNK_SIZE = 500
 
 # Per-chunk retry delays (seconds) for transient 5xx / network errors.
-# Length of this tuple defines max retries (3 retries = 4 total attempts).
-_BULK_CHUNK_RETRY_DELAYS: tuple[int, ...] = (1, 4, 16)
+# Widened in response to recall-watchlist run 25741922002, where a Cloudflare
+# 502/500 storm in front of Supabase blew through the old (1,4,16) sequence
+# in under 22s and crashed upsert_recalls mid-batch.
+_BULK_CHUNK_RETRY_DELAYS: tuple[int, ...] = (5, 15, 45, 90)
+
+# Per-request httpx timeout (seconds) for bulk POST and per-row fallback
+# inside _bulk_insert. Long enough to ride through Cloudflare slow paths
+# without a client-side timeout cutting an in-flight request short.
+_BULK_REQUEST_TIMEOUT: int = 60
+
+
+def _retry_sleep(delay: int) -> None:
+    """Sleep `delay` seconds plus 0–25% jitter to desynchronize retries."""
+    time.sleep(delay + random.uniform(0, delay * 0.25))
 
 
 def _dedup_rows(rows: list[dict], keys: tuple[str, ...]) -> list[dict]:
@@ -229,12 +276,12 @@ def _bulk_insert(
             if attempt > 0:
                 delay = _BULK_CHUNK_RETRY_DELAYS[attempt - 1]
                 logger.warning(
-                    "Chunk %d-%d: retry %d/%d in %ds",
+                    "Chunk %d-%d: retry %d/%d in ~%ds",
                     i, i + len(chunk), attempt, len(_BULK_CHUNK_RETRY_DELAYS), delay,
                 )
-                time.sleep(delay)
+                _retry_sleep(delay)
             try:
-                resp = httpx.post(base_url, headers=headers, json=chunk, timeout=120)
+                resp = httpx.post(base_url, headers=headers, json=chunk, timeout=_BULK_REQUEST_TIMEOUT)
             except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError) as exc:
                 if attempt < len(_BULK_CHUNK_RETRY_DELAYS):
                     logger.warning(
@@ -266,7 +313,7 @@ def _bulk_insert(
                 "per-row insert for %s (chunk size=%d)", table, len(chunk),
             )
             for row in chunk:
-                row_resp = httpx.post(base_url, headers=headers, json=[row], timeout=60)
+                row_resp = httpx.post(base_url, headers=headers, json=[row], timeout=_BULK_REQUEST_TIMEOUT)
                 if row_resp.status_code == 409:
                     skipped_dupes += 1
                     continue
@@ -387,8 +434,10 @@ class PipelineRun:
         if DRY_RUN:
             self._metadata["dry_run"] = True
 
-        # Pull source_domain from pipeline_configs
-        configs = _get("pipeline_configs", {
+        # Pull source_domain from pipeline_configs. Wrap in retry so a transient
+        # Supabase blip — e.g. a sibling job crashing and briefly degrading the
+        # PostgREST instance — doesn't kill this job before it even starts.
+        configs = _get_with_retry("pipeline_configs", {
             "pipeline_name": f"eq.{pipeline_name}",
             "select": "source_domain,step_definitions",
         })
