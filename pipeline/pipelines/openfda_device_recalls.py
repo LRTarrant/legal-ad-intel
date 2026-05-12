@@ -251,34 +251,53 @@ def _update_aliases(manuf_id: str, aliases: list[str]) -> None:
     resp.raise_for_status()
 
 
-def ensure_manufacturer(raw_name: str, cache: dict[str, str]) -> str | None:
-    """Upsert a manufacturer and return its id. Uses an in-memory cache to
-    avoid hammering the API during a single run."""
+def ensure_manufacturer(raw_name: str, cache: dict[str, dict]) -> str | None:
+    """Upsert a manufacturer and return its id.
+
+    ``cache`` maps slug → {id, canonical_name, known_aliases} and is the
+    sole authoritative source for alias state during a run.  Cache hits
+    perform zero HTTP calls; only the first encounter per unique slug hits
+    Supabase.
+    """
     if not raw_name:
         return None
     canonical = canonicalize_manufacturer(raw_name)
     if not canonical:
         return None
     slug = slugify(canonical)
+
     if slug in cache:
-        manuf_id = cache[slug]
-        existing = _find_by_slug("recall_manufacturers", slug)
-        if existing and raw_name not in (existing.get("aliases") or []) and raw_name != existing.get("canonical_name"):
-            new_aliases = list(set((existing.get("aliases") or []) + [raw_name]))
+        entry = cache[slug]
+        manuf_id = entry["id"]
+        if raw_name not in entry["known_aliases"] and raw_name != entry["canonical_name"]:
+            new_aliases = sorted(entry["known_aliases"] | {raw_name})
             _update_aliases(manuf_id, new_aliases)
+            entry["known_aliases"].add(raw_name)
         return manuf_id
 
     existing = _find_by_slug("recall_manufacturers", slug)
     if existing:
-        cache[slug] = existing["id"]
-        if raw_name not in (existing.get("aliases") or []) and raw_name != existing.get("canonical_name"):
-            new_aliases = list(set((existing.get("aliases") or []) + [raw_name]))
+        entry = {
+            "id": existing["id"],
+            "canonical_name": existing.get("canonical_name", canonical),
+            "known_aliases": set(existing.get("aliases") or []),
+        }
+        cache[slug] = entry
+        if raw_name not in entry["known_aliases"] and raw_name != entry["canonical_name"]:
+            new_aliases = sorted(entry["known_aliases"] | {raw_name})
             _update_aliases(existing["id"], new_aliases)
+            entry["known_aliases"].add(raw_name)
         return existing["id"]
 
     if DRY_RUN:
-        cache[slug] = f"dry-{slug}"
-        return cache[slug]
+        entry = {
+            "id": f"dry-{slug}",
+            "canonical_name": canonical,
+            "known_aliases": {raw_name} if raw_name != canonical else set(),
+        }
+        cache[slug] = entry
+        return entry["id"]
+
     url = f"{SUPABASE_URL}/rest/v1/recall_manufacturers"
     payload = {
         "canonical_name": canonical,
@@ -288,7 +307,12 @@ def ensure_manufacturer(raw_name: str, cache: dict[str, str]) -> str | None:
     resp = httpx.post(url, headers={**_headers(want_return=True)}, json=payload, timeout=30)
     resp.raise_for_status()
     new_id = resp.json()[0]["id"]
-    cache[slug] = new_id
+    entry = {
+        "id": new_id,
+        "canonical_name": canonical,
+        "known_aliases": {raw_name} if raw_name != canonical else set(),
+    }
+    cache[slug] = entry
     return new_id
 
 
@@ -400,7 +424,8 @@ def main() -> int:
             step.set_counts(rows_in=0, rows_out=len(enforcement_map))
 
         with run.step("normalize_manufacturers") as step:
-            cache: dict[str, str] = {}
+            cache: dict[str, dict] = {}
+            total_mfr_lookups = 0
             normalized: list[dict] = []
             wanted = set(classes) if classes else None
             unclassified_count = 0
@@ -420,8 +445,17 @@ def main() -> int:
                         recalling_firm = manuf_name_field[0]
                     elif isinstance(manuf_name_field, str):
                         recalling_firm = manuf_name_field
+                if recalling_firm:
+                    total_mfr_lookups += 1
                 manuf_id = ensure_manufacturer(recalling_firm, cache) if recalling_firm else None
                 normalized.append(build_recall_row(ev, manuf_id, enforcement_map))
+
+            cache_misses = len(cache)  # each unique slug = exactly one first-fetch
+            cache_hits = total_mfr_lookups - cache_misses
+            logger.info(
+                "normalize_manufacturers cache stats: hits=%d misses=%d total_lookups=%d",
+                cache_hits, cache_misses, total_mfr_lookups,
+            )
 
             if unclassified_count:
                 logger.info(
