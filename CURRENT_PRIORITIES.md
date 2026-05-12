@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-05-12
+Last updated: 2026-05-12 (data-source arc scaffolded)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -149,7 +149,30 @@ Parked (no action unless conditions change):
 
 ---
 
-## 6. How AI tools should use this file
+## 6. Data Source Arc: CPSC → FAERS → MAUDE
+
+**Goal:** Stand up three complementary tort-signal data sources on a shared openFDA-style ingest architecture. The recall watchlist arc is closed; this is the next arc.
+
+**Sequencing rationale (build order is deliberate, not alphabetical):**
+
+1. **CPSC first.** Sits entirely outside FDA AEMS migration risk (see below). Lets us iterate on the shared ingest architecture — HTTP client, retry, manufacturer normalization, tort-signal scoring — without a moving-target endpoint. Also fills the non-FDA gap: consumer products, recalls, NEISS injury data that FAERS/MAUDE cannot see.
+2. **FAERS second.** Pharma foundation. Forces us to lift the existing recall HTTP client into a shared `openfda_client` module and build the AEMS adapter layer the right way — FAERS is the lower-volume openFDA endpoint (~20M records, quarterly refresh) so we can prove the adapter pattern before MAUDE's ~24M records and weekly cadence stress it. Pairs with adding 2–3 pharma tort pages (GLP-1 NAION is the canonical live signal — see `docs/data-sources/faers.md` §5 and §7).
+3. **MAUDE third.** Inherits the shared `openfda_client` + AEMS adapter from FAERS. Larger volume (~24M records, weekly refresh, nested arrays, free-text narratives) — by the time we get here the architecture is proven.
+
+**Central scope risk — AEMS migration:** FDA launched the unified Adverse Event Monitoring System (AEMS) on 2026-03-11 with stated plan to migrate MAUDE into it by end of May 2026 and FAERS to follow. openFDA's `/device/event.json` and `/drug/event.json` are not formally deprecated, but their upstreams are being replaced. Both FAERS and MAUDE pipelines must wrap the endpoint URL and field map behind a thin adapter layer so the AEMS cutover is a one-file change. Building CPSC first buys us the architectural runway to get this right. Details in `docs/data-sources/maude.md` §6 (AEMS migration timeline) and `docs/data-sources/faers.md` §7.
+
+**Dependency:** FAERS rollout pairs with adding 2–3 pharma tort pages (e.g., GLP-1 NAION) — the pipeline is only as valuable as the surfaces that consume it. CPSC and MAUDE are device/product-shaped and reuse the existing tort-page model.
+
+**Research status:**
+- `docs/data-sources/maude.md` — complete (verbatim research scoping report).
+- `docs/data-sources/faers.md` — complete (verbatim research scoping report).
+- `docs/data-sources/cpsc.md` — placeholder; deep-research scoping in progress in a separate chat. Pipeline implementation blocked on that research landing.
+
+**Out of scope for the scaffolding PR:** no pipeline code, no schema migrations, no web/ changes. Those land in follow-up PRs once CPSC research is complete.
+
+---
+
+## 7. How AI tools should use this file
 
 - **Claude:** Treat this as the source of truth for what features are “in play” this week; don’t start work outside these items unless explicitly asked.
 - **Perplexity Computer:** Use this to decide what’s high-value when orchestrating multi-step tasks; everything else belongs in backlog.

@@ -326,7 +326,10 @@ These referenced docs sit next to CLAUDE.md / under `docs/`. Status as of 2026-0
 | `README.md` | Current — thin, ~25 lines, points at CLAUDE.md / PROJECT_BRIEF / state-onboarding / schema / data-sources. | Keep thin. Don't reintroduce a repo-structure block — it rots. |
 | `docs/schema.md` | Current — regenerated as a domain map from `supabase/migrations/` + `web/lib/database.types.ts`. | `web/lib/database.types.ts` is the source of truth for column-level types. Refresh this doc when major schema changes land. |
 | `docs/roadmap.md` | Removed. | Roadmap lives in `CURRENT_PRIORITIES.md`. |
-| `docs/data-sources.md` | Current — mirrors the §6 Feature Map as a single table (Feature · External APIs · Pipelines · Workflow + schedule · Supabase tables). | Update when a new source, pipeline, or workflow lands. |
+| `docs/data-sources.md` | Stale — superseded by `docs/data-sources/` directory (per-source scoping docs). | Delete in a follow-up PR once any unique content has been merged into the new directory. New per-source research lands under `docs/data-sources/<source>.md`. |
+| `docs/data-sources/maude.md` | Current — verbatim research scoping report for FDA MAUDE (`/device/event.json`) ingest. | Refresh if AEMS migration changes endpoint/schema (see CLAUDE.md §11 and the doc's §6). |
+| `docs/data-sources/faers.md` | Current — verbatim research scoping report for openFDA FAERS (`/drug/event.json`) ingest. | Refresh if openFDA shifts /drug/event from quarterly to daily cadence (per Aug 22, 2025 FDA announcement). |
+| `docs/data-sources/cpsc.md` | Placeholder. Research pending; Lance owner; sequenced first in the CPSC → FAERS → MAUDE arc (no AEMS exposure). | Replace verbatim with the deep-research scoping doc when it lands. |
 | `docs/state-onboarding.md` | Current and useful runbook. | Keep as-is. |
 | `docs/recalls/recall-class-taxonomy-correction.md` | Current PR delta report; useful audit trail. | Keep. |
 
