@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-05-12 (data-source arc scaffolded)
+Last updated: 2026-05-12 (CPSC research complete; data-source arc fully scoped)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -163,12 +163,14 @@ Parked (no action unless conditions change):
 
 **Dependency:** FAERS rollout pairs with adding 2–3 pharma tort pages (e.g., GLP-1 NAION) — the pipeline is only as valuable as the surfaces that consume it. CPSC and MAUDE are device/product-shaped and reuse the existing tort-page model.
 
-**Research status:**
+**Research status (all three sources scoped):**
 - `docs/data-sources/maude.md` — complete (verbatim research scoping report).
 - `docs/data-sources/faers.md` — complete (verbatim research scoping report).
-- `docs/data-sources/cpsc.md` — placeholder; deep-research scoping in progress in a separate chat. Pipeline implementation blocked on that research landing.
+- `docs/data-sources/cpsc.md` — complete. Identifies three distinct surfaces (Recalls API, SaferProducts.gov Incident Reports OData, api.cpsc.gov NEISS), Section 6(b) disclosure mechanics that structurally delay public data by ≥15 days, and the CPSC → HHS reorg pending Congress as the AEMS-analogue political risk.
 
-**Out of scope for the scaffolding PR:** no pipeline code, no schema migrations, no web/ changes. Those land in follow-up PRs once CPSC research is complete.
+**Next deliverable: CPSC Phase 1 — Recalls API ingest.** Per the cpsc.md §8 phased plan: build `pipelines/cpsc_recalls.py` against `https://www.saferproducts.gov/RestWebServices/Recall?format=json` (no auth, ~10K records, weekly refresh, ~1–2 engineer-days). Lands a new `cpsc_recalls` + six child tables under a `cpsc_*` namespace (do NOT extend the existing `recalls` table — different recall-number namespace and severity semantics). Wrap the endpoint URL in an env-var adapter from day one so any HHS reorg URL change is a config flip. Surface CPSC recalls in the existing Recall Watchlist behind a source filter. Phase 2 (Incident Reports OData, leading-indicator signal) and Phase 3 (NEISS aggregate context) land after Phase 1 is operating cleanly.
+
+**Out of scope for this scaffolding PR:** no pipeline code, no schema migrations, no web/ changes — those land in follow-up PRs starting with CPSC Phase 1.
 
 ---
 

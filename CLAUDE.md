@@ -329,7 +329,7 @@ These referenced docs sit next to CLAUDE.md / under `docs/`. Status as of 2026-0
 | `docs/data-sources.md` | Stale — superseded by `docs/data-sources/` directory (per-source scoping docs). | Delete in a follow-up PR once any unique content has been merged into the new directory. New per-source research lands under `docs/data-sources/<source>.md`. |
 | `docs/data-sources/maude.md` | Current — verbatim research scoping report for FDA MAUDE (`/device/event.json`) ingest. | Refresh if AEMS migration changes endpoint/schema (see CLAUDE.md §11 and the doc's §6). |
 | `docs/data-sources/faers.md` | Current — verbatim research scoping report for openFDA FAERS (`/drug/event.json`) ingest. | Refresh if openFDA shifts /drug/event from quarterly to daily cadence (per Aug 22, 2025 FDA announcement). |
-| `docs/data-sources/cpsc.md` | Placeholder. Research pending; Lance owner; sequenced first in the CPSC → FAERS → MAUDE arc (no AEMS exposure). | Replace verbatim with the deep-research scoping doc when it lands. |
+| `docs/data-sources/cpsc.md` | Current — verbatim research scoping report for CPSC. Covers three distinct surfaces: Recalls API (no auth, v1 build), SaferProducts.gov Incident Reports OData (v2), and api.cpsc.gov NEISS (v3, deferred). | Refresh if CPSC's pending HHS reorganization (still before Congress as of May 2026) changes the endpoint hosts — see the doc's §6 ("CPSC organizational risk") for the AEMS-analogue risk. |
 | `docs/state-onboarding.md` | Current and useful runbook. | Keep as-is. |
 | `docs/recalls/recall-class-taxonomy-correction.md` | Current PR delta report; useful audit trail. | Keep. |
 
