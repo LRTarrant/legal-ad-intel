@@ -1,10 +1,20 @@
 """Tests for recall_thermometer scoring logic."""
 import sys
 import os
+from unittest.mock import MagicMock, patch
+
+import httpx
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pipelines.recall_thermometer import compute_stage, reason_for_change
+# Match test_bulk_insert.py: ensure DRY_RUN is off so the HTTP path exercises.
+os.environ.pop("DRY_RUN", None)
+
+from pipelines.recall_thermometer import (
+    _bulk_update_recalls,
+    compute_stage,
+    reason_for_change,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -140,3 +150,55 @@ def test_reason_class_i_no_trigger_when_already_at_or_above_stage_2():
         has_class_i=True,
     )
     assert reason == "new_case"
+
+
+# ---------------------------------------------------------------------------
+# _bulk_update_recalls — bulk upsert wiring
+# ---------------------------------------------------------------------------
+
+def _ok_response() -> MagicMock:
+    resp = MagicMock(spec=httpx.Response)
+    resp.status_code = 201
+    resp.text = ""
+    resp.raise_for_status.return_value = None
+    return resp
+
+
+def test_bulk_update_recalls_empty_skips_http():
+    """Empty input returns 0 and never POSTs."""
+    with patch("lib.pipeline.httpx.post") as mock_post:
+        assert _bulk_update_recalls([]) == 0
+    mock_post.assert_not_called()
+
+
+def test_bulk_update_recalls_posts_upsert_with_correct_target():
+    """Single-row update POSTs with on_conflict=source,external_id and
+    merge-duplicates, carrying source + external_id + score fields."""
+    rows = [{
+        "source": "openfda_device",
+        "external_id": "Z-0001-2026",
+        "case_count": 7,
+        "state_count": 3,
+        "specialty_firm_count": 1,
+        "stage": 3,
+        "stage_label": "warm",
+        "first_case_filed_at": "2025-01-15",
+        "last_case_filed_at": "2026-04-30",
+        "last_scored_at": "2026-05-12T12:00:00+00:00",
+    }]
+    with patch("lib.pipeline.httpx.post", return_value=_ok_response()) as mock_post:
+        sent = _bulk_update_recalls(rows)
+
+    assert sent == 1
+    assert mock_post.call_count == 1
+    call = mock_post.call_args
+    url = call.args[0] if call.args else call.kwargs["url"]
+    assert "/rest/v1/recalls" in url
+    assert "on_conflict=source%2Cexternal_id" in url or "on_conflict=source,external_id" in url
+    prefer = call.kwargs["headers"]["Prefer"]
+    assert "resolution=merge-duplicates" in prefer
+    payload = call.kwargs["json"]
+    assert payload[0]["source"] == "openfda_device"
+    assert payload[0]["external_id"] == "Z-0001-2026"
+    assert payload[0]["stage"] == 3
+    assert payload[0]["case_count"] == 7
