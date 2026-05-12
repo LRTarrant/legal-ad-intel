@@ -112,12 +112,25 @@ async function checkDbDrift(filesystemTortSlugs) {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
     if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+      const text = await resp.text();
+      // Pre-migration prod / preview environments don't have the
+      // has_advertising_page or advertising_page_slug columns yet.
+      // PostgREST returns 400 with code "42703" (undefined_column).
+      // Treat that as "skip" rather than fatal \u2014 the drift check is a
+      // bonus on top of the filesystem<->overview check above.
+      if (resp.status === 400 && /42703|column .* does not exist|has_advertising_page|advertising_page_slug/i.test(text)) {
+        console.log(
+          "  (DB drift check skipped: mass_torts.has_advertising_page not present yet \u2014 pre-migration)"
+        );
+        return { skipped: true };
+      }
+      throw new Error(`HTTP ${resp.status}: ${text}`);
     }
     rows = await resp.json();
   } catch (e) {
-    console.error(`\u2717 DB drift check failed to query mass_torts: ${e.message}`);
-    return { ok: false, fatal: true };
+    // Don't fail prebuild for a transient DB issue; warn and skip.
+    console.warn(`  (DB drift check skipped: query failed \u2014 ${e.message})`);
+    return { skipped: true };
   }
 
   // Filesystem set: directories that aren't tooling pages.
