@@ -45,7 +45,7 @@ jobs:
   openfda-recalls:
     name: FDA device recall ingest
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     # FDA API flakiness must not block litigation tracking downstream.
     continue-on-error: true
 
