@@ -359,6 +359,7 @@ export async function POST(req: NextRequest) {
         purpose: "mt_radio_script",
         provider: "openai",
         model: "gpt-4o",
+        called_from: "api/campaigns/generate-radio-script",
         usage: {
           input_tokens: data.usage?.prompt_tokens ?? 0,
           output_tokens: data.usage?.completion_tokens ?? 0,

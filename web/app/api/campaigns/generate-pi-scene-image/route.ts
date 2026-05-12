@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
       purpose: "image_gen",
       provider: "internal",
       model: "pi_library",
+      called_from: "api/campaigns/generate-pi-scene-image",
       usage: { image_count: 1 },
       meta: {
         pi_category: body.pi_category,
@@ -206,6 +207,7 @@ export async function POST(req: NextRequest) {
     purpose: "image_gen",
     provider: providerName,
     model: modelName,
+    called_from: "api/campaigns/generate-pi-scene-image",
     usage: { image_count: 1 },
     meta: {
       pi_category: body.pi_category,

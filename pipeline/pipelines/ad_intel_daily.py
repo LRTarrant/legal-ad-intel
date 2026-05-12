@@ -49,6 +49,42 @@ from lib.pipeline import (
     _headers, _get, _bulk_insert, _delete,
     SUPABASE_URL,
 )
+from lib.api_usage import log_api_call
+
+
+def _log_apify_run(run_info: dict, actor_id: str, label: str) -> None:
+    """Read cost off an Apify run record and write a row to api_usage_log.
+
+    Cost is reported by Apify in `usage.totalUsageUsd` (or
+    `usageTotalUsd` at the run-record root) once the run is terminal.
+    Compute units come from `usage.ACTOR_COMPUTE_UNITS` or
+    `computeUnits`. Never raises.
+    """
+    usage = run_info.get("usage") or {}
+    total = run_info.get("usageTotalUsd")
+    if isinstance(total, (int, float)):
+        cost_usd = float(total)
+    elif isinstance(usage.get("totalUsageUsd"), (int, float)):
+        cost_usd = float(usage["totalUsageUsd"])
+    else:
+        cost_usd = 0.0
+    compute_units = usage.get("ACTOR_COMPUTE_UNITS") or run_info.get("computeUnits") or 0
+    log_api_call(
+        provider="apify",
+        operation=label,
+        model_or_actor=actor_id,
+        units_consumed=float(compute_units),
+        unit_type="compute_units",
+        cost_usd=cost_usd,
+        called_from="pipelines.ad_intel_daily",
+        request_id=str(run_info.get("id") or ""),
+        metadata={
+            "status": run_info.get("status"),
+            "dataset_id": run_info.get("defaultDatasetId"),
+            "started_at": run_info.get("startedAt"),
+            "finished_at": run_info.get("finishedAt"),
+        },
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +211,7 @@ def _run_apify_actor(actor_id: str, actor_input: dict, label: str) -> list[dict]
         status = run_info.get("status")
 
         if status == "SUCCEEDED":
+            _log_apify_run(run_info, actor_id, label)
             dataset_id = run_info.get("defaultDatasetId")
             if not dataset_id:
                 return []
@@ -187,6 +224,8 @@ def _run_apify_actor(actor_id: str, actor_input: dict, label: str) -> list[dict]
             return items_resp.json()
 
         if status in {"FAILED", "ABORTED", "TIMED-OUT"}:
+            # Log so the dashboard still surfaces wasted spend on failed runs.
+            _log_apify_run(run_info, actor_id, label)
             raise RuntimeError(f"Apify actor {label} ended with status={status}")
 
         if time.time() - started >= APIFY_RUN_TIMEOUT_SECONDS:

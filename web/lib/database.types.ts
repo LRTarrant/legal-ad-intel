@@ -396,6 +396,95 @@ export type Database = {
         }
         Relationships: []
       }
+      api_pricing_config: {
+        Row: {
+          created_at: string
+          effective_from: string
+          id: string
+          monthly_quota_units: number | null
+          notes: string | null
+          plan_name: string | null
+          provider: Database["public"]["Enums"]["api_provider"]
+          rate_per_unit_usd: number
+          unit_type: Database["public"]["Enums"]["api_unit_type"]
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          monthly_quota_units?: number | null
+          notes?: string | null
+          plan_name?: string | null
+          provider: Database["public"]["Enums"]["api_provider"]
+          rate_per_unit_usd: number
+          unit_type: Database["public"]["Enums"]["api_unit_type"]
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          monthly_quota_units?: number | null
+          notes?: string | null
+          plan_name?: string | null
+          provider?: Database["public"]["Enums"]["api_provider"]
+          rate_per_unit_usd?: number
+          unit_type?: Database["public"]["Enums"]["api_unit_type"]
+        }
+        Relationships: []
+      }
+      api_usage_log: {
+        Row: {
+          called_from: string
+          cost_usd: number
+          created_at: string
+          id: string
+          metadata: Json
+          model_or_actor: string
+          operation: string
+          provider: Database["public"]["Enums"]["api_provider"]
+          request_id: string | null
+          tenant_id: string | null
+          unit_type: Database["public"]["Enums"]["api_unit_type"]
+          units_consumed: number
+        }
+        Insert: {
+          called_from: string
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          model_or_actor: string
+          operation: string
+          provider: Database["public"]["Enums"]["api_provider"]
+          request_id?: string | null
+          tenant_id?: string | null
+          unit_type: Database["public"]["Enums"]["api_unit_type"]
+          units_consumed?: number
+        }
+        Update: {
+          called_from?: string
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          model_or_actor?: string
+          operation?: string
+          provider?: Database["public"]["Enums"]["api_provider"]
+          request_id?: string | null
+          tenant_id?: string | null
+          unit_type?: Database["public"]["Enums"]["api_unit_type"]
+          units_consumed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boating_accidents: {
         Row: {
           accident_date: string | null
@@ -2902,6 +2991,14 @@ export type Database = {
     }
     Enums: {
       advertiser_segment: "on_docket" | "off_docket" | "aggregator"
+      api_provider: "openai" | "searchapi" | "apify"
+      api_unit_type:
+        | "tokens"
+        | "searches"
+        | "compute_units"
+        | "characters"
+        | "seconds"
+        | "images"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3030,6 +3127,15 @@ export const Constants = {
   public: {
     Enums: {
       advertiser_segment: ["on_docket", "off_docket", "aggregator"],
+      api_provider: ["openai", "searchapi", "apify"],
+      api_unit_type: [
+        "tokens",
+        "searches",
+        "compute_units",
+        "characters",
+        "seconds",
+        "images",
+      ],
     },
   },
 } as const

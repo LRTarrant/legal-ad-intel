@@ -238,6 +238,7 @@ export async function POST(req: NextRequest) {
                                   // PI is identifiable via pi_category in meta.
       provider: "openai",
       model: "gpt-4o",
+      called_from: "api/campaigns/generate-pi-video-script",
       usage: {
         input_tokens: data.usage?.prompt_tokens ?? 0,
         output_tokens: data.usage?.completion_tokens ?? 0,

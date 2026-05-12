@@ -18,6 +18,7 @@ import {
   calculateCost,
   type UsageMeasurements,
 } from "./calculator";
+import { logApiCall, type ApiProvider, type ApiUnitType } from "../api-usage";
 
 export type GenerationPurpose =
   | "pi_script"
@@ -43,6 +44,12 @@ export interface TrackCallInput {
   latency_ms?: number;
   /** Free-form metadata. Keep small. */
   meta?: Record<string, unknown>;
+  /**
+   * Source path for the api_usage_log fan-out
+   * (e.g. "api/campaigns/generate-pi-meta-ad"). Required so the
+   * admin cost dashboard can attribute spend to a route.
+   */
+  called_from: string;
 }
 
 export interface TrackCallResult {
@@ -97,15 +104,78 @@ export async function trackCall(
     if (error) {
       // Log but don't throw \u2014 cost tracking is observability.
       console.warn(`[cost-tracking] insert failed: ${error.message}`);
+      // Still fan out to api_usage_log so the admin dashboard sees the
+      // call even when the per-user attribution write fails.
+      void fanOutToApiUsageLog(input, cost_cents);
       return { ok: false, cost_cents, error: error.message };
     }
 
+    void fanOutToApiUsageLog(input, cost_cents);
     return { ok: true, cost_cents, id: (data as { id: string } | null)?.id };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.warn(`[cost-tracking] insert threw: ${message}`);
+    void fanOutToApiUsageLog(input, cost_cents);
     return { ok: false, cost_cents, error: message };
   }
+}
+
+/* \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+/* Fan-out to api_usage_log                                                 */
+/* \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+
+function pickUnitType(provider: string, usage: UsageMeasurements): ApiUnitType {
+  if (usage.input_tokens !== undefined || usage.output_tokens !== undefined) {
+    return "tokens";
+  }
+  if (usage.characters_synth !== undefined) return "characters";
+  if (usage.seconds_video !== undefined || usage.seconds_audio !== undefined) {
+    return "seconds";
+  }
+  if (usage.image_count !== undefined) return "images";
+  // Unknown shape; default to tokens (most calls).
+  void provider;
+  return "tokens";
+}
+
+function pickUnitsConsumed(usage: UsageMeasurements): number {
+  if (usage.input_tokens !== undefined || usage.output_tokens !== undefined) {
+    return (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0);
+  }
+  if (usage.characters_synth !== undefined) return usage.characters_synth;
+  if (usage.seconds_video !== undefined) return usage.seconds_video;
+  if (usage.seconds_audio !== undefined) return usage.seconds_audio;
+  if (usage.image_count !== undefined) return usage.image_count;
+  return 0;
+}
+
+async function fanOutToApiUsageLog(
+  input: TrackCallInput,
+  cost_cents: number,
+): Promise<void> {
+  // Only the three providers the admin dashboard tracks fan out.
+  // Anthropic / ElevenLabs / Google Vertex calls stay in
+  // generation_costs only until those providers join api_usage_log.
+  const TRACKED: ReadonlySet<string> = new Set(["openai", "searchapi", "apify"]);
+  if (!TRACKED.has(input.provider)) return;
+
+  await logApiCall({
+    provider: input.provider as ApiProvider,
+    operation: input.purpose,
+    model_or_actor: input.model,
+    units_consumed: pickUnitsConsumed(input.usage),
+    unit_type: pickUnitType(input.provider, input.usage),
+    cost_usd: cost_cents / 100,
+    called_from: input.called_from,
+    tenant_id: input.firm_id ?? null,
+    metadata: {
+      purpose: input.purpose,
+      campaign_id: input.campaign_id ?? null,
+      user_id: input.user_id,
+      latency_ms: input.latency_ms ?? null,
+      ...(input.meta ?? {}),
+    },
+  });
 }
 
 /* ──────────────────────────────────────────────────────────────────────── */
