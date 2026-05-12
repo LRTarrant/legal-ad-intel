@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logOpenAITokenCall } from "@/lib/api-usage";
 import {
   getQualificationCriteriaByName,
   type ScreeningQuestion,
@@ -385,6 +386,19 @@ export async function POST(req: NextRequest) {
           { status: 502 },
         );
       }
+
+      void logOpenAITokenCall({
+        operation: "landing_page",
+        model: "gpt-4o",
+        input_tokens: data.usage?.prompt_tokens ?? 0,
+        output_tokens: data.usage?.completion_tokens ?? 0,
+        called_from: "api/campaigns/generate-landing-page",
+        metadata: {
+          tort_name: body.tort_name,
+          states: body.states,
+          multi_page: isMultiPage,
+        },
+      });
 
       /* ── Build qualification form HTML (shared) ────────────────── */
       let formHtml: string | null = null;

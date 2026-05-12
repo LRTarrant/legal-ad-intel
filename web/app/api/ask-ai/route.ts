@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextRequest } from "next/server";
+import { logOpenAITokenCall } from "@/lib/api-usage";
 
 export async function POST(req: NextRequest) {
   const { messages, tortContext, pageContext } = await req.json();
@@ -60,10 +61,12 @@ ${pageContext.dataSummary}
     systemMessage = `You are an AI analyst embedded in a legal advertising intelligence platform. You help plaintiff law firms and their marketing agencies make better case-acquisition and advertising decisions. Be concise, data-driven, and actionable.`;
   }
 
+  const MODEL = "gpt-4o-mini";
   const stream = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: MODEL,
     messages: [{ role: "system", content: systemMessage }, ...messages],
     stream: true,
+    stream_options: { include_usage: true },
     temperature: 0.3,
     max_tokens: 1000,
   });
@@ -71,13 +74,31 @@ ${pageContext.dataSummary}
   const encoder = new TextEncoder();
   const readable = new ReadableStream({
     async start(controller) {
+      let inputTokens = 0;
+      let outputTokens = 0;
       for await (const chunk of stream) {
         const text = chunk.choices[0]?.delta?.content || "";
         if (text) {
           controller.enqueue(encoder.encode(text));
         }
+        // Final chunk (stream_options.include_usage) carries usage totals.
+        if (chunk.usage) {
+          inputTokens = chunk.usage.prompt_tokens ?? 0;
+          outputTokens = chunk.usage.completion_tokens ?? 0;
+        }
       }
       controller.close();
+      void logOpenAITokenCall({
+        operation: "ask_ai",
+        model: MODEL,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        called_from: "api/ask-ai",
+        metadata: {
+          has_tort_context: Boolean(tortContext),
+          has_page_context: Boolean(pageContext),
+        },
+      });
     },
   });
 

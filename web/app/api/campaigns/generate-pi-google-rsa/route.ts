@@ -296,6 +296,7 @@ export async function POST(req: NextRequest) {
     purpose: "ad_creative",
     provider: "openai",
     model: "gpt-4o",
+    called_from: "api/campaigns/generate-pi-google-rsa",
     usage: {
       input_tokens: llmData.usage?.prompt_tokens ?? 0,
       output_tokens: llmData.usage?.completion_tokens ?? 0,
