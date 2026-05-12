@@ -1,94 +1,42 @@
 # Schema overview
 
-## Design principle
+The Supabase Postgres database is the system of record for every surface in LMI. The schema lives in `supabase/migrations/` (189 migrations and counting) and that directory is the source of truth — never apply schema changes directly to the live project. Column-level types for the frontend are generated into `web/lib/database.types.ts` via `supabase gen types typescript --linked --schema public`; treat that file as the authoritative column reference.
 
-The schema is organized around `ad_events` as the core fact table. Everything else supports attribution, filtering, enrichment, or downstream analysis.
+This doc is a high-level domain map. The table list below is the union of `CREATE TABLE` statements across `supabase/migrations/` and the public tables/views currently in `database.types.ts`. A handful of tables exist in production via the migration repair workflow (see CLAUDE.md §11 and `repair-migration-history.yml`) and may not appear in either source; do not delete a row from the live DB on the assumption that an absent migration means an absent table.
 
-## Fact table
+## Tables by domain
 
-### `ad_events`
+### Recall Watchlist
+Pre-MDL early-warning board for medical-device recalls. Core tables: `recalls`, `recall_manufacturers`, `recall_device_families`, `recall_cases`, `recall_specialty_firms`, `recall_stage_history`. The manufacturer → tort linkage lives in `manufacturer_tort_map`; the human-curated allow list is `recall_manufacturer_allow_list`.
 
-Primary record of observed advertising activity across channels and platforms.
+### MDL Tracker and litigation
+Federal MDL state plus docket and JPML snapshots: `mdls`, `mdl_stats_monthly`, `mdl_developments`, `mdl_attorneys`, `jpml_snapshots`, `jpml_type_summaries`, `dockets`, `docket_events`, `cl_docket_map` (CourtListener ID mapping), `judicial_profiles`.
 
-Key relationships:
+### Ad intelligence
+Advertising fact and aggregate layer. Core fact: `ad_events`. Normalized and raw observation tables: `ad_observations_raw`, `ad_observations_normalized`, `ad_saturation_scores`, plus the `ad_saturation_summary` view. Resolved advertisers in `advertiser_entities`. Search-side intelligence: `serp_results_raw`, `serp_results_normalized`, `serp_visibility_scores`, `google_trends_observations`, `google_trends_related_queries`, `pi_search_observations`, `pi_keyword_clusters`, `pi_competitor_profiles`. Pricing and market-fit signals: `tort_cost_benchmarks`, `tort_lifecycle_cpa_ranges`, `tort_recommended_markets`.
 
-- `firm_id -> firms.id`
-- `market_id -> markets.id`
-- `mass_tort_id -> mass_torts.id`
-- `mdl_id -> mdls.id`
+### State Intelligence
+Per-state PI surface inputs. Crash and fatality data: `fars_fatalities`, `fatalities`, plus `state_crash_statistics` (with `is_preliminary`). Weather and incident overlays: `storms`, `storm_events`, `storm_events_summary`. Other risk surfaces: `boating_accidents`, `cancer_incidence`. Geography and demographics: `census_demographics`, `msa_demographics` (view), `county_msa_crosswalk`, `pi_metros`, `geo_targets`, `dma_markets`, `markets`. State rollout metadata: `state_data_sources`, `state_rollout`.
 
-Representative measures:
+### Mass torts and PI surfaces
+Per-tort tables for the surfaces listed in CLAUDE.md §6.5 — e.g. the AI suicide stack (`ai_suicide_adverse_events`, `ai_suicide_qualifying_criteria_tiers`, `ai_suicide_settlement_projections`, `ai_suicide_timeline`, `ai_suicide_volume_signals_by_state`) and the Olympus scope stack (`olympus_adverse_events`, `olympus_device_failure_timeline`, `olympus_ercp_volume_by_state`, `olympus_qualifying_criteria_tiers`, `olympus_settlement_projections`). General tort dimensions: `mass_torts`, `torts`, `pi_viability_scores`, `tort_traction`.
 
-- `spend_estimate`
-- `impressions_estimate`
-- `airings_count`
-- `estimated_reach`
+### Campaign Builder
+`campaigns` plus runtime-generated assets in the `campaign_assets` Storage bucket. Supporting tables: `pronunciation_dictionary` (ElevenLabs TTS), `generation_costs` (OpenAI/Vertex/ElevenLabs cost tracking), `tort_images`, `tort_recommended_markets`.
 
-Representative dimensions carried directly on the fact:
+### Broadcast Intel
+`broadcast_stations` (radio/TV station inventory) plus the related media-outlet rows surfaced by `web/app/api/broadcast/*`.
 
-- `source`
-- `event_date`
-- `channel`
-- `platform`
-- `state_code`
-- `dma_code`
-- `metadata`
+### Admin, auth, and tenancy
+`firms`, `firm_managers`, `subscriptions`, `activity_log`, `alert_configs`, `alert_events`, `alert_known_advertisers`, `ai_search_log`. `profiles`, `invites`, and `tenant_branding` are referenced by the app and managed alongside Supabase Auth.
 
-## Dimension tables
+### Pipeline observability
+`pipeline_configs`, `pipeline_runs`, `pipeline_run_steps` — written by `pipeline/lib/pipeline.py:PipelineRun` for every scheduled ingest. Inspect these tables when diagnosing a failed workflow run.
 
-### `firms`
+## Regenerating this doc
 
-Canonical organizations tied to plaintiff firms, agencies, advertisers, or unknown entities.
+Refresh this file when schema changes meaningfully (new domain, new feature surface, major rename):
 
-### `markets`
-
-Canonical market records keyed by `market_code`, with geography and timezone metadata.
-
-### `mass_torts`
-
-Canonical tort topics used to group related ad activity and litigation signals.
-
-### `mdls`
-
-Federal MDL entities linked back to `mass_torts` when applicable.
-
-## Enrichment and activity tables
-
-### `mdl_stats_monthly`
-
-Monthly snapshots of MDL pending actions and changes over time.
-
-### `dockets`
-
-Case-level docket records linked to MDLs and mass torts.
-
-### `docket_events`
-
-Time-ordered events within each docket.
-
-### `fatalities`
-
-Incident-level fatality data that can be mapped to markets and used as enrichment.
-
-### `storms`
-
-Weather or disaster events that can be tied to markets and used for signal correlation.
-
-## Current table inventory
-
-- `firms`
-- `markets`
-- `mass_torts`
-- `ad_events`
-- `fatalities`
-- `storms`
-- `mdls`
-- `mdl_stats_monthly`
-- `dockets`
-- `docket_events`
-
-## Notes for future migrations
-
-- Preserve `ad_events` as the central fact model unless there is a compelling product reason to split facts by source.
-- Add new enrichment tables around the fact model rather than baking source-specific fields into unrelated dimensions.
-- Keep schema changes in `supabase/migrations/` and avoid direct manual drift in the live project.
+1. Pull the latest schema view via `supabase db pull`, or enumerate `information_schema.tables` directly.
+2. Run `supabase gen types typescript --linked --schema public > web/lib/database.types.ts` and commit the result.
+3. Update the domain groupings above. Keep the doc short — `database.types.ts` carries the columns.
