@@ -1,0 +1,48 @@
+{
+  "RecallID": 24999,
+  "RecallNumber": "24-999",
+  "RecallDate": "2024-03-15T00:00:00",
+  "LastPublishDate": "2024-03-15T00:00:00",
+  "Title": "Sample Product Recalled Due to Missing Category Metadata",
+  "Description": "Reproduces the live-prod failure mode where CPSC serializes integer fields as empty strings instead of omitting them, breaking the publish step on cpsc_recall_products (22P02 invalid input syntax for type integer).",
+  "URL": "https://www.cpsc.gov/Recalls/2024/Sample-Product-Recall",
+  "ConsumerContact": "Sample Manufacturer toll-free at 800-555-0199",
+  "Products": [
+    {
+      "CategoryID": "",
+      "Description": "Product with missing CategoryID",
+      "Model": "SP-001",
+      "Name": "Sample Product",
+      "NumberOfUnits": "About 5,000",
+      "Type": "Consumer good"
+    },
+    {
+      "CategoryID": "1234",
+      "Description": "Product with stringified-int CategoryID",
+      "Model": "SP-002",
+      "Name": "Sample Product Variant",
+      "NumberOfUnits": "About 2,500",
+      "Type": "Consumer good"
+    }
+  ],
+  "Manufacturers": [
+    {"CompanyID": "0", "Name": "Sample Manufacturer Inc."}
+  ],
+  "ManufacturerCountries": [
+    {"Country": "United States"}
+  ],
+  "Hazards": [
+    {"HazardTypeID": "", "Name": "Choking Hazard"},
+    {"HazardTypeID": 1106, "Name": "Entrapment Hazard"}
+  ],
+  "Remedies": [
+    {"Name": "Refund"}
+  ],
+  "Injuries": [],
+  "Retailers": [],
+  "Importers": [],
+  "Distributors": [],
+  "Images": [],
+  "ProductUPCs": [],
+  "Inconjunctions": []
+}
