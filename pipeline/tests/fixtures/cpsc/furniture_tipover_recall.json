@@ -1,0 +1,57 @@
+{
+  "RecallID": 15191,
+  "RecallNumber": "15-202",
+  "RecallDate": "2015-07-22T00:00:00",
+  "LastPublishDate": "2016-06-28T00:00:00",
+  "Title": "IKEA Recalls MALM and Other Models of Chests and Dressers Due to Serious Tip-Over Hazard Posing Risk of Death to Children",
+  "Description": "The recalled chests and dressers are unstable if not properly anchored to the wall, posing a serious tip-over and entrapment hazard that can result in death or injuries to children.",
+  "URL": "https://www.cpsc.gov/Recalls/2015/ikea-recalls-malm-and-other-models-of-chests-and-dressers",
+  "ConsumerContact": "IKEA toll-free at 866-856-4532 anytime or online at www.ikea-usa.com",
+  "Products": [
+    {
+      "CategoryID": 308,
+      "Description": "Chest of drawers",
+      "Model": "MALM 6-drawer chest",
+      "Name": "MALM 6-Drawer Chest",
+      "NumberOfUnits": "About 8.2 million (in addition to 6.6 million in Canada)",
+      "Type": "Chests and Dressers"
+    },
+    {
+      "CategoryID": 308,
+      "Description": "Chest of drawers",
+      "Model": "MALM 4-drawer chest",
+      "Name": "MALM 4-Drawer Chest",
+      "NumberOfUnits": "Included in 8.2 million total",
+      "Type": "Chests and Dressers"
+    }
+  ],
+  "Manufacturers": [
+    {"CompanyID": "0", "Name": "IKEA Supply AG"}
+  ],
+  "ManufacturerCountries": [
+    {"Country": "Sweden"}
+  ],
+  "Hazards": [
+    {"HazardTypeID": 1101, "Name": "Tip-Over Hazard"},
+    {"HazardTypeID": 1106, "Name": "Entrapment Hazard"}
+  ],
+  "Remedies": [
+    {"Name": "Refund"},
+    {"Name": "Repair"}
+  ],
+  "Injuries": [
+    {"Name": "IKEA has received reports of six fatalities and 36 injuries related to tip-over of these chests and dressers."}
+  ],
+  "Retailers": [
+    {"CompanyID": "0", "Name": "IKEA stores nationwide"}
+  ],
+  "Importers": [
+    {"CompanyID": "0", "Name": "IKEA North America Services LLC"}
+  ],
+  "Distributors": [],
+  "Images": [
+    {"URL": "https://www.cpsc.gov/-/media/images/recalls/2015/ikea-malm.jpg"}
+  ],
+  "ProductUPCs": [],
+  "Inconjunctions": []
+}
