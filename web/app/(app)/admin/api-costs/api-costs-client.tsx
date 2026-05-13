@@ -24,12 +24,14 @@ import {
   type TenantSpend,
 } from "@/lib/api-costs/queries";
 
+type SettledOr<T> = { ok: true; data: T } | { ok: false; error: string };
+
 interface Props {
-  monthlySpend: ProviderSpend[];
-  topOperations: OperationSpend[];
-  tenantSpend: TenantSpend[];
-  quotaBurn: QuotaBurn;
-  dailyTrend: DailyTrendPoint[];
+  monthlySpend: SettledOr<ProviderSpend[]>;
+  topOperations: SettledOr<OperationSpend[]>;
+  tenantSpend: SettledOr<TenantSpend[]>;
+  quotaBurn: SettledOr<QuotaBurn>;
+  dailyTrend: SettledOr<DailyTrendPoint[]>;
 }
 
 const usd = (n: number): string =>
@@ -48,7 +50,8 @@ export function ApiCostsClient({
   quotaBurn,
   dailyTrend,
 }: Props) {
-  const totalMtd = monthlySpend.reduce((sum, p) => sum + p.cost_usd, 0);
+  const monthly = monthlySpend.ok ? monthlySpend.data : [];
+  const totalMtd = monthly.reduce((sum, p) => sum + p.cost_usd, 0);
 
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto">
@@ -68,11 +71,13 @@ export function ApiCostsClient({
           subtitle="Month-to-date"
           className="lg:col-span-2"
         >
-          {totalMtd === 0 ? (
+          {!monthlySpend.ok ? (
+            <ErrorState message={monthlySpend.error} />
+          ) : totalMtd === 0 ? (
             <EmptyState>No spend recorded this month.</EmptyState>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={monthlySpend} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
+              <BarChart data={monthly} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                 <XAxis
                   dataKey="provider"
@@ -105,46 +110,56 @@ export function ApiCostsClient({
         </Card>
 
         <Card title="Total month-to-date" subtitle="All providers">
-          <div className="flex h-full flex-col justify-center">
-            <p className="text-3xl font-semibold text-slate-900">
-              {usd(totalMtd)}
-            </p>
-            <ul className="mt-3 space-y-1 text-xs text-slate-600">
-              {monthlySpend.map((p) => (
-                <li key={p.provider} className="flex justify-between">
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      aria-hidden="true"
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ backgroundColor: PROVIDER_COLORS[p.provider] }}
-                    />
-                    {PROVIDER_LABELS[p.provider]}
-                  </span>
-                  <span className="tabular-nums">{usd(p.cost_usd)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {!monthlySpend.ok ? (
+            <ErrorState message={monthlySpend.error} />
+          ) : (
+            <div className="flex h-full flex-col justify-center">
+              <p className="text-3xl font-semibold text-slate-900">
+                {usd(totalMtd)}
+              </p>
+              <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                {monthly.map((p) => (
+                  <li key={p.provider} className="flex justify-between">
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: PROVIDER_COLORS[p.provider] }}
+                      />
+                      {PROVIDER_LABELS[p.provider]}
+                    </span>
+                    <span className="tabular-nums">{usd(p.cost_usd)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
       </section>
 
       {/* Searchapi quota burn-down */}
       <section className="mb-8">
         <Card title="Searchapi quota burn-down" subtitle="Month-to-date">
-          <QuotaBurnPanel burn={quotaBurn} />
+          {!quotaBurn.ok ? (
+            <ErrorState message={quotaBurn.error} />
+          ) : (
+            <QuotaBurnPanel burn={quotaBurn.data} />
+          )}
         </Card>
       </section>
 
       {/* 30-day trend */}
       <section className="mb-8">
         <Card title="Spend trend by provider" subtitle="Last 30 days">
-          {dailyTrend.every(
-            (d) => d.openai === 0 && d.searchapi === 0 && d.apify === 0
-          ) ? (
+          {!dailyTrend.ok ? (
+            <ErrorState message={dailyTrend.error} />
+          ) : dailyTrend.data.every(
+              (d) => d.openai === 0 && d.searchapi === 0 && d.apify === 0
+            ) ? (
             <EmptyState>No spend recorded in the last 30 days.</EmptyState>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={dailyTrend} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
+              <LineChart data={dailyTrend.data} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis
                   dataKey="date"
@@ -204,7 +219,9 @@ export function ApiCostsClient({
       {/* Bottom row: top operations + tenant attribution */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Top operations by cost" subtitle="Month-to-date · Top 10">
-          {topOperations.length === 0 ? (
+          {!topOperations.ok ? (
+            <ErrorState message={topOperations.error} />
+          ) : topOperations.data.length === 0 ? (
             <EmptyState>No spend recorded this month.</EmptyState>
           ) : (
             <table className="w-full text-sm">
@@ -216,7 +233,7 @@ export function ApiCostsClient({
                 </tr>
               </thead>
               <tbody>
-                {topOperations.map((op) => (
+                {topOperations.data.map((op) => (
                   <tr
                     key={op.called_from}
                     className="border-b border-slate-100 last:border-0"
@@ -241,7 +258,9 @@ export function ApiCostsClient({
         </Card>
 
         <Card title="Cost by tenant" subtitle="Month-to-date">
-          {tenantSpend.length === 0 ? (
+          {!tenantSpend.ok ? (
+            <ErrorState message={tenantSpend.error} />
+          ) : tenantSpend.data.length === 0 ? (
             <EmptyState>No spend recorded this month.</EmptyState>
           ) : (
             <table className="w-full text-sm">
@@ -252,7 +271,7 @@ export function ApiCostsClient({
                 </tr>
               </thead>
               <tbody>
-                {tenantSpend.map((t) => (
+                {tenantSpend.data.map((t) => (
                   <tr
                     key={t.tenant_id ?? "platform"}
                     className="border-b border-slate-100 last:border-0"
@@ -302,6 +321,17 @@ function EmptyState({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-32 items-center justify-center text-sm text-slate-500">
       {children}
+    </div>
+  );
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+      <p className="font-medium">Failed to load this panel.</p>
+      <pre className="mt-1 whitespace-pre-wrap break-all font-mono text-[11px]">
+        {message}
+      </pre>
     </div>
   );
 }

@@ -131,7 +131,10 @@ export async function getTopOperationsByCost(
 
 /**
  * Month-to-date cost grouped by tenant. Null tenant_id (pipelines,
- * untagged routes) bucketed as "Platform / infra".
+ * untagged routes) bucketed as "Platform / infra". Firm names are
+ * fetched in a second query and joined in JS — we intentionally do
+ * not use a PostgREST embed because RLS interactions between
+ * api_usage_log (super_admin only) and firms can refuse the join.
  */
 export async function getTenantAttributedCost(
   supabase: SupabaseServer
@@ -139,28 +142,36 @@ export async function getTenantAttributedCost(
   const since = startOfCurrentMonthUTC();
   const { data, error } = await supabase
     .from("api_usage_log")
-    .select("tenant_id, cost_usd, firms:firms(name)")
+    .select("tenant_id, cost_usd")
     .gte("created_at", since);
 
   if (error) throw error;
 
-  const byTenant = new Map<string | null, { name: string | null; cost: number }>();
-  type Row = {
-    tenant_id: string | null;
-    cost_usd: number;
-    firms: { name: string | null } | { name: string | null }[] | null;
-  };
-  for (const row of (data ?? []) as Row[]) {
-    const cur = byTenant.get(row.tenant_id) ?? {
-      name: extractFirmName(row.firms),
-      cost: 0,
-    };
-    cur.cost += Number(row.cost_usd) || 0;
-    byTenant.set(row.tenant_id, cur);
+  const byTenant = new Map<string | null, number>();
+  for (const row of data ?? []) {
+    const cur = byTenant.get(row.tenant_id) ?? 0;
+    byTenant.set(row.tenant_id, cur + (Number(row.cost_usd) || 0));
+  }
+
+  const tenantIds = Array.from(byTenant.keys()).filter(
+    (id): id is string => id !== null
+  );
+
+  const nameByTenant = new Map<string, string | null>();
+  if (tenantIds.length > 0) {
+    const { data: firms, error: firmsError } = await supabase
+      .from("firms")
+      .select("id, name")
+      .in("id", tenantIds);
+    if (firmsError) throw firmsError;
+    for (const firm of firms ?? []) {
+      nameByTenant.set(firm.id, firm.name);
+    }
   }
 
   const results: TenantSpend[] = [];
-  for (const [tenant_id, { name, cost }] of byTenant.entries()) {
+  for (const [tenant_id, cost] of byTenant.entries()) {
+    const name = tenant_id ? (nameByTenant.get(tenant_id) ?? null) : null;
     results.push({
       tenant_id,
       display_label: formatTenantLabel(tenant_id, name),
@@ -168,14 +179,6 @@ export async function getTenantAttributedCost(
     });
   }
   return results.sort((a, b) => b.cost_usd - a.cost_usd);
-}
-
-function extractFirmName(
-  firms: { name: string | null } | { name: string | null }[] | null
-): string | null {
-  if (!firms) return null;
-  if (Array.isArray(firms)) return firms[0]?.name ?? null;
-  return firms.name ?? null;
 }
 
 /**
