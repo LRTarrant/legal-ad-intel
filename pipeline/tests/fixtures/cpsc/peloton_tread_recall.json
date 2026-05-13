@@ -1,0 +1,47 @@
+{
+  "RecallID": 21178,
+  "RecallNumber": "21-178",
+  "RecallDate": "2021-05-05T00:00:00",
+  "LastPublishDate": "2021-05-05T00:00:00",
+  "Title": "Peloton Recalls Tread+ Treadmills After One Child Died and More Than 70 Incidents Reported",
+  "Description": "The treadmill poses serious risks to children for abrasions, fractures, and death from the touch screen, rotating components, and pull-under hazard.",
+  "URL": "https://www.cpsc.gov/Recalls/2021/Peloton-Recalls-Tread-Treadmills-After-One-Child-Died-and-More-Than-70-Incidents-Reported",
+  "ConsumerContact": "Peloton toll-free at 866-679-9129 or online at www.onepeloton.com",
+  "Products": [
+    {
+      "CategoryID": 211,
+      "Description": "Peloton Tread+ treadmill",
+      "Model": "TR01",
+      "Name": "Tread+ Treadmill",
+      "NumberOfUnits": "About 125,000",
+      "Type": "Treadmill"
+    }
+  ],
+  "Manufacturers": [
+    {"CompanyID": "0", "Name": "Peloton Interactive, Inc."}
+  ],
+  "ManufacturerCountries": [
+    {"Country": "United States"}
+  ],
+  "Hazards": [
+    {"HazardTypeID": 1106, "Name": "Entrapment Hazard"},
+    {"HazardTypeID": 1102, "Name": "Injury Hazard"}
+  ],
+  "Remedies": [
+    {"Name": "Refund"},
+    {"Name": "Repair"}
+  ],
+  "Injuries": [
+    {"Name": "Peloton has received 72 reports of adult users, children, pets and/or objects being pulled under the rear of the treadmill, including 29 reports of injuries to children such as second- and third-degree abrasions, broken bones, and lacerations. One child died."}
+  ],
+  "Retailers": [
+    {"CompanyID": "0", "Name": "Peloton Interactive Inc."}
+  ],
+  "Importers": [],
+  "Distributors": [],
+  "Images": [
+    {"URL": "https://www.cpsc.gov/-/media/images/recalls/2021/peloton-tread-plus.jpg"}
+  ],
+  "ProductUPCs": [],
+  "Inconjunctions": []
+}
