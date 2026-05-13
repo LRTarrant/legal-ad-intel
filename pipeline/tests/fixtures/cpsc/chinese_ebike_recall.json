@@ -1,0 +1,44 @@
+{
+  "RecallID": 24102,
+  "RecallNumber": "24-102",
+  "RecallDate": "2024-02-14T00:00:00",
+  "LastPublishDate": "2024-02-14T00:00:00",
+  "Title": "Lithium-Ion E-Bike Batteries Recalled by Importer Due to Fire Hazard",
+  "Description": "The lithium-ion batteries in the recalled e-bikes can overheat, posing fire and burn hazards to consumers. Manufacturer of record could not be identified; recall handled by the U.S. importer.",
+  "URL": "https://www.cpsc.gov/Recalls/2024/Lithium-Ion-E-Bike-Batteries-Recalled-by-Importer-Due-to-Fire-Hazard",
+  "ConsumerContact": "Sample Importer toll-free at 800-555-0100",
+  "Products": [
+    {
+      "CategoryID": 5093,
+      "Description": "Lithium-ion battery pack for e-bikes",
+      "Model": "BP-48V",
+      "Name": "E-Bike Battery Pack",
+      "NumberOfUnits": "About 12,500",
+      "Type": "Battery"
+    }
+  ],
+  "Manufacturers": [],
+  "ManufacturerCountries": [
+    {"Country": "China"}
+  ],
+  "Hazards": [
+    {"HazardTypeID": 1102, "Name": "Fire Hazard"},
+    {"HazardTypeID": 1103, "Name": "Burn Hazard"}
+  ],
+  "Remedies": [
+    {"Name": "Refund"}
+  ],
+  "Injuries": [
+    {"Name": "The importer has received nine reports of battery fires, including three reports of property damage. No injuries have been reported."}
+  ],
+  "Retailers": [
+    {"CompanyID": "0", "Name": "Amazon.com"}
+  ],
+  "Importers": [
+    {"CompanyID": "0", "Name": "Sample Importer LLC"}
+  ],
+  "Distributors": [],
+  "Images": [],
+  "ProductUPCs": [],
+  "Inconjunctions": []
+}
