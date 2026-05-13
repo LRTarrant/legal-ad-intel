@@ -6,6 +6,11 @@ import {
   getSearchapiQuotaBurn,
   getTenantAttributedCost,
   getTopOperationsByCost,
+  type DailyTrendPoint,
+  type OperationSpend,
+  type ProviderSpend,
+  type QuotaBurn,
+  type TenantSpend,
 } from "@/lib/api-costs/queries";
 import { ApiCostsClient } from "./api-costs-client";
 
@@ -14,6 +19,20 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "API Costs | Admin",
 };
+
+type SettledOr<T> = { ok: true; data: T } | { ok: false; error: string };
+
+async function settle<T>(p: Promise<T>): Promise<SettledOr<T>> {
+  try {
+    const data = await p;
+    return { ok: true, data };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
 
 export default async function AdminApiCostsPage() {
   const supabase = await createClient();
@@ -37,11 +56,11 @@ export default async function AdminApiCostsPage() {
 
   const [monthlySpend, topOperations, tenantSpend, quotaBurn, dailyTrend] =
     await Promise.all([
-      getMonthlySpendByProvider(supabase),
-      getTopOperationsByCost(supabase, 10),
-      getTenantAttributedCost(supabase),
-      getSearchapiQuotaBurn(supabase),
-      getDailyTrendByProvider(supabase, 30),
+      settle<ProviderSpend[]>(getMonthlySpendByProvider(supabase)),
+      settle<OperationSpend[]>(getTopOperationsByCost(supabase, 10)),
+      settle<TenantSpend[]>(getTenantAttributedCost(supabase)),
+      settle<QuotaBurn>(getSearchapiQuotaBurn(supabase)),
+      settle<DailyTrendPoint[]>(getDailyTrendByProvider(supabase, 30)),
     ]);
 
   return (
