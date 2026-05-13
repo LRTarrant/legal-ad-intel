@@ -5,6 +5,7 @@ import type {
   ManufacturerRow,
   RecentEscalation,
   StageCounts,
+  FlatRecallRow,
 } from "./recall-watchlist-client";
 
 const RecallWatchlistClient = nextDynamic(() =>
@@ -68,6 +69,26 @@ interface StageHistoryRaw {
   transitioned_at: string | null;
 }
 
+interface CpscRecallRaw {
+  id: string;
+  cpsc_recall_id: number | null;
+  recall_number: string | null;
+  recall_date: string | null;
+  title: string | null;
+  description: string | null;
+  severity_tier: string | null;
+  units_recalled_text: string | null;
+  units_recalled_int: number | null;
+  cpsc_url: string | null;
+}
+
+interface CpscManufacturerLinkRaw {
+  recall_id: string;
+  manufacturer_id: string | null;
+  raw_name: string;
+  role: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Data fetchers                                                       */
 /* ------------------------------------------------------------------ */
@@ -120,6 +141,45 @@ async function fetchManufacturers(ids: string[]): Promise<ManufacturerRaw[]> {
   return all;
 }
 
+async function fetchCpscRecalls(limit = 500): Promise<CpscRecallRaw[]> {
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  const { data, error } = await sb
+    .from("cpsc_recalls")
+    .select(
+      "id,cpsc_recall_id,recall_number,recall_date,title,description,severity_tier,units_recalled_text,units_recalled_int,cpsc_url"
+    )
+    .order("recall_date", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as CpscRecallRaw[];
+}
+
+async function fetchCpscManufacturerLinks(
+  recallIds: string[]
+): Promise<CpscManufacturerLinkRaw[]> {
+  if (recallIds.length === 0) return [];
+  const supabase = getSupabase();
+  const sb = supabase as unknown as {
+    from: (table: string) => ReturnType<typeof supabase.from>;
+  };
+  // Chunk to avoid URL length issues on .in()
+  const chunkSize = 200;
+  const all: CpscManufacturerLinkRaw[] = [];
+  for (let i = 0; i < recallIds.length; i += chunkSize) {
+    const chunk = recallIds.slice(i, i + chunkSize);
+    const { data, error } = await sb
+      .from("cpsc_recall_manufacturers")
+      .select("recall_id,manufacturer_id,raw_name,role")
+      .in("recall_id", chunk);
+    if (error) throw error;
+    all.push(...((data ?? []) as unknown as CpscManufacturerLinkRaw[]));
+  }
+  return all;
+}
+
 async function fetchRecentStageHistory(limit = 25): Promise<StageHistoryRaw[]> {
   const supabase = getSupabase();
   const sb = supabase as unknown as {
@@ -143,7 +203,9 @@ async function fetchRecentStageHistory(limit = 25): Promise<StageHistoryRaw[]> {
 function buildPageData(
   recalls: RecallRaw[],
   mfrs: ManufacturerRaw[],
-  history: StageHistoryRaw[]
+  history: StageHistoryRaw[],
+  cpscRecalls: CpscRecallRaw[],
+  cpscLinks: CpscManufacturerLinkRaw[]
 ): RecallWatchlistPageData {
   const mfrById = new Map(mfrs.map((m) => [m.id, m]));
   const recallById = new Map(recalls.map((r) => [r.id, r]));
@@ -317,12 +379,81 @@ function buildPageData(
       };
     });
 
+  // -------------------------------------------------------------------
+  // Flat "All Recalls" list: merge FDA + CPSC, sorted by date desc.
+  // Cap at 500 rows post-merge (already a long list; the page also
+  // re-orders this client-side when the user sorts).
+  // -------------------------------------------------------------------
+  const linksByCpscId = new Map<string, CpscManufacturerLinkRaw[]>();
+  for (const l of cpscLinks) {
+    const list = linksByCpscId.get(l.recall_id) ?? [];
+    list.push(l);
+    linksByCpscId.set(l.recall_id, list);
+  }
+
+  function primaryCpscLink(
+    recallId: string
+  ): CpscManufacturerLinkRaw | undefined {
+    const links = linksByCpscId.get(recallId) ?? [];
+    if (links.length === 0) return undefined;
+    // Prefer role='manufacturer'; otherwise first deterministic link.
+    return (
+      links.find((l) => l.role === "manufacturer") ??
+      links.slice().sort((a, b) => a.raw_name.localeCompare(b.raw_name))[0]
+    );
+  }
+
+  const flatFda: FlatRecallRow[] = recalls.map((r) => {
+    const mfr = r.manufacturer_id ? mfrById.get(r.manufacturer_id) : null;
+    return {
+      id: r.id,
+      source: "fda",
+      recall_date: r.event_date_initiated,
+      severity_class: r.recall_class,
+      severity_tier: null,
+      manufacturer_id: r.manufacturer_id,
+      manufacturer_canonical_name: mfr?.canonical_name ?? null,
+      manufacturer_slug: mfr?.slug ?? null,
+      manufacturer_raw_name: null,
+      title: r.product_description ?? "",
+      external_url: null,
+      units_text: null,
+    };
+  });
+
+  const flatCpsc: FlatRecallRow[] = cpscRecalls.map((r) => {
+    const link = primaryCpscLink(r.id);
+    const matchedMfr = link?.manufacturer_id
+      ? mfrById.get(link.manufacturer_id)
+      : null;
+    return {
+      id: r.id,
+      source: "cpsc",
+      recall_date: r.recall_date,
+      severity_class: null,
+      severity_tier: r.severity_tier,
+      manufacturer_id: link?.manufacturer_id ?? null,
+      manufacturer_canonical_name: matchedMfr?.canonical_name ?? null,
+      manufacturer_slug: matchedMfr?.slug ?? null,
+      manufacturer_raw_name: link?.raw_name ?? null,
+      title: r.title ?? "",
+      external_url: r.cpsc_url,
+      units_text: r.units_recalled_text,
+    };
+  });
+
+  const flatRecalls = [...flatFda, ...flatCpsc]
+    .sort((a, b) => (b.recall_date ?? "").localeCompare(a.recall_date ?? ""))
+    .slice(0, 500);
+
   return {
     stageCounts,
     manufacturers,
     recentEscalations,
     totalRecalls: recalls.length,
     classIRecalls: recalls.filter((r) => r.recall_class === "Class I").length,
+    cpscRecallCount: cpscRecalls.length,
+    flatRecalls,
     generatedAt: new Date().toISOString(),
   };
 }
@@ -336,16 +467,32 @@ function labelForStage(s: number): string {
 /* ------------------------------------------------------------------ */
 
 export default async function RecallWatchlistPage() {
-  const recalls = await fetchAllRecalls();
-  const mfrIds = Array.from(
-    new Set(recalls.map((r) => r.manufacturer_id).filter((v): v is string => !!v))
+  // Fetch FDA recalls + CPSC recalls in parallel — neither depends on the other.
+  const [recalls, cpscRecalls] = await Promise.all([
+    fetchAllRecalls(),
+    fetchCpscRecalls(500),
+  ]);
+
+  // CPSC manufacturer links must be fetched first so we know which canonical
+  // manufacturer rows to load alongside the FDA-referenced ones.
+  const cpscLinks = await fetchCpscManufacturerLinks(
+    cpscRecalls.map((r) => r.id)
   );
+
+  const fdaMfrIds = recalls
+    .map((r) => r.manufacturer_id)
+    .filter((v): v is string => !!v);
+  const cpscMfrIds = cpscLinks
+    .map((l) => l.manufacturer_id)
+    .filter((v): v is string => !!v);
+  const mfrIds = Array.from(new Set([...fdaMfrIds, ...cpscMfrIds]));
+
   const [mfrs, history] = await Promise.all([
     fetchManufacturers(mfrIds),
     fetchRecentStageHistory(25),
   ]);
 
-  const data = buildPageData(recalls, mfrs, history);
+  const data = buildPageData(recalls, mfrs, history, cpscRecalls, cpscLinks);
 
   return <RecallWatchlistClient data={data} />;
 }

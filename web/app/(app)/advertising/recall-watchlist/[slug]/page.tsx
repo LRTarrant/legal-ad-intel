@@ -1,7 +1,10 @@
 import nextDynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
-import type { ManufacturerDetailData } from "./manufacturer-detail-client";
+import type {
+  ManufacturerDetailData,
+  CpscRecallDetail,
+} from "./manufacturer-detail-client";
 
 const ManufacturerDetailClient = nextDynamic(() =>
   import("./manufacturer-detail-client").then((m) => m.ManufacturerDetailClient)
@@ -90,6 +93,22 @@ interface TortMapRaw {
   confidence: "high" | "medium" | "low";
   alt_slugs: string[] | null;
   notes: string | null;
+}
+
+interface CpscLinkRaw {
+  recall_id: string;
+  role: string;
+  raw_name: string;
+}
+
+interface CpscRecallRaw {
+  id: string;
+  recall_number: string | null;
+  recall_date: string | null;
+  title: string | null;
+  severity_tier: string | null;
+  units_recalled_text: string | null;
+  cpsc_url: string | null;
 }
 
 interface MassTortRaw {
@@ -182,6 +201,38 @@ async function fetchStageHistoryForRecalls(recallIds: string[]): Promise<StageHi
     .limit(100);
   if (error) throw error;
   return (data ?? []) as unknown as StageHistoryRaw[];
+}
+
+async function fetchCpscRecallsForMfr(mfrId: string): Promise<{
+  recalls: CpscRecallRaw[];
+  links: CpscLinkRaw[];
+}> {
+  const sb = getSupabase() as unknown as {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    from: (table: string) => any;
+  };
+  // Step 1: find every cpsc_recall_manufacturers row pointing at this manufacturer.
+  const { data: linkData, error: linkErr } = await sb
+    .from("cpsc_recall_manufacturers")
+    .select("recall_id,role,raw_name")
+    .eq("manufacturer_id", mfrId);
+  if (linkErr) throw linkErr;
+  const links = (linkData ?? []) as unknown as CpscLinkRaw[];
+  if (links.length === 0) return { recalls: [], links };
+
+  const recallIds = Array.from(new Set(links.map((l) => l.recall_id)));
+  const { data: recallData, error: recallErr } = await sb
+    .from("cpsc_recalls")
+    .select(
+      "id,recall_number,recall_date,title,severity_tier,units_recalled_text,cpsc_url"
+    )
+    .in("id", recallIds)
+    .order("recall_date", { ascending: false, nullsFirst: false });
+  if (recallErr) throw recallErr;
+  return {
+    recalls: (recallData ?? []) as unknown as CpscRecallRaw[],
+    links,
+  };
 }
 
 async function fetchTortMapForMfr(mfrId: string): Promise<TortMapRaw[]> {
@@ -289,8 +340,21 @@ function buildDetailData(params: {
   masstorts: MassTortRaw[];
   serpAgg: SerpAggRow[];
   adEventsAgg: AdEventAggRow[];
+  cpscRecalls: CpscRecallRaw[];
+  cpscLinks: CpscLinkRaw[];
 }): ManufacturerDetailData {
-  const { mfr, recalls, cases, history, tortMap, masstorts, serpAgg, adEventsAgg } = params;
+  const {
+    mfr,
+    recalls,
+    cases,
+    history,
+    tortMap,
+    masstorts,
+    serpAgg,
+    adEventsAgg,
+    cpscRecalls,
+    cpscLinks,
+  } = params;
 
   // Aggregate across all recalls
   let maxStage = 1;
@@ -426,6 +490,31 @@ function buildDetailData(params: {
       case_count_at_transition: h.case_count_at_transition ?? 0,
     }));
 
+  // CPSC recalls attributed to this manufacturer. Build the primary-link
+  // role per recall (prefer "manufacturer", else first deterministic).
+  const linksByRecall = new Map<string, CpscLinkRaw[]>();
+  for (const l of cpscLinks) {
+    const list = linksByRecall.get(l.recall_id) ?? [];
+    list.push(l);
+    linksByRecall.set(l.recall_id, list);
+  }
+  const cpscDetails: CpscRecallDetail[] = cpscRecalls.map((r) => {
+    const links = linksByRecall.get(r.id) ?? [];
+    const primary =
+      links.find((l) => l.role === "manufacturer") ??
+      links.slice().sort((a, b) => a.role.localeCompare(b.role))[0];
+    return {
+      id: r.id,
+      recall_number: r.recall_number,
+      recall_date: r.recall_date,
+      title: r.title ?? "",
+      severity_tier: r.severity_tier,
+      units_recalled_text: r.units_recalled_text,
+      cpsc_url: r.cpsc_url,
+      role: primary?.role ?? "manufacturer",
+    };
+  });
+
   return {
     mfr: {
       id: mfr.id,
@@ -450,11 +539,13 @@ function buildDetailData(params: {
       mdl_formed: mdlFormed,
       first_case_filed_at: firstCase,
       last_case_filed_at: lastCase,
+      cpsc_recall_count: cpscDetails.length,
     },
     linked_torts: linkedTorts,
     recalls: sortedRecalls,
     cases: sortedCases,
     stage_history: sortedHistory,
+    cpsc_recalls: cpscDetails,
     generated_at: new Date().toISOString(),
   };
 }
@@ -475,10 +566,11 @@ export default async function ManufacturerDetailPage({
   const recalls = await fetchRecallsForMfr(mfr.id);
   const recallIds = recalls.map((r) => r.id);
 
-  const [cases, history, tortMap] = await Promise.all([
+  const [cases, history, tortMap, cpscBundle] = await Promise.all([
     fetchCasesForRecalls(recallIds),
     fetchStageHistoryForRecalls(recallIds),
     fetchTortMapForMfr(mfr.id),
+    fetchCpscRecallsForMfr(mfr.id),
   ]);
 
   const tortIds = tortMap.map((m) => m.tort_id);
@@ -503,6 +595,8 @@ export default async function ManufacturerDetailPage({
     masstorts,
     serpAgg,
     adEventsAgg,
+    cpscRecalls: cpscBundle.recalls,
+    cpscLinks: cpscBundle.links,
   });
 
   return <ManufacturerDetailClient data={data} />;

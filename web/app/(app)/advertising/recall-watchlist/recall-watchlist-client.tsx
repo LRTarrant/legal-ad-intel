@@ -21,8 +21,14 @@ import {
   MapPin,
   Users,
   ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 import { PageTour } from "@/app/(app)/components/page-tour";
+import {
+  SeverityBadge,
+  SourceBadge,
+} from "@/components/recall-watchlist/badges";
+import type { RecallSource } from "@/lib/recall-watchlist/badges";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -90,12 +96,33 @@ export interface RecentEscalation {
   transitioned_at: string | null;
 }
 
+export interface FlatRecallRow {
+  id: string;
+  source: RecallSource;
+  recall_date: string | null;
+  /** FDA only: "Class I" | "Class II" | "Class III" | null. */
+  severity_class: string | null;
+  /** CPSC only: "A" | "B" | "C" | "D" | null. */
+  severity_tier: string | null;
+  manufacturer_id: string | null;
+  manufacturer_canonical_name: string | null;
+  manufacturer_slug: string | null;
+  /** CPSC unmatched-manufacturer fallback. Null for FDA rows. */
+  manufacturer_raw_name: string | null;
+  title: string;
+  /** CPSC press-release URL; null for FDA rows. */
+  external_url: string | null;
+  units_text: string | null;
+}
+
 export interface RecallWatchlistPageData {
   stageCounts: StageCounts;
   manufacturers: ManufacturerRow[];
   recentEscalations: RecentEscalation[];
   totalRecalls: number;
   classIRecalls: number;
+  cpscRecallCount: number;
+  flatRecalls: FlatRecallRow[];
   generatedAt: string;
 }
 
@@ -772,6 +799,12 @@ export function RecallWatchlistClient({
         )}
       </div>
 
+      {/* 7. All Recalls — flat list spanning FDA + CPSC sources */}
+      <AllRecallsSection
+        rows={data.flatRecalls}
+        totalFda={data.totalRecalls}
+        totalCpsc={data.cpscRecallCount}
+      />
     </div>
   );
 }
@@ -968,6 +1001,219 @@ function EmptyState({
         </button>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  All Recalls flat list (FDA + CPSC)                                  */
+/* ------------------------------------------------------------------ */
+
+type SourceFilter = "all" | "fda" | "cpsc";
+
+const ALL_RECALLS_PAGE_SIZE = 250;
+
+function AllRecallsSection({
+  rows,
+  totalFda,
+  totalCpsc,
+}: {
+  rows: FlatRecallRow[];
+  totalFda: number;
+  totalCpsc: number;
+}) {
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    let list = rows;
+    if (sourceFilter !== "all") {
+      list = list.filter((r) => r.source === sourceFilter);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((r) => {
+        if (r.title.toLowerCase().includes(q)) return true;
+        if (
+          r.manufacturer_canonical_name &&
+          r.manufacturer_canonical_name.toLowerCase().includes(q)
+        )
+          return true;
+        if (r.manufacturer_raw_name && r.manufacturer_raw_name.toLowerCase().includes(q))
+          return true;
+        return false;
+      });
+    }
+    return list;
+  }, [rows, sourceFilter, search]);
+
+  const fdaCount = rows.filter((r) => r.source === "fda").length;
+  const cpscCount = rows.filter((r) => r.source === "cpsc").length;
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-intelligence-teal" />
+          <h2 className="font-heading text-lg font-semibold text-midnight-navy">
+            All Recalls
+          </h2>
+          <span className="text-xs text-slate-gray">
+            · Recent activity across FDA ({totalFda.toLocaleString()}) and CPSC (
+            {totalCpsc.toLocaleString()}) · sorted by recall date
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <FilterPill
+            active={sourceFilter === "all"}
+            onClick={() => setSourceFilter("all")}
+            label={`All sources (${rows.length})`}
+            dotClass="bg-midnight-navy"
+          />
+          <FilterPill
+            active={sourceFilter === "fda"}
+            onClick={() => setSourceFilter("fda")}
+            label={`FDA (${fdaCount})`}
+            dotClass="bg-slate-500"
+          />
+          <FilterPill
+            active={sourceFilter === "cpsc"}
+            onClick={() => setSourceFilter("cpsc")}
+            label={`CPSC (${cpscCount})`}
+            dotClass="bg-indigo-500"
+          />
+          <div className="ml-auto relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search product or manufacturer…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64 rounded-md border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm text-midnight-navy placeholder:text-slate-400 focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+            />
+          </div>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="py-10 px-6 text-center text-sm text-slate-gray">
+          {rows.length === 0
+            ? "No recalls have been ingested yet. The weekly CPSC + FDA jobs run Monday morning."
+            : "No recalls match the current filters."}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-gray">
+                <th className="py-2 px-3 text-left font-semibold w-16">Source</th>
+                <th className="py-2 px-3 text-left font-semibold">Severity</th>
+                <th className="py-2 px-3 text-left font-semibold">Date</th>
+                <th className="py-2 px-3 text-left font-semibold">Manufacturer</th>
+                <th className="py-2 px-3 text-left font-semibold">Product / Title</th>
+                <th className="py-2 px-3 text-right font-semibold">Units</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice(0, ALL_RECALLS_PAGE_SIZE).map((r) => (
+                <AllRecallsRow key={`${r.source}:${r.id}`} row={r} />
+              ))}
+            </tbody>
+          </table>
+          {filtered.length > ALL_RECALLS_PAGE_SIZE && (
+            <div className="border-t border-slate-100 bg-slate-50 px-4 py-2 text-center text-xs text-slate-gray">
+              Showing first {ALL_RECALLS_PAGE_SIZE.toLocaleString()} of{" "}
+              {filtered.length.toLocaleString()} matches · narrow your filters to see
+              more
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AllRecallsRow({ row }: { row: FlatRecallRow }) {
+  // FDA → internal manufacturer detail page when matched, else inert text.
+  // CPSC → external CPSC.gov press release (new tab).
+  const mfrLabel =
+    row.manufacturer_canonical_name ??
+    (row.manufacturer_raw_name
+      ? `${row.manufacturer_raw_name}`
+      : "Unknown manufacturer");
+
+  const mfrIsUnmatched =
+    row.source === "cpsc" &&
+    row.manufacturer_canonical_name === null &&
+    row.manufacturer_raw_name !== null;
+
+  let mfrNode: React.ReactNode;
+  if (row.source === "fda" && row.manufacturer_slug) {
+    mfrNode = (
+      <Link
+        href={`/advertising/recall-watchlist/${row.manufacturer_slug}`}
+        className="font-medium text-midnight-navy hover:text-intelligence-teal hover:underline"
+      >
+        {mfrLabel}
+      </Link>
+    );
+  } else if (row.source === "cpsc" && row.manufacturer_slug) {
+    mfrNode = (
+      <Link
+        href={`/advertising/recall-watchlist/${row.manufacturer_slug}`}
+        className="font-medium text-midnight-navy hover:text-intelligence-teal hover:underline"
+      >
+        {mfrLabel}
+      </Link>
+    );
+  } else {
+    mfrNode = <span className="text-midnight-navy">{mfrLabel}</span>;
+  }
+
+  let titleNode: React.ReactNode;
+  if (row.source === "cpsc" && row.external_url) {
+    titleNode = (
+      <a
+        href={row.external_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-midnight-navy hover:text-intelligence-teal hover:underline"
+      >
+        <span className="line-clamp-2">{row.title || "—"}</span>
+        <ExternalLink className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+      </a>
+    );
+  } else {
+    titleNode = (
+      <span className="line-clamp-2 text-midnight-navy">{row.title || "—"}</span>
+    );
+  }
+
+  return (
+    <tr className="border-b border-slate-100 hover:bg-slate-50/60">
+      <td className="py-2 px-3">
+        <SourceBadge source={row.source} />
+      </td>
+      <td className="py-2 px-3">
+        <SeverityBadge
+          source={row.source}
+          recall_class={row.severity_class}
+          severity_tier={row.severity_tier}
+        />
+      </td>
+      <td className="py-2 px-3 whitespace-nowrap text-xs text-slate-gray font-mono">
+        {fmtDate(row.recall_date)}
+      </td>
+      <td className="py-2 px-3 max-w-[18rem]">
+        <div className="truncate">{mfrNode}</div>
+        {mfrIsUnmatched && (
+          <span className="text-[10px] italic text-slate-400">(unmatched)</span>
+        )}
+      </td>
+      <td className="py-2 px-3 max-w-[28rem] text-sm">{titleNode}</td>
+      <td className="py-2 px-3 text-right text-xs text-slate-gray whitespace-nowrap">
+        {row.units_text ?? "—"}
+      </td>
+    </tr>
   );
 }
 
