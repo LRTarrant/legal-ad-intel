@@ -207,6 +207,39 @@ _UNITS_RE = re.compile(
 _MULTIPLIERS = {None: 1, "thousand": 1_000, "million": 1_000_000, "billion": 1_000_000_000}
 
 
+def _coerce_int(value: Any) -> int | None:
+    """Coerce a loosely-typed CPSC integer field to ``int | None``.
+
+    CPSC's API occasionally serializes integer fields (CategoryID, HazardTypeID)
+    as empty strings instead of omitting them. Postgres then rejects the empty
+    string with 22P02 "invalid input syntax for type integer". Normalize at the
+    parse layer so every child-table insert path stays clean.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        try:
+            return int(value)
+        except (OverflowError, ValueError):
+            return None
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        try:
+            return int(s)
+        except ValueError:
+            try:
+                return int(float(s))
+            except (ValueError, OverflowError):
+                return None
+    return None
+
+
 def parse_units_recalled(raw: str | None) -> int | None:
     """Best-effort parse of a CPSC NumberOfUnits string.
 
@@ -528,7 +561,7 @@ def normalize_recall(
 
     products_rows = [
         {
-            "category_id": (p or {}).get("CategoryID"),
+            "category_id": _coerce_int((p or {}).get("CategoryID")),
             "name": (p or {}).get("Name") or None,
             "type": (p or {}).get("Type") or None,
             "model": (p or {}).get("Model") or None,
@@ -590,7 +623,7 @@ def normalize_recall(
 
     hazards_rows = [
         {
-            "hazard_type_id": (h or {}).get("HazardTypeID"),
+            "hazard_type_id": _coerce_int((h or {}).get("HazardTypeID")),
             "name": (h or {}).get("Name") or "",
         }
         for h in (raw.get("Hazards") or [])

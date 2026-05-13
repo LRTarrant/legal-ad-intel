@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipelines.cpsc_recalls import (  # noqa: E402
     RECALL_URL_INCLUSION_PATTERN,
+    _coerce_int,
     compute_severity_tier,
     fetch_existing_state,
     normalize_manufacturer_name,
@@ -338,6 +339,74 @@ class TestNormalizeRecall:
         bad = {**raw}
         bad.pop("RecallID")
         assert normalize_recall(bad, alias_map={}, canonical_map={}) is None
+
+
+# ---------------------------------------------------------------------------
+# Empty-string integer coercion (Postgres 22P02 reproduction)
+# ---------------------------------------------------------------------------
+
+class TestCoerceInt:
+    def test_empty_string_returns_none(self):
+        assert _coerce_int("") is None
+
+    def test_whitespace_string_returns_none(self):
+        assert _coerce_int("   ") is None
+
+    def test_none_returns_none(self):
+        assert _coerce_int(None) is None
+
+    def test_int_passthrough(self):
+        assert _coerce_int(42) == 42
+
+    def test_int_zero(self):
+        assert _coerce_int(0) == 0
+
+    def test_numeric_string_coerces(self):
+        assert _coerce_int("42") == 42
+
+    def test_numeric_string_with_whitespace_coerces(self):
+        assert _coerce_int("  42  ") == 42
+
+    def test_non_numeric_string_returns_none(self):
+        assert _coerce_int("abc") is None
+
+    def test_float_truncates(self):
+        assert _coerce_int(1.9) == 1
+
+    def test_float_string_truncates(self):
+        # CPSC has never been observed to send floats here, but be defensive.
+        assert _coerce_int("1.5") == 1
+
+
+class TestEmptyIntegerCoercion:
+    """Regression: live CPSC payloads occasionally serialize integer fields
+    (CategoryID, HazardTypeID) as empty strings. Forwarding "" to Postgres
+    raises 22P02 and aborts the publish step. See PR #379.
+    """
+
+    def test_empty_category_id_normalizes_to_none(self):
+        raw = _load("empty_integers_recall.json")
+        norm = normalize_recall(raw, alias_map={}, canonical_map={})
+        assert norm is not None
+        products = norm["products"]
+        assert len(products) == 2
+        # First product had CategoryID="" -> None.
+        assert products[0]["category_id"] is None
+        assert products[0]["name"] == "Sample Product"
+        # Second product had CategoryID="1234" -> 1234 (string-coerced).
+        assert products[1]["category_id"] == 1234
+
+    def test_empty_hazard_type_id_normalizes_to_none(self):
+        raw = _load("empty_integers_recall.json")
+        norm = normalize_recall(raw, alias_map={}, canonical_map={})
+        assert norm is not None
+        hazards = norm["hazards"]
+        assert len(hazards) == 2
+        # First hazard had HazardTypeID="" -> None.
+        assert hazards[0]["hazard_type_id"] is None
+        assert hazards[0]["name"] == "Choking Hazard"
+        # Second hazard had HazardTypeID=1106 -> 1106.
+        assert hazards[1]["hazard_type_id"] == 1106
 
 
 # ---------------------------------------------------------------------------
