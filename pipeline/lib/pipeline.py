@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 import random
+import re
 import sys
 import time
 import traceback
@@ -154,6 +155,36 @@ def _delete(table: str, params: dict) -> None:
     resp = httpx.delete(url, headers=_headers(), params=params, timeout=30)
     resp.raise_for_status()
 
+
+# ---------------------------------------------------------------------------
+# Text normalization helpers
+# ---------------------------------------------------------------------------
+
+_MULTI_WS_RE = re.compile(r"\s+")
+
+
+def _canonicalize_name(text: str | None) -> str:
+    """Lowercase, trim, collapse internal whitespace to single spaces.
+
+    Matches the canonical alias_text form enforced by CHECK constraints on
+    public.cpsc_manufacturer_aliases and public.drug_manufacturer_aliases —
+    both require ``alias_text = lower(trim(alias_text))`` and reject any
+    run of 2+ whitespace.
+
+    Pipelines compose this with their own domain-specific normalization
+    (e.g. legal-suffix stripping for CPSC company names) and use the
+    result as the lookup key into the alias table.
+
+    Returns "" for None/empty input.
+    """
+    if not text:
+        return ""
+    return _MULTI_WS_RE.sub(" ", text.strip().lower())
+
+
+# ---------------------------------------------------------------------------
+# Bulk insert
+# ---------------------------------------------------------------------------
 
 BULK_CHUNK_SIZE = 500
 

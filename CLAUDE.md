@@ -207,15 +207,16 @@ Each surface lists: frontend · API · pipeline · workflow + schedule · Supaba
 - **Env vars:** `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `ALERT_CHECK_SECRET` (cron secret for `/api/alerts/check`), `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
 
 ### 6.10 FAERS Adverse Event Reports (drug safety signal)
-Phase 2 of the CPSC → FAERS → MAUDE arc. Schema landed in PR-2 (this entry); pipeline, API, and UI follow in PR-3 / PR-4 / PR-5.
+Phase 2/3 of the CPSC → FAERS → MAUDE arc. Schema landed in PR-2; PR-3 (this entry) ships the pipeline + normalization tables + weekly workflow. PR-4 / PR-5 build API + UI.
 - **Frontend:** TBD in PR-4 / PR-5.
 - **API:** TBD in PR-5.
-- **Pipeline:** TBD in PR-3 (`pipeline/pipelines/drug_event.py` planned; will reuse the shared `openfda_client` module from PR-1 / #380).
-- **Workflow:** TBD in PR-3. Planned weekly cron aligned with openFDA's quarterly `/drug/event.json` refresh (monitor the FDA Aug 2025 daily-publication announcement — openFDA cadence has not yet moved off quarterly as of last review).
-- **Supabase tables:** `drug_adverse_events` (parent fact — one row per `safetyreportid`), `drug_adverse_event_drugs` (child — one row per drug per report; preserves `openfda_*` enrichment arrays for PR-3 normalization), `drug_adverse_event_reactions` (child — one row per MedDRA PT per report), `meddra_terms` (PT dimension, populated by PR-3).
+- **Pipeline:** `pipeline/pipelines/faers_weekly.py` — streams openFDA `/drug/event.json` (with `serious:1` filter only — see source-filter note below) via the shared `openfda_client` (PR-1 / #380) using `search_after` cursor pagination with a compound `receivedate,safetyreportid` cursor (the single-field cursor collides on FAERS' high-volume dates; PR-3 extended `openfda_client.paginate_search_after` to accept a `compound_cursor_extractor`). Normalizes drugs through an NDC → UNII → RxCUI → application_number → name match-fallback chain into the `drugs` dim; observes MedDRA PTs into `meddra_terms`; counts `drug_manufacturer_aliases` misses for analyst review. Lawyer-flood (`primarysource_qualification = 4`) is preserved on every row — filtering happens at query time in PR-4/5, not at ingest.
+- **Workflow:** `.github/workflows/faers-weekly.yml` — Mondays 03:00 UTC (steady-state rolling 7-day window catches stragglers around quarterly openFDA refreshes). Manual `workflow_dispatch` accepts `dry_run` + `backfill_since` + `year` inputs (dispatch shape matches `cpsc-recalls-weekly.yml`). Recommended one-shot backfill: `backfill_since=2024-01-01` (~1.6M serious records, ~80min wall with the API key). 240min timeout covers the 2-year backfill scenario.
+- **Supabase tables:** `drug_adverse_events` (parent fact — one row per `safetyreportid`, upsert on the natural key), `drug_adverse_event_drugs` (child — one row per drug per report; preserves `openfda_*` enrichment arrays plus a normalized `drug_id` FK to `drugs`), `drug_adverse_event_reactions` (child — one row per MedDRA PT per report), `drugs` (dimension — keyed by `unique_match_key` with `ndc:` / `unii:` / `rxcui:` / `appno:` / `name:` prefix recording the match path), `meddra_terms` (PT dimension), `drug_manufacturer_aliases` (curated alias → canonical lookup, mirrors `cpsc_manufacturer_aliases` shape).
 - **External APIs:** openFDA `https://api.fda.gov/drug/event.json` (FAERS adverse-event reports).
-- **Env vars:** `OPENFDA_API_KEY` (optional but raises rate limit from 1k/day to 120k/day), `OPENFDA_BASE_URL` (AEMS-migration adapter, see §7), shared Supabase vars.
-- **Design notes:** Schema preserves `drug_adverse_events.primarysource_qualification` (smallint, CHECK 1..5) so PR-3 / PR-4 / PR-5 can filter out lawyer-sourced reports (`qualification = 4`), which are mass-tort solicitation artifacts rather than organic safety signal. Filter enforcement is intentionally NOT in the schema — pipeline computes dual signal (all-reporter vs non-lawyer) and UI surfaces both views. See `docs/data-sources/faers.md` for full scoping (volumes, MedDRA PT-only constraint, drug→manufacturer normalization plan, lawyer-flood feedback loop).
+- **Env vars:** `OPENFDA_API_KEY` (raises rate limit from 1k/day → 120k/day, required for backfill), `OPENFDA_BASE_URL` (AEMS-migration adapter, see §7), `FAERS_BATCH_FLUSH_SIZE` (optional, default 500), shared Supabase vars (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`).
+- **Source-filter note:** Pipeline ingests `serious:1` reports only (~50% of FAERS volume per faers.md §4). A future operator who wants research-grade data (e.g. ROR/PRR disproportionality computation that needs a non-suspect denominator) must drop the filter in `pipelines/faers_weekly.py:SEARCH_SEVERITY` and re-budget storage. Documented in both the migration header and the pipeline docstring.
+- **Design notes:** Schema preserves `drug_adverse_events.primarysource_qualification` (smallint, CHECK 1..5) so PR-4 / PR-5 surfaces can filter out lawyer-sourced reports (`qualification = 4`), which are mass-tort solicitation artifacts rather than organic safety signal. Filter enforcement intentionally lives in queries, not the pipeline — PR-3 preserves the value, PR-4/5 surfaces apply `WHERE primarysource_qualification != 4` for the non-lawyer view. See `docs/data-sources/faers.md` for full scoping (volumes, MedDRA PT-only constraint, drug→manufacturer normalization plan, lawyer-flood feedback loop).
 
 ---
 
@@ -243,7 +244,7 @@ Names and purposes only. Don't commit values; see `web/.env.example` for the loc
 **Pipelines (GitHub Actions runner, also for local pipeline runs):**
 - `SUPABASE_URL` — same as `NEXT_PUBLIC_SUPABASE_URL`, named without the prefix on the server side.
 - `SUPABASE_SERVICE_KEY` (preferred) or `SUPABASE_SERVICE_ROLE_KEY` (fallback) — service-role key for direct REST writes.
-- `OPENFDA_API_KEY` — optional; raises openFDA rate limit from 1k/hr to 240/min.
+- `OPENFDA_API_KEY` — optional but strongly recommended in production. openFDA rate is 240 req/min either way; the key raises the daily quota from 1,000/day (anonymous) to 120,000/day, which is the difference between killing a backfill at request #1001 and finishing it. Required for the FAERS pipeline's 2-year backfill (~16k requests).
 - `OPENFDA_BASE_URL` — optional, default `https://api.fda.gov`. AEMS migration adapter: when openFDA endpoints cut over to AEMS hosts, flip this single env var instead of changing code. Used by `pipeline/lib/openfda_client.py`.
 - `COURTLISTENER_API_TOKEN` — required for CourtListener pipelines (raises rate limit to ~5k/hr).
 - `SEARCHAPI_API_KEY` — Searchapi.io for ad / SERP ingest.
@@ -282,6 +283,7 @@ All schedules are UTC.
 | `jpml-monthly.yml` | daily 2nd–5th of month 15:00 | `pipelines.jpml_monthly` |
 | `load-storm-events.yml` | monthly 5th 06:00 | `scripts/load_storm_events.py` |
 | `recall-watchlist-weekly.yml` | Mon 12:00 | openFDA → CourtListener cases → parties → thermometer |
+| `faers-weekly.yml` | Mon 03:00 | `pipelines.faers_weekly` (openFDA `/drug/event.json`, `serious:1` only) |
 | `supabase-migrations.yml` | on push to main (paths: `supabase/migrations/`) | `supabase db push` |
 | `repair-migration-history.yml` | manual only | one-shot `migration repair` for local-only versions |
 | `pr-typecheck.yml` | every PR to main | TS net-new error gate |

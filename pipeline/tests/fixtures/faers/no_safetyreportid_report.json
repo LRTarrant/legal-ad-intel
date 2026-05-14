@@ -1,0 +1,18 @@
+{
+  "safetyreportversion": "1",
+  "receivedate": "20260101",
+  "serious": "1",
+  "patient": {
+    "reaction": [
+      {
+        "reactionmeddrapt": "Nausea"
+      }
+    ],
+    "drug": [
+      {
+        "drugcharacterization": "1",
+        "medicinalproduct": "MYSTERY DRUG"
+      }
+    ]
+  }
+}

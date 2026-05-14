@@ -286,6 +286,7 @@ class OpenFDAClient:
         max_pages: int = 100_000,
         request_delay: float = 0.25,
         cursor_extractor: Callable[[dict, str], Any] | None = None,
+        compound_cursor_extractor: Callable[[dict, list[str]], str | None] | None = None,
     ) -> Iterator[tuple[list[dict], int]]:
         """Iterate pages via `search_after` cursor.
 
@@ -293,11 +294,33 @@ class OpenFDAClient:
         ``skip`` cap (e.g. FAERS ``/drug/event.json`` at ~20M records).
 
         openFDA's ``search_after`` value is the sort-field value of the
-        last record from the prior page. For a sort like
-        ``receivedate:desc``, the cursor is the ``receivedate`` value of
-        the last result. Compound sorts (``"a:asc,b:desc"``) require a
-        custom extractor; this PR ships single-field support only —
-        callers that need compound can pass ``cursor_extractor``.
+        last record from the prior page. For a single-field sort like
+        ``"receivedate:desc"`` the cursor is the receivedate of the last
+        result. For a **compound** sort like
+        ``"receivedate:desc,safetyreportid:desc"`` the cursor must carry
+        every sort field — otherwise pages can collide when many records
+        share the same primary sort value (FAERS: hundreds of thousands
+        of reports per ``receivedate``, so a single-field cursor of
+        ``"20260512"`` re-fetches the same records on every page until
+        the safety-cap kicks in).
+
+        Two extractor hooks:
+
+          * ``cursor_extractor`` — single-field override. Signature
+            ``(record, field_path) -> Any``. Used when the sort is a
+            single field but lives at a non-trivial path the default
+            dotted walker can't reach.
+          * ``compound_cursor_extractor`` — full multi-field cursor
+            builder. Signature ``(record, sort_field_paths) -> str | None``.
+            Returns the assembled ``search_after`` string (typically
+            comma-separated to mirror the sort expression). Discovered
+            during FAERS integration (PR-3) where ``receivedate``
+            collisions otherwise stall pagination.
+
+        If both are passed, ``compound_cursor_extractor`` wins. If
+        neither is passed and ``sort`` has multiple fields, the default
+        is the single-field extractor on the FIRST sort field — usually
+        wrong for high-collision keys; pass ``compound_cursor_extractor``.
 
         Args:
             path: endpoint path (e.g. ``DRUG_EVENT_PATH``).
@@ -307,16 +330,16 @@ class OpenFDAClient:
             page_size: per-request ``limit``.
             max_pages: safety cap on total pages fetched.
             request_delay: polite pacing between pages.
-            cursor_extractor: optional ``(record, sort_field) -> Any``
-                              override for non-trivial sort expressions.
+            cursor_extractor: optional single-field override.
+            compound_cursor_extractor: optional multi-field cursor builder
+                                       for compound sorts.
         """
         if not sort:
             raise ValueError("paginate_search_after requires a non-empty sort= expression")
 
-        # Default extractor: walk dotted field path, take the value of
-        # the first (single) sort field.
-        primary_field = sort.split(",")[0].split(":")[0].strip()
-        extractor = cursor_extractor or _default_cursor_extractor
+        sort_fields = [seg.split(":")[0].strip() for seg in sort.split(",") if seg.strip()]
+        primary_field = sort_fields[0]
+        single_extractor = cursor_extractor or _default_cursor_extractor
 
         cursor: str | None = None
         pages = 0
@@ -332,14 +355,20 @@ class OpenFDAClient:
             pages += 1
             if len(results) < page_size:
                 break
-            cursor_val = extractor(results[-1], primary_field)
-            if cursor_val is None or cursor_val == "":
+
+            if compound_cursor_extractor is not None:
+                next_cursor = compound_cursor_extractor(results[-1], sort_fields)
+            else:
+                cursor_val = single_extractor(results[-1], primary_field)
+                next_cursor = None if cursor_val is None else str(cursor_val)
+
+            if next_cursor is None or next_cursor == "":
                 logger.warning(
-                    "search_after cursor came back empty for field %r — "
-                    "stopping pagination to avoid an infinite loop", primary_field,
+                    "search_after cursor came back empty (sort=%r) — "
+                    "stopping pagination to avoid an infinite loop", sort,
                 )
                 break
-            cursor = str(cursor_val)
+            cursor = next_cursor
             time.sleep(request_delay)
 
 

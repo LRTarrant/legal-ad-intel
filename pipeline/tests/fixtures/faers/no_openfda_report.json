@@ -1,0 +1,34 @@
+{
+  "safetyreportid": "10000007-1",
+  "safetyreportversion": "1",
+  "receivedate": "20260505",
+  "serious": "1",
+  "seriousnesshospitalization": "1",
+  "occurcountry": "BR",
+  "primarysource": {
+    "qualification": "3",
+    "reportercountry": "BR"
+  },
+  "patient": {
+    "patientonsetage": "67",
+    "patientonsetageunit": "801",
+    "patientsex": "2",
+    "reaction": [
+      {
+        "reactionmeddrapt": "Drug ineffective",
+        "reactionmeddraversionpt": "26.0",
+        "reactionoutcome": "6"
+      }
+    ],
+    "drug": [
+      {
+        "drugcharacterization": "1",
+        "medicinalproduct": "DIPIRONA SODICA 500MG"
+      },
+      {
+        "drugcharacterization": "3",
+        "medicinalproduct": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "safetyreportid": "10000003-1",
+  "safetyreportversion": "1",
+  "receivedate": "20260415",
+  "serious": "1",
+  "seriousnessother": "1",
+  "fulfillexpeditecriteria": "2",
+  "occurcountry": "US",
+  "primarysource": {
+    "qualification": "4",
+    "reportercountry": "US"
+  },
+  "sender": {
+    "sendertype": "6",
+    "senderorganization": "MASS TORT INTAKE LLP"
+  },
+  "companynumb": "PLAINTIFF-INTAKE-04152026",
+  "patient": {
+    "patientonsetage": "55",
+    "patientonsetageunit": "801",
+    "patientsex": "2",
+    "reaction": [
+      {
+        "reactionmeddrapt": "Ovarian cancer",
+        "reactionmeddraversionpt": "27.0",
+        "reactionoutcome": "3"
+      }
+    ],
+    "drug": [
+      {
+        "drugcharacterization": "1",
+        "medicinalproduct": "JOHNSON'S BABY POWDER (TALC)",
+        "drugindication": "PERSONAL HYGIENE",
+        "openfda": {
+          "brand_name": ["Johnson's Baby Powder"],
+          "manufacturer_name": ["Johnson & Johnson Consumer Inc."],
+          "product_type": ["HUMAN OTC DRUG"]
+        }
+      }
+    ]
+  }
+}

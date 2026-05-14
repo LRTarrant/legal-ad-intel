@@ -72,6 +72,7 @@ from lib.pipeline import (  # noqa: E402
     DRY_RUN,
     PipelineRun,
     _bulk_insert,
+    _canonicalize_name,
     _delete,
     _get,
     _headers,
@@ -177,23 +178,21 @@ _LEGAL_SUFFIX_RE = re.compile(
 )
 
 _PUNCT_RE = re.compile(r"[,;&./\\()\[\]]")
-_WS_RE = re.compile(r"\s+")
 
 
 def normalize_manufacturer_name(raw: str) -> str:
     """Normalize a CPSC free-text manufacturer name to its alias-table form.
 
-    Lowercase, strip legal suffixes, strip punctuation, collapse whitespace,
-    trim. Output is exactly the form stored in cpsc_manufacturer_aliases
-    (which has a CHECK constraint enforcing canonical form).
+    Strip punctuation and legal suffixes, then run through the shared
+    `_canonicalize_name` helper (lowercase / trim / single-space). Output
+    is exactly the form stored in cpsc_manufacturer_aliases (which has a
+    CHECK constraint enforcing canonical form).
     """
     if not raw:
         return ""
-    s = raw.strip()
-    s = _PUNCT_RE.sub(" ", s)
+    s = _PUNCT_RE.sub(" ", raw)
     s = _LEGAL_SUFFIX_RE.sub("", s)
-    s = _WS_RE.sub(" ", s).strip().lower()
-    return s
+    return _canonicalize_name(s)
 
 
 # ---------------------------------------------------------------------------
