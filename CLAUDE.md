@@ -233,6 +233,7 @@ Names and purposes only. Don't commit values; see `web/.env.example` for the loc
 - `SUPABASE_URL` — same as `NEXT_PUBLIC_SUPABASE_URL`, named without the prefix on the server side.
 - `SUPABASE_SERVICE_KEY` (preferred) or `SUPABASE_SERVICE_ROLE_KEY` (fallback) — service-role key for direct REST writes.
 - `OPENFDA_API_KEY` — optional; raises openFDA rate limit from 1k/hr to 240/min.
+- `OPENFDA_BASE_URL` — optional, default `https://api.fda.gov`. AEMS migration adapter: when openFDA endpoints cut over to AEMS hosts, flip this single env var instead of changing code. Used by `pipeline/lib/openfda_client.py`.
 - `COURTLISTENER_API_TOKEN` — required for CourtListener pipelines (raises rate limit to ~5k/hr).
 - `SEARCHAPI_API_KEY` — Searchapi.io for ad / SERP ingest.
 - `APIFY_TOKEN` — Apify actors for Google/TikTok ad ingest.

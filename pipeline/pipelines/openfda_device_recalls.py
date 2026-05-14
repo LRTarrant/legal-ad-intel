@@ -31,6 +31,7 @@ Usage:
 
 Env:
     OPENFDA_API_KEY     optional; raises rate limit from 1,000/hr to 240/min
+    OPENFDA_BASE_URL    optional, default https://api.fda.gov (AEMS adapter)
     SUPABASE_URL        required
     SUPABASE_SERVICE_KEY required
 """
@@ -41,10 +42,8 @@ import logging
 import os
 import re
 import sys
-import time
 from collections import Counter
 from datetime import datetime, timezone, timedelta
-from typing import Any
 
 import httpx
 
@@ -58,11 +57,22 @@ from lib.pipeline import (  # noqa: E402
     _get,
     _headers,
 )
+from lib.openfda_client import (  # noqa: E402
+    DEFAULT_BASE_URL as _OPENFDA_DEFAULT_BASE_URL,
+    DEVICE_ENFORCEMENT_PATH,
+    DEVICE_RECALL_PATH,
+    OpenFDAClient,
+)
 
 logger = logging.getLogger(__name__)
 
-OPENFDA_RECALL_BASE = "https://api.fda.gov/device/recall.json"
-OPENFDA_ENFORCEMENT_BASE = "https://api.fda.gov/device/enforcement.json"
+# Endpoint URL constants kept for backwards compatibility / greppability.
+# The real source of truth is lib/openfda_client.py — base URL is
+# configurable via OPENFDA_BASE_URL (AEMS migration adapter) and the
+# path constants live in the shared client.
+_OPENFDA_BASE_URL = os.environ.get("OPENFDA_BASE_URL") or _OPENFDA_DEFAULT_BASE_URL
+OPENFDA_RECALL_BASE = f"{_OPENFDA_BASE_URL.rstrip('/')}{DEVICE_RECALL_PATH}"
+OPENFDA_ENFORCEMENT_BASE = f"{_OPENFDA_BASE_URL.rstrip('/')}{DEVICE_ENFORCEMENT_PATH}"
 OPENFDA_API_KEY = os.environ.get("OPENFDA_API_KEY", "")
 PAGE_SIZE = 100              # openFDA max is 1000 but 100 keeps payloads manageable
 MAX_PAGES = 200              # recall endpoint safety cap (~20k records)
@@ -111,21 +121,41 @@ def slugify(s: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# openFDA pagination helper (shared by both endpoints)
+# openFDA pagination helper (kept as a thin wrapper around OpenFDAClient
+# so existing call sites and any monkey-patches keep working unchanged).
 # ---------------------------------------------------------------------------
 
+def _client() -> OpenFDAClient:
+    """Build a client honouring this module's globals.
+
+    Reads ``OPENFDA_API_KEY`` at call time so tests / runs that mutate
+    ``os.environ`` after import still see the right value, matching the
+    pre-refactor behavior where ``OPENFDA_API_KEY`` was read at module
+    load.
+    """
+    return OpenFDAClient(
+        base_url=_OPENFDA_BASE_URL,
+        api_key=OPENFDA_API_KEY or None,
+    )
+
+
 def _fetch_page(base_url: str, search: str, skip: int, limit: int) -> tuple[list[dict], int]:
-    """Return (results, total_hits) from any openFDA endpoint."""
-    params: dict[str, Any] = {"search": search, "limit": limit, "skip": skip}
-    if OPENFDA_API_KEY:
-        params["api_key"] = OPENFDA_API_KEY
-    resp = httpx.get(base_url, params=params, timeout=60)
-    if resp.status_code == 404:
-        # openFDA returns 404 when the query has zero results.
-        return [], 0
-    resp.raise_for_status()
-    data = resp.json()
-    return data.get("results", []) or [], int(data.get("meta", {}).get("results", {}).get("total", 0))
+    """Return (results, total_hits) from any openFDA endpoint.
+
+    Thin wrapper preserved for backwards compatibility — callers may
+    still pass a full base URL (``https://api.fda.gov/device/recall.json``)
+    and this resolves the path portion against ``OpenFDAClient``.
+    """
+    # Map a full URL back to a path so OpenFDAClient can rebuild against
+    # whatever base it's configured for. This keeps the AEMS adapter
+    # honest even when callers hand us the full URL.
+    path = base_url
+    for prefix in (_OPENFDA_DEFAULT_BASE_URL, _OPENFDA_BASE_URL):
+        prefix = prefix.rstrip("/")
+        if path.startswith(prefix):
+            path = path[len(prefix):]
+            break
+    return _client().fetch_page(path, search, skip=skip, limit=limit)
 
 
 # ---------------------------------------------------------------------------
@@ -144,21 +174,15 @@ def fetch_recalls(since: str) -> list[dict]:
     logger.info("openFDA recall search: %s", search)
 
     all_results: list[dict] = []
-    skip = 0
-    pages = 0
-    total = None
-    while pages < MAX_PAGES:
-        results, total = _fetch_page(OPENFDA_RECALL_BASE, search, skip, PAGE_SIZE)
-        if not results:
-            break
-        all_results.extend(results)
-        skip += len(results)
-        pages += 1
-        if total is not None and skip >= total:
-            break
-        if len(results) < PAGE_SIZE:
-            break
-        time.sleep(REQUEST_DELAY)
+    total = 0
+    for page, total in _client().paginate_skip(
+        DEVICE_RECALL_PATH,
+        search,
+        page_size=PAGE_SIZE,
+        max_pages=MAX_PAGES,
+        request_delay=REQUEST_DELAY,
+    ):
+        all_results.extend(page)
 
     logger.info("Fetched %d device-recall rows (total reported=%s)", len(all_results), total)
     return all_results
@@ -185,31 +209,27 @@ def fetch_enforcement_classifications(since: str) -> dict[str, str]:
     logger.info("openFDA enforcement search: %s", search)
 
     enforcement_map: dict[str, str] = {}
-    skip = 0
-    pages = 0
-    total = None
+    total_seen = 0
+    total = 0
 
-    while pages < ENFORCEMENT_MAX_PAGES:
-        results, total = _fetch_page(OPENFDA_ENFORCEMENT_BASE, search, skip, PAGE_SIZE)
-        if not results:
-            break
-        for r in results:
+    for page, total in _client().paginate_skip(
+        DEVICE_ENFORCEMENT_PATH,
+        search,
+        page_size=PAGE_SIZE,
+        max_pages=ENFORCEMENT_MAX_PAGES,
+        request_delay=REQUEST_DELAY,
+    ):
+        for r in page:
             rn = (r.get("recall_number") or "").strip()
             cls = (r.get("classification") or "").strip()
             if rn and cls in _SEVERITY_CLASSES:
                 enforcement_map[rn] = cls
-        skip += len(results)
-        pages += 1
-        if total is not None and skip >= total:
-            break
-        if len(results) < PAGE_SIZE:
-            break
-        time.sleep(REQUEST_DELAY)
+        total_seen += len(page)
 
     logger.info(
         "Fetched %d enforcement records (total reported=%s); "
         "%d unique recall_numbers with valid classification",
-        skip, total, len(enforcement_map),
+        total_seen, total, len(enforcement_map),
     )
     dist = Counter(enforcement_map.values())
     for cls in sorted(dist):
