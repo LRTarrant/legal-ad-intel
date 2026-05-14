@@ -206,6 +206,17 @@ Each surface lists: frontend · API · pipeline · workflow + schedule · Supaba
 - **External APIs:** Resend (transactional email), GA4 (analytics — see Known Issues).
 - **Env vars:** `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `ALERT_CHECK_SECRET` (cron secret for `/api/alerts/check`), `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
 
+### 6.10 FAERS Adverse Event Reports (drug safety signal)
+Phase 2 of the CPSC → FAERS → MAUDE arc. Schema landed in PR-2 (this entry); pipeline, API, and UI follow in PR-3 / PR-4 / PR-5.
+- **Frontend:** TBD in PR-4 / PR-5.
+- **API:** TBD in PR-5.
+- **Pipeline:** TBD in PR-3 (`pipeline/pipelines/drug_event.py` planned; will reuse the shared `openfda_client` module from PR-1 / #380).
+- **Workflow:** TBD in PR-3. Planned weekly cron aligned with openFDA's quarterly `/drug/event.json` refresh (monitor the FDA Aug 2025 daily-publication announcement — openFDA cadence has not yet moved off quarterly as of last review).
+- **Supabase tables:** `drug_adverse_events` (parent fact — one row per `safetyreportid`), `drug_adverse_event_drugs` (child — one row per drug per report; preserves `openfda_*` enrichment arrays for PR-3 normalization), `drug_adverse_event_reactions` (child — one row per MedDRA PT per report), `meddra_terms` (PT dimension, populated by PR-3).
+- **External APIs:** openFDA `https://api.fda.gov/drug/event.json` (FAERS adverse-event reports).
+- **Env vars:** `OPENFDA_API_KEY` (optional but raises rate limit from 1k/day to 120k/day), `OPENFDA_BASE_URL` (AEMS-migration adapter, see §7), shared Supabase vars.
+- **Design notes:** Schema preserves `drug_adverse_events.primarysource_qualification` (smallint, CHECK 1..5) so PR-3 / PR-4 / PR-5 can filter out lawyer-sourced reports (`qualification = 4`), which are mass-tort solicitation artifacts rather than organic safety signal. Filter enforcement is intentionally NOT in the schema — pipeline computes dual signal (all-reporter vs non-lawyer) and UI surfaces both views. See `docs/data-sources/faers.md` for full scoping (volumes, MedDRA PT-only constraint, drug→manufacturer normalization plan, lawyer-flood feedback loop).
+
 ---
 
 ## 7. Environment & secrets
