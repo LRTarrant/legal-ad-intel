@@ -165,7 +165,33 @@ end$$;
 -- PipelineRun(pipeline_name='faers_weekly') resolves its step layout.
 -- Shares source_domain='faers' with no siblings today (MAUDE is deferred);
 -- a future drug_enforcement sibling can join the same domain.
+--
+-- The CHECK constraint on pipeline_configs.source_domain is an enum-by-list,
+-- last extended in 20260422150000_recall_pipeline_configs.sql to add
+-- 'recall_watchlist'. Same drop-and-re-add pattern as the prior extensions
+-- in 20260411140000 (serp_intelligence) and 20260417120000 (pi_advertising):
+-- the constraint is a CHECK, not a real ENUM type, so a plain DROP+ADD is
+-- the established convention. Adding 'faers' here unblocks the INSERT below.
 -- ----------------------------------------------------------------------------
+alter table public.pipeline_configs
+  drop constraint if exists pipeline_configs_source_domain_check;
+
+alter table public.pipeline_configs
+  add constraint pipeline_configs_source_domain_check
+  check (source_domain = any (array[
+    'ad_intelligence',
+    'ad_events_legacy',
+    'litigation_mdl',
+    'mva_fars',
+    'boating',
+    'weather_storms',
+    'reference_geo',
+    'serp_intelligence',
+    'pi_advertising',
+    'recall_watchlist',
+    'faers'
+  ]));
+
 insert into public.pipeline_configs (pipeline_name, source_domain, step_definitions)
 values
   (
