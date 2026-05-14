@@ -73,13 +73,19 @@ MedDRA HANDLING (faers.md §5):
 
 PAGINATION:
 
-    sort='receivedate:desc,safetyreportid:desc' — receivedate alone collides
+    sort='receivedate:desc,receiptdate:desc' — receivedate alone collides
     when hundreds of thousands of reports share a date, so search_after on
-    a single-field cursor would loop until the safety cap. The compound
-    cursor is the first edge case discovered during real consumer
-    integration; the openfda_client.paginate_search_after extension to
-    accept `compound_cursor_extractor` landed in this PR alongside this
-    pipeline.
+    a single-field cursor would loop until the safety cap. We tried
+    safetyreportid as the secondary sort first, but openFDA indexes it as
+    a text (analyzed) field, not keyword (sortable) — the API returns HTTP
+    500 with an "operations that require per-document field data ... are
+    disabled by default" error. receiptdate is keyword-typed and works.
+    Caveat: receivedate == receiptdate is common on initial-report cases
+    where FDA stamps both fields the same day; less common on amended /
+    follow-up reports. Frequency unknown without sampling. The pagination
+    safety logic in lib/openfda_client.py (empty-cursor short-circuit)
+    handles residual collisions cleanly so exact ratio doesn't matter for
+    correctness.
 
 RATE LIMIT BUDGET:
 
@@ -152,9 +158,15 @@ DEFAULT_ROLLING_DAYS = 7
 # Sort + base search expression.
 # Compound sort: receivedate alone collides — hundreds of thousands of FAERS
 # reports share a date, so a single-field cursor of "20260512" re-fetches the
-# same page indefinitely. safetyreportid is unique and stable, giving cursor
-# uniqueness inside a date bucket.
-SORT_EXPR = "receivedate:desc,safetyreportid:desc"
+# same page indefinitely. safetyreportid would be the natural tiebreaker (it's
+# unique per report) but openFDA indexes it as TEXT (analyzed for full-text
+# search) not KEYWORD (sortable), so attempting to sort by it returns HTTP 500
+# with "operations that require per-document field data ... are disabled by
+# default". receiptdate is keyword-typed and works as a tiebreaker. It doesn't
+# fully eliminate collisions (initial reports share receivedate == receiptdate),
+# but the empty-cursor short-circuit in paginate_search_after handles the
+# residual case safely.
+SORT_EXPR = "receivedate:desc,receiptdate:desc"
 SEARCH_SEVERITY = "serious:1"
 
 
@@ -563,9 +575,14 @@ def normalize_report(
 def faers_compound_cursor(record: dict, sort_fields: list[str]) -> str | None:
     """Build a compound search_after cursor for FAERS.
 
-    sort=receivedate:desc,safetyreportid:desc -> "<receivedate>,<safetyreportid>".
+    sort=receivedate:desc,receiptdate:desc -> "<receivedate>,<receiptdate>".
     Returns None if any required field is missing on the last record — that
     signals paginate_search_after to stop rather than loop forever.
+
+    Note: the function itself is sort-field agnostic — it walks whatever
+    paths the caller passes in. The sort-field choice is locked in
+    SORT_EXPR above (see comment there for why safetyreportid is not
+    usable as the secondary sort).
     """
     parts: list[str] = []
     for field_path in sort_fields:

@@ -517,6 +517,16 @@ class PipelineRun:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Failure surfacing rule: any step failure (raised exception OR a
+        # step that called .finish('failed') manually) must propagate as a
+        # non-zero shell exit so CI turns red. The previous version returned
+        # True here, swallowing the exception, and the no-exception
+        # partial_success path returned False without signalling — both
+        # caused green CI on failed runs ("silent green" observability bug).
+        # We preserve the friendly logging + DB update, then raise
+        # SystemExit(1) so the script exits non-zero without printing a
+        # noisy Python traceback (Python's interpreter handles SystemExit
+        # specially — no traceback when the value is an int).
         if exc_type:
             error_msg = f"{exc_type.__name__}: {exc_val}"
             tb = "".join(traceback.format_exception(exc_type, exc_val, exc_tb))
@@ -527,7 +537,7 @@ class PipelineRun:
             self._finish_run("failed", error=error_msg)
             self._metadata["traceback"] = tb[:4000]
             print(f"\n✗ Pipeline FAILED: {error_msg}")
-            return True  # suppress exception so script exits cleanly
+            raise SystemExit(1)
 
         # Determine final status from step outcomes
         statuses = [s._status for s in self._steps]
@@ -543,6 +553,11 @@ class PipelineRun:
         print(f"\n{symbol} Pipeline finished: {final}")
         print(f"  Ingested={self.total_ingested}  Normalized={self.total_normalized}  "
               f"Scored={self.total_scored}  Rejected={self.total_rejected}")
+        if final != "success":
+            # partial_success: at least one step manually marked itself
+            # failed without raising. Treat as a failure for CI purposes —
+            # see the failure-surfacing rule comment above.
+            raise SystemExit(1)
         return False
 
     def _finish_run(self, status: str, error: Optional[str] = None):
