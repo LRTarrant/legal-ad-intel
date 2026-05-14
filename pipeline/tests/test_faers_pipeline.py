@@ -450,18 +450,31 @@ class TestNormalizeReport:
 
 class TestCompoundCursor:
     def test_basic_compound(self):
-        rec = {"receivedate": "20260512", "safetyreportid": "5801206-7"}
-        c = faers_compound_cursor(rec, ["receivedate", "safetyreportid"])
-        assert c == "20260512,5801206-7"
+        rec = {"receivedate": "20260512", "receiptdate": "20260510"}
+        c = faers_compound_cursor(rec, ["receivedate", "receiptdate"])
+        assert c == "20260512,20260510"
 
     def test_missing_field_returns_none(self):
         """Missing field stops pagination (signal back to paginate_search_after)."""
         rec = {"receivedate": "20260512"}
-        assert faers_compound_cursor(rec, ["receivedate", "safetyreportid"]) is None
+        assert faers_compound_cursor(rec, ["receivedate", "receiptdate"]) is None
 
     def test_empty_field_returns_none(self):
-        rec = {"receivedate": "", "safetyreportid": "x"}
-        assert faers_compound_cursor(rec, ["receivedate", "safetyreportid"]) is None
+        rec = {"receivedate": "", "receiptdate": "20260510"}
+        assert faers_compound_cursor(rec, ["receivedate", "receiptdate"]) is None
+
+    def test_sort_expr_does_not_use_safetyreportid(self):
+        """Regression guard for the live HTTP 500 we hit in workflow_dispatch.
+
+        openFDA indexes safetyreportid as a text (analyzed) field, not
+        keyword (sortable). Any attempt to sort by it returns:
+            "Text fields are not optimised for operations that require
+            per-document field data like aggregations and sorting..."
+        This bug must never recur — assert the sort string doesn't mention it.
+        """
+        assert "safetyreportid" not in SORT_EXPR
+        assert "receivedate" in SORT_EXPR  # primary sort still in place
+        assert "receiptdate" in SORT_EXPR  # current tiebreaker
 
 
 # ---------------------------------------------------------------------------
@@ -475,14 +488,16 @@ class TestPaginateSearchAfterCompound:
         captured: list[dict] = []
 
         # Page one: 100 records all sharing receivedate=20260512 but with
-        # distinct safetyreportids — exactly the collision scenario the
-        # compound cursor is designed to defeat.
+        # varying receiptdate — exactly the collision scenario the compound
+        # cursor is designed to defeat. (safetyreportid would be ideal as
+        # the tiebreaker but openFDA indexes it as unsortable text — see
+        # SORT_EXPR comment in faers_weekly.py.)
         page_one = [
-            {"receivedate": "20260512", "safetyreportid": f"{i:07d}-1"}
+            {"receivedate": "20260512", "receiptdate": f"2026050{i % 10}"}
             for i in range(100)
         ]
         # Page two: 1 record (short → paginator stops after this).
-        page_two = [{"receivedate": "20260511", "safetyreportid": "0000200-1"}]
+        page_two = [{"receivedate": "20260511", "receiptdate": "20260509"}]
 
         def fake_get(url, params, timeout):
             captured.append(dict(params))
@@ -510,14 +525,15 @@ class TestPaginateSearchAfterCompound:
         # Without the compound extractor the cursor would have been
         # "20260512" — same as the value all 100 page-one records share —
         # and we'd have re-fetched the same page. The compound cursor
-        # uses the LAST record's safetyreportid too, breaking the tie.
-        assert captured[1]["search_after"] == "20260512,0000099-1"
+        # appends the LAST record's receiptdate (page_one[99] → "20260509")
+        # to break the tie.
+        assert captured[1]["search_after"] == "20260512,20260509"
         assert captured[1]["sort"] == SORT_EXPR
 
     def test_compound_extractor_returning_none_stops_pagination(self):
         """If the last record lacks a cursor field, pagination halts."""
         client = OpenFDAClient(api_key="", retry_delays=(0,))
-        page_one = [{"receivedate": "20260512"} for _ in range(100)]  # no safetyreportid
+        page_one = [{"receivedate": "20260512"} for _ in range(100)]  # no receiptdate
 
         def fake_get(url, params, timeout):
             r = MagicMock(spec=httpx.Response)
@@ -537,7 +553,8 @@ class TestPaginateSearchAfterCompound:
                 max_pages=10,
                 compound_cursor_extractor=faers_compound_cursor,
             ))
-        # Stops after one page because the compound extractor returns None.
+        # Stops after one page because the compound extractor returns None
+        # (receiptdate missing on every record in page one).
         assert len(pages) == 1
 
 
