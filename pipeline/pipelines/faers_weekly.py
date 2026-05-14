@@ -6,8 +6,12 @@ Endpoint: https://api.fda.gov/drug/event.json (openFDA FAERS).
   * Quarterly refresh upstream (faers.md §2). The FDA Aug 2025 daily-publication
     announcement has not yet propagated to the openFDA API cadence.
   * Total volume ~20M records; we ingest the `serious:1` subset only (~50%).
-  * Skip cap = 25k per query — paginate via search_after cursor (PR-1's
-    openfda_client.paginate_search_after, first production consumer here).
+  * Skip cap = 25k per query — we partition the receivedate range into
+    windows that each fit under the cap, then paginate each window via
+    `skip`/`limit` (the documented openFDA path). The cursor alternative
+    (`search_after`) was tried first and failed against the live API; see
+    `lib/openfda_client.py:paginate_search_after` docstring for the
+    diagnosis and verbatim error.
 
 SOURCE FILTER — serious:1 ONLY:
 
@@ -71,29 +75,51 @@ MedDRA HANDLING (faers.md §5):
     is `_canonicalize_name(pt_name)`; `first_seen_meddra_version` is
     captured on the first observation only.
 
-PAGINATION:
+PAGINATION (skip + date-window chunking):
 
-    sort='receivedate:desc,receiptdate:desc' — receivedate alone collides
-    when hundreds of thousands of reports share a date, so search_after on
-    a single-field cursor would loop until the safety cap. We tried
-    safetyreportid as the secondary sort first, but openFDA indexes it as
-    a text (analyzed) field, not keyword (sortable) — the API returns HTTP
-    500 with an "operations that require per-document field data ... are
-    disabled by default" error. receiptdate is keyword-typed and works.
-    Caveat: receivedate == receiptdate is common on initial-report cases
-    where FDA stamps both fields the same day; less common on amended /
-    follow-up reports. Frequency unknown without sampling. The pagination
-    safety logic in lib/openfda_client.py (empty-cursor short-circuit)
-    handles residual collisions cleanly so exact ratio doesn't matter for
-    correctness.
+    openFDA's `skip` is capped at 25,000 records per query. To respect
+    that cap across the full receivedate range we want to ingest, the
+    pipeline partitions the range into windows that each fit under
+    the cap, then paginates each window from skip=0.
+
+    Algorithm (see `adaptive_windows` for the implementation):
+      1. Slice the receivedate range into 7-day chunks (DEFAULT_CHUNK_DAYS).
+      2. For each chunk, probe `meta.results.total` via a cheap limit=1
+         request to learn the chunk's record count BEFORE paginating it.
+      3. If the chunk count <= 25,000 (SKIP_CAP), yield as a single window.
+      4. If the chunk count exceeds the cap, subdivide into daily windows
+         and re-probe each.
+      5. A daily window that STILL exceeds the cap is yielded with a
+         loud WARNING (the operator needs to intervene — the tail of the
+         day's records will be missed when skip rolls past 25k). The
+         miss is recorded in IngestStats.records_missed_over_cap so it
+         surfaces in pipeline_run_steps.metadata for queryable signal.
+
+    sort='receivedate:desc,receiptdate:desc' is passed through every page
+    so flush batches arrive in a stable order (easier debug reading); not
+    strictly required for correctness in skip-pagination.
+
+    Why not search_after: openFDA's /drug/event endpoint advertises
+    `search_after` but its parser rejects compound cursors with
+    "illegal_argument_exception: search_after has 1 value(s) but sort
+    has 3". The endpoint's underlying Elasticsearch silently appends an
+    implicit tiebreaker (the 3rd sort field is not exposed in response
+    documents) AND the parser does not split the cursor string on
+    commas. Both bugs would have to be fixed FDA-side. PR #382's
+    search_after approach failed on the first live request; PR #385
+    moved to this skip-based design. The lib's paginate_search_after
+    function is retained as documented dead-but-preserved code for any
+    future endpoint (AEMS migration) that ships with working semantics.
 
 RATE LIMIT BUDGET:
 
     With OPENFDA_API_KEY (240/min, 120k/day):
-      * Steady-state weekly run (~0 records most weeks, ~200k once per
-        quarterly refresh) — well under daily quota, ~10min wall time.
-      * 2-year backfill (~1.6M serious records at page_size=100):
-        ~16k requests, ~67min straight pagination + polite delay = ~80min.
+      * Steady-state weekly run: 7-day window = 1 chunk = 1 probe + a
+        handful of pagination requests. ~10min wall time.
+      * 2-year backfill: ~104 weekly probes + ~5-10 daily-fallback
+        probes for spike weeks + ~16k pagination requests (~1.6M
+        serious records / 100 per page). ~80min wall time, ~13% of
+        daily quota.
     Without the API key the daily 1k cap kills the backfill on request
     #1001 — verify OPENFDA_API_KEY secret exists before dispatching.
 
@@ -155,17 +181,16 @@ BATCH_FLUSH_SIZE = int(os.environ.get("FAERS_BATCH_FLUSH_SIZE", "500"))
 # clock skew + refresh-publication latency.
 DEFAULT_ROLLING_DAYS = 7
 
-# Sort + base search expression.
-# Compound sort: receivedate alone collides — hundreds of thousands of FAERS
-# reports share a date, so a single-field cursor of "20260512" re-fetches the
-# same page indefinitely. safetyreportid would be the natural tiebreaker (it's
-# unique per report) but openFDA indexes it as TEXT (analyzed for full-text
-# search) not KEYWORD (sortable), so attempting to sort by it returns HTTP 500
-# with "operations that require per-document field data ... are disabled by
-# default". receiptdate is keyword-typed and works as a tiebreaker. It doesn't
-# fully eliminate collisions (initial reports share receivedate == receiptdate),
-# but the empty-cursor short-circuit in paginate_search_after handles the
-# residual case safely.
+# Date-window chunking (see module docstring §PAGINATION):
+DEFAULT_CHUNK_DAYS = 7   # initial chunk granularity; high-volume chunks subdivide
+SKIP_CAP = 25_000        # openFDA's documented skip ceiling per query
+
+# Sort kept across pagination so flush batches arrive in a stable order. Not
+# required for skip-pagination correctness (each page is independent), but
+# easier on log readers and on the residual safetyreportid upsert-conflict
+# detection logic. safetyreportid would be the natural sort key but openFDA
+# indexes it as analyzed text, not keyword — see SORT_EXPR docstring above
+# in module header.
 SORT_EXPR = "receivedate:desc,receiptdate:desc"
 SEARCH_SEVERITY = "serious:1"
 
@@ -569,34 +594,115 @@ def normalize_report(
 
 
 # ---------------------------------------------------------------------------
-# Compound cursor extractor for search_after pagination
+# Date-window chunking
 # ---------------------------------------------------------------------------
 
-def faers_compound_cursor(record: dict, sort_fields: list[str]) -> str | None:
-    """Build a compound search_after cursor for FAERS.
+def iter_windows(start: date, end: date, days: int) -> "Iterator[tuple[date, date]]":
+    """Yield (window_start, window_end) inclusive pairs covering [start, end].
 
-    sort=receivedate:desc,receiptdate:desc -> "<receivedate>,<receiptdate>".
-    Returns None if any required field is missing on the last record — that
-    signals paginate_search_after to stop rather than loop forever.
+    Windows are `days` calendar days wide except the last, which is
+    truncated to end. `days` must be >= 1.
 
-    Note: the function itself is sort-field agnostic — it walks whatever
-    paths the caller passes in. The sort-field choice is locked in
-    SORT_EXPR above (see comment there for why safetyreportid is not
-    usable as the secondary sort).
+    Example: iter_windows(2024-01-01, 2024-01-10, days=4) yields
+      (2024-01-01, 2024-01-04), (2024-01-05, 2024-01-08), (2024-01-09, 2024-01-10).
     """
-    parts: list[str] = []
-    for field_path in sort_fields:
-        # Walk dotted path.
-        cur: Any = record
-        for seg in field_path.split("."):
-            if not isinstance(cur, dict):
-                cur = None
-                break
-            cur = cur.get(seg)
-        if cur is None or cur == "":
-            return None
-        parts.append(str(cur))
-    return ",".join(parts)
+    if days < 1:
+        raise ValueError(f"window days must be >= 1, got {days}")
+    cur = start
+    while cur <= end:
+        win_end = min(cur + timedelta(days=days - 1), end)
+        yield cur, win_end
+        cur = win_end + timedelta(days=1)
+
+
+def probe_window_total(client: OpenFDAClient, window_start: date, window_end: date) -> int:
+    """Cheap limit=1 request to learn meta.results.total for a window.
+
+    Used by adaptive_windows to decide whether a candidate window fits
+    under the skip cap. One probe per window — ~120 extra requests on
+    a 2-year backfill, trivial against the 120k/day quota.
+    """
+    search = build_search(window_start, window_end)
+    _, total = client.fetch_page(
+        DRUG_EVENT_PATH, search,
+        limit=1, skip=0, sort=SORT_EXPR,
+    )
+    return total
+
+
+def adaptive_windows(
+    client: OpenFDAClient,
+    start: date,
+    end: date,
+    *,
+    chunk_days: int = DEFAULT_CHUNK_DAYS,
+    skip_cap: int = SKIP_CAP,
+    stats: "IngestStats | None" = None,
+) -> "Iterator[tuple[date, date, int]]":
+    """Yield (window_start, window_end, expected_total) windows that fit under skip_cap.
+
+    Strategy:
+      1. Cut [start, end] into chunk_days-wide windows.
+      2. Probe each window's total. If <= skip_cap, yield it.
+      3. If > skip_cap, subdivide into daily windows and re-probe each.
+      4. If a daily window STILL exceeds skip_cap, log a loud WARNING,
+         record the overflow into IngestStats.records_missed_over_cap so
+         the miss is queryable from pipeline_run_steps.metadata, and
+         yield the window anyway — skip-pagination will fetch the first
+         skip_cap records and stop. Operator intervention required.
+    """
+    for win_start, win_end in iter_windows(start, end, days=chunk_days):
+        total = probe_window_total(client, win_start, win_end)
+        if total <= skip_cap:
+            yield win_start, win_end, total
+            continue
+
+        # Window exceeds cap — split into days and re-probe each.
+        logger.info(
+            "Window %s..%s has %d records (> skip_cap=%d) — subdividing to daily windows",
+            win_start, win_end, total, skip_cap,
+        )
+        for day_start, day_end in iter_windows(win_start, win_end, days=1):
+            day_total = probe_window_total(client, day_start, day_end)
+            if day_total > skip_cap:
+                missed = day_total - skip_cap
+                # Loud warning — operator needs to see this in CI immediately.
+                logger.warning(
+                    "######################################################################"
+                )
+                logger.warning(
+                    "FAERS skip-cap exceeded on a SINGLE DAY — operator action required."
+                )
+                logger.warning(
+                    "  window:          %s..%s (single day)",
+                    day_start, day_end,
+                )
+                logger.warning(
+                    "  records in day:  %d", day_total,
+                )
+                logger.warning(
+                    "  skip cap:        %d", skip_cap,
+                )
+                logger.warning(
+                    "  records missed:  %d (tail of the day will NOT be ingested)",
+                    missed,
+                )
+                logger.warning(
+                    "  remediation:     widen filter to narrower receivedate window, "
+                    "or split by another field (e.g. receivedate range + reportercountry)",
+                )
+                logger.warning(
+                    "######################################################################"
+                )
+                if stats is not None:
+                    stats.records_missed_over_cap += missed
+                    stats.over_cap_windows.append({
+                        "window_start": day_start.isoformat(),
+                        "window_end": day_end.isoformat(),
+                        "records_in_window": day_total,
+                        "records_missed": missed,
+                    })
+            yield day_start, day_end, day_total
 
 
 # ---------------------------------------------------------------------------
@@ -617,6 +723,13 @@ class IngestStats:
     drug_match_paths: Counter = field(default_factory=Counter)
     alias_misses: Counter = field(default_factory=Counter)
     batches_flushed: int = 0
+    windows_processed: int = 0
+    # Skip-cap over-saturation surface — see adaptive_windows. Non-zero
+    # records_missed_over_cap means a single-day window exceeded openFDA's
+    # skip ceiling and the tail was NOT ingested. Records both the
+    # cumulative count and per-window detail for postmortem.
+    records_missed_over_cap: int = 0
+    over_cap_windows: list[dict] = field(default_factory=list)
 
 
 def _quote_for_in(values: Iterable[str]) -> str:
@@ -820,17 +933,28 @@ def flush_batch(
 def ingest_pages(
     *,
     client: OpenFDAClient,
-    search: str,
+    window_start: date,
+    window_end: date,
     sort: str = SORT_EXPR,
     page_size: int = PAGE_SIZE,
     batch_flush_size: int = BATCH_FLUSH_SIZE,
-    max_pages: int = 100_000,
+    max_pages_per_window: int = 100_000,
+    chunk_days: int = DEFAULT_CHUNK_DAYS,
+    skip_cap: int = SKIP_CAP,
     alias_map: dict[str, str],
     drugs_index: dict[str, str],
     meddra_index: set[str],
     progress_log_every: int = 20,
 ) -> IngestStats:
-    """Stream FAERS pages, normalize, flush per batch. Returns aggregate stats."""
+    """Stream FAERS pages across date-chunked windows. Returns aggregate stats.
+
+    Outer loop walks `adaptive_windows`; each window probes its total,
+    subdivides if needed (see module §PAGINATION), and yields a window
+    that fits under skip_cap. Inner loop paginates the window via
+    `paginate_skip`. Stats accumulate across all windows; the batch
+    buffer flushes when it reaches `batch_flush_size` regardless of
+    window boundaries.
+    """
     stats = IngestStats()
     new_drugs: dict[str, dict] = {}
     new_meddra_terms: dict[str, dict] = {}
@@ -853,46 +977,55 @@ def ingest_pages(
         drug_children_by_sri.clear()
         reaction_children_by_sri.clear()
 
-    pages = 0
-    for page_results, _total in client.paginate_search_after(
-        DRUG_EVENT_PATH,
-        search,
-        sort=sort,
-        page_size=page_size,
-        max_pages=max_pages,
-        compound_cursor_extractor=faers_compound_cursor,
+    for win_start, win_end, expected_total in adaptive_windows(
+        client, window_start, window_end,
+        chunk_days=chunk_days, skip_cap=skip_cap, stats=stats,
     ):
-        pages += 1
-        for raw in page_results:
-            stats.fetched += 1
-            normalized = normalize_report(
-                raw,
-                drugs_index=drugs_index,
-                new_drugs=new_drugs,
-                meddra_index=meddra_index,
-                new_meddra_terms=new_meddra_terms,
-                alias_map=alias_map,
-                stats=stats,
-            )
-            if normalized is None:
-                stats.rejected += 1
-                continue
-            stats.normalized += 1
-            sri = normalized["parent"]["safetyreportid"]
-            parent_buffer.append(normalized["parent"])
-            drug_children_by_sri[sri] = normalized["drugs"]
-            reaction_children_by_sri[sri] = normalized["reactions"]
+        stats.windows_processed += 1
+        logger.info(
+            "FAERS window %s..%s: expected_total=%d",
+            win_start, win_end, expected_total,
+        )
+        window_search = build_search(win_start, win_end)
+        pages = 0
+        for page_results, _total in client.paginate_skip(
+            DRUG_EVENT_PATH,
+            window_search,
+            page_size=page_size,
+            max_pages=max_pages_per_window,
+            sort=sort,
+        ):
+            pages += 1
+            for raw in page_results:
+                stats.fetched += 1
+                normalized = normalize_report(
+                    raw,
+                    drugs_index=drugs_index,
+                    new_drugs=new_drugs,
+                    meddra_index=meddra_index,
+                    new_meddra_terms=new_meddra_terms,
+                    alias_map=alias_map,
+                    stats=stats,
+                )
+                if normalized is None:
+                    stats.rejected += 1
+                    continue
+                stats.normalized += 1
+                sri = normalized["parent"]["safetyreportid"]
+                parent_buffer.append(normalized["parent"])
+                drug_children_by_sri[sri] = normalized["drugs"]
+                reaction_children_by_sri[sri] = normalized["reactions"]
 
-        if len(parent_buffer) >= batch_flush_size:
-            _flush()
+            if len(parent_buffer) >= batch_flush_size:
+                _flush()
 
-        if pages % progress_log_every == 0:
-            logger.info(
-                "FAERS ingest progress: %d pages, %d fetched, %d normalized, "
-                "%d rejected, %d batches flushed",
-                pages, stats.fetched, stats.normalized,
-                stats.rejected, stats.batches_flushed,
-            )
+            if pages % progress_log_every == 0:
+                logger.info(
+                    "FAERS window %s..%s progress: %d pages, %d fetched, "
+                    "%d normalized, %d rejected, %d batches flushed",
+                    win_start, win_end, pages, stats.fetched,
+                    stats.normalized, stats.rejected, stats.batches_flushed,
+                )
 
     # Tail flush
     if parent_buffer or new_drugs or new_meddra_terms:
@@ -975,7 +1108,9 @@ def main() -> int:
         year=args.year,
         rolling_days=args.rolling_days,
     )
-    search = build_search(start, end)
+    # Full-range probe is for visibility only — actual paging happens
+    # per chunked window (see ingest_pages).
+    full_range_search = build_search(start, end)
 
     client = OpenFDAClient()
     if not client.api_key:
@@ -994,17 +1129,19 @@ def main() -> int:
             "window_end": end.isoformat(),
             "endpoint_base": client.base_url,
             "endpoint_path": DRUG_EVENT_PATH,
-            "search": search,
+            "search": full_range_search,
             "sort": SORT_EXPR,
             "page_size": args.page_size,
+            "chunk_days": DEFAULT_CHUNK_DAYS,
+            "skip_cap": SKIP_CAP,
             "api_key_present": bool(client.api_key),
         },
     ) as run:
         with run.step("fetch_raw") as step:
-            # Peek total hits so the operator sees scope before the big loop.
+            # Peek full-range total hits so the operator sees scope before the big loop.
             _first, total_hits = client.fetch_page(
-                DRUG_EVENT_PATH, search,
-                limit=1, skip=None, sort=SORT_EXPR,
+                DRUG_EVENT_PATH, full_range_search,
+                limit=1, skip=0, sort=SORT_EXPR,
             )
             step.set_metadata({
                 "endpoint_total_hits": total_hits,
@@ -1029,11 +1166,14 @@ def main() -> int:
         with run.step("publish") as step:
             stats = ingest_pages(
                 client=client,
-                search=search,
+                window_start=start,
+                window_end=end,
                 sort=SORT_EXPR,
                 page_size=args.page_size,
                 batch_flush_size=BATCH_FLUSH_SIZE,
-                max_pages=args.max_pages,
+                max_pages_per_window=args.max_pages,
+                chunk_days=DEFAULT_CHUNK_DAYS,
+                skip_cap=SKIP_CAP,
                 alias_map=alias_map,
                 drugs_index=drugs_index,
                 meddra_index=meddra_index,
@@ -1056,6 +1196,12 @@ def main() -> int:
                 "drug_match_paths": dict(stats.drug_match_paths),
                 "top_alias_misses": stats.alias_misses.most_common(20),
                 "batches_flushed": stats.batches_flushed,
+                "windows_processed": stats.windows_processed,
+                # Skip-cap saturation surface — non-zero means the tail of
+                # at least one single-day window was NOT ingested. Operator
+                # action required; over_cap_windows carries per-window detail.
+                "records_missed_over_cap": stats.records_missed_over_cap,
+                "over_cap_windows": stats.over_cap_windows,
             })
 
     return 0

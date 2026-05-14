@@ -23,7 +23,9 @@ os.environ.setdefault("SUPABASE_SERVICE_KEY", "fake-key")
 from lib.openfda_client import OpenFDAClient  # noqa: E402
 from lib.pipeline import _canonicalize_name  # noqa: E402
 from pipelines.faers_weekly import (  # noqa: E402
+    DEFAULT_CHUNK_DAYS,
     IngestStats,
+    SKIP_CAP,
     SORT_EXPR,
     _quote_for_in,
     _safe_date,
@@ -31,10 +33,11 @@ from pipelines.faers_weekly import (  # noqa: E402
     _to_bool_one,
     _to_serious_bool,
     _to_smallint,
+    adaptive_windows,
     build_search,
     derive_drug_match,
-    faers_compound_cursor,
     ingest_pages,
+    iter_windows,
     normalize_report,
     resolve_window,
 )
@@ -445,26 +448,12 @@ class TestNormalizeReport:
 
 
 # ---------------------------------------------------------------------------
-# Compound cursor extractor (the FAERS-driven edge case)
+# SORT_EXPR regression guard (carried forward from PR #384)
 # ---------------------------------------------------------------------------
 
-class TestCompoundCursor:
-    def test_basic_compound(self):
-        rec = {"receivedate": "20260512", "receiptdate": "20260510"}
-        c = faers_compound_cursor(rec, ["receivedate", "receiptdate"])
-        assert c == "20260512,20260510"
-
-    def test_missing_field_returns_none(self):
-        """Missing field stops pagination (signal back to paginate_search_after)."""
-        rec = {"receivedate": "20260512"}
-        assert faers_compound_cursor(rec, ["receivedate", "receiptdate"]) is None
-
-    def test_empty_field_returns_none(self):
-        rec = {"receivedate": "", "receiptdate": "20260510"}
-        assert faers_compound_cursor(rec, ["receivedate", "receiptdate"]) is None
-
+class TestSortExprRegressionGuard:
     def test_sort_expr_does_not_use_safetyreportid(self):
-        """Regression guard for the live HTTP 500 we hit in workflow_dispatch.
+        """Regression guard for the live HTTP 500 first seen in workflow_dispatch.
 
         openFDA indexes safetyreportid as a text (analyzed) field, not
         keyword (sortable). Any attempt to sort by it returns:
@@ -473,111 +462,180 @@ class TestCompoundCursor:
         This bug must never recur — assert the sort string doesn't mention it.
         """
         assert "safetyreportid" not in SORT_EXPR
-        assert "receivedate" in SORT_EXPR  # primary sort still in place
-        assert "receiptdate" in SORT_EXPR  # current tiebreaker
+        assert "receivedate" in SORT_EXPR
+        assert "receiptdate" in SORT_EXPR
 
 
 # ---------------------------------------------------------------------------
-# paginate_search_after integration with compound cursor (the new code path)
+# iter_windows — calendar-day chunker
 # ---------------------------------------------------------------------------
 
-class TestPaginateSearchAfterCompound:
-    def test_compound_cursor_is_assembled_and_passed(self):
-        """The compound extractor builds the cursor; the next request carries it."""
-        client = OpenFDAClient(api_key="", retry_delays=(0,))
-        captured: list[dict] = []
-
-        # Page one: 100 records all sharing receivedate=20260512 but with
-        # varying receiptdate — exactly the collision scenario the compound
-        # cursor is designed to defeat. (safetyreportid would be ideal as
-        # the tiebreaker but openFDA indexes it as unsortable text — see
-        # SORT_EXPR comment in faers_weekly.py.)
-        page_one = [
-            {"receivedate": "20260512", "receiptdate": f"2026050{i % 10}"}
-            for i in range(100)
+class TestIterWindows:
+    def test_evenly_divisible_range_weekly(self):
+        from datetime import date as _d
+        windows = list(iter_windows(_d(2024, 1, 1), _d(2024, 1, 14), days=7))
+        # Two 7-day chunks: Jan 1..Jan 7 (inclusive, 7 days) + Jan 8..Jan 14.
+        assert windows == [
+            (_d(2024, 1, 1), _d(2024, 1, 7)),
+            (_d(2024, 1, 8), _d(2024, 1, 14)),
         ]
-        # Page two: 1 record (short → paginator stops after this).
-        page_two = [{"receivedate": "20260511", "receiptdate": "20260509"}]
 
-        def fake_get(url, params, timeout):
-            captured.append(dict(params))
-            r = MagicMock(spec=httpx.Response)
-            r.status_code = 200
-            r.request = MagicMock(spec=httpx.Request)
-            r.raise_for_status.return_value = None
-            if "search_after" not in params:
-                r.json.return_value = {"results": page_one, "meta": {"results": {"total": 101}}}
-            else:
-                r.json.return_value = {"results": page_two, "meta": {"results": {"total": 101}}}
-            return r
+    def test_partial_last_window_truncated(self):
+        from datetime import date as _d
+        windows = list(iter_windows(_d(2024, 1, 1), _d(2024, 1, 10), days=4))
+        assert windows == [
+            (_d(2024, 1, 1), _d(2024, 1, 4)),
+            (_d(2024, 1, 5), _d(2024, 1, 8)),
+            (_d(2024, 1, 9), _d(2024, 1, 10)),  # truncated
+        ]
 
-        with patch("lib.openfda_client.httpx.get", side_effect=fake_get), \
-             patch("lib.openfda_client.time.sleep"):
-            pages = list(client.paginate_search_after(
-                "/drug/event.json",
-                "serious:1",
-                sort=SORT_EXPR,
-                page_size=100,
-                compound_cursor_extractor=faers_compound_cursor,
-            ))
+    def test_single_day_range(self):
+        from datetime import date as _d
+        windows = list(iter_windows(_d(2024, 1, 5), _d(2024, 1, 5), days=7))
+        assert windows == [(_d(2024, 1, 5), _d(2024, 1, 5))]
 
-        assert len(pages) == 2
-        # Without the compound extractor the cursor would have been
-        # "20260512" — same as the value all 100 page-one records share —
-        # and we'd have re-fetched the same page. The compound cursor
-        # appends the LAST record's receiptdate (page_one[99] → "20260509")
-        # to break the tie.
-        assert captured[1]["search_after"] == "20260512,20260509"
-        assert captured[1]["sort"] == SORT_EXPR
+    def test_daily_granularity(self):
+        from datetime import date as _d
+        windows = list(iter_windows(_d(2024, 1, 1), _d(2024, 1, 3), days=1))
+        assert windows == [
+            (_d(2024, 1, 1), _d(2024, 1, 1)),
+            (_d(2024, 1, 2), _d(2024, 1, 2)),
+            (_d(2024, 1, 3), _d(2024, 1, 3)),
+        ]
 
-    def test_compound_extractor_returning_none_stops_pagination(self):
-        """If the last record lacks a cursor field, pagination halts."""
-        client = OpenFDAClient(api_key="", retry_delays=(0,))
-        page_one = [{"receivedate": "20260512"} for _ in range(100)]  # no receiptdate
-
-        def fake_get(url, params, timeout):
-            r = MagicMock(spec=httpx.Response)
-            r.status_code = 200
-            r.request = MagicMock(spec=httpx.Request)
-            r.raise_for_status.return_value = None
-            r.json.return_value = {"results": page_one, "meta": {"results": {"total": 999}}}
-            return r
-
-        with patch("lib.openfda_client.httpx.get", side_effect=fake_get), \
-             patch("lib.openfda_client.time.sleep"):
-            pages = list(client.paginate_search_after(
-                "/drug/event.json",
-                "serious:1",
-                sort=SORT_EXPR,
-                page_size=100,
-                max_pages=10,
-                compound_cursor_extractor=faers_compound_cursor,
-            ))
-        # Stops after one page because the compound extractor returns None
-        # (receiptdate missing on every record in page one).
-        assert len(pages) == 1
+    def test_invalid_days_raises(self):
+        from datetime import date as _d
+        with pytest.raises(ValueError):
+            list(iter_windows(_d(2024, 1, 1), _d(2024, 1, 10), days=0))
 
 
 # ---------------------------------------------------------------------------
-# ingest_pages integration — runs through the streaming path end-to-end
-# with mocked HTTP and DB.
+# adaptive_windows — probe + subdivide
+# ---------------------------------------------------------------------------
+
+def _client_with_probe(probe_totals: dict[tuple[str, str], int]) -> OpenFDAClient:
+    """Build a client whose fetch_page returns ([], total) where total
+    is looked up by (start_yyyymmdd, end_yyyymmdd) from the dict."""
+    client = OpenFDAClient(api_key="", retry_delays=(0,))
+
+    def fake_get(url, params, timeout):
+        # build_search emits 'serious:1 AND receivedate:[YYYYMMDD TO YYYYMMDD]'.
+        search = params["search"]
+        # Parse window dates out of the search expression.
+        import re
+        m = re.search(r"\[(\d{8}) TO (\d{8})\]", search)
+        if not m:
+            total = 0
+        else:
+            total = probe_totals.get((m.group(1), m.group(2)), 0)
+        r = MagicMock(spec=httpx.Response)
+        r.status_code = 200
+        r.request = MagicMock(spec=httpx.Request)
+        r.raise_for_status.return_value = None
+        r.json.return_value = {"results": [], "meta": {"results": {"total": total}}}
+        return r
+
+    client._fake_get = fake_get  # for the test to install via patch
+    return client
+
+
+class TestAdaptiveWindows:
+    def test_passes_small_windows_through_unchanged(self):
+        from datetime import date as _d
+        # Two weekly chunks; each fits well under the cap.
+        client = _client_with_probe({
+            ("20240101", "20240107"): 500,
+            ("20240108", "20240114"): 800,
+        })
+        with patch("lib.openfda_client.httpx.get", side_effect=client._fake_get):
+            windows = list(adaptive_windows(
+                client, _d(2024, 1, 1), _d(2024, 1, 14),
+                chunk_days=7, skip_cap=25_000,
+            ))
+        assert windows == [
+            (_d(2024, 1, 1), _d(2024, 1, 7), 500),
+            (_d(2024, 1, 8), _d(2024, 1, 14), 800),
+        ]
+
+    def test_subdivides_when_weekly_window_over_cap(self):
+        from datetime import date as _d
+        # Weekly probe says 30k → subdivide to dailies, each fitting under cap.
+        probes = {("20240101", "20240107"): 30_000}
+        for day in range(1, 8):
+            probes[(f"2024010{day}", f"2024010{day}")] = 1_000
+        client = _client_with_probe(probes)
+        with patch("lib.openfda_client.httpx.get", side_effect=client._fake_get):
+            windows = list(adaptive_windows(
+                client, _d(2024, 1, 1), _d(2024, 1, 7),
+                chunk_days=7, skip_cap=25_000,
+            ))
+        # 7 single-day windows yielded.
+        assert len(windows) == 7
+        for i, (start, end, total) in enumerate(windows, start=1):
+            assert start == end == _d(2024, 1, i)
+            assert total == 1_000
+
+    def test_single_day_over_cap_records_miss_in_stats(self, caplog):
+        from datetime import date as _d
+        # Weekly probe: 30k → split. One day spikes at 27k (still over cap).
+        probes = {("20240101", "20240107"): 30_000}
+        for day in range(1, 8):
+            probes[(f"2024010{day}", f"2024010{day}")] = 1_000
+        probes[("20240103", "20240103")] = 27_000  # 27k > 25k cap
+        client = _client_with_probe(probes)
+        stats = IngestStats()
+        with patch("lib.openfda_client.httpx.get", side_effect=client._fake_get), \
+             caplog.at_level("WARNING", logger="pipelines.faers_weekly"):
+            list(adaptive_windows(
+                client, _d(2024, 1, 1), _d(2024, 1, 7),
+                chunk_days=7, skip_cap=25_000, stats=stats,
+            ))
+        # 27k records exist in the day, 25k can be fetched → 2k missed.
+        assert stats.records_missed_over_cap == 2_000
+        assert len(stats.over_cap_windows) == 1
+        miss = stats.over_cap_windows[0]
+        assert miss["window_start"] == "2024-01-03"
+        assert miss["window_end"] == "2024-01-03"
+        assert miss["records_in_window"] == 27_000
+        assert miss["records_missed"] == 2_000
+        # WARNING log present + carries the window + miss count for the operator.
+        log_text = "\n".join(r.message for r in caplog.records)
+        assert "skip-cap exceeded" in log_text.lower()
+        assert "2024-01-03" in log_text
+        assert "27000" in log_text or "27,000" in log_text
+        assert "2000" in log_text or "2,000" in log_text  # missed count
+
+
+# ---------------------------------------------------------------------------
+# ingest_pages — end-to-end skip pagination + chunking
 # ---------------------------------------------------------------------------
 
 class TestIngestPagesIntegration:
-    def test_full_flow_with_mocked_http_and_db(self):
-        """One real page → normalize → flush → counters reflect the writes."""
+    def test_full_flow_uses_skip_pagination_not_search_after(self):
+        """One window → probe + skip-paginate → normalize → flush → DB writes.
+
+        Hard-fails if any request carries `search_after` — the broken
+        endpoint code path is gone for good.
+        """
+        from datetime import date as _d
         client = OpenFDAClient(api_key="", retry_delays=(0,))
 
-        # Build a page with two distinct records (different SRIs).
         page = [_load("serious_report.json"), _load("multi_drug_report.json")]
+        captured_params: list[dict] = []
 
         def fake_get(url, params, timeout):
+            captured_params.append(dict(params))
             r = MagicMock(spec=httpx.Response)
             r.status_code = 200
             r.request = MagicMock(spec=httpx.Request)
             r.raise_for_status.return_value = None
-            # First call: full page; subsequent: short page so paginator halts.
-            if "search_after" not in params:
+            limit = int(params.get("limit", 100))
+            skip = int(params.get("skip", 0))
+            if limit == 1:
+                # Probe — return total only.
+                r.json.return_value = {"results": [], "meta": {"results": {"total": 2}}}
+                return r
+            if skip == 0:
                 r.json.return_value = {"results": page, "meta": {"results": {"total": 2}}}
             else:
                 r.json.return_value = {"results": [], "meta": {"results": {"total": 2}}}
@@ -590,12 +648,9 @@ class TestIngestPagesIntegration:
             return len(rows)
 
         def fake_get_table(table, params):
-            # _fetch_resolved_drug_ids and _fetch_parent_ids hit _get.
-            # Return synthetic mappings so wiring works.
             if table == "drugs":
                 keys = params.get("unique_match_key", "")
                 if keys.startswith("in.("):
-                    # Strip 'in.(' and ')' and split by quoted entries.
                     return [
                         {"id": f"drug-uuid-{i}", "unique_match_key": k}
                         for i, k in enumerate(_extract_in(keys))
@@ -616,32 +671,41 @@ class TestIngestPagesIntegration:
              patch("pipelines.faers_weekly._delete"):
             stats = ingest_pages(
                 client=client,
-                search="serious:1",
+                window_start=_d(2024, 1, 1),
+                window_end=_d(2024, 1, 7),
                 page_size=100,
                 batch_flush_size=10,
-                max_pages=5,
+                max_pages_per_window=5,
                 alias_map={},
                 drugs_index={},
                 meddra_index=set(),
             )
 
+        # Counters
         assert stats.fetched == 2
         assert stats.normalized == 2
         assert stats.rejected == 0
         assert stats.parents_written == 2
-        # Single-drug serious_report + three-drug multi_drug_report = 4 drug rows
         assert stats.drug_rows_written == 4
-        # serious_report has 1 reaction; multi_drug_report has 1; total 2
         assert stats.reaction_rows_written == 2
-        # New drugs created across both fixtures = 4 (1 in serious + 3 in multi)
         assert stats.drugs_created == 4
-        # Tables touched in the right order
+        assert stats.windows_processed == 1
+        assert stats.records_missed_over_cap == 0
+
+        # Tables touched
         tables_written = [t for t, _ in write_log]
-        assert "drugs" in tables_written
-        assert "meddra_terms" in tables_written
-        assert "drug_adverse_events" in tables_written
-        assert "drug_adverse_event_drugs" in tables_written
-        assert "drug_adverse_event_reactions" in tables_written
+        for table in ("drugs", "meddra_terms", "drug_adverse_events",
+                      "drug_adverse_event_drugs", "drug_adverse_event_reactions"):
+            assert table in tables_written
+
+        # NO request carries search_after — that path is gone.
+        assert all("search_after" not in p for p in captured_params)
+        # At least one request DOES carry skip (the pagination call).
+        assert any("skip" in p for p in captured_params)
+        # The sort is passed through on the pagination request (deterministic order).
+        pagination_calls = [p for p in captured_params if int(p.get("limit", 1)) > 1]
+        assert pagination_calls
+        assert pagination_calls[0]["sort"] == SORT_EXPR
 
 
 def _extract_in(value: str) -> list[str]:

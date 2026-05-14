@@ -244,6 +244,7 @@ class OpenFDAClient:
         page_size: int = 100,
         max_pages: int = 200,
         request_delay: float = 0.25,
+        sort: str | None = None,
     ) -> Iterator[tuple[list[dict], int]]:
         """Iterate pages via `skip`/`limit`.
 
@@ -254,7 +255,16 @@ class OpenFDAClient:
           * ``max_pages`` is reached
 
         openFDA caps `skip` at 25,000 — for endpoints that can exceed
-        that, use :meth:`paginate_search_after` instead.
+        that, partition the query (e.g. by date window) so each call
+        stays under the cap. The cursor alternative (`search_after`)
+        does not work against /drug/event — see the docstring on
+        :meth:`paginate_search_after` for the diagnosis.
+
+        ``sort`` is optional. When set, it is passed through to every
+        page request so result ordering is deterministic across pages —
+        useful for callers that flush partial batches and want stable
+        log ordering. Recalls today calls without sort; FAERS uses
+        ``receivedate:desc,receiptdate:desc``.
 
         Yields ``(page_results, total_reported)`` per page. The total is
         the API-reported `meta.results.total` from the first page and is
@@ -264,7 +274,9 @@ class OpenFDAClient:
         pages = 0
         total = 0
         while pages < max_pages:
-            results, total = self.fetch_page(path, search, skip=skip, limit=page_size)
+            results, total = self.fetch_page(
+                path, search, skip=skip, limit=page_size, sort=sort,
+            )
             if not results:
                 break
             yield results, total
@@ -290,8 +302,38 @@ class OpenFDAClient:
     ) -> Iterator[tuple[list[dict], int]]:
         """Iterate pages via `search_after` cursor.
 
+        DEAD-BUT-PRESERVED. As of PR #384 / #385 there is NO active
+        caller for this function in the codebase. It is kept available
+        for endpoints that ship with a working Elasticsearch
+        ``search_after`` implementation — AEMS (the announced openFDA
+        platform migration) may be one such endpoint.
+
+        Why it's not in production use: openFDA's current /drug/event
+        (FAERS) endpoint advertises ``search_after`` but its parser does
+        not handle compound cursors. The live API rejects every compound
+        request with::
+
+            {"error": {"code": "SERVER_ERROR",
+              "details": "[illegal_argument_exception] search_after has
+                          1 value(s) but sort has 3."}}
+
+        Two failures combined: (a) the parser treats the cursor string
+        as a single value rather than splitting on commas — so a
+        ``20241231,20250810`` cursor counts as one value; and (b) the
+        backing index silently appends an implicit tiebreaker, raising
+        the effective sort arity to 3 fields, but that 3rd field is not
+        exposed in response documents so we cannot construct the
+        correctly-sized cursor even after fixing (a). FAERS migrated
+        to skip-pagination + date-window chunking in PR #385 (see
+        ``pipelines/faers_weekly.py``).
+
+        The remainder of the docstring describes the intended contract
+        if/when a working endpoint surfaces.
+
         Required for endpoints that can return more than openFDA's 25k
-        ``skip`` cap (e.g. FAERS ``/drug/event.json`` at ~20M records).
+        ``skip`` cap. Such an endpoint would need a fully-conformant
+        ``search_after`` implementation — FAERS is NOT such an endpoint
+        despite its size (~20M records); see notice above.
 
         openFDA's ``search_after`` value is the sort-field value of the
         last record from the prior page. For a single-field sort like
