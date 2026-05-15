@@ -58,9 +58,9 @@ def load_allow_list_domains() -> frozenset[str]:
 
     domains: set[str] = set()
 
-    firms = _get("firms", {"select": "website", "website": "not.is.null"})
+    firms = _get("firms", {"select": "website_url", "website_url": "not.is.null"})
     for r in firms:
-        d = extract_root_domain(r.get("website", "") or "")
+        d = extract_root_domain(r.get("website_url", "") or "")
         if d:
             domains.add(d)
 
