@@ -83,12 +83,21 @@ def load_allow_list_domains() -> frozenset[str]:
 
 
 def load_manufacturer_domains() -> frozenset[str]:
-    """Domains in manufacturer_tort_map (deny-list side)."""
+    """Domains in manufacturer_tort_map (deny-list side).
+
+    `manufacturer_tort_map` doesn't carry a domain column itself — it links
+    to `recall_manufacturers` via manufacturer_id, where `website` lives.
+    Embed via PostgREST FK so we only pull the 8-ish mapped rows rather
+    than all 1,400+ manufacturers.
+    """
     from .domain_mapper import extract_root_domain
 
-    rows = _get("manufacturer_tort_map", {"select": "manufacturer_domain"})
+    rows = _get("manufacturer_tort_map", {"select": "recall_manufacturers(website)"})
     return frozenset(
-        d for d in (extract_root_domain(r.get("manufacturer_domain", "") or "") for r in rows) if d
+        d for d in (
+            extract_root_domain((r.get("recall_manufacturers") or {}).get("website") or "")
+            for r in rows
+        ) if d
     )
 
 
