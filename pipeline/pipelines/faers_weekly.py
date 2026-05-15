@@ -176,6 +176,17 @@ PAGE_SIZE = 100
 # matters (lower it).
 BATCH_FLUSH_SIZE = int(os.environ.get("FAERS_BATCH_FLUSH_SIZE", "500"))
 
+# Per-chunk size for Supabase REST upserts. FAERS rows are heavier than
+# recalls (28 columns on the parent INCLUDING the JSONB `raw_payload` that
+# carries the entire upstream record), and the default 500-row chunk hit
+# Postgres `statement_timeout` (57014) on the very first upsert when run
+# against the live workload — see run 25897299528. Half of recalls' 200
+# default keeps the parent upsert under the timeout while staying well
+# inside the openFDA rate budget. One knob is intentional: the narrow
+# child tables (reactions, meddra_terms) tolerate 100 just fine, the cost
+# is ~2x request count for those tables which is trivial.
+FAERS_UPSERT_CHUNK_SIZE = int(os.environ.get("FAERS_UPSERT_CHUNK_SIZE", "100"))
+
 # Steady-state rolling window — most weeks see ~0 new records because the
 # upstream cadence is quarterly, but the small overlap protects against
 # clock skew + refresh-publication latency.
@@ -852,7 +863,7 @@ def flush_batch(
             drug_seed_rows,
             on_conflict="unique_match_key",
             resolution="ignore-duplicates",
-            chunk_size=500,
+            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
         )
         resolved = _fetch_resolved_drug_ids(list(new_drugs.keys()))
         drugs_index.update(resolved)
@@ -866,7 +877,7 @@ def flush_batch(
             list(new_meddra_terms.values()),
             on_conflict="pt_name",
             resolution="ignore-duplicates",
-            chunk_size=500,
+            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
         )
         for term in new_meddra_terms.values():
             meddra_index.add(term["pt_name"])
@@ -884,7 +895,7 @@ def flush_batch(
         parents,
         on_conflict="safetyreportid",
         resolution="merge-duplicates",
-        chunk_size=500,
+        chunk_size=FAERS_UPSERT_CHUNK_SIZE,
     )
     stats.parents_written += len(parents)
 
@@ -917,13 +928,17 @@ def flush_batch(
             reaction_child_rows.append(child)
 
     if drug_child_rows:
-        _bulk_insert("drug_adverse_event_drugs", drug_child_rows, chunk_size=500)
+        _bulk_insert(
+            "drug_adverse_event_drugs",
+            drug_child_rows,
+            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+        )
         stats.drug_rows_written += len(drug_child_rows)
     if reaction_child_rows:
         _bulk_insert(
             "drug_adverse_event_reactions",
             reaction_child_rows,
-            chunk_size=500,
+            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
         )
         stats.reaction_rows_written += len(reaction_child_rows)
 
