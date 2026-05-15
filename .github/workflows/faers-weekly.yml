@@ -34,15 +34,22 @@ on:
         required: false
         default: ''
         type: string
+      month:
+        description: 'Optional: narrow the year backfill to ONE month (requires year). Recommended backfill: 12 month dispatches/year, each ~90min, vs one year run that exceeds the timeout.'
+        required: false
+        default: ''
+        type: choice
+        options: ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 jobs:
   faers-weekly:
     name: FAERS adverse event ingest (openFDA /drug/event.json)
     runs-on: ubuntu-latest
-    # 240 minutes covers the 2-year backfill scenario (~80min API +
-    # publish overhead + safety margin). Steady-state runs finish in
-    # ~10min so the wide ceiling is operationally cheap.
-    timeout-minutes: 240
+    # 360 minutes (hosted-runner max) gives bulk-reporting weeks headroom
+    # in steady-state. Note: a single full-year backfill still exceeds this
+    # — that's why the `month` dispatch input exists. Backfill via 12
+    # per-month dispatches (each ~90min), NOT one --year run.
+    timeout-minutes: 360
 
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +83,12 @@ jobs:
           fi
           if [ -n "${{ inputs.year }}" ]; then
             ARGS="$ARGS --year ${{ inputs.year }}"
+            if [ -n "${{ inputs.month }}" ]; then
+              ARGS="$ARGS --month ${{ inputs.month }}"
+            fi
+          elif [ -n "${{ inputs.month }}" ]; then
+            echo "::error::month input requires year input (a bare month has no anchor)"
+            exit 1
           elif [ -n "${{ inputs.backfill_since }}" ]; then
             ARGS="$ARGS --backfill-since ${{ inputs.backfill_since }}"
           fi

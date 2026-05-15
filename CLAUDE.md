@@ -217,6 +217,7 @@ Phase 2/3 of the CPSC → FAERS → MAUDE arc. Schema landed in PR-2; PR-3 (this
 - **Env vars:** `OPENFDA_API_KEY` (raises rate limit from 1k/day → 120k/day, required for backfill), `OPENFDA_BASE_URL` (AEMS-migration adapter, see §7), `FAERS_BATCH_FLUSH_SIZE` (optional, default 500), shared Supabase vars (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`).
 - **Source-filter note:** Pipeline ingests `serious:1` reports only (~50% of FAERS volume per faers.md §4). A future operator who wants research-grade data (e.g. ROR/PRR disproportionality computation that needs a non-suspect denominator) must drop the filter in `pipelines/faers_weekly.py:SEARCH_SEVERITY` and re-budget storage. Documented in both the migration header and the pipeline docstring.
 - **Design notes:** Schema preserves `drug_adverse_events.primarysource_qualification` (smallint, CHECK 1..5) so PR-4 / PR-5 surfaces can filter out lawyer-sourced reports (`qualification = 4`), which are mass-tort solicitation artifacts rather than organic safety signal. Filter enforcement intentionally lives in queries, not the pipeline — PR-3 preserves the value, PR-4/5 surfaces apply `WHERE primarysource_qualification != 4` for the non-lawyer view. See `docs/data-sources/faers.md` for full scoping (volumes, MedDRA PT-only constraint, drug→manufacturer normalization plan, lawyer-flood feedback loop).
+- **Chunk-size note:** Upsert chunk sizes are per-table hard-coded constants in `pipelines/faers_weekly.py` (`PARENT_CHUNK_SIZE=100`, `CHILD_CHUNK_SIZE=500`, `DIM_CHUNK_SIZE=500`), NOT an env var — they're facts about row shape, not operator tuning. Only `drug_adverse_events` carries a JSONB `raw_payload` (full upstream record) so only the parent needs the small chunk to clear Postgres `statement_timeout`; forcing the narrow child tables to 100 (the original single-knob fix) 4-5x'd their request count and blew the workflow wall-clock timeout. Per-table is the correct dimension because the JSONB is a per-table fact.
 
 ---
 
@@ -251,7 +252,6 @@ Names and purposes only. Don't commit values; see `web/.env.example` for the loc
 - `APIFY_TOKEN` — Apify actors for Google/TikTok ad ingest.
 - `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` — TikTok CCL ingest.
 - `RECALLS_UPSERT_CHUNK_SIZE` — optional override for chunked recall upserts (default 200).
-- `FAERS_UPSERT_CHUNK_SIZE` — optional override for chunked FAERS upserts (default 100). Smaller than recalls because the `drug_adverse_events` parent row carries a JSONB `raw_payload` of the full upstream record on top of ~27 other columns; 500-row chunks hit Postgres `statement_timeout` (57014) on the live workload.
 - `DRY_RUN` — set to `true` to skip DB writes locally (every pipeline supports this).
 - `PIPELINE_TRIGGER` — set by workflows to `scheduled` or `manual` for run logging.
 

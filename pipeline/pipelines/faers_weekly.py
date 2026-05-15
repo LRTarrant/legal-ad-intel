@@ -128,6 +128,7 @@ Usage:
     python -m pipelines.faers_weekly                          # 7-day rolling
     python -m pipelines.faers_weekly --backfill-since 2024-01-01
     python -m pipelines.faers_weekly --year 2024
+    python -m pipelines.faers_weekly --year 2024 --month 1    # single month
 
 Env:
     SUPABASE_URL               required
@@ -140,6 +141,7 @@ Env:
 from __future__ import annotations
 
 import argparse
+import calendar
 import logging
 import os
 import sys
@@ -176,16 +178,26 @@ PAGE_SIZE = 100
 # matters (lower it).
 BATCH_FLUSH_SIZE = int(os.environ.get("FAERS_BATCH_FLUSH_SIZE", "500"))
 
-# Per-chunk size for Supabase REST upserts. FAERS rows are heavier than
-# recalls (28 columns on the parent INCLUDING the JSONB `raw_payload` that
-# carries the entire upstream record), and the default 500-row chunk hit
-# Postgres `statement_timeout` (57014) on the very first upsert when run
-# against the live workload — see run 25897299528. Half of recalls' 200
-# default keeps the parent upsert under the timeout while staying well
-# inside the openFDA rate budget. One knob is intentional: the narrow
-# child tables (reactions, meddra_terms) tolerate 100 just fine, the cost
-# is ~2x request count for those tables which is trivial.
-FAERS_UPSERT_CHUNK_SIZE = int(os.environ.get("FAERS_UPSERT_CHUNK_SIZE", "100"))
+# Per-table chunk sizes for Supabase REST upserts. These are tuned to row
+# SHAPE, not operator preference — they're facts about the rows, so they're
+# hard-coded constants, not env vars.
+#
+#   PARENT_CHUNK_SIZE — drug_adverse_events carries a JSONB `raw_payload`
+#     holding the entire upstream FAERS record on top of ~27 other columns,
+#     and the UPSERT does on_conflict=safetyreportid conflict detection.
+#     500-row chunks blew Postgres `statement_timeout` (57014) on the first
+#     chunk against the live workload (PR #386, run 25897299528). 100 clears
+#     the timeout.
+#   CHILD_CHUNK_SIZE — drug_adverse_event_drugs / _reactions have NO JSONB
+#     and narrower rows; they sustain the lib default 500 at ~1s/req vs the
+#     parent's ~5s/req. Forcing them to 100 (PR #386's single-knob choice)
+#     quadrupled their request count and pushed the year backfill past the
+#     workflow's wall-clock timeout — that's the bug this constant fixes.
+#   DIM_CHUNK_SIZE — drugs / meddra_terms are small ignore-duplicates
+#     upserts with tiny rows; lib default 500.
+PARENT_CHUNK_SIZE = 100
+CHILD_CHUNK_SIZE = 500
+DIM_CHUNK_SIZE = 500
 
 # Steady-state rolling window — most weeks see ~0 new records because the
 # upstream cadence is quarterly, but the small overlap protects against
@@ -863,7 +875,7 @@ def flush_batch(
             drug_seed_rows,
             on_conflict="unique_match_key",
             resolution="ignore-duplicates",
-            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+            chunk_size=DIM_CHUNK_SIZE,
         )
         resolved = _fetch_resolved_drug_ids(list(new_drugs.keys()))
         drugs_index.update(resolved)
@@ -877,7 +889,7 @@ def flush_batch(
             list(new_meddra_terms.values()),
             on_conflict="pt_name",
             resolution="ignore-duplicates",
-            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+            chunk_size=DIM_CHUNK_SIZE,
         )
         for term in new_meddra_terms.values():
             meddra_index.add(term["pt_name"])
@@ -895,7 +907,7 @@ def flush_batch(
         parents,
         on_conflict="safetyreportid",
         resolution="merge-duplicates",
-        chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+        chunk_size=PARENT_CHUNK_SIZE,
     )
     stats.parents_written += len(parents)
 
@@ -931,14 +943,14 @@ def flush_batch(
         _bulk_insert(
             "drug_adverse_event_drugs",
             drug_child_rows,
-            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+            chunk_size=CHILD_CHUNK_SIZE,
         )
         stats.drug_rows_written += len(drug_child_rows)
     if reaction_child_rows:
         _bulk_insert(
             "drug_adverse_event_reactions",
             reaction_child_rows,
-            chunk_size=FAERS_UPSERT_CHUNK_SIZE,
+            chunk_size=CHILD_CHUNK_SIZE,
         )
         stats.reaction_rows_written += len(reaction_child_rows)
 
@@ -1058,9 +1070,27 @@ def resolve_window(
     backfill_since: str | None,
     year: int | None,
     rolling_days: int,
+    month: int | None = None,
 ) -> tuple[date, date]:
-    """Return (start, end) inclusive. End defaults to today (UTC)."""
+    """Return (start, end) inclusive. End defaults to today (UTC).
+
+    Precedence: year[/month] > backfill_since > rolling window.
+
+    `month` (1..12) narrows a `year` backfill to a single calendar month so
+    each manual dispatch fits inside the workflow wall-clock timeout — the
+    recommended backfill shape is 12 month-dispatches per year. `month`
+    REQUIRES `year` (a bare month has no anchor) and is mutually exclusive
+    with `backfill_since`. The steady-state weekly cron passes none of these
+    and falls through to the rolling window unchanged.
+    """
     today = datetime.now(timezone.utc).date()
+    if month is not None:
+        if year is None:
+            raise SystemExit("--month requires --year (a bare month has no anchor)")
+        if not (1 <= month <= 12):
+            raise SystemExit(f"--month must be 1..12, got {month}")
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, 1), date(year, month, last_day)
     if year is not None:
         return date(year, 1, 1), date(year, 12, 31)
     if backfill_since:
@@ -1103,6 +1133,10 @@ def main() -> int:
                          "Recommended one-shot manual: 2024-01-01.")
     ap.add_argument("--year", type=int, default=None,
                     help="Backfill a single calendar year by receivedate.")
+    ap.add_argument("--month", type=int, default=None, metavar="1-12",
+                    help="Narrow a --year backfill to a single calendar month "
+                         "(requires --year). Recommended backfill shape: 12 "
+                         "month dispatches per year, each ~90min.")
     ap.add_argument("--rolling-days", type=int, default=DEFAULT_ROLLING_DAYS,
                     help=f"Steady-state rolling window (default {DEFAULT_ROLLING_DAYS}).")
     ap.add_argument("--max-pages", type=int, default=100_000,
@@ -1121,6 +1155,7 @@ def main() -> int:
     start, end = resolve_window(
         backfill_since=args.backfill_since,
         year=args.year,
+        month=args.month,
         rolling_days=args.rolling_days,
     )
     # Full-range probe is for visibility only — actual paging happens
