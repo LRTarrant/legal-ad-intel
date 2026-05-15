@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 SEARCHAPI_BASE = "https://www.searchapi.io/api/v1/search"
 SEARCHAPI_API_KEY = os.environ.get("SEARCHAPI_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-DMA_COUNT = int(os.environ.get("TORT_LANDING_PAGES_DMA_COUNT", "25"))
+DMA_COUNT = int(os.environ.get("TORT_LANDING_PAGES_DMA_COUNT") or "25")
 REQUEST_DELAY_SECONDS = 1.5
 
 
