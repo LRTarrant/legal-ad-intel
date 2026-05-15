@@ -251,6 +251,7 @@ Names and purposes only. Don't commit values; see `web/.env.example` for the loc
 - `APIFY_TOKEN` — Apify actors for Google/TikTok ad ingest.
 - `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` — TikTok CCL ingest.
 - `RECALLS_UPSERT_CHUNK_SIZE` — optional override for chunked recall upserts (default 200).
+- `FAERS_UPSERT_CHUNK_SIZE` — optional override for chunked FAERS upserts (default 100). Smaller than recalls because the `drug_adverse_events` parent row carries a JSONB `raw_payload` of the full upstream record on top of ~27 other columns; 500-row chunks hit Postgres `statement_timeout` (57014) on the live workload.
 - `DRY_RUN` — set to `true` to skip DB writes locally (every pipeline supports this).
 - `PIPELINE_TRIGGER` — set by workflows to `scheduled` or `manual` for run logging.
 

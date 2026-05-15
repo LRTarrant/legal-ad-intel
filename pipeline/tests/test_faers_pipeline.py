@@ -778,3 +778,121 @@ class TestQuoteForIn:
 
     def test_with_quote_in_value_is_escaped(self):
         assert _quote_for_in(['name:johnson\'s "talc"']) == '"name:johnson\'s ""talc"""'
+
+
+# ---------------------------------------------------------------------------
+# FAERS_UPSERT_CHUNK_SIZE — env var wired through every _bulk_insert call
+# ---------------------------------------------------------------------------
+
+class TestFaersChunkSize:
+    """FAERS rows are heavier than recalls (28 columns including JSONB
+    raw_payload). The default chunk MUST be small enough to clear Supabase's
+    statement_timeout on the live workload — see workflow run 25897299528.
+    """
+
+    def test_default_is_at_or_below_100(self):
+        """Regression guard — default must be <= 100 to avoid 57014 timeout.
+
+        FAERS_UPSERT_CHUNK_SIZE is read at module import. We pop the env var
+        and reload the module so the constant is recomputed from a clean
+        environment — without the reload, the value from whatever was in the
+        env when pytest first imported the module would leak through.
+        """
+        os.environ.pop("FAERS_UPSERT_CHUNK_SIZE", None)
+        import importlib
+        import pipelines.faers_weekly as mod
+        importlib.reload(mod)
+        assert mod.FAERS_UPSERT_CHUNK_SIZE <= 100, (
+            f"FAERS_UPSERT_CHUNK_SIZE default must stay <= 100 to clear "
+            f"Supabase statement_timeout on drug_adverse_events upserts "
+            f"(JSONB raw_payload + 27 cols). Got: {mod.FAERS_UPSERT_CHUNK_SIZE}"
+        )
+        assert mod.FAERS_UPSERT_CHUNK_SIZE == 100
+
+    def test_env_var_override(self, monkeypatch):
+        """FAERS_UPSERT_CHUNK_SIZE env var overrides the default.
+
+        Constant is read at module import, so monkeypatch the env then
+        force an importlib.reload to re-evaluate the module-level constant.
+        Without the reload, the previously-cached module value wins.
+        """
+        monkeypatch.setenv("FAERS_UPSERT_CHUNK_SIZE", "50")
+        import importlib
+        import pipelines.faers_weekly as mod
+        importlib.reload(mod)
+        try:
+            assert mod.FAERS_UPSERT_CHUNK_SIZE == 50
+        finally:
+            # Restore the default for any test that imports the module later
+            # in this session — monkeypatch unsets the env var on teardown
+            # but the module-level constant stays at 50 until reloaded.
+            monkeypatch.delenv("FAERS_UPSERT_CHUNK_SIZE", raising=False)
+            importlib.reload(mod)
+
+    def test_flush_batch_passes_chunk_size_to_every_bulk_insert(self):
+        """Every _bulk_insert call inside flush_batch must carry the
+        FAERS_UPSERT_CHUNK_SIZE knob. Hard-fails if a literal 500 (or any
+        other value) slips back in for any of the five tables.
+        """
+        import pipelines.faers_weekly as mod
+
+        calls: list[dict] = []
+
+        def fake_bulk_insert(table, rows, **kwargs):
+            calls.append({"table": table, "chunk_size": kwargs.get("chunk_size")})
+            return len(rows)
+
+        def fake_get_table(table, params):
+            if table == "drugs":
+                keys = params.get("unique_match_key", "")
+                if keys.startswith("in.("):
+                    return [
+                        {"id": f"drug-uuid-{i}", "unique_match_key": k}
+                        for i, k in enumerate(_extract_in(keys))
+                    ]
+                return []
+            if table == "drug_adverse_events":
+                sris = _extract_in(params.get("safetyreportid", ""))
+                return [
+                    {"id": f"report-uuid-{i}", "safetyreportid": s}
+                    for i, s in enumerate(sris)
+                ]
+            return []
+
+        parents = [{"safetyreportid": "RPT-1", "raw_payload": {}}]
+        drug_children = {"RPT-1": [{"drug_seq": 1, "_match_key": "name:foo"}]}
+        reaction_children = {"RPT-1": [{"reaction_seq": 1, "reactionmeddrapt": "HEADACHE"}]}
+        new_drugs = {"name:foo": {"unique_match_key": "name:foo", "canonical_name": "foo"}}
+        new_meddra = {"headache": {"pt_name": "HEADACHE", "pt_name_canonical": "headache"}}
+
+        with patch("pipelines.faers_weekly._bulk_insert", side_effect=fake_bulk_insert), \
+             patch("pipelines.faers_weekly._get", side_effect=fake_get_table), \
+             patch("pipelines.faers_weekly._delete"):
+            mod.flush_batch(
+                parents=parents,
+                drug_children_by_sri=drug_children,
+                reaction_children_by_sri=reaction_children,
+                new_drugs=new_drugs,
+                new_meddra_terms=new_meddra,
+                drugs_index={},
+                meddra_index=set(),
+                stats=IngestStats(),
+            )
+
+        expected = mod.FAERS_UPSERT_CHUNK_SIZE
+        assert calls, "flush_batch made no _bulk_insert calls"
+        for call in calls:
+            assert call["chunk_size"] == expected, (
+                f"_bulk_insert for {call['table']} got chunk_size="
+                f"{call['chunk_size']}, expected {expected}"
+            )
+        # All five tables should be exercised by this fixture.
+        tables = {c["table"] for c in calls}
+        for t in (
+            "drugs",
+            "meddra_terms",
+            "drug_adverse_events",
+            "drug_adverse_event_drugs",
+            "drug_adverse_event_reactions",
+        ):
+            assert t in tables, f"flush_batch did not write to {t}"
