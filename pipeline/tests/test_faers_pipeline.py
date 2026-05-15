@@ -23,8 +23,11 @@ os.environ.setdefault("SUPABASE_SERVICE_KEY", "fake-key")
 from lib.openfda_client import OpenFDAClient  # noqa: E402
 from lib.pipeline import _canonicalize_name  # noqa: E402
 from pipelines.faers_weekly import (  # noqa: E402
+    CHILD_CHUNK_SIZE,
     DEFAULT_CHUNK_DAYS,
+    DIM_CHUNK_SIZE,
     IngestStats,
+    PARENT_CHUNK_SIZE,
     SKIP_CAP,
     SORT_EXPR,
     _quote_for_in,
@@ -750,9 +753,78 @@ class TestResolveWindow:
         start, end = resolve_window(backfill_since=None, year=None, rolling_days=7)
         assert (end - start).days == 7
 
+    def test_steady_state_cron_path_unchanged(self):
+        """The Monday 03:00 UTC cron passes no year/month/backfill_since —
+        it MUST still produce the rolling N-day window ending today (UTC).
+        This is the path the scheduled workflow exercises every week.
+        """
+        from datetime import datetime as _dt, timezone as _tz
+        today = _dt.now(_tz.utc).date()
+        start, end = resolve_window(
+            backfill_since=None, year=None, month=None, rolling_days=7,
+        )
+        assert end == today
+        assert (end - start).days == 7
+        # A non-default rolling width is honored too.
+        start30, end30 = resolve_window(
+            backfill_since=None, year=None, month=None, rolling_days=30,
+        )
+        assert (end30 - start30).days == 30
+
     def test_invalid_backfill_raises(self):
         with pytest.raises(SystemExit):
             resolve_window(backfill_since="not-a-date", year=None, rolling_days=7)
+
+    def test_year_and_month_january(self):
+        start, end = resolve_window(
+            backfill_since=None, year=2024, month=1, rolling_days=7,
+        )
+        assert start.isoformat() == "2024-01-01"
+        assert end.isoformat() == "2024-01-31"
+
+    def test_year_and_month_february_leap(self):
+        """monthrange handles Feb 29 in a leap year without special-casing."""
+        start, end = resolve_window(
+            backfill_since=None, year=2024, month=2, rolling_days=7,
+        )
+        assert start.isoformat() == "2024-02-01"
+        assert end.isoformat() == "2024-02-29"
+
+    def test_year_and_month_february_non_leap(self):
+        start, end = resolve_window(
+            backfill_since=None, year=2023, month=2, rolling_days=7,
+        )
+        assert start.isoformat() == "2023-02-01"
+        assert end.isoformat() == "2023-02-28"
+
+    def test_year_and_month_december(self):
+        start, end = resolve_window(
+            backfill_since=None, year=2024, month=12, rolling_days=7,
+        )
+        assert start.isoformat() == "2024-12-01"
+        assert end.isoformat() == "2024-12-31"
+
+    def test_month_without_year_raises(self):
+        """A bare month has no anchor — must fail loud, not silently ignore."""
+        with pytest.raises(SystemExit):
+            resolve_window(
+                backfill_since=None, year=None, month=3, rolling_days=7,
+            )
+
+    def test_month_out_of_range_raises(self):
+        for bad in (0, 13, -1):
+            with pytest.raises(SystemExit):
+                resolve_window(
+                    backfill_since=None, year=2024, month=bad, rolling_days=7,
+                )
+
+    def test_month_takes_precedence_over_backfill_since(self):
+        """year+month is mutually exclusive with backfill_since; month wins."""
+        start, end = resolve_window(
+            backfill_since="2020-06-15", year=2024, month=5, rolling_days=7,
+        )
+        assert start.isoformat() == "2024-05-01"
+        assert end.isoformat() == "2024-05-31"
 
 
 class TestBuildSearch:
@@ -781,60 +853,56 @@ class TestQuoteForIn:
 
 
 # ---------------------------------------------------------------------------
-# FAERS_UPSERT_CHUNK_SIZE — env var wired through every _bulk_insert call
+# Per-table chunk sizes — facts about row shape, NOT operator-tunable env vars
 # ---------------------------------------------------------------------------
 
-class TestFaersChunkSize:
-    """FAERS rows are heavier than recalls (28 columns including JSONB
-    raw_payload). The default chunk MUST be small enough to clear Supabase's
-    statement_timeout on the live workload — see workflow run 25897299528.
+class TestFaersChunkSizes:
+    """Chunk sizes are tuned to row SHAPE. Only drug_adverse_events carries a
+    JSONB raw_payload, so only the parent needs the small chunk to clear
+    Supabase's statement_timeout (PR #386, run 25897299528). Forcing the
+    narrow child tables to 100 4-5x'd their request count and blew the
+    workflow wall-clock timeout — that's the regression these guards lock.
     """
 
-    def test_default_is_at_or_below_100(self):
-        """Regression guard — default must be <= 100 to avoid 57014 timeout.
+    def test_parent_chunk_size_is_100(self):
+        """drug_adverse_events: JSONB raw_payload + ~27 cols, expensive
+        on_conflict=safetyreportid upsert. MUST stay at 100 to clear the
+        Postgres statement_timeout (57014)."""
+        assert PARENT_CHUNK_SIZE == 100
 
-        FAERS_UPSERT_CHUNK_SIZE is read at module import. We pop the env var
-        and reload the module so the constant is recomputed from a clean
-        environment — without the reload, the value from whatever was in the
-        env when pytest first imported the module would leak through.
-        """
-        os.environ.pop("FAERS_UPSERT_CHUNK_SIZE", None)
-        import importlib
+    def test_child_chunk_size_is_500(self):
+        """drug_adverse_event_drugs / _reactions: no JSONB, narrow rows.
+        500 (lib default) keeps the request count low enough to fit the
+        backfill inside the workflow timeout."""
+        assert CHILD_CHUNK_SIZE == 500
+
+    def test_dim_chunk_size_is_500(self):
+        """drugs / meddra_terms: tiny ignore-duplicates upserts."""
+        assert DIM_CHUNK_SIZE == 500
+
+    def test_no_faers_upsert_chunk_size_env_var(self):
+        """The single FAERS_UPSERT_CHUNK_SIZE env var was removed — chunk
+        sizes are row-shape facts, not knobs. Hard-fail if it creeps back."""
         import pipelines.faers_weekly as mod
-        importlib.reload(mod)
-        assert mod.FAERS_UPSERT_CHUNK_SIZE <= 100, (
-            f"FAERS_UPSERT_CHUNK_SIZE default must stay <= 100 to clear "
-            f"Supabase statement_timeout on drug_adverse_events upserts "
-            f"(JSONB raw_payload + 27 cols). Got: {mod.FAERS_UPSERT_CHUNK_SIZE}"
+        assert not hasattr(mod, "FAERS_UPSERT_CHUNK_SIZE"), (
+            "FAERS_UPSERT_CHUNK_SIZE was removed in favor of per-table "
+            "constants — do not reintroduce the single-knob env var."
         )
-        assert mod.FAERS_UPSERT_CHUNK_SIZE == 100
 
-    def test_env_var_override(self, monkeypatch):
-        """FAERS_UPSERT_CHUNK_SIZE env var overrides the default.
-
-        Constant is read at module import, so monkeypatch the env then
-        force an importlib.reload to re-evaluate the module-level constant.
-        Without the reload, the previously-cached module value wins.
-        """
-        monkeypatch.setenv("FAERS_UPSERT_CHUNK_SIZE", "50")
-        import importlib
-        import pipelines.faers_weekly as mod
-        importlib.reload(mod)
-        try:
-            assert mod.FAERS_UPSERT_CHUNK_SIZE == 50
-        finally:
-            # Restore the default for any test that imports the module later
-            # in this session — monkeypatch unsets the env var on teardown
-            # but the module-level constant stays at 50 until reloaded.
-            monkeypatch.delenv("FAERS_UPSERT_CHUNK_SIZE", raising=False)
-            importlib.reload(mod)
-
-    def test_flush_batch_passes_chunk_size_to_every_bulk_insert(self):
-        """Every _bulk_insert call inside flush_batch must carry the
-        FAERS_UPSERT_CHUNK_SIZE knob. Hard-fails if a literal 500 (or any
-        other value) slips back in for any of the five tables.
+    def test_flush_batch_uses_correct_per_table_chunk_size(self):
+        """Every _bulk_insert call inside flush_batch must carry the chunk
+        size for its table: parent -> 100, children -> 500, dims -> 500.
+        Hard-fails if a wrong constant (or a literal) slips back in.
         """
         import pipelines.faers_weekly as mod
+
+        expected_by_table = {
+            "drugs": DIM_CHUNK_SIZE,
+            "meddra_terms": DIM_CHUNK_SIZE,
+            "drug_adverse_events": PARENT_CHUNK_SIZE,
+            "drug_adverse_event_drugs": CHILD_CHUNK_SIZE,
+            "drug_adverse_event_reactions": CHILD_CHUNK_SIZE,
+        }
 
         calls: list[dict] = []
 
@@ -879,20 +947,14 @@ class TestFaersChunkSize:
                 stats=IngestStats(),
             )
 
-        expected = mod.FAERS_UPSERT_CHUNK_SIZE
         assert calls, "flush_batch made no _bulk_insert calls"
         for call in calls:
+            expected = expected_by_table[call["table"]]
             assert call["chunk_size"] == expected, (
                 f"_bulk_insert for {call['table']} got chunk_size="
                 f"{call['chunk_size']}, expected {expected}"
             )
         # All five tables should be exercised by this fixture.
         tables = {c["table"] for c in calls}
-        for t in (
-            "drugs",
-            "meddra_terms",
-            "drug_adverse_events",
-            "drug_adverse_event_drugs",
-            "drug_adverse_event_reactions",
-        ):
+        for t in expected_by_table:
             assert t in tables, f"flush_batch did not write to {t}"
