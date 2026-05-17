@@ -498,6 +498,7 @@ export function Sidebar() {
             </p>
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Campaign Builder", href: "/campaigns/builder", Icon: Crosshair })}
+              {renderNavLink({ label: "Proposal Builder", href: "/proposal-builder", Icon: Newspaper })}
               {renderNavLink({ label: "Firm Profile", href: "/settings/firms", Icon: Briefcase })}
             </div>
           </div>
