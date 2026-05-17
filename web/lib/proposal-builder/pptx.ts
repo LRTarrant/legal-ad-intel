@@ -264,6 +264,7 @@ export async function buildProposalPptx(
           w: 4.5,
           h: bodyBottom - bodyTop,
           textColor,
+          primary,
         });
       }
     } else if (hasTable) {
@@ -281,6 +282,7 @@ export async function buildProposalPptx(
           w: 12.13,
           h: 1,
           textColor,
+          primary,
         });
       }
     } else if (bullets.length > 0) {
@@ -290,6 +292,7 @@ export async function buildProposalPptx(
         w: 12.13,
         h: bodyBottom - bodyTop,
         textColor,
+        primary,
       });
     }
 
@@ -469,20 +472,34 @@ function addBullets(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   slide: any,
   bullets: string[],
-  opts: { x: number; y: number; w: number; h: number; textColor: string },
+  opts: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    textColor: string;
+    primary: string;
+  },
 ): void {
+  // Every fragment carries breakLine:true so pptxgenjs renders each as its
+  // own paragraph. Without it, a non-bulleted run (a "Header:" line) gets
+  // concatenated inline onto the preceding bulleted run — the collision the
+  // Phase 2.1 fix targets. Lines ending ":" are styled as subheadings;
+  // lines starting "•" are an indented child list.
   slide.addText(
-    bullets.slice(0, 10).map((line) => {
+    bullets.slice(0, 12).map((line, i) => {
       const isHeader = line.endsWith(":");
       const isSub = line.startsWith("•");
       return {
         text: isSub ? line.replace(/^•\s*/, "") : line,
         options: {
-          bullet: !isHeader && !isSub ? { code: "2022" } : isSub,
+          breakLine: true,
+          bullet: isHeader ? false : isSub ? { code: "2022" } : { code: "2022" },
           bold: isHeader,
           indentLevel: isSub ? 1 : 0,
-          color: opts.textColor,
-          fontSize: 12,
+          color: isHeader ? opts.primary : opts.textColor,
+          fontSize: isHeader ? 13 : 12,
+          paraSpaceBefore: isHeader && i > 0 ? 10 : 0,
           paraSpaceAfter: 6,
         },
       };

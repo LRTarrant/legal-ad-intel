@@ -28,6 +28,7 @@ import {
   STATE_OPTIONS,
   AD_INTEL_OPTIONS,
   BLOCK_TYPE_META,
+  type PickOption,
 } from "../../_components/catalog";
 
 interface CampaignLite {
@@ -126,7 +127,14 @@ function blockHeadline(block: ProposalBlockRow): string {
   );
 }
 
-export function ProposalEditorClient({ deckId }: { deckId: string }) {
+export function ProposalEditorClient({
+  deckId,
+  tortOptions,
+}: {
+  deckId: string;
+  /** mass_torts-sourced picker options; falls back to the static list. */
+  tortOptions?: PickOption[];
+}) {
   const router = useRouter();
   const branding = useTenant();
 
@@ -493,6 +501,7 @@ export function ProposalEditorClient({ deckId }: { deckId: string }) {
               key={type}
               type={type}
               campaigns={campaigns}
+              tortOptions={tortOptions}
               onOpenCampaigns={loadCampaigns}
               onAdd={(data) => addBlock(type, data)}
             />
@@ -662,11 +671,13 @@ export function ProposalEditorClient({ deckId }: { deckId: string }) {
 function LibrarySection({
   type,
   campaigns,
+  tortOptions,
   onOpenCampaigns,
   onAdd,
 }: {
   type: BlockType;
   campaigns: CampaignLite[];
+  tortOptions?: PickOption[];
   onOpenCampaigns: () => void;
   onAdd: (data: Record<string, unknown>) => void;
 }) {
@@ -681,7 +692,9 @@ function LibrarySection({
 
   const options =
     type === "tort_page"
-      ? TORT_OPTIONS
+      ? tortOptions && tortOptions.length > 0
+        ? tortOptions
+        : TORT_OPTIONS
       : type === "state_intel"
         ? STATE_OPTIONS
         : type === "ad_intel"
