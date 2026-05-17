@@ -16,16 +16,35 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import {
   getAuthenticatedUser,
   resolveBrandingFromRequest,
 } from "@/lib/proposal-builder/server";
 import { buildProposalPptx } from "@/lib/proposal-builder/pptx";
+import { renderBlock } from "@/lib/proposal-builder/block-renderers";
+import type { SlideSpec } from "@/lib/proposal-builder/slide-spec";
 import type {
   ExportRequest,
   ProposalBlockRow,
 } from "@/lib/proposal-builder/types";
+
+/**
+ * Service-role client for the data joins. The proposal + block rows are
+ * still fetched RLS-scoped (caller's tenant only); only the cross-table
+ * content reads (tort / ad / state dims) use the elevated client so a
+ * join never silently drops rows behind per-user RLS. Falls back to the
+ * RLS client if the service key is unset (degraded, never crashing).
+ */
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key, {
+    auth: { persistSession: false },
+  });
+}
 
 // pptxgenjs is Node-only — pin this handler to the Node runtime.
 export const runtime = "nodejs";
@@ -138,14 +157,26 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
   const branding = await resolveBrandingFromRequest(req);
 
+  // Service-role client for cross-table content joins; fall back to the
+  // RLS-scoped client so a missing service key degrades instead of 500ing.
+  const dataClient = getServiceClient() ?? db;
+
+  const slides: SlideSpec[] = [];
+  for (const block of blockRows) {
+    const blockSlides = await renderBlock(block, dataClient, {
+      branding,
+      campaignNames,
+    });
+    slides.push(...blockSlides);
+  }
+
   let buffer: Buffer;
   try {
     buffer = await buildProposalPptx({
       title: proposal.title,
       description: proposal.description,
-      blocks: blockRows,
+      slides,
       branding,
-      campaignNames,
     });
   } catch (e) {
     return NextResponse.json(

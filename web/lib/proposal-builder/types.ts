@@ -48,7 +48,20 @@ export type AdIntelSurface = (typeof AD_INTEL_SURFACES)[number]["id"];
 
 /* ── Per-type block_data shapes ───────────────────────────────────────── */
 
-export interface TortPageBlockData {
+/**
+ * Date-range selection persisted on time-series blocks. Stored inline in
+ * block_data (JSONB) — no DDL needed; the contract is enforced here + in
+ * validateBlock. Both bounds are ISO `YYYY-MM-DD`.
+ */
+export interface BlockDateRange {
+  date_from: string;
+  date_to: string;
+}
+
+/** Default lookback window for time-series blocks (last 90 days). */
+export const DEFAULT_RANGE_DAYS = 90;
+
+export interface TortPageBlockData extends Partial<BlockDateRange> {
   tort_slug: string;
   /** Optional cached display label so the canvas/PPTX needn't re-lookup. */
   label?: string;
@@ -59,7 +72,7 @@ export interface StateIntelBlockData {
   label?: string;
 }
 
-export interface AdIntelBlockData {
+export interface AdIntelBlockData extends Partial<BlockDateRange> {
   surface: AdIntelSurface;
   label?: string;
 }
@@ -181,6 +194,71 @@ export interface ValidationResult {
 export const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Strict ISO calendar date (no time component). */
+export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isIsoDate(v: unknown): v is string {
+  if (typeof v !== "string" || !ISO_DATE_RE.test(v)) return false;
+  const t = Date.parse(`${v}T00:00:00Z`);
+  return Number.isFinite(t);
+}
+
+/**
+ * Validate the optional date_from/date_to pair on a block payload. Either
+ * both are present (and well-ordered) or neither is — a half-set range is
+ * rejected so renderers can trust the invariant.
+ */
+function validateOptionalDateRange(
+  data: Record<string, unknown>,
+  errors: string[],
+): void {
+  const hasFrom = data.date_from !== undefined && data.date_from !== null;
+  const hasTo = data.date_to !== undefined && data.date_to !== null;
+  if (!hasFrom && !hasTo) return;
+  if (hasFrom !== hasTo) {
+    errors.push("date_from and date_to must be provided together");
+    return;
+  }
+  if (!isIsoDate(data.date_from)) {
+    errors.push("date_from must be an ISO date (YYYY-MM-DD)");
+  }
+  if (!isIsoDate(data.date_to)) {
+    errors.push("date_to must be an ISO date (YYYY-MM-DD)");
+  }
+  if (
+    isIsoDate(data.date_from) &&
+    isIsoDate(data.date_to) &&
+    data.date_from > data.date_to
+  ) {
+    errors.push("date_from must be on or before date_to");
+  }
+}
+
+/** Today minus `days`, as `YYYY-MM-DD` (UTC). */
+export function isoDaysAgo(days: number, from: Date = new Date()): string {
+  const d = new Date(from.getTime() - days * 86_400_000);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Resolve a block's persisted range, falling back to the last
+ * DEFAULT_RANGE_DAYS when absent or malformed. Always returns a usable,
+ * well-ordered pair so renderers never have to defend against bad input.
+ */
+export function resolveDateRange(
+  data: Record<string, unknown> | null | undefined,
+): BlockDateRange {
+  const from = data?.date_from;
+  const to = data?.date_to;
+  if (isIsoDate(from) && isIsoDate(to) && from <= to) {
+    return { date_from: from, date_to: to };
+  }
+  return {
+    date_from: isoDaysAgo(DEFAULT_RANGE_DAYS),
+    date_to: isoDaysAgo(0),
+  };
+}
+
 export function validateCreateProposal(
   body: CreateProposalRequest,
 ): ValidationResult {
@@ -256,6 +334,7 @@ export function validateBlock(
       if (!data.tort_slug || typeof data.tort_slug !== "string") {
         errors.push("tort_page blocks require block_data.tort_slug");
       }
+      validateOptionalDateRange(data, errors);
       break;
     case "state_intel":
       if (!data.state_abbr || typeof data.state_abbr !== "string") {
@@ -269,6 +348,7 @@ export function validateBlock(
       } else if (!valid.has(data.surface)) {
         errors.push(`Unknown ad_intel surface: ${JSON.stringify(data.surface)}`);
       }
+      validateOptionalDateRange(data, errors);
       break;
     }
     case "campaign":
