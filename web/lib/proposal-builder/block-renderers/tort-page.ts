@@ -1,29 +1,23 @@
 /**
  * Tort Page block → 2–3 slides:
  *   1. Tort Overview      — MDL identity, case-count trend, qualification gist
- *   2. Advertiser Landscape — top advertisers, channel-mix donut, saturation
+ *   2. Advertiser Landscape — tracked advertisers, segment-mix donut, spend
  *   3. Recent Developments  — only when mdl_developments has rows
  *
- * All reads go through the service-role client passed in so we can join
- * mass_torts → mdls → mdl_stats_monthly / mdl_developments / ad_events
- * without per-user RLS gaps.
+ * Reads go through the service-role client passed in so we can join
+ * mass_torts → mdls → mdl_stats_monthly / mdl_developments without
+ * per-user RLS gaps. The advertiser landscape uses the same RPCs the live
+ * /advertising/<tort> pages use (ad_observations_raw via the legacy `torts`
+ * dimension) rather than ad_events.mass_tort_id, which is unpopulated.
  */
 
 import type { ProposalBlockRow } from "@/lib/proposal-builder/types";
-import { resolveDateRange } from "@/lib/proposal-builder/types";
 import {
   type SlideSpec,
   fallbackSlide,
 } from "@/lib/proposal-builder/slide-spec";
 import { getQualificationCriteria } from "@/lib/data/tort-qualification-criteria";
-import {
-  type SupabaseLike,
-  channelBucket,
-  fmtInt,
-  pctDelta,
-  rangeLabel,
-  shortDate,
-} from "./shared";
+import { type SupabaseLike, fmtInt, fmtUsd, shortDate } from "./shared";
 
 interface MassTortRow {
   id: string;
@@ -52,14 +46,37 @@ interface StatsRow {
   pending_actions_change: number | null;
 }
 
-interface AdRow {
-  advertiser_name_raw: string | null;
-  source: string | null;
-  channel: string | null;
-  event_date: string;
+interface SegmentSummaryRow {
+  segment: string;
+  advertiser_count: number;
+  total_spend: number | string;
+  total_creatives: number;
 }
 
-const CHANNELS = ["TV", "Digital", "Radio", "CTV", "Other"] as const;
+interface TopAdvertiserRow {
+  advertiser_name: string;
+  segment: string;
+  entity_type: string;
+  total_spend: number | string;
+  total_creatives: number;
+  market_count: number;
+}
+
+const SEGMENT_LABELS: Record<string, string> = {
+  on_docket: "On-docket firms",
+  off_docket: "Off-docket firms",
+  aggregator: "Lead aggregators",
+  marketing: "Marketing / agency",
+  unknown: "Unclassified",
+  unclassified: "Unclassified",
+};
+
+function humanizeSegment(s: string | null | undefined): string {
+  const k = (s ?? "").toLowerCase();
+  if (SEGMENT_LABELS[k]) return SEGMENT_LABELS[k];
+  if (!k) return "Unclassified";
+  return k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export async function renderTortPage(
   block: ProposalBlockRow,
@@ -71,8 +88,6 @@ export async function renderTortPage(
   if (!slug) {
     return [fallbackSlide(label || "Tort Page", "No tort selected.", "Tort Spotlight")];
   }
-
-  const { date_from, date_to } = resolveDateRange(data);
 
   const { data: tortRow } = await supabase
     .from("mass_torts")
@@ -111,15 +126,7 @@ export async function renderTortPage(
   slides.push(
     await buildOverview(supabase, tort, mdl, slug, label),
   );
-  slides.push(
-    await buildAdvertiserLandscape(
-      supabase,
-      tort,
-      label,
-      date_from,
-      date_to,
-    ),
-  );
+  slides.push(await buildAdvertiserLandscape(supabase, tort, label));
 
   if (mdl) {
     const devSlide = await buildDevelopments(supabase, mdl, label);
@@ -211,7 +218,6 @@ async function buildOverview(
 
   const criteria = getQualificationCriteria(slug);
   if (criteria && criteria.screeningQuestions.length) {
-    bullets.push("");
     bullets.push("Key qualification criteria:");
     for (const q of criteria.screeningQuestions.slice(0, 4)) {
       bullets.push(`• ${q.question}`);
@@ -229,98 +235,102 @@ async function buildOverview(
   };
 }
 
+/**
+ * Mirrors the live /advertising/<tort> pages. Those pages read advertiser
+ * activity from ad_observations_raw joined through the legacy `torts`
+ * dimension via the get_top_advertisers_by_segment / get_segment_summary
+ * RPCs — NOT ad_events.mass_tort_id (that column is unpopulated for these
+ * torts, which is why Phase 2 rendered empty advertiser slides). The block
+ * stores the hyphenated mass_torts slug; the RPCs key on the legacy
+ * underscore slug (or its slug_alias), so we convert hyphen → underscore.
+ */
 async function buildAdvertiserLandscape(
   supabase: SupabaseLike,
   tort: MassTortRow,
   label: string,
-  date_from: string,
-  date_to: string,
 ): Promise<SlideSpec> {
-  // ad_events is the time-series fact; join by mass_tort_id within range.
-  const { data: adRows } = await supabase
-    .from("ad_events")
-    .select("advertiser_name_raw, source, channel, event_date")
-    .eq("mass_tort_id", tort.id)
-    .gte("event_date", date_from)
-    .lte("event_date", date_to)
-    .limit(20000);
-  const ads = (adRows ?? []) as AdRow[];
+  const legacySlug = (tort.slug ?? "").replace(/-/g, "_");
 
-  if (ads.length === 0) {
+  const [topRes, segRes] = await Promise.all([
+    supabase.rpc("get_top_advertisers_by_segment", {
+      p_tort_slug: legacySlug,
+      p_limit: 8,
+      p_source: null,
+    }),
+    supabase.rpc("get_segment_summary", {
+      p_tort_slug: legacySlug,
+      p_source: null,
+    }),
+  ]);
+
+  const top = (topRes?.data ?? []) as TopAdvertiserRow[];
+  const segments = (segRes?.data ?? []) as SegmentSummaryRow[];
+
+  if (top.length === 0) {
     return {
       kicker: "Advertiser Landscape",
       heading: `${label} — Advertiser Landscape`,
       bullets: [
-        `No tracked ad activity for ${label} between ${rangeLabel(date_from, date_to)}.`,
-        "Widen the date range or check back after the next ad-intel ingest.",
+        `No tracked ad activity for ${label} in the LMI ad observation feed yet.`,
+        "Advertiser tracking populates as creatives are observed across Meta, Google, and TikTok.",
       ],
-      footnote: `Window: ${rangeLabel(date_from, date_to)} · Source: LMI ad observation feed`,
+      footnote: "Source: LMI ad observation feed (cumulative, estimates)",
       fallback: true,
     };
   }
 
-  // Top advertisers by ad volume.
-  const byAdv = new Map<string, number>();
-  const byChannel = new Map<string, number>();
-  for (const a of ads) {
-    const name = (a.advertiser_name_raw ?? "").trim() || "Unattributed";
-    byAdv.set(name, (byAdv.get(name) ?? 0) + 1);
-    const b = channelBucket(a.source, a.channel);
-    byChannel.set(b, (byChannel.get(b) ?? 0) + 1);
-  }
-  const topAdv = [...byAdv.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  const advertiserCount = segments.reduce(
+    (s, r) => s + Number(r.advertiser_count || 0),
+    0,
+  );
+  const totalSpend = segments.reduce(
+    (s, r) => s + Number(r.total_spend || 0),
+    0,
+  );
+  const totalCreatives = segments.reduce(
+    (s, r) => s + Number(r.total_creatives || 0),
+    0,
+  );
 
-  // Week-over-week delta on the last two 7-day windows of the range.
-  const end = new Date(`${date_to}T00:00:00Z`);
-  const w1Start = new Date(end.getTime() - 6 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-  const w0End = new Date(end.getTime() - 7 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-  const w0Start = new Date(end.getTime() - 13 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-  let lastWeek = 0;
-  let priorWeek = 0;
-  for (const a of ads) {
-    if (a.event_date >= w1Start) lastWeek += 1;
-    else if (a.event_date >= w0Start && a.event_date <= w0End)
-      priorWeek += 1;
-  }
-
-  const channelSeries = CHANNELS.filter((c) => (byChannel.get(c) ?? 0) > 0);
+  const segMix = segments
+    .filter((s) => Number(s.advertiser_count || 0) > 0)
+    .slice(0, 6);
 
   return {
     kicker: "Advertiser Landscape",
     heading: `${label} — Advertiser Landscape`,
     stats: [
-      { label: "Advertisers", value: fmtInt(byAdv.size) },
-      { label: "Ad observations", value: fmtInt(ads.length) },
       {
-        label: "Ad volume (last 7d)",
-        value: fmtInt(lastWeek),
-        delta: `${pctDelta(lastWeek, priorWeek)} WoW`,
+        label: "Tracked advertisers",
+        value: fmtInt(advertiserCount || top.length),
       },
+      { label: "Est. ad spend", value: fmtUsd(totalSpend) },
+      { label: "Creatives", value: fmtInt(totalCreatives) },
     ],
-    chart: {
-      type: "doughnut",
-      series: [
-        {
-          name: "Channel mix",
-          labels: channelSeries,
-          values: channelSeries.map((c) => byChannel.get(c) ?? 0),
-        },
-      ],
-      caption: "Share of tracked ad observations by channel",
-    },
+    chart:
+      segMix.length > 0
+        ? {
+            type: "doughnut",
+            series: [
+              {
+                name: "Advertiser mix",
+                labels: segMix.map((s) => humanizeSegment(s.segment)),
+                values: segMix.map((s) => Number(s.advertiser_count || 0)),
+              },
+            ],
+            caption: "Tracked advertisers by segment",
+          }
+        : undefined,
     table: {
-      columns: ["Top advertiser", "Ad observations"],
-      rows: topAdv.map(([n, c]) => [n, fmtInt(c)]),
+      columns: ["Top advertiser", "Segment", "Est. spend"],
+      rows: top.map((a) => [
+        a.advertiser_name || "Unattributed",
+        humanizeSegment(a.segment),
+        fmtUsd(Number(a.total_spend || 0)),
+      ]),
     },
-    footnote: `Window: ${rangeLabel(date_from, date_to)} · Source: LMI ad observation feed (estimates)`,
+    footnote:
+      "Source: LMI ad observation feed (cumulative, estimates) · matches the live tort page",
   };
 }
 
