@@ -37,20 +37,74 @@ interface CampaignLite {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
+/** Block types that carry a date-range (time-series data). */
+const RANGED: ReadonlySet<BlockType> = new Set<BlockType>([
+  "tort_page",
+  "ad_intel",
+]);
+
+/** Today minus `days`, as YYYY-MM-DD. */
+function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+interface DateRange {
+  date_from: string;
+  date_to: string;
+}
+
+function defaultRange(): DateRange {
+  return { date_from: isoDaysAgo(90), date_to: isoDaysAgo(0) };
+}
+
+function rangeLabel(d: Record<string, unknown>): string {
+  const from = typeof d.date_from === "string" ? d.date_from : null;
+  const to = typeof d.date_to === "string" ? d.date_to : null;
+  if (!from || !to) return "last 90 days";
+  return `${from} → ${to}`;
+}
+
+/** One-line "what will render" hint shown under a canvas block. */
+function dataPreview(block: ProposalBlockRow): string | null {
+  const d = block.block_data ?? {};
+  switch (block.block_type) {
+    case "tort_page":
+      return `Overview · advertiser landscape · developments — ${rangeLabel(d)}`;
+    case "ad_intel": {
+      const s = String(d.surface ?? "");
+      if (s === "advertisers")
+        return `Top 10 advertisers + channel — ${rangeLabel(d)}`;
+      if (s === "saturation")
+        return `Market saturation trend — ${rangeLabel(d)}`;
+      return "Coming soon — label slide only";
+    }
+    case "state_intel":
+      return "Fatality snapshot + workplace (CFOI) where available";
+    case "campaign":
+      return "Label only (deep render deferred)";
+    default:
+      return null;
+  }
+}
+
 /** Build the block_data payload + a display label for a picked target. */
 function buildBlockData(
   type: BlockType,
   value: string,
   label: string,
   custom?: { title: string; content: string },
+  range?: DateRange,
 ): Record<string, unknown> {
+  const r = range ?? defaultRange();
   switch (type) {
     case "tort_page":
-      return { tort_slug: value, label };
+      return { tort_slug: value, label, ...r };
     case "state_intel":
       return { state_abbr: value, label };
     case "ad_intel":
-      return { surface: value, label };
+      return { surface: value, label, ...r };
     case "campaign":
       return { campaign_id: value, label };
     case "custom_text":
@@ -212,6 +266,19 @@ export function ProposalEditorClient({ deckId }: { deckId: string }) {
   async function updateCustomText(
     id: string,
     patch: { title?: string; content?: string },
+  ) {
+    setBlocks((b) =>
+      b.map((x) =>
+        x.id === id
+          ? { ...x, block_data: { ...x.block_data, ...patch } }
+          : x,
+      ),
+    );
+  }
+
+  function patchBlockData(
+    id: string,
+    patch: Record<string, unknown>,
   ) {
     setBlocks((b) =>
       b.map((x) =>
@@ -499,9 +566,53 @@ export function ProposalEditorClient({ deckId }: { deckId: string }) {
                           />
                         </div>
                       ) : (
-                        <p className="mt-0.5 truncate text-sm font-medium text-midnight-navy">
-                          {blockHeadline(block)}
-                        </p>
+                        <>
+                          <p className="mt-0.5 truncate text-sm font-medium text-midnight-navy">
+                            {blockHeadline(block)}
+                          </p>
+                          {dataPreview(block) && (
+                            <p className="mt-0.5 truncate text-[11px] text-slate-gray">
+                              {dataPreview(block)}
+                            </p>
+                          )}
+                          {RANGED.has(block.block_type) && (
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                              <input
+                                type="date"
+                                value={String(
+                                  block.block_data.date_from ??
+                                    defaultRange().date_from,
+                                )}
+                                onChange={(e) =>
+                                  patchBlockData(block.id, {
+                                    date_from: e.target.value,
+                                  })
+                                }
+                                onBlur={() => persistBlockData(block.id)}
+                                className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] text-charcoal outline-none focus:border-intelligence-teal"
+                                aria-label="Date from"
+                              />
+                              <span className="text-[11px] text-slate-gray">
+                                →
+                              </span>
+                              <input
+                                type="date"
+                                value={String(
+                                  block.block_data.date_to ??
+                                    defaultRange().date_to,
+                                )}
+                                onChange={(e) =>
+                                  patchBlockData(block.id, {
+                                    date_to: e.target.value,
+                                  })
+                                }
+                                onBlur={() => persistBlockData(block.id)}
+                                className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] text-charcoal outline-none focus:border-intelligence-teal"
+                                aria-label="Date to"
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="flex shrink-0 flex-col items-center gap-1">
@@ -563,8 +674,10 @@ function LibrarySection({
   const [value, setValue] = useState("");
   const [ctTitle, setCtTitle] = useState("");
   const [ctContent, setCtContent] = useState("");
+  const [range, setRange] = useState<DateRange>(defaultRange());
 
   const meta = BLOCK_TYPE_META[type];
+  const ranged = RANGED.has(type);
 
   const options =
     type === "tort_page"
@@ -590,7 +703,7 @@ function LibrarySection({
     }
     if (!value) return;
     const label = options.find((o) => o.value === value)?.label ?? value;
-    onAdd(buildBlockData(type, value, label));
+    onAdd(buildBlockData(type, value, label, undefined, range));
     setValue("");
   }
 
@@ -645,6 +758,34 @@ function LibrarySection({
                 </option>
               ))}
             </select>
+          )}
+          {ranged && (
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-slate-gray">
+                Date range (defaults to last 90 days)
+              </p>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={range.date_from}
+                  onChange={(e) =>
+                    setRange((r) => ({ ...r, date_from: e.target.value }))
+                  }
+                  className="w-full rounded border border-slate-200 px-1.5 py-1 text-xs outline-none focus:border-intelligence-teal"
+                  aria-label="Date from"
+                />
+                <span className="text-xs text-slate-gray">→</span>
+                <input
+                  type="date"
+                  value={range.date_to}
+                  onChange={(e) =>
+                    setRange((r) => ({ ...r, date_to: e.target.value }))
+                  }
+                  className="w-full rounded border border-slate-200 px-1.5 py-1 text-xs outline-none focus:border-intelligence-teal"
+                  aria-label="Date to"
+                />
+              </div>
+            </div>
           )}
           <button
             onClick={handleAdd}
