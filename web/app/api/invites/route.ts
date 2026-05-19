@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { buildInviteEmailHtml } from "@/lib/email-templates/invite";
+import { randomBytes } from "node:crypto";
 
 function getServiceClient() {
   return createClient(
@@ -56,41 +57,86 @@ export async function POST(req: NextRequest) {
     const serviceClient = getServiceClient();
     const { profile } = auth;
 
-    // Check for existing pending invitation for this email + tenant
-    const { data: existing } = await serviceClient
+    // Any unaccepted invitation for this (tenant, email) — expired or not —
+    // is treated as a resend. The partial unique index
+    // idx_invitations_unique_pending (tenant_id, email) WHERE accepted_at IS NULL
+    // does not exclude expired rows, so a fresh INSERT for an address that
+    // still has an expired-but-unaccepted row collides; refresh in place.
+    const { data: existing, error: lookupError } = await serviceClient
       .from("invitations")
       .select("id")
       .eq("tenant_id", profile.tenant_id)
       .eq("email", email)
       .is("accepted_at", null)
-      .gt("expires_at", new Date().toISOString())
       .maybeSingle();
 
-    if (existing) {
+    if (lookupError) {
+      console.error("[invites] existing-invitation lookup failed", lookupError);
       return NextResponse.json(
-        { error: "A pending invitation already exists for this email" },
-        { status: 409 },
+        { error: "Failed to look up existing invitation" },
+        { status: 500 },
       );
     }
 
-    // Create the invitation
-    const { data: invitation, error: insertError } = await serviceClient
-      .from("invitations")
-      .insert({
-        tenant_id: profile.tenant_id,
-        email,
-        role,
-        invited_by: auth.user.id,
-        trial_days: trialDays,
-      })
-      .select("id, email, role, token, expires_at")
-      .single();
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    if (insertError || !invitation) {
-      return NextResponse.json(
-        { error: "Failed to create invitation" },
-        { status: 500 },
-      );
+    let invitation: {
+      id: string;
+      email: string;
+      role: string;
+      token: string;
+      expires_at: string;
+    };
+
+    if (existing) {
+      // Resend: rotate the token, reset the 7-day expiry, refresh role/trial.
+      const { data: resent, error: updateError } = await serviceClient
+        .from("invitations")
+        .update({
+          role,
+          trial_days: trialDays,
+          invited_by: auth.user.id,
+          token,
+          expires_at: expiresAt,
+        })
+        .eq("id", existing.id)
+        .select("id, email, role, token, expires_at")
+        .single();
+
+      if (updateError || !resent) {
+        console.error("[invites] resend update failed", updateError);
+        return NextResponse.json(
+          { error: "Failed to resend invitation" },
+          { status: 500 },
+        );
+      }
+      invitation = resent;
+    } else {
+      const { data: created, error: insertError } = await serviceClient
+        .from("invitations")
+        .insert({
+          tenant_id: profile.tenant_id,
+          email,
+          role,
+          invited_by: auth.user.id,
+          trial_days: trialDays,
+          token,
+          expires_at: expiresAt,
+        })
+        .select("id, email, role, token, expires_at")
+        .single();
+
+      if (insertError || !created) {
+        console.error("[invites] invitation insert failed", insertError);
+        return NextResponse.json(
+          { error: "Failed to create invitation" },
+          { status: 500 },
+        );
+      }
+      invitation = created;
     }
 
     // Fetch tenant branding for the email
@@ -188,7 +234,8 @@ export async function POST(req: NextRequest) {
         expires_at: invitation.expires_at,
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("[invites] POST unexpected error", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -214,6 +261,7 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("[invites] GET list query failed", error);
       return NextResponse.json(
         { error: "Failed to fetch invitations" },
         { status: 500 },
@@ -233,7 +281,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ invitations: withStatus });
-  } catch {
+  } catch (err) {
+    console.error("[invites] GET unexpected error", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
