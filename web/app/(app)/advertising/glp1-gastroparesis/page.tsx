@@ -14,6 +14,7 @@ import {
   getSerpVisibilityWindowed,
   getSerpTopResults,
   getSampleAds,
+  getFaersGlp1Signals,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -186,7 +187,7 @@ export default async function GLP1GastroparesisPage() {
   windowStartDate.setDate(windowStartDate.getDate() - 90);
   const windowStart = windowStartDate.toISOString().slice(0, 10);
 
-  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds] =
+  const [segments, topAdvertisers, platforms, saturation, benchmarks, serpVisibility, serpResults, sampleAds, faersSignals] =
     await Promise.all([
       getSegmentSummary(TORT_SLUG),
       getTopAdvertisersBySegment(TORT_SLUG, 25),
@@ -196,6 +197,9 @@ export default async function GLP1GastroparesisPage() {
       getSerpVisibilityWindowed(windowStart, windowEnd, TORT_SLUG),
       getSerpTopResults(TORT_SLUG, 5),
       getSampleAds(TORT_SLUG, 12),
+      // getFaersGlp1Signals never throws (returns an empty structure on error),
+      // so it is safe inside Promise.all.
+      getFaersGlp1Signals("gastroparesis"),
     ]);
 
   /* -- Aggregate advertising stats ---------------------------------- */
@@ -286,6 +290,7 @@ export default async function GLP1GastroparesisPage() {
     serpVisibility,
     serpResults,
     sampleAds,
+    faersSignals,
   };
 
   // Summary for AI panel

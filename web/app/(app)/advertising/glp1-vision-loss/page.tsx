@@ -14,6 +14,7 @@ import {
   getSerpVisibilityWindowed,
   getSerpTopResults,
   getSampleAds,
+  getFaersGlp1Signals,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -206,6 +207,10 @@ export default async function GLP1VisionLossPage() {
   const serpResults = adResults[6].status === "fulfilled" ? adResults[6].value : [];
   const sampleAds = adResults[7].status === "fulfilled" ? adResults[7].value : [];
 
+  // Live FAERS signals. getFaersGlp1Signals never throws (returns an empty
+  // structure on failure), so a bare await keeps the page resilient.
+  const faersSignals = await getFaersGlp1Signals("vision_loss");
+
   /* -- Aggregate advertising stats ---------------------------------- */
   const platformMap = new Map<string, string[]>();
   for (const p of platforms) {
@@ -297,6 +302,7 @@ export default async function GLP1VisionLossPage() {
     serpVisibility,
     serpResults,
     sampleAds,
+    faersSignals,
   };
 
   const topPrescriptionStates = prescriptionTop15.slice(0, 3).map((s) => `${s.state} (${s.statewide_usage_pct}%)`).join(", ");
