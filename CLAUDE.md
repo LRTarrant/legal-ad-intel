@@ -202,7 +202,7 @@ Each surface lists: frontend · API · pipeline · workflow + schedule · Supaba
 - **Frontend:** `web/app/(app)/admin/{users,tort-images,rollout,torts,data-sources}/`, plus `settings/`, `invite/`, `login/`, `forgot-password/`, `reset-password/`, `pricing/`.
 - **API:** `web/app/api/{admin,invites,firms,subscription,tenant-branding,activity,alerts,ask-ai,courtlistener/sync-attorneys}/`.
 - **Auth flow:** Supabase SSR via `web/middleware.ts`; tenant context via `web/contexts/TenantContext`. Roles checked from `profiles.role` (`tenant_admin`, `super_admin`, etc.).
-- **Supabase tables:** `profiles`, `firms`, `firm_managers`, `subscriptions`, `invites`, `tenant_branding`, `activity_log`, `alerts`, `pipeline_runs`.
+- **Supabase tables:** `profiles`, `firms`, `firm_managers`, `subscriptions`, `invitations`, `tenant_branding`, `activity_log`, `alerts`, `pipeline_runs`. The invitation table is `invitations` (not `invites` — that's only the API route folder name); it is tenant-scoped via `tenant_id` → `tenants` (there is no `firm_id`), and has **no `status` column** — pending/accepted/expired is computed in the `GET /api/invites` handler from `accepted_at` + `expires_at`. A partial unique index `idx_invitations_unique_pending (tenant_id, email) WHERE accepted_at IS NULL` allows one open invite per address; resends UPDATE that row in place. Schema-of-record: migration `20260521000000_document_invitations_schema.sql` (the original `20260418165323_create_invitations_table.sql` is a placeholder — see §11).
 - **External APIs:** Resend (transactional email), GA4 (analytics — see Known Issues).
 - **Env vars:** `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `ALERT_CHECK_SECRET` (cron secret for `/api/alerts/check`), `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
 
