@@ -207,6 +207,11 @@ const STATE_GROUP_KEYS: StateGroupKey[] = ["A-C", "D-H", "I-M", "N-Z"];
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Set alongside isAdmin from the same profile fetch below. Intentionally
+  // NOT using web/lib/admin/use-super-admin.ts to avoid a second identical
+  // SELECT against profiles — please don't "clean this up" by swapping in
+  // the hook.
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [alertUnreadCount, setAlertUnreadCount] = useState(0);
   const [emergingTortsOpen, setEmergingTortsOpen] = useState(true);
   const [activeMdlsOpen, setActiveMdlsOpen] = useState(true);
@@ -242,6 +247,12 @@ export function Sidebar() {
           .single();
         if (profile && ["tenant_admin", "super_admin"].includes(profile.role)) {
           setIsAdmin(true);
+        }
+        if (
+          profile &&
+          (profile as { role?: string }).role === "super_admin"
+        ) {
+          setIsSuperAdmin(true);
         }
       } catch {
         // ignore — default to non-admin
@@ -487,6 +498,7 @@ export function Sidebar() {
             </p>
             <div className="flex flex-col gap-0.5 pl-2">
               {renderNavLink({ label: "Campaign Builder", href: "/campaigns/builder", Icon: Crosshair })}
+              {renderNavLink({ label: "Proposal Builder", href: "/proposal-builder", Icon: Newspaper })}
               {renderNavLink({ label: "Firm Profile", href: "/settings/firms", Icon: Briefcase })}
             </div>
           </div>
@@ -522,6 +534,7 @@ export function Sidebar() {
               </p>
               <div className="flex flex-col gap-0.5 pl-2">
                 {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
+                {isSuperAdmin && renderNavLink({ label: "API Costs", href: "/admin/api-costs", Icon: DollarSign })}
                 {renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
                 {renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
                 {renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}

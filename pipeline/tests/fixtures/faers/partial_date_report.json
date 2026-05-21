@@ -1,0 +1,41 @@
+{
+  "safetyreportid": "10000006-1",
+  "safetyreportversion": "1",
+  "receivedate": "20260430",
+  "serious": "1",
+  "seriousnessother": "1",
+  "occurcountry": "DE",
+  "primarysource": {
+    "qualification": "1",
+    "reportercountry": "DE"
+  },
+  "patient": {
+    "patientonsetage": "55",
+    "patientonsetageunit": "801",
+    "patientsex": "1",
+    "reaction": [
+      {
+        "reactionmeddrapt": "Hepatic failure",
+        "reactionmeddraversionpt": "26.0",
+        "reactionoutcome": "3"
+      }
+    ],
+    "drug": [
+      {
+        "drugcharacterization": "1",
+        "medicinalproduct": "TAXTODYNE-XR (FICTIONAL)",
+        "drugstartdate": "201808",
+        "drugstartdateformat": "610",
+        "drugenddate": "2024",
+        "drugenddateformat": "602",
+        "openfda": {
+          "brand_name": ["Taxtodyne XR"],
+          "generic_name": ["FICTIONAL ACTIVE"],
+          "manufacturer_name": ["Sample Drug Co Ltd."],
+          "rxcui": ["9999999"],
+          "unii": ["FICTIONAL01"]
+        }
+      }
+    ]
+  }
+}

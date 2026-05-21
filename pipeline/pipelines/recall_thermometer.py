@@ -35,17 +35,13 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.pipeline import (  # noqa: E402
     PipelineRun,
-    DRY_RUN,
     SUPABASE_URL,
     SUPABASE_KEY,
     _bulk_insert,
     _get,
-    _headers,
 )
 
 logger = logging.getLogger(__name__)
@@ -168,18 +164,21 @@ def _aggregate_cases_by_recall() -> dict[str, dict]:
 # Recall update + stage history
 # ---------------------------------------------------------------------------
 
-def _patch_recall(recall_id: str, patch: dict) -> None:
-    if DRY_RUN:
-        logger.info("  [DRY] patch recalls %s %s", recall_id, patch)
-        return
-    url = f"{SUPABASE_URL}/rest/v1/recalls?id=eq.{recall_id}"
-    resp = httpx.patch(
-        url,
-        headers={**_headers(), "Prefer": "return=minimal"},
-        json=patch,
-        timeout=30,
+def _bulk_update_recalls(rows: list[dict]) -> int:
+    """Bulk-upsert scoring fields onto public.recalls.
+
+    Uses the same (source, external_id) unique constraint and merge-duplicates
+    pattern as openfda_device_recalls.upsert_recalls, so we inherit the
+    chunked + retried bulk insert path. DRY_RUN gating lives in _bulk_insert.
+    """
+    if not rows:
+        return 0
+    return _bulk_insert(
+        "recalls",
+        rows,
+        on_conflict="source,external_id",
+        resolution="merge-duplicates",
     )
-    resp.raise_for_status()
 
 
 def _insert_stage_history(rows: list[dict]) -> int:
@@ -219,11 +218,14 @@ def main() -> int:
         history_rows: list[dict] = []
         changed = 0
 
+        recall_updates: list[dict] = []
+
         with run.step("score") as step:
             recall_params: dict[str, str] = {
-                "select": ("id,stage,stage_label,case_count,state_count,"
-                           "specialty_firm_count,mdl_petition_filed,mdl_formed,"
-                           "first_case_filed_at,last_case_filed_at,recall_class"),
+                "select": ("id,source,external_id,stage,stage_label,case_count,"
+                           "state_count,specialty_firm_count,mdl_petition_filed,"
+                           "mdl_formed,first_case_filed_at,last_case_filed_at,"
+                           "recall_class"),
             }
             if args.recall_id:
                 recall_params["id"] = f"eq.{args.recall_id}"
@@ -254,7 +256,11 @@ def main() -> int:
                 prev_stage = int(r.get("stage") or 1)
                 prev_label = r.get("stage_label") or STAGE_LABELS[prev_stage]
 
-                patch = {
+                # Carry source/external_id so the bulk upsert can resolve the
+                # conflict on the existing UNIQUE (source, external_id) index.
+                recall_updates.append({
+                    "source": r["source"],
+                    "external_id": r["external_id"],
                     "case_count": new_cc,
                     "state_count": new_sc,
                     "specialty_firm_count": new_spc,
@@ -263,8 +269,7 @@ def main() -> int:
                     "first_case_filed_at": a["first_case_filed"],
                     "last_case_filed_at": a["last_case_filed"],
                     "last_scored_at": now_iso,
-                }
-                _patch_recall(rid, patch)
+                })
 
                 if new_stage != prev_stage:
                     changed += 1
@@ -287,8 +292,12 @@ def main() -> int:
             step.set_metadata({"stage_changes": changed})
 
         with run.step("publish") as step:
+            updated = _bulk_update_recalls(recall_updates)
             inserted = _insert_stage_history(history_rows)
-            step.set_counts(rows_in=len(history_rows), rows_out=inserted)
+            step.set_counts(
+                rows_in=len(recall_updates) + len(history_rows),
+                rows_out=updated + inserted,
+            )
 
     return 0
 

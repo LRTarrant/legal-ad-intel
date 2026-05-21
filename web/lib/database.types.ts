@@ -7177,6 +7177,26 @@ export type Database = {
           tort_name: string
         }[]
       }
+      faers_glp1_drug_breakdown: {
+        Args: { p_brand_map: Json; p_reaction_pts: string[] }
+        Returns: {
+          brand: string
+          consumer_reports: number
+          deaths: number
+          hospitalizations: number
+          max_receivedate: string
+          top_reactions: Json
+          total_events: number
+        }[]
+      }
+      faers_glp1_monthly_trend: {
+        Args: { p_brand_map: Json; p_reaction_pts: string[] }
+        Returns: {
+          brand: string
+          event_count: number
+          month: string
+        }[]
+      }
       get_ad_saturation_windowed: {
         Args: {
           p_source?: string

@@ -4,6 +4,7 @@ import type { GLP1VisionLossPageData } from "./glp1-vision-loss-client";
 
 const GLP1VisionLossClient = nextDynamic(() => import("./glp1-vision-loss-client").then((m) => m.GLP1VisionLossClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -311,6 +312,7 @@ export default async function GLP1VisionLossPage() {
   return (
     <>
       <GLP1VisionLossClient data={pageData} />
+      <NewLandingPagesCard tortSlug="glp1-vision-loss" tortLabel="GLP-1 Vision Loss" />
       <AskAIPanel
         tortContext={{
           tortName: "GLP-1 Vision Loss (NAION)",

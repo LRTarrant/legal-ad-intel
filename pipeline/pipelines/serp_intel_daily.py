@@ -38,7 +38,24 @@ from lib.pipeline import (
     _get, _bulk_insert, _delete, _dedup_rows,
     SUPABASE_URL, _headers,
 )
+from lib.api_usage import log_api_call
+from lib.api_pricing import get_searchapi_pricing
 from lib.domain_mapper import DomainMapper, extract_root_domain
+
+
+def _log_searchapi_call(engine: str, query: str) -> None:
+    """Record a Searchapi.io call. Never raises."""
+    pricing = get_searchapi_pricing()
+    log_api_call(
+        provider="searchapi",
+        operation=f"searchapi_{engine}",
+        model_or_actor=engine,
+        units_consumed=1,
+        unit_type="searches",
+        cost_usd=pricing["rate_per_unit_usd"],
+        called_from="pipelines.serp_intel_daily",
+        metadata={"engine": engine, "q": query},
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +137,7 @@ def _searchapi_google(query: str) -> dict:
                 continue
 
             resp.raise_for_status()
+            _log_searchapi_call("google", query)
             return resp.json()
         except httpx.HTTPError as e:
             if attempt < MAX_RETRIES - 1:

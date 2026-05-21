@@ -250,6 +250,7 @@ export async function POST(
     purpose: "brand_extract",
     provider: "openai",
     model: "gpt-4o",
+    called_from: "api/firms/[id]/extract-brand",
     usage: {
       input_tokens: llmData.usage?.prompt_tokens ?? 0,
       output_tokens: llmData.usage?.completion_tokens ?? 0,

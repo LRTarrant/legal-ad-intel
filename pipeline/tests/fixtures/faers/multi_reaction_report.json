@@ -1,0 +1,57 @@
+{
+  "safetyreportid": "10000005-1",
+  "safetyreportversion": "1",
+  "receivedate": "20260422",
+  "serious": "1",
+  "seriousnesshospitalization": "1",
+  "seriousnesslifethreatening": "1",
+  "occurcountry": "US",
+  "primarysource": {
+    "qualification": "2",
+    "reportercountry": "US"
+  },
+  "patient": {
+    "patientonsetage": "29",
+    "patientonsetageunit": "801",
+    "patientsex": "2",
+    "reaction": [
+      {
+        "reactionmeddrapt": "Suicidal ideation",
+        "reactionmeddraversionpt": "27.1",
+        "reactionoutcome": "1"
+      },
+      {
+        "reactionmeddrapt": "Depression",
+        "reactionmeddraversionpt": "27.1",
+        "reactionoutcome": "2"
+      },
+      {
+        "reactionmeddrapt": "Insomnia",
+        "reactionmeddraversionpt": "27.1",
+        "reactionoutcome": "1"
+      },
+      {
+        "reactionmeddrapt": "",
+        "reactionmeddraversionpt": "27.1",
+        "reactionoutcome": "6"
+      }
+    ],
+    "drug": [
+      {
+        "drugcharacterization": "1",
+        "medicinalproduct": "SINGULAIR",
+        "drugindication": "ASTHMA",
+        "openfda": {
+          "brand_name": ["Singulair"],
+          "generic_name": ["MONTELUKAST SODIUM"],
+          "substance_name": ["MONTELUKAST SODIUM"],
+          "manufacturer_name": ["Merck Sharp & Dohme Corp."],
+          "product_ndc": ["0006-0117"],
+          "application_number": ["NDA020829"],
+          "rxcui": ["88249"],
+          "unii": ["U1O3J18SFL"]
+        }
+      }
+    ]
+  }
+}

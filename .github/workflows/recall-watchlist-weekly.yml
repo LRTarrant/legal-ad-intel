@@ -26,6 +26,11 @@ on:
         required: false
         default: ''
         type: string
+      backfill_since:
+        description: 'Optional: ISO date (YYYY-MM-DD) to override the 5-year lookback. Leave blank for normal weekly behavior.'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   # --------------------------------------------------------------------------
@@ -40,7 +45,7 @@ jobs:
   openfda-recalls:
     name: FDA device recall ingest
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     # FDA API flakiness must not block litigation tracking downstream.
     continue-on-error: true
 
@@ -64,13 +69,19 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
           PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+          # Halve the default 200-row chunk to shrink per-request payload and
+          # reduce the surface for Cloudflare 502s during upsert_recalls. See
+          # PR widening _bulk_insert retries/timeouts.
+          RECALLS_UPSERT_CHUNK_SIZE: '100'
         run: |
+          ARGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "Running in DRY-RUN mode"
-            python -m pipelines.openfda_device_recalls --dry-run
-          else
-            python -m pipelines.openfda_device_recalls
+            ARGS="$ARGS --dry-run"
           fi
+          if [ -n "${{ inputs.backfill_since }}" ]; then
+            ARGS="$ARGS --backfill-since ${{ inputs.backfill_since }}"
+          fi
+          python -m pipelines.openfda_device_recalls $ARGS
 
   courtlistener-search:
     name: CourtListener case search
@@ -154,7 +165,10 @@ jobs:
   thermometer-score:
     name: Five-Stage Thermometer scoring
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Bumped 30→60 after a run hit the 30m wall mid-success on ~12K per-row
+    # PATCH calls. The job now batches recall updates via _bulk_insert; 60m
+    # is a safety margin, not the expected runtime.
+    timeout-minutes: 60
     needs: parties-enrichment
     # Run scoring even if upstream was a no-op, but skip on manual dry-run
     if: ${{ always() && (github.event_name == 'schedule' || inputs.dry_run != 'true') }}

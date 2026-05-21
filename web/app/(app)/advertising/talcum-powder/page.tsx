@@ -21,6 +21,7 @@ import {
   Crosshair,
 } from "lucide-react";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -2012,6 +2013,7 @@ export default async function TalcumPowderPage() {
         </p>
       </div>
 
+      <NewLandingPagesCard tortSlug="talcum-powder" tortLabel="Talcum Powder" />
       <AskAIPanel tortContext={TALCUM_POWDER_TORT_CONTEXT} />
     </div>
   );

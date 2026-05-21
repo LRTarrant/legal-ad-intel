@@ -37,6 +37,23 @@ from lib.pipeline import (
     _bulk_insert,
     SUPABASE_URL,
 )
+from lib.api_usage import log_api_call
+from lib.api_pricing import get_searchapi_pricing
+
+
+def _log_searchapi_call(data_type: str, keyword: str) -> None:
+    """Record a Searchapi.io google_trends call. Never raises."""
+    pricing = get_searchapi_pricing()
+    log_api_call(
+        provider="searchapi",
+        operation=f"searchapi_google_trends_{data_type.lower()}",
+        model_or_actor="google_trends",
+        units_consumed=1,
+        unit_type="searches",
+        cost_usd=pricing["rate_per_unit_usd"],
+        called_from="pipelines.google_trends_daily",
+        metadata={"data_type": data_type, "q": keyword},
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +116,7 @@ def _searchapi_trends(keyword: str) -> dict:
                 time.sleep(backoff)
                 continue
             resp.raise_for_status()
+            _log_searchapi_call("TIMESERIES", keyword)
             return resp.json()
         except httpx.HTTPError as e:
             if attempt < MAX_RETRIES - 1:
@@ -135,6 +153,7 @@ def _searchapi_trends_geo_us(keyword: str) -> dict:
                 time.sleep(backoff)
                 continue
             resp.raise_for_status()
+            _log_searchapi_call("GEO_MAP", keyword)
             return resp.json()
         except httpx.HTTPError as e:
             if attempt < MAX_RETRIES - 1:
@@ -169,6 +188,7 @@ def _searchapi_trends_related_queries(keyword: str) -> dict:
                 timeout=60,
             )
             resp.raise_for_status()
+            _log_searchapi_call("RELATED_QUERIES", keyword)
             return resp.json()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as e:
             if attempt == 0:

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import { logOpenAITokenCall } from "@/lib/api-usage";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -567,6 +568,14 @@ export async function POST(req: NextRequest) {
       ],
     });
 
+    void logOpenAITokenCall({
+      operation: "ai_search_intent",
+      model: "gpt-4o-mini",
+      input_tokens: intentResponse.usage?.prompt_tokens ?? 0,
+      output_tokens: intentResponse.usage?.completion_tokens ?? 0,
+      called_from: "api/campaign-builder/ai-search",
+    });
+
     const intentRaw = intentResponse.choices[0]?.message?.content ?? "{}";
     let parsed: IntentResult;
     try {
@@ -662,6 +671,15 @@ export async function POST(req: NextRequest) {
       );
 
       clearTimeout(timeout);
+
+      void logOpenAITokenCall({
+        operation: "ai_search_synthesis",
+        model: "gpt-4o-mini",
+        input_tokens: synthesisResponse.usage?.prompt_tokens ?? 0,
+        output_tokens: synthesisResponse.usage?.completion_tokens ?? 0,
+        called_from: "api/campaign-builder/ai-search",
+        metadata: { intent: parsed.intent },
+      });
 
       const content =
         synthesisResponse.choices[0]?.message?.content ?? "{}";

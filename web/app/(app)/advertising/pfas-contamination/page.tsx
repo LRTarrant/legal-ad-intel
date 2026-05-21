@@ -1,6 +1,7 @@
 import { getSupabase } from "@/lib/supabase";
 import { PfasClient, type PfasPageData } from "./pfas-client";
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 
 export const dynamic = "force-dynamic";
 
@@ -356,6 +357,7 @@ export default async function PfasContaminationPage() {
   return (
     <>
       <PfasClient data={pageData} />
+      <NewLandingPagesCard tortSlug="pfas-contamination" tortLabel="PFAS Contamination" />
       <AskAIPanel
         pageContext={{
           pageName: "PFAS Contamination Intelligence",

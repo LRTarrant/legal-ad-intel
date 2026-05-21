@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
       purpose: "voiceover",
       provider: "elevenlabs",
       model: "eleven_multilingual_v2",
+      called_from: "api/campaigns/generate-voiceover",
       usage: { characters_synth: polish.text.length },
       meta: {
         voice_id: body.voiceId,

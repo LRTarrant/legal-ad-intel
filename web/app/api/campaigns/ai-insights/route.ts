@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logOpenAITokenCall } from "@/lib/api-usage";
 
 interface AiInsightsRequest {
   tort_name: string;
@@ -230,6 +231,15 @@ export async function POST(req: NextRequest) {
           { status: 502 },
         );
       }
+
+      void logOpenAITokenCall({
+        operation: "ai_insights",
+        model: "gpt-4o",
+        input_tokens: data.usage?.prompt_tokens ?? 0,
+        output_tokens: data.usage?.completion_tokens ?? 0,
+        called_from: "api/campaigns/ai-insights",
+        metadata: { tort_name: body.tort_name, states: body.states },
+      });
 
       const insights: AiInsightsResponse = JSON.parse(content);
 

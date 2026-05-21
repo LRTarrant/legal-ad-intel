@@ -1,0 +1,46 @@
+{
+  "RecallID": 19089,
+  "RecallNumber": "19-089",
+  "RecallDate": "2019-04-12T00:00:00",
+  "LastPublishDate": "2023-01-09T00:00:00",
+  "Title": "Fisher-Price Recalls Rock 'n Play Sleepers Due to Reports of Deaths",
+  "Description": "Fisher-Price is recalling all models of the Rock 'n Play Sleeper. Infant fatalities have occurred while using this product after the infants rolled from their back to their stomach or side, or under other circumstances. This recall has been re-announced after additional fatalities were reported.",
+  "URL": "https://www.cpsc.gov/Recalls/2019/Fisher-Price-Recalls-Rock-n-Play-Sleepers-Due-to-Reports-of-Deaths",
+  "ConsumerContact": "Fisher-Price toll-free at 866-812-6518 or online at service.mattel.com",
+  "Products": [
+    {
+      "CategoryID": 5044,
+      "Description": "Rock 'n Play Sleeper",
+      "Model": "All models",
+      "Name": "Rock 'n Play Sleeper",
+      "NumberOfUnits": "About 4.7 million",
+      "Type": "Infant Sleep Product"
+    }
+  ],
+  "Manufacturers": [
+    {"CompanyID": "0", "Name": "Fisher-Price Inc."}
+  ],
+  "ManufacturerCountries": [
+    {"Country": "China"}
+  ],
+  "Hazards": [
+    {"HazardTypeID": 1108, "Name": "Suffocation Hazard"}
+  ],
+  "Remedies": [
+    {"Name": "Refund"},
+    {"Name": "Replace"}
+  ],
+  "Injuries": [
+    {"Name": "Fisher-Price is aware of more than 30 reported infant fatalities, including eight additional deaths reported since the original 2019 recall."}
+  ],
+  "Retailers": [
+    {"CompanyID": "0", "Name": "Mass-market retailers nationwide"}
+  ],
+  "Importers": [],
+  "Distributors": [],
+  "Images": [
+    {"URL": "https://www.cpsc.gov/-/media/images/recalls/2019/fisher-price-rock-n-play.jpg"}
+  ],
+  "ProductUPCs": [],
+  "Inconjunctions": []
+}

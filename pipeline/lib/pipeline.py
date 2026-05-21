@@ -26,7 +26,10 @@ Environment variables:
 from __future__ import annotations
 
 import os
+import random
+import re
 import sys
+import time
 import traceback
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -109,6 +112,40 @@ def _get(table: str, params: dict) -> list[dict]:
     return resp.json()
 
 
+# Backoff (seconds) for the initial pipeline_configs read in PipelineRun.__init__.
+# Guards against a sibling job's crash leaving Supabase briefly degraded — without
+# this, the next job dies on its very first read and the whole chain unravels.
+_CONFIG_GET_RETRY_DELAYS: tuple[int, ...] = (5, 15, 30)
+
+
+def _get_with_retry(table: str, params: dict) -> list[dict]:
+    """`_get` with bounded retries for transient 5xx / network errors.
+
+    Only retries server-side / network failures; 4xx propagates immediately.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    last_exc: Exception | None = None
+    for attempt in range(len(_CONFIG_GET_RETRY_DELAYS) + 1):
+        if attempt > 0:
+            delay = _CONFIG_GET_RETRY_DELAYS[attempt - 1]
+            logger.warning(
+                "Retrying GET %s (attempt %d/%d) in ~%ds",
+                table, attempt, len(_CONFIG_GET_RETRY_DELAYS), delay,
+            )
+            _retry_sleep(delay)
+        try:
+            return _get(table, params)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code < 500:
+                raise
+            last_exc = exc
+        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError) as exc:
+            last_exc = exc
+    assert last_exc is not None
+    raise last_exc
+
+
 def _delete(table: str, params: dict) -> None:
     """Delete rows matching filter. In dry-run mode, logs instead."""
     if DRY_RUN:
@@ -119,7 +156,53 @@ def _delete(table: str, params: dict) -> None:
     resp.raise_for_status()
 
 
+# ---------------------------------------------------------------------------
+# Text normalization helpers
+# ---------------------------------------------------------------------------
+
+_MULTI_WS_RE = re.compile(r"\s+")
+
+
+def _canonicalize_name(text: str | None) -> str:
+    """Lowercase, trim, collapse internal whitespace to single spaces.
+
+    Matches the canonical alias_text form enforced by CHECK constraints on
+    public.cpsc_manufacturer_aliases and public.drug_manufacturer_aliases —
+    both require ``alias_text = lower(trim(alias_text))`` and reject any
+    run of 2+ whitespace.
+
+    Pipelines compose this with their own domain-specific normalization
+    (e.g. legal-suffix stripping for CPSC company names) and use the
+    result as the lookup key into the alias table.
+
+    Returns "" for None/empty input.
+    """
+    if not text:
+        return ""
+    return _MULTI_WS_RE.sub(" ", text.strip().lower())
+
+
+# ---------------------------------------------------------------------------
+# Bulk insert
+# ---------------------------------------------------------------------------
+
 BULK_CHUNK_SIZE = 500
+
+# Per-chunk retry delays (seconds) for transient 5xx / network errors.
+# Widened in response to recall-watchlist run 25741922002, where a Cloudflare
+# 502/500 storm in front of Supabase blew through the old (1,4,16) sequence
+# in under 22s and crashed upsert_recalls mid-batch.
+_BULK_CHUNK_RETRY_DELAYS: tuple[int, ...] = (5, 15, 45, 90)
+
+# Per-request httpx timeout (seconds) for bulk POST and per-row fallback
+# inside _bulk_insert. Long enough to ride through Cloudflare slow paths
+# without a client-side timeout cutting an in-flight request short.
+_BULK_REQUEST_TIMEOUT: int = 60
+
+
+def _retry_sleep(delay: int) -> None:
+    """Sleep `delay` seconds plus 0–25% jitter to desynchronize retries."""
+    time.sleep(delay + random.uniform(0, delay * 0.25))
 
 
 def _dedup_rows(rows: list[dict], keys: tuple[str, ...]) -> list[dict]:
@@ -156,8 +239,9 @@ def _bulk_insert(
     on_conflict: str | None = None,
     resolution: str = "ignore-duplicates",
     skip_existing: bool = False,
+    chunk_size: int | None = None,
 ) -> int:
-    """Bulk insert rows in chunks. In dry-run mode, logs summary.
+    """Bulk insert rows in chunks with per-chunk retry on 5xx/network errors.
 
     Args:
         table: Supabase table name.
@@ -179,6 +263,9 @@ def _bulk_insert(
                        tables where the natural-key index can't be
                        referenced via on_conflict (e.g., partial unique
                        indexes) but we still want re-runs to be idempotent.
+        chunk_size: Override the default BULK_CHUNK_SIZE for this call.
+                    Useful when a specific table needs smaller batches to
+                    avoid statement timeouts (e.g., wide JSONB rows).
     Returns:
         Number of rows actually written (excludes skipped duplicates).
     """
@@ -187,6 +274,8 @@ def _bulk_insert(
     if DRY_RUN:
         print(f"  [DRY RUN] Would insert {len(rows)} rows into {table}")
         return len(rows)
+
+    effective_chunk_size = chunk_size if chunk_size is not None else BULK_CHUNK_SIZE
 
     base_url = f"{SUPABASE_URL}/rest/v1/{table}"
     params: list[str] = []
@@ -205,10 +294,48 @@ def _bulk_insert(
     logger = logging.getLogger(__name__)
     total_sent = 0
     skipped_dupes = 0
-    for i in range(0, len(rows), BULK_CHUNK_SIZE):
-        chunk = rows[i : i + BULK_CHUNK_SIZE]
+
+    for i in range(0, len(rows), effective_chunk_size):
+        chunk = rows[i : i + effective_chunk_size]
         logger.info("Inserting chunk %d-%d of %d into %s", i, i + len(chunk), len(rows), table)
-        resp = httpx.post(base_url, headers=headers, json=chunk, timeout=120)
+
+        # Per-chunk retry loop: up to len(_BULK_CHUNK_RETRY_DELAYS) retries on
+        # 5xx server errors and transient network failures.  4xx client errors
+        # are not retried — they indicate data problems, not transient issues.
+        resp = None
+        for attempt in range(len(_BULK_CHUNK_RETRY_DELAYS) + 1):
+            if attempt > 0:
+                delay = _BULK_CHUNK_RETRY_DELAYS[attempt - 1]
+                logger.warning(
+                    "Chunk %d-%d: retry %d/%d in ~%ds",
+                    i, i + len(chunk), attempt, len(_BULK_CHUNK_RETRY_DELAYS), delay,
+                )
+                _retry_sleep(delay)
+            try:
+                resp = httpx.post(base_url, headers=headers, json=chunk, timeout=_BULK_REQUEST_TIMEOUT)
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError) as exc:
+                if attempt < len(_BULK_CHUNK_RETRY_DELAYS):
+                    logger.warning(
+                        "Chunk %d-%d network error (%s), will retry",
+                        i, i + len(chunk), type(exc).__name__,
+                    )
+                    continue
+                raise
+            # 4xx: don't retry (includes 409 handled below and real client errors)
+            if resp.status_code < 500:
+                break
+            # 5xx: retry if attempts remain, otherwise fall through to raise
+            if attempt < len(_BULK_CHUNK_RETRY_DELAYS):
+                logger.warning(
+                    "Chunk %d-%d server error %d, will retry",
+                    i, i + len(chunk), resp.status_code,
+                )
+                continue
+            break  # all retries exhausted; raise_for_status below
+
+        if resp is None:
+            raise RuntimeError(f"_bulk_insert: no response after retry loop for {table}")
+
         if resp.status_code == 409 and skip_existing:
             # Chunk had at least one row that violates a unique constraint.
             # Fall back to per-row inserts so the non-duplicate rows land.
@@ -217,7 +344,7 @@ def _bulk_insert(
                 "per-row insert for %s (chunk size=%d)", table, len(chunk),
             )
             for row in chunk:
-                row_resp = httpx.post(base_url, headers=headers, json=[row], timeout=60)
+                row_resp = httpx.post(base_url, headers=headers, json=[row], timeout=_BULK_REQUEST_TIMEOUT)
                 if row_resp.status_code == 409:
                     skipped_dupes += 1
                     continue
@@ -229,6 +356,7 @@ def _bulk_insert(
                     row_resp.raise_for_status()
                 total_sent += 1
             continue
+
         if resp.status_code >= 400:
             logger.error(
                 "Bulk insert error %d for %s: %s",
@@ -236,6 +364,7 @@ def _bulk_insert(
             )
         resp.raise_for_status()
         total_sent += len(chunk)
+
     if skipped_dupes:
         logger.info("Skipped %d duplicate rows on %s", skipped_dupes, table)
     return total_sent
@@ -336,8 +465,10 @@ class PipelineRun:
         if DRY_RUN:
             self._metadata["dry_run"] = True
 
-        # Pull source_domain from pipeline_configs
-        configs = _get("pipeline_configs", {
+        # Pull source_domain from pipeline_configs. Wrap in retry so a transient
+        # Supabase blip — e.g. a sibling job crashing and briefly degrading the
+        # PostgREST instance — doesn't kill this job before it even starts.
+        configs = _get_with_retry("pipeline_configs", {
             "pipeline_name": f"eq.{pipeline_name}",
             "select": "source_domain,step_definitions",
         })
@@ -386,6 +517,16 @@ class PipelineRun:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Failure surfacing rule: any step failure (raised exception OR a
+        # step that called .finish('failed') manually) must propagate as a
+        # non-zero shell exit so CI turns red. The previous version returned
+        # True here, swallowing the exception, and the no-exception
+        # partial_success path returned False without signalling — both
+        # caused green CI on failed runs ("silent green" observability bug).
+        # We preserve the friendly logging + DB update, then raise
+        # SystemExit(1) so the script exits non-zero without printing a
+        # noisy Python traceback (Python's interpreter handles SystemExit
+        # specially — no traceback when the value is an int).
         if exc_type:
             error_msg = f"{exc_type.__name__}: {exc_val}"
             tb = "".join(traceback.format_exception(exc_type, exc_val, exc_tb))
@@ -396,7 +537,7 @@ class PipelineRun:
             self._finish_run("failed", error=error_msg)
             self._metadata["traceback"] = tb[:4000]
             print(f"\n✗ Pipeline FAILED: {error_msg}")
-            return True  # suppress exception so script exits cleanly
+            raise SystemExit(1)
 
         # Determine final status from step outcomes
         statuses = [s._status for s in self._steps]
@@ -412,6 +553,11 @@ class PipelineRun:
         print(f"\n{symbol} Pipeline finished: {final}")
         print(f"  Ingested={self.total_ingested}  Normalized={self.total_normalized}  "
               f"Scored={self.total_scored}  Rejected={self.total_rejected}")
+        if final != "success":
+            # partial_success: at least one step manually marked itself
+            # failed without raising. Treat as a failure for CI purposes —
+            # see the failure-surfacing rule comment above.
+            raise SystemExit(1)
         return False
 
     def _finish_run(self, status: str, error: Optional[str] = None):

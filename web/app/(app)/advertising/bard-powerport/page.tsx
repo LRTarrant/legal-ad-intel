@@ -4,6 +4,7 @@ import type { BardPowerPortPageData } from "./bard-powerport-client";
 
 const BardPowerPortClient = nextDynamic(() => import("./bard-powerport-client").then((m) => m.BardPowerPortClient));
 import { AskAIPanel } from "../../components/ask-ai-panel";
+import { NewLandingPagesCard } from "../../components/new-landing-pages-card";
 import {
   getSegmentSummary,
   getTopAdvertisersBySegment,
@@ -323,6 +324,7 @@ export default async function BardPowerPortPage() {
   return (
     <>
       <BardPowerPortClient data={pageData} />
+      <NewLandingPagesCard tortSlug="bard-powerport" tortLabel="Bard PowerPort" />
       <AskAIPanel
         tortContext={{
           tortName: "Bard PowerPort Catheter (MDL 3081)",

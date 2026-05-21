@@ -17,11 +17,30 @@ import {
   Search,
   Target,
   Layers,
+  ShieldAlert,
 } from "lucide-react";
+import {
+  SeverityBadge,
+  SourceBadge,
+} from "@/components/recall-watchlist/badges";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
 /* ------------------------------------------------------------------ */
+
+export interface CpscRecallDetail {
+  id: string;
+  recall_number: string | null;
+  recall_date: string | null;
+  title: string;
+  severity_tier: string | null;
+  units_recalled_text: string | null;
+  cpsc_url: string | null;
+  /** "manufacturer" | "importer" | "distributor" | "retailer" — CPSC role
+   *  for this manufacturer on this recall. Surfaces edge cases where the
+   *  firm is e.g. an importer rather than the maker. */
+  role: string;
+}
 
 export interface ManufacturerDetailData {
   mfr: {
@@ -47,6 +66,7 @@ export interface ManufacturerDetailData {
     mdl_formed: boolean;
     first_case_filed_at: string | null;
     last_case_filed_at: string | null;
+    cpsc_recall_count: number;
   };
   linked_torts: {
     tort_id: string;
@@ -98,6 +118,7 @@ export interface ManufacturerDetailData {
     transitioned_at: string | null;
     case_count_at_transition: number;
   }[];
+  cpsc_recalls: CpscRecallDetail[];
   generated_at: string;
 }
 
@@ -144,7 +165,7 @@ function formatMoney(n: number): string {
 /* ------------------------------------------------------------------ */
 
 export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailData }) {
-  const { mfr, kpis, linked_torts, recalls, cases, stage_history } = data;
+  const { mfr, kpis, linked_torts, recalls, cases, stage_history, cpsc_recalls } = data;
   const stageStyle = STAGE_COLORS[kpis.max_stage] ?? STAGE_COLORS[1];
 
   const primaryTorts = linked_torts.filter((t) => t.confidence === "high" || t.confidence === "medium");
@@ -217,7 +238,16 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-        <KpiCard icon={<AlertTriangle className="h-5 w-5" />} label="Recalls" value={kpis.total_recalls} sublabel={`${kpis.class_i_recalls} Class I`} />
+        <KpiCard
+          icon={<AlertTriangle className="h-5 w-5" />}
+          label="Recalls"
+          value={kpis.total_recalls}
+          sublabel={
+            kpis.cpsc_recall_count > 0
+              ? `${kpis.class_i_recalls} Class I · ${kpis.cpsc_recall_count} CPSC`
+              : `${kpis.class_i_recalls} Class I`
+          }
+        />
         <KpiCard icon={<Scale className="h-5 w-5" />} label="Cases filed" value={kpis.total_cases} />
         <KpiCard icon={<MapPin className="h-5 w-5" />} label="States" value={kpis.state_count} />
         <KpiCard icon={<Users className="h-5 w-5" />} label="Plaintiff firms" value={kpis.specialty_firm_count} />
@@ -374,13 +404,13 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
         </section>
       )}
 
-      {/* Recalls List */}
+      {/* FDA Recall Events */}
       {recalls.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-intelligence-teal" />
             <h2 className="font-heading text-xl font-semibold text-midnight-navy">
-              Recall Events ({recalls.length})
+              FDA Recall Events ({recalls.length})
             </h2>
           </div>
           <div className="space-y-3">
@@ -394,17 +424,11 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        {r.recall_class && (
-                          <span
-                            className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                              r.recall_class === "Class I"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {r.recall_class}
-                          </span>
-                        )}
+                        <SourceBadge source="fda" />
+                        <SeverityBadge
+                          source="fda"
+                          recall_class={r.recall_class}
+                        />
                         <span className={`rounded px-2 py-0.5 text-xs font-semibold ${rStyle.bg} ${rStyle.text}`}>
                           {rStyle.label}
                         </span>
@@ -446,6 +470,84 @@ export function ManufacturerDetailClient({ data }: { data: ManufacturerDetailDat
             })}
             {recalls.length > 15 && (
               <p className="text-xs text-slate-gray">Showing 15 of {recalls.length} recall events.</p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* CPSC Recalls (consumer products) */}
+      {cpsc_recalls.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-intelligence-teal" />
+            <h2 className="font-heading text-xl font-semibold text-midnight-navy">
+              CPSC Recalls ({cpsc_recalls.length})
+            </h2>
+          </div>
+          <p className="text-xs text-slate-gray">
+            Consumer Product Safety Commission recalls where {mfr.canonical_name} appears as manufacturer, importer, distributor, or retailer. Severity tier is a computed proxy (hazard taxonomy + units) — not the FDA Class I/II/III statutory scale.
+          </p>
+          <div className="space-y-3">
+            {cpsc_recalls.slice(0, 15).map((c) => (
+              <div
+                key={c.id}
+                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SourceBadge source="cpsc" />
+                      <SeverityBadge
+                        source="cpsc"
+                        severity_tier={c.severity_tier}
+                      />
+                      {c.role !== "manufacturer" && (
+                        <span
+                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600"
+                          title="CPSC role for this manufacturer on this recall — surfaces importer/distributor/retailer relationships."
+                        >
+                          {c.role}
+                        </span>
+                      )}
+                      {c.recall_number && (
+                        <span className="text-xs text-slate-gray tabular-nums">
+                          #{c.recall_number}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-gray">
+                        {formatDate(c.recall_date)}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-midnight-navy">
+                      {c.title || "Unnamed recall"}
+                    </h3>
+                    {c.cpsc_url && (
+                      <a
+                        href={c.cpsc_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-intelligence-teal hover:underline"
+                      >
+                        View on CPSC.gov
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 text-xs tabular-nums min-w-[180px]">
+                    <div className="text-center">
+                      <div className="text-slate-gray">Units recalled</div>
+                      <div className="font-semibold text-midnight-navy">
+                        {c.units_recalled_text ?? "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {cpsc_recalls.length > 15 && (
+              <p className="text-xs text-slate-gray">
+                Showing 15 of {cpsc_recalls.length} CPSC recalls.
+              </p>
             )}
           </div>
         </section>

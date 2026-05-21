@@ -1,0 +1,66 @@
+name: CPSC Recalls Weekly
+
+# Phase 1 of the CPSC -> FAERS -> MAUDE data-source arc.
+# Independent workflow (NOT folded into recall-watchlist-weekly.yml) per
+# docs/data-sources/cpsc.md §8 — different upstream, different failure
+# modes, shouldn't block FDA recall ingest.
+
+on:
+  schedule:
+    # Mondays at 13:00 UTC — one hour after recall-watchlist-weekly (12:00 UTC).
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no DB writes)'
+        required: false
+        default: 'true'
+        type: boolean
+      backfill_since:
+        description: 'Optional: ISO date (YYYY-MM-DD) for RecallDateStart. Leave blank for the default 60-day rolling LastPublishDate window.'
+        required: false
+        default: ''
+        type: string
+      year:
+        description: 'Optional: single calendar year backfill by RecallDate (e.g. 2019 for Rock n Play). Overrides backfill_since.'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  cpsc-recalls:
+    name: CPSC SaferProducts.gov recall ingest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run cpsc_recalls
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          # CPSC_RECALLS_BASE: <override-if-CPSC-migrates-to-HHS>
+          PIPELINE_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ -n "${{ inputs.year }}" ]; then
+            ARGS="$ARGS --year ${{ inputs.year }}"
+          elif [ -n "${{ inputs.backfill_since }}" ]; then
+            ARGS="$ARGS --backfill-since ${{ inputs.backfill_since }}"
+          fi
+          python -m pipelines.cpsc_recalls $ARGS

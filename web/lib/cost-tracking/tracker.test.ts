@@ -65,6 +65,7 @@ test("trackCall computes cost and writes a generation_costs row", async () => {
     purpose: "pi_script",
     provider: "openai",
     model: "gpt-4o-mini",
+    called_from: "test",
     usage: { input_tokens: 10_000, output_tokens: 1_000 },
   });
   expect(result.ok).toBe(true);
@@ -89,6 +90,7 @@ test("trackCall stores nulls (not undefined) for absent usage fields", async () 
     purpose: "pi_script",
     provider: "openai",
     model: "gpt-4o-mini",
+    called_from: "test",
     usage: { input_tokens: 100, output_tokens: 50 },
   });
   // Non-LLM fields should be null
@@ -108,6 +110,7 @@ test("trackCall stores TTS attribution correctly", async () => {
     purpose: "voiceover",
     provider: "elevenlabs",
     model: "eleven_turbo_v2",
+    called_from: "test",
     usage: { characters_synth: 1000 },
   });
   expect(result.ok).toBe(true);
@@ -123,6 +126,7 @@ test("trackCall preserves meta object", async () => {
     purpose: "mt_radio_script",
     provider: "openai",
     model: "gpt-4o",
+    called_from: "test",
     usage: { input_tokens: 100, output_tokens: 50 },
     meta: { tort_name: "AFFF", duration: "30s" },
   });
@@ -141,6 +145,7 @@ test("trackCall returns ok:false on DB error but doesn't throw", async () => {
     purpose: "pi_script",
     provider: "openai",
     model: "gpt-4o-mini",
+    called_from: "test",
     usage: { input_tokens: 100, output_tokens: 50 },
   });
   expect(result.ok).toBe(false);
@@ -156,6 +161,7 @@ test("trackCall catches insert-throws and returns ok:false", async () => {
     purpose: "pi_script",
     provider: "openai",
     model: "gpt-4o-mini",
+    called_from: "test",
     usage: { input_tokens: 100, output_tokens: 50 },
   });
   expect(result.ok).toBe(false);
@@ -171,6 +177,7 @@ test("trackCall records unknown models with cost_cents=0", async () => {
     purpose: "other",
     provider: "newprovider",
     model: "unrecognized",
+    called_from: "test",
     usage: { input_tokens: 100, output_tokens: 50 },
   });
   // The insert succeeded; cost is just zero so we can find it later
@@ -191,6 +198,7 @@ test("trackedCall returns the fn result + tracked metadata", async () => {
       purpose: "pi_script",
       provider: "openai",
       model: "gpt-4o-mini",
+      called_from: "test",
     },
     async () => ({
       result: "the script",
@@ -215,6 +223,7 @@ test("trackedCall does NOT track when fn throws", async () => {
         purpose: "pi_script",
         provider: "openai",
         model: "gpt-4o-mini",
+        called_from: "test",
       },
       async () => {
         throw new Error("upstream failure");
