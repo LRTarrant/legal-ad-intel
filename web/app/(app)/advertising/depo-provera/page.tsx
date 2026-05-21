@@ -29,9 +29,11 @@ import {
   getSerpVisibilityWindowed,
   getSerpTopResults,
   getSampleAds,
+  getFaersDepoProveraSignals,
   extractDomain,
 } from "@/lib/queries";
 import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
+import { LiveFaersSignals } from "@/components/tort-intelligence/live-faers-signals";
 
 export const dynamic = "force-dynamic";
 
@@ -351,6 +353,10 @@ export default async function DepoProveraPage() {
       getSampleAds(TORT_SLUG, 12),
     ]);
 
+  // Live FAERS signals. getFaersDepoProveraSignals never throws (returns an
+  // empty structure on failure), so a bare await keeps the page resilient.
+  const faersSignals = await getFaersDepoProveraSignals();
+
   // Build platform lookup by advertiser
   const platformMap = new Map<string, string[]>();
   for (const p of platforms) {
@@ -637,6 +643,14 @@ export default async function DepoProveraPage() {
           </p>
         </div>
       </div>
+
+      {/* ── 5b. Live FAERS Signals (LIVE DATA) ──────────────────────────── */}
+      <LiveFaersSignals
+        data={faersSignals}
+        injuryLabel="meningioma"
+        concentrationMode="lawyer"
+        methodologyNote="Lawyer-filed share is FAERS reports with an attorney primary-source qualification divided by all qualifying meningioma reports for the drug. The full-dataset lawyer-filed baseline is 0.73%; Depo-Provera's share far above it reflects direct plaintiff-firm reporting tied to MDL 3140 — a litigation-activity indicator, not a clinical finding. Reports are matched on the exact FAERS medicinal-product name 'DEPO-PROVERA'; generic medroxyprogesterone-acetate strings (which add under 3% of volume because litigation reports co-name the brand) and oral Provera are excluded."
+      />
 
       {/* ── 6. Qualification Criteria ───────────────────────────────────── */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
