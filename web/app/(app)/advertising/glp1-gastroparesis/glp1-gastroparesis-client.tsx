@@ -36,6 +36,8 @@ import type { BenchmarkScorecardData } from "../../components/cost-benchmark-sco
 import {
   extractDomain,
 } from "@/lib/queries";
+import type { FaersGlp1Signals } from "@/lib/queries/faers-glp1";
+import { LiveFaersSignals } from "@/components/tort-intelligence/live-faers-signals";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -132,6 +134,7 @@ export interface GLP1GastroparesisPageData {
   serpVisibility: SerpVisRow[];
   serpResults: SerpResultRow[];
   sampleAds: SampleAdRow[];
+  faersSignals: FaersGlp1Signals;
 }
 
 /* ------------------------------------------------------------------ */
@@ -872,6 +875,13 @@ export function GLP1GastroparesisClient({ data }: { data: GLP1GastroparesisPageD
           </table>
         </div>
       </div>
+
+      {/* -- 7b. Live FAERS Signals (LIVE DATA) ---------------------------- */}
+      <LiveFaersSignals
+        data={data.faersSignals}
+        injuryLabel="gastroparesis-spectrum"
+        methodologyNote="Consumer share is FAERS reports with a consumer primary-source qualification divided by all qualifying reports for the drug. Mass-tort claimant intake routed through manufacturers stays tagged as consumer-sourced, so a share above the 36.6% dataset baseline is a preliminary litigation-activity indicator — not a clinical finding. Drugs are matched on exact FAERS medicinal-product names; minor dose-variant spellings (<1% of volume) are excluded."
+      />
 
       {/* -- 8. FAERS Adverse Event Profile -------------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm">

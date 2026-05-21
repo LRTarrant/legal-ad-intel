@@ -38,6 +38,8 @@ import {
 import { CostBenchmarkScorecard } from "../../components/cost-benchmark-scorecard";
 import type { BenchmarkScorecardData } from "../../components/cost-benchmark-scorecard";
 import { extractDomain } from "@/lib/queries";
+import type { FaersGlp1Signals } from "@/lib/queries/faers-glp1";
+import { LiveFaersSignals } from "@/components/tort-intelligence/live-faers-signals";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -134,6 +136,7 @@ export interface GLP1VisionLossPageData {
   serpVisibility: SerpVisRow[];
   serpResults: SerpResultRow[];
   sampleAds: SampleAdRow[];
+  faersSignals: FaersGlp1Signals;
 }
 
 /* ------------------------------------------------------------------ */
@@ -884,6 +887,13 @@ export function GLP1VisionLossClient({ data }: { data: GLP1VisionLossPageData })
           </table>
         </div>
       </div>
+
+      {/* -- 7b. Live FAERS Signals (LIVE DATA) ------------------------ */}
+      <LiveFaersSignals
+        data={data.faersSignals}
+        injuryLabel="NAION & vision-loss"
+        methodologyNote="Consumer share is FAERS reports with a consumer primary-source qualification divided by all qualifying reports for the drug. Mass-tort claimant intake routed through manufacturers stays tagged as consumer-sourced, so a share above the 36.6% dataset baseline is a preliminary litigation-activity indicator — not a clinical finding. Drugs are matched on exact FAERS medicinal-product names; minor dose-variant spellings (<1% of volume) are excluded."
+      />
 
       {/* -- 8. NAION Risk Profile (UNIQUE) ---------------------------- */}
       <div className="rounded-lg bg-white p-6 shadow-sm border border-red-100">
