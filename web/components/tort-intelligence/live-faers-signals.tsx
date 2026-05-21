@@ -1,17 +1,22 @@
 "use client";
 
 /**
- * Live FAERS Signals block for the GLP-1 tort pages.
+ * Live FAERS Signals block for the tort pages.
  *
  * Renders three signals computed live from the ingested FAERS dataset:
  *   1. Drug-by-drug breakdown (events, top reactions, % serious outcomes)
- *   2. Consumer-report concentration vs. the dataset baseline (lawyer-flood proxy)
+ *   2. Reporting-source concentration vs. the dataset baseline
  *   3. Monthly trend per drug
  *
- * Presentational only - data is fetched server-side via getFaersGlp1Signals()
+ * Presentational only - data is fetched server-side via getFaersSignals()
  * and passed in. Deliberately styled distinct from the static, paper-sourced
- * "FAERS Adverse Event Profile" / "NAION Risk Profile" cards below it: a teal
- * ring + tinted header + green "LIVE DATA" pill mark this as live data.
+ * adverse-event cards on the page: a teal ring + tinted header + green
+ * "LIVE DATA" pill mark this as live data.
+ *
+ * Signal 2 has two modes (see ConcentrationMode in faers-shared.ts):
+ * "consumer" for pre-MDL torts (consumer-report share is a lawyer-flood
+ * proxy) and "lawyer" for mature MDLs (plaintiff firms file reports
+ * directly). The page picks the mode for its tort.
  */
 
 import {
@@ -23,10 +28,11 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip } from "recharts";
 import type {
+  ConcentrationMode,
   FaersDrugSignal,
-  FaersGlp1Signals,
+  FaersSignals,
   FaersTrendDirection,
-} from "@/lib/queries/faers-glp1";
+} from "@/lib/queries/faers-shared";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -55,6 +61,29 @@ const DIRECTION_META: Record<
   declining: { label: "Declining", Icon: TrendingDown, cls: "text-slate-gray" },
   stable: { label: "Stable", Icon: Minus, cls: "text-slate-gray" },
   insufficient: { label: "Limited data", Icon: Minus, cls: "text-slate-gray" },
+};
+
+/** Per-mode copy for Signal 2. */
+const MODE_META: Record<
+  ConcentrationMode,
+  { heading: string; rowLabel: string; blurb: (baseline: number) => string }
+> = {
+  consumer: {
+    heading: "Consumer-report concentration",
+    rowLabel: "consumer-reported",
+    blurb: (b) =>
+      `Share of each drug’s reports filed by consumers vs. the full-dataset ` +
+      `baseline of ${b}% (vertical marker). Higher than baseline is consistent ` +
+      `with active claimant intake. Preliminary signal.`,
+  },
+  lawyer: {
+    heading: "Lawyer-filed report concentration",
+    rowLabel: "lawyer-filed",
+    blurb: (b) =>
+      `Share of each drug’s reports filed by attorneys vs. the full-dataset ` +
+      `baseline of ${b}% (vertical marker). A share far above baseline reflects ` +
+      `direct plaintiff-firm reporting tied to active litigation. Preliminary signal.`,
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -143,20 +172,23 @@ function DrugBreakdownCard({ drug }: { drug: FaersDrugSignal }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Consumer-concentration row (Signal 2)                               */
+/*  Concentration row (Signal 2)                                        */
 /* ------------------------------------------------------------------ */
 
-function ConsumerRow({
+function ConcentrationRow({
   drug,
   baseline,
+  mode,
 }: {
   drug: FaersDrugSignal;
   baseline: number;
+  mode: ConcentrationMode;
 }) {
   if (drug.totalEvents === 0) return null;
-  const fill = Math.min(drug.consumerPct, 100);
+  const value = mode === "lawyer" ? drug.lawyerPct : drug.consumerPct;
+  const fill = Math.min(value, 100);
   const baselineLeft = Math.min(baseline, 100);
-  const aboveBaseline = drug.consumerPct > baseline;
+  const aboveBaseline = value > baseline;
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2 text-xs">
@@ -169,9 +201,9 @@ function ConsumerRow({
                 : "font-semibold text-midnight-navy"
             }
           >
-            {drug.consumerPct}%
+            {value}%
           </span>{" "}
-          consumer-reported
+          {MODE_META[mode].rowLabel}
         </span>
       </div>
       <div className="relative mt-1 h-3 rounded-full bg-cloud">
@@ -238,19 +270,31 @@ function TrendCard({ drug }: { drug: FaersDrugSignal }) {
 /* ------------------------------------------------------------------ */
 
 export interface LiveFaersSignalsProps {
-  data: FaersGlp1Signals;
-  /** Short injury phrase, e.g. "gastroparesis-spectrum" or "NAION & vision-loss". */
+  data: FaersSignals;
+  /** Short injury phrase, e.g. "gastroparesis-spectrum" or "meningioma". */
   injuryLabel: string;
-  /** One-line methodology footer shown under the consumer-concentration signal. */
+  /** One-line methodology footer shown under the concentration signal. */
   methodologyNote: string;
+  /**
+   * Which reporting-source share Signal 2 surfaces. "consumer" (default) for
+   * pre-MDL torts, "lawyer" for mature MDLs. See ConcentrationMode.
+   */
+  concentrationMode?: ConcentrationMode;
 }
 
 export function LiveFaersSignals({
   data,
   injuryLabel,
   methodologyNote,
+  concentrationMode = "consumer",
 }: LiveFaersSignalsProps) {
   const activeDrugs = data.drugs.filter((d) => d.totalEvents > 0);
+  // Single-brand torts (e.g. Depo-Provera) get a non-grid layout so the lone
+  // card / chart is not stranded in a multi-column grid.
+  const cardGridCls =
+    data.drugs.length === 1
+      ? "mt-3 grid grid-cols-1 gap-3"
+      : "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-intelligence-teal/30">
@@ -294,30 +338,28 @@ export function LiveFaersSignals({
               Qualifying {injuryLabel} adverse-event reports per drug, with top
               reactions and serious-outcome rates.
             </p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={cardGridCls}>
               {data.drugs.map((drug) => (
                 <DrugBreakdownCard key={drug.brand} drug={drug} />
               ))}
             </div>
           </section>
 
-          {/* -- Signal 2: consumer-report concentration ------------------- */}
+          {/* -- Signal 2: reporting-source concentration ------------------ */}
           <section>
             <h3 className="text-sm font-semibold text-midnight-navy">
-              Consumer-report concentration
+              {MODE_META[concentrationMode].heading}
             </h3>
             <p className="mt-0.5 text-xs text-slate-gray">
-              Share of each drug&rsquo;s reports filed by consumers vs. the
-              full-dataset baseline of {data.consumerBaselinePct}% (vertical
-              marker). Higher than baseline is consistent with active claimant
-              intake. Preliminary signal.
+              {MODE_META[concentrationMode].blurb(data.baselinePct)}
             </p>
             <div className="mt-3 space-y-3">
               {activeDrugs.map((drug) => (
-                <ConsumerRow
+                <ConcentrationRow
                   key={drug.brand}
                   drug={drug}
-                  baseline={data.consumerBaselinePct}
+                  baseline={data.baselinePct}
+                  mode={concentrationMode}
                 />
               ))}
             </div>
@@ -343,7 +385,7 @@ export function LiveFaersSignals({
                 : ""}
               . Hover a bar for the monthly figure.
             </p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={cardGridCls}>
               {data.drugs.map((drug) => (
                 <TrendCard key={drug.brand} drug={drug} />
               ))}
