@@ -51,6 +51,7 @@ export * from "./tort-benchmarks";
 export * from "./sample-ads";
 export * from "./faers-glp1";
 export * from "./faers-depo-provera";
+export * from "./faers-dupixent";
 
 export {
   getMdlFirmSummary,

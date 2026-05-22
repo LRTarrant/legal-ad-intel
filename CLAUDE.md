@@ -6,6 +6,20 @@ Your job: be a **careful, high-quality coder and primary orchestrator**. Follow 
 
 ---
 
+## 0. Session start
+
+At the start of any session working in this repo, read these three files in order:
+
+1. `CLAUDE.md` (this file) — orchestration rules, repo map, env vars, GH Actions inventory.
+2. `memory.md` — recent PRs, dataset lessons, key decisions, open questions. Updated as work ships.
+3. `CURRENT_PRIORITIES.md` — what's actively in play this week.
+
+Acknowledge briefly (one line, e.g. "Loaded CLAUDE.md, memory.md, CURRENT_PRIORITIES — caught up on [X]") and then address the request.
+
+**Maintain `memory.md`** when a PR ships that changes architecture/schema/pipelines, a dataset shape lesson is learned, a decision affects future work, or a blocker is identified. See the file's own header for entry rules.
+
+---
+
 ## 1. Project overview
 
 - LMI is a legal advertising intelligence SaaS for U.S. plaintiff firms and their agencies.
@@ -166,7 +180,7 @@ Each surface lists: frontend · API · pipeline · workflow + schedule · Supaba
 - **Env vars:** `COURTLISTENER_API_TOKEN`, shared Supabase vars.
 
 ### 6.5 Mass-tort / PI surfaces (per-tort pages)
-- **Frontend:** `web/app/(app)/advertising/{afff-firefighting-foam, ai-suicide, bair-hugger, bard-powerport, depo-provera, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, olympus-scopes, paraquat, pfas-contamination, roblox-abuse, roundup, social-media-addiction, talcum-powder}/`, plus `pi-viability/`, `judicial-profiles/`, `cancer-incidence/`, `construction/`.
+- **Frontend:** `web/app/(app)/advertising/{afff-firefighting-foam, ai-suicide, bair-hugger, bard-powerport, depo-provera, dupixent, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, olympus-scopes, paraquat, pfas-contamination, roblox-abuse, roundup, social-media-addiction, talcum-powder}/`, plus `pi-viability/`, `judicial-profiles/`, `cancer-incidence/`, `construction/`.
 - **API:** per-tort pages use Supabase server queries; some pull from `web/lib/data/` static fixtures during scaffolding.
 - **Pipelines:** `ingest_google_news_legal.py` (general + tort_backfill buckets), `ingest_rss_developments.py`, `load_cancer_incidence.py`, plus PI viability seeds.
 - **Workflows:** `ingest-google-news.yml` (11:30 UTC daily; tort_backfill Mondays 05:00 UTC), `ingest-rss.yml` (12:00 UTC daily).

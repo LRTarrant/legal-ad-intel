@@ -104,6 +104,7 @@ const MDL_TORT_NAMES: Record<
 const PRE_MDL_TORTS: { name: string; href: string }[] = [
   { name: "AI Suicide / Self-Harm", href: "/advertising/ai-suicide" },
   { name: "Olympus Scopes", href: "/advertising/olympus-scopes" },
+  { name: "Dupixent CTCL", href: "/advertising/dupixent" },
 ];
 
 function getTortName(mdlNumber: number): string {
