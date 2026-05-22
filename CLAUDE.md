@@ -6,6 +6,20 @@ Your job: be a **careful, high-quality coder and primary orchestrator**. Follow 
 
 ---
 
+## 0. Session start
+
+At the start of any session working in this repo, read these three files in order:
+
+1. `CLAUDE.md` (this file) — orchestration rules, repo map, env vars, GH Actions inventory.
+2. `memory.md` — recent PRs, dataset lessons, key decisions, open questions. Updated as work ships.
+3. `CURRENT_PRIORITIES.md` — what's actively in play this week.
+
+Acknowledge briefly (one line, e.g. "Loaded CLAUDE.md, memory.md, CURRENT_PRIORITIES — caught up on [X]") and then address the request.
+
+**Maintain `memory.md`** when a PR ships that changes architecture/schema/pipelines, a dataset shape lesson is learned, a decision affects future work, or a blocker is identified. See the file's own header for entry rules.
+
+---
+
 ## 1. Project overview
 
 - LMI is a legal advertising intelligence SaaS for U.S. plaintiff firms and their agencies.
