@@ -180,7 +180,7 @@ Each surface lists: frontend · API · pipeline · workflow + schedule · Supaba
 - **Env vars:** `COURTLISTENER_API_TOKEN`, shared Supabase vars.
 
 ### 6.5 Mass-tort / PI surfaces (per-tort pages)
-- **Frontend:** `web/app/(app)/advertising/{afff-firefighting-foam, ai-suicide, bair-hugger, bard-powerport, depo-provera, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, olympus-scopes, paraquat, pfas-contamination, roblox-abuse, roundup, social-media-addiction, talcum-powder}/`, plus `pi-viability/`, `judicial-profiles/`, `cancer-incidence/`, `construction/`.
+- **Frontend:** `web/app/(app)/advertising/{afff-firefighting-foam, ai-suicide, bair-hugger, bard-powerport, depo-provera, dupixent, glp1-gastroparesis, glp1-vision-loss, hair-relaxer, olympus-scopes, paraquat, pfas-contamination, roblox-abuse, roundup, social-media-addiction, talcum-powder}/`, plus `pi-viability/`, `judicial-profiles/`, `cancer-incidence/`, `construction/`.
 - **API:** per-tort pages use Supabase server queries; some pull from `web/lib/data/` static fixtures during scaffolding.
 - **Pipelines:** `ingest_google_news_legal.py` (general + tort_backfill buckets), `ingest_rss_developments.py`, `load_cancer_incidence.py`, plus PI viability seeds.
 - **Workflows:** `ingest-google-news.yml` (11:30 UTC daily; tort_backfill Mondays 05:00 UTC), `ingest-rss.yml` (12:00 UTC daily).

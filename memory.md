@@ -22,19 +22,23 @@ Long-term memory across sessions for the LMI / legal-ad-intel repo. Keeps in-fli
 
 ## Repo state
 
-- 2026-05-20 — Repo path on Lance's machine: `/Users/lancetarrant/legal-ad-intel`. Mounted as a Cowork folder so scheduled tasks/skills can read it. Active branch as of 2026-05-20: `feat/proposal-builder` with uncommitted work — new heatmap-panel + heatmap + county-centroids.json (PI States), new `scripts/load_census_demographics.py` (Data & automation), modified `recall-watchlist-client.tsx`, stray `recall-failure.log`. `CURRENT_PRIORITIES.md` last updated 2026-05-08.
+- 2026-05-22 — Repo path on Lance's machine: `/Users/lancetarrant/legal-ad-intel`. Mounted as a Cowork folder so scheduled tasks/skills can read it. Active branch: `feat/depo-provera-faers-signals` — FAERS live-signal surface work (see PR-5 entry below). `CURRENT_PRIORITIES.md` last updated 2026-05-08.
 
 ---
 
 ## Recent PRs / shipped work
 
 - 2026-05-21 — **PR #395 — Live FAERS Signal Block** on both GLP-1 tort pages (gastroparesis and vision-loss/NAION), rendered above the existing static paper-sourced FAERS sections with green LIVE-DATA badge + "Data current through March 2026" badge. Three signals per page: drug-by-drug breakdown (5 GLP-1 brands × MedDRA reaction filters with top-5 reactions, % death, % hospitalization), consumer-report concentration vs the 36.6% dataset baseline (lawyer-flood proxy), and reporting trend via recharts sparkline per brand. Architecture: 2 read-only RPC functions (`faers_glp1_drug_breakdown`, `faers_glp1_monthly_trend`) because PostgREST can't GROUP BY across joined 8M-row tables. Exact-match drug arrays against the `medicinalproduct` btree index (substring ILIKE over 8.16M rows times out at the 8s Postgres limit). 7-day `unstable_cache` revalidate matching the weekly cron. 18-test suite passing, repo-wide TS errors dropped 1939→1837 from regenerating `database.types.ts`. Architecture validated on live data: Ozempic gastroparesis spot check matched Phase 0 prediction exactly (3,284 events / 1.8% death / 63.8% hospitalized / 74.2% consumer share vs 36.6% baseline).
-- 2026-05-21 — **FAERS arc closed across PRs #382–#387 + #395.** Pipeline shipped (6 bugs, 6 PRs); backfill completed (1,583,293 events spanning Jan 2024 – March 2026, 8.16M drug rows, 5.57M reaction rows); first user-visible surface live on both GLP-1 pages. Next: PR-5 — Dupixent pre-MDL evaluation page using the same `live-faers-signals` component template.
+- 2026-05-21 — **FAERS arc closed across PRs #382–#387 + #395.** Pipeline shipped (6 bugs, 6 PRs); backfill completed (1,583,293 events spanning Jan 2024 – March 2026, 8.16M drug rows, 5.57M reaction rows); first user-visible surface live on both GLP-1 pages.
+- 2026-05-22 — **PR-5 on `feat/depo-provera-faers-signals`** — original scope was Dupixent + Depo-Provera as a paired task, but the two diverged:
+  - **Depo-Provera live FAERS block shipped** (commit `773fc38`) — block added to the existing tort page; `faers-depo-provera.ts` config + RPC generalization. Done.
+  - **Dupixent CTCL tort page built** (2026-05-22) — new pre-MDL tort surface. `faers-dupixent.ts` config (brand map + 10-term CTCL PT array, verified against live data) + test; new `web/app/(app)/advertising/dupixent/page.tsx` with the live FAERS block (lawyer concentration mode); registered in `PRE_MDL_TORTS` on `mass-tort-overview/page.tsx`; `mass_torts` + `torts` rows in migration `20260522000000_add_dupixent_tort.sql` (NOT yet applied — apply via Supabase SQL editor or on merge). Page is pre-MDL framed: MDL 3180 petitioned not formed, no settlement section, CPA labeled an LMI estimate. Deliberately omits demographic/state-prescribing/keyword tables (no verified data — would be fabrication). Litigation facts from web research — see Dupixent findings entry below.
 
 ---
 
 ## Findings worth tracking (business + product implications)
 
+- 2026-05-22 — **Dupixent CTCL litigation (MDL 3180) — pre-MDL facts** (web research, as of 2026-05-22). MDL No. 3180 *In re: Dupixent (Dupilumab) Products Liability Litigation* petitioned with the JPML 2026-02-13; consolidation hearing **May 28, 2026** — not yet formed. ~15 cases / 12 federal districts; N.D. Georgia requested. Defendants Regeneron + Sanofi. Injury CTCL (also PTCL). No verdicts/settlements; individual filings. Key science: Hasan et al., JAAD 2024, TriNetX cohort — OR 4.10 (CI 2.06–8.19) for CTCL in dupilumab-treated AD; OR 3.20 in DMARD-naive subgroup. Contested by the "unmasking" hypothesis (pre-existing CTCL misdiagnosed as AD). FAERS cross-check: petition cites 300+ CTCL reports; live FAERS query found ~301 — independent corroboration. **Recheck MDL status after May 28, 2026** — the page MDL copy is status-dated.
 - 2026-05-21 — **Tirzepatide vision-loss signal vs semaglutide.** Unexpected finding from PR #395's vision-loss block: tirzepatide drugs show dramatically higher consumer-report share than semaglutide drugs. Mounjaro 83.4% and Zepbound 82% vs Ozempic 61.7%, Wegovy 38.4%, Rybelsus 46.7%. MDL 3163 is currently centered on Novo Nordisk because the Harvard/JAMA study primarily examined semaglutide — but the FAERS lawyer-flood signal suggests tirzepatide vision-loss claimant intake is heavier proportionally. Worth tracking for future Eli Lilly conversations and as a potential angle for firms positioning early in MDL 3163.
 
 ---
@@ -64,6 +68,10 @@ Long-term memory across sessions for the LMI / legal-ad-intel repo. Keeps in-fli
 
 ### Query / index gotchas
 - 2026-05-21 — **Substring ILIKE over the 8.16M-row `drug_adverse_event_drugs.medicinalproduct` table times out at the 8s Postgres query limit.** Exact-match arrays against the existing btree index (`medicinalproduct = ANY(ARRAY[...])`) are the only viable matching strategy without adding trigram indexes.
+
+### Per-tort canonical terms (verified against live data)
+- 2026-05-22 — **Depo-Provera:** brand `["DEPO-PROVERA"]` (oral PROVERA + generic MPA excluded); injury = meningioma, literal `Meningioma` PT exists (8-term spectrum). 95.2% lawyer-sourced → lawyer concentration mode. See `faers-depo-provera.ts`.
+- 2026-05-22 — **Dupixent (dupilumab) has NO single dominant injury in FAERS.** Largest reaction clusters are ocular-surface disease (~1,608 reports) and joint/arthritis (~1,604) — but both are **0.0% lawyer-filed** (on-label ADRs, no litigation footprint). The litigation-shaped cluster is **cutaneous T-cell lymphoma**: 198 qualifying reports, **5.56% lawyer (7.6× the 0.73% baseline)**, 4.5% fatal — theory is dupilumab unmasking CTCL misdiagnosed as atopic dermatitis. Chosen as the Dupixent tort. Brand map `["DUPIXENT","DUPILUMAB"]` — generic INN **included** here (departure from GLP-1/Depo rule) because dupilumab is a single-source biologic with no generic competitor, so the INN maps 1:1 to the brand. CTCL PTs: FAERS codes these as `Cutaneous T-cell lymphoma`, NOT `Mycosis fungoides`/`Sezary syndrome` (neither PT appears). Bare `Lymphoma` excluded — verified 0.0% lawyer, B-cell-ambiguous. See `faers-dupixent.ts`.
 
 ---
 
