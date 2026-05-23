@@ -144,6 +144,7 @@ const dataModules: NavGroup[] = [
 // Alphabetized emerging tort pages (moved out of Advertising Research accordion)
 const EMERGING_TORTS: NavItem[] = [
   { label: "AI Suicide / Self-Harm (Pre-MDL)", href: "/advertising/ai-suicide", Icon: ShieldAlert },
+  { label: "Dupixent CTCL (Pre-MDL)", href: "/advertising/dupixent", Icon: Syringe },
   { label: "Olympus Scopes (Pre-MDL)", href: "/advertising/olympus-scopes", Icon: Stethoscope },
   { label: "Recall Watchlist", href: "/advertising/recall-watchlist", Icon: Thermometer },
 ];
