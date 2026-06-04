@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { buildInviteEmailHtml } from "@/lib/email-templates/invite";
+import { tenantBaseUrl } from "@/lib/tenant";
+import { canManageUsers, invitableRoles } from "@/lib/roles";
 import { randomBytes } from "node:crypto";
 
 function getServiceClient() {
@@ -12,7 +14,10 @@ function getServiceClient() {
   );
 }
 
-async function getAuthenticatedAdmin(supabase: Awaited<ReturnType<typeof createServerClient>>) {
+// Authenticate a caller allowed to manage users (Admin or Manager).
+async function getAuthenticatedManager(
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
+) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -24,7 +29,7 @@ async function getAuthenticatedAdmin(supabase: Awaited<ReturnType<typeof createS
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["tenant_admin", "super_admin"].includes(profile.role)) {
+  if (!profile || !canManageUsers(profile.role)) {
     return null;
   }
 
@@ -35,24 +40,36 @@ async function getAuthenticatedAdmin(supabase: Awaited<ReturnType<typeof createS
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createServerClient();
-    const auth = await getAuthenticatedAdmin(supabase);
+    const auth = await getAuthenticatedManager(supabase);
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const email = body.email?.trim().toLowerCase();
-    const role = body.role === "tenant_admin" ? "tenant_admin" : "member";
-    const trialDays =
-      role === "tenant_admin"
-        ? null
-        : body.trial_days != null
-          ? Number(body.trial_days) || null
-          : 14;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
+
+    // Authorize the requested role against the caller's tier:
+    // Admins may invite any tenant role; Managers may invite Users only.
+    const allowedRoles = invitableRoles(auth.profile.role);
+    const requestedRole = body.role ?? "user";
+    if (!allowedRoles.includes(requestedRole)) {
+      return NextResponse.json(
+        { error: "You are not allowed to invite that role" },
+        { status: 403 },
+      );
+    }
+    const role = requestedRole;
+    // Only Users carry a trial; Managers and Admins get full access.
+    const trialDays =
+      role === "user"
+        ? body.trial_days != null
+          ? Number(body.trial_days) || null
+          : 14
+        : null;
 
     const serviceClient = getServiceClient();
     const { profile } = auth;
@@ -158,14 +175,9 @@ export async function POST(req: NextRequest) {
     const branding =
       brandingResult.status === "fulfilled" ? brandingResult.value.data : null;
 
-    const defaultAppUrl =
-      process.env.NEXT_PUBLIC_APP_URL ??
-      "https://www.legalmarketingintelligence.com";
-
-    // Use tenant custom domain if available, otherwise default
-    const appUrl = tenant?.domain
-      ? `https://${tenant.domain}`
-      : defaultAppUrl;
+    // Branded base URL: custom domain → {slug}.legalmarketingintelligence.com →
+    // apex. Ensures the invite link lands on the tenant's branded site.
+    const appUrl = tenantBaseUrl(tenant);
 
     // Use tenant-specific email logo (dark logo for white email background).
     // Convention: each tenant has /tenants/{slug}/logo-email.png — a dark logo
@@ -247,7 +259,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     const supabase = await createServerClient();
-    const auth = await getAuthenticatedAdmin(supabase);
+    const auth = await getAuthenticatedManager(supabase);
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { canManageUsers } from "@/lib/roles";
 
 function getServiceClient() {
   return createClient(
@@ -28,10 +29,7 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    if (
-      !profile ||
-      !["tenant_admin", "super_admin"].includes(profile.role)
-    ) {
+    if (!profile || !canManageUsers(profile.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

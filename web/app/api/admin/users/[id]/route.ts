@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { canManageUsers, canRemoveUser } from "@/lib/roles";
 
 function getServiceClient() {
   return createClient(
@@ -42,10 +43,7 @@ export async function DELETE(
       .eq("id", user.id)
       .single();
 
-    if (
-      !callerProfile ||
-      !["tenant_admin", "super_admin"].includes(callerProfile.role)
-    ) {
+    if (!callerProfile || !canManageUsers(callerProfile.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -73,21 +71,11 @@ export async function DELETE(
       );
     }
 
-    // Cannot remove a super_admin
-    if (targetProfile.role === "super_admin") {
+    // Enforce the role hierarchy: nobody removes a super_admin; Admins remove
+    // Managers + Users (not other Admins); Managers remove Users only.
+    if (!canRemoveUser(callerProfile.role, targetProfile.role)) {
       return NextResponse.json(
-        { error: "Cannot remove a super admin" },
-        { status: 403 },
-      );
-    }
-
-    // tenant_admin can only remove members
-    if (
-      callerProfile.role === "tenant_admin" &&
-      targetProfile.role !== "member"
-    ) {
-      return NextResponse.json(
-        { error: "You can only remove members" },
+        { error: "You are not allowed to remove this user" },
         { status: 403 },
       );
     }

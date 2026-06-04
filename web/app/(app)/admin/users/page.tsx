@@ -3,6 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
+import {
+  canRemoveUser,
+  invitableRoles,
+  isAdmin,
+  roleLabel,
+  type Role,
+} from "@/lib/roles";
 import { UserPlus, X, Trash2 } from "lucide-react";
 
 interface UserRow {
@@ -43,7 +50,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"member" | "tenant_admin">("member");
+  const [inviteRole, setInviteRole] = useState<Role>("user");
   const [inviteTrialDays, setInviteTrialDays] = useState<number | null>(14);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -117,7 +124,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({
           email: inviteEmail,
           role: inviteRole,
-          trial_days: inviteRole === "tenant_admin" ? null : inviteTrialDays,
+          trial_days: inviteRole === "user" ? inviteTrialDays : null,
         }),
       });
 
@@ -131,7 +138,7 @@ export default function AdminUsersPage() {
       showToast("success", `Invitation sent to ${inviteEmail}`);
       setShowInviteModal(false);
       setInviteEmail("");
-      setInviteRole("member");
+      setInviteRole("user");
       setInviteTrialDays(14);
       fetchData();
     } catch {
@@ -158,13 +165,10 @@ export default function AdminUsersPage() {
     }
   }
 
-  function canRemoveUser(u: UserRow): boolean {
+  function canRemoveThisUser(u: UserRow): boolean {
     if (!currentUserId || !currentUserRole) return false;
     if (u.id === currentUserId) return false;
-    if (u.role === "super_admin") return false;
-    if (!["super_admin", "tenant_admin"].includes(currentUserRole)) return false;
-    if (currentUserRole === "tenant_admin" && u.role !== "member") return false;
-    return true;
+    return canRemoveUser(currentUserRole, u.role);
   }
 
   async function handleRemoveUser() {
@@ -268,12 +272,12 @@ export default function AdminUsersPage() {
                       <span
                         className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
                         style={
-                          u.role === "super_admin" || u.role === "tenant_admin"
+                          isAdmin(u.role) || u.role === "manager"
                             ? { backgroundColor: `${accentColor}20`, color: accentColor }
                             : { backgroundColor: "#e2e8f0", color: "#475569" }
                         }
                       >
-                        {u.role === "tenant_admin" ? "Admin" : u.role === "super_admin" ? "Super Admin" : "Member"}
+                        {roleLabel(u.role)}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
@@ -283,7 +287,7 @@ export default function AdminUsersPage() {
                       {formatDate(u.created_at)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {canRemoveUser(u) && (
+                      {canRemoveThisUser(u) && (
                         <button
                           onClick={() => setRemoveTarget(u)}
                           className="text-red-500 transition hover:text-red-700"
@@ -331,12 +335,12 @@ export default function AdminUsersPage() {
                       <span
                         className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
                         style={
-                          inv.role === "tenant_admin"
+                          isAdmin(inv.role) || inv.role === "manager"
                             ? { backgroundColor: `${accentColor}20`, color: accentColor }
                             : { backgroundColor: "#e2e8f0", color: "#475569" }
                         }
                       >
-                        {inv.role === "tenant_admin" ? "Admin" : "Member"}
+                        {roleLabel(inv.role)}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
@@ -405,19 +409,22 @@ export default function AdminUsersPage() {
                   id="inviteRole"
                   value={inviteRole}
                   onChange={(e) => {
-                    const role = e.target.value as "member" | "tenant_admin";
+                    const role = e.target.value as Role;
                     setInviteRole(role);
-                    if (role === "tenant_admin") setInviteTrialDays(null);
-                    else setInviteTrialDays(14);
+                    if (role === "user") setInviteTrialDays(14);
+                    else setInviteTrialDays(null);
                   }}
                   className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
                 >
-                  <option value="member">Member</option>
-                  <option value="tenant_admin">Admin</option>
+                  {invitableRoles(currentUserRole).map((r) => (
+                    <option key={r} value={r}>
+                      {roleLabel(r)}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {inviteRole === "member" && (
+              {inviteRole === "user" && (
                 <div>
                   <label htmlFor="inviteTrialDays" className="block text-sm font-medium text-slate-700">
                     Trial Duration

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { hasUnlimitedAccess } from "@/lib/roles";
 import { TrialExpired } from "./trial-expired";
 import { TrialBanner } from "./trial-banner";
 
@@ -41,8 +42,9 @@ export function TrialGate({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Admins always have unlimited access regardless of trial_expires_at
-        if (profile.role === "super_admin" || profile.role === "tenant_admin") {
+        // Managers and Admins always have unlimited access regardless of
+        // trial_expires_at — only the User tier is trial-gated.
+        if (hasUnlimitedAccess(profile.role)) {
           setTrial({ checked: true, expired: false, daysRemaining: null });
           return;
         }
