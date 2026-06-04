@@ -1,7 +1,7 @@
 -- Migration: add_manager_role_and_rename_member_to_user
 -- Purpose: Introduce the tenant role hierarchy Admin > Manager > User.
 --   * Rename the legacy 'member' tier to 'user' (data + constraint + default).
---   * Add the new 'manager' tier to the invitations role CHECK.
+--   * Add the new 'manager' tier to the profiles AND invitations role CHECKs.
 --   * Fix the is_tenant_admin() helper bug (it checked 'admin' instead of
 --     'tenant_admin') and add an is_tenant_manager() helper.
 --
@@ -11,25 +11,44 @@
 --   manager      — invite/remove Users + view roster only; full (non-trial) access
 --   user         — standard/trial product access (formerly 'member')
 --
--- IDEMPOTENCY: the UPDATEs are no-ops once data is migrated; CREATE OR REPLACE
---   FUNCTION and DROP/ADD CONSTRAINT are safe to re-run. Running this via
---   `supabase db push` against a DB that is already migrated is harmless.
+-- IMPORTANT (constraint ordering): both `profiles` and `invitations` carry a
+--   role CHECK that did NOT permit 'user' (profiles: super_admin|tenant_admin|
+--   member|viewer; invitations: member|tenant_admin). The widened CHECK must
+--   therefore be installed AROUND the data migration: drop the old CHECK →
+--   UPDATE rows to 'user' → add the new CHECK. Updating before dropping fails
+--   with "violates check constraint ..._role_check".
 --
--- NOTE: We intentionally do NOT add a CHECK constraint to profiles.role — the
---   OAuth callback historically wrote 'viewer' (now 'user' in code), and a
---   strict constraint risks breaking inserts for any stray legacy value.
+-- IDEMPOTENCY: the UPDATEs are no-ops once data is migrated; DROP CONSTRAINT IF
+--   EXISTS + ADD CONSTRAINT and CREATE OR REPLACE FUNCTION are safe to re-run.
+--   Running this via `supabase db push` against an already-migrated DB is a
+--   harmless no-op.
 
 -- ============================================================================
--- 1. Migrate existing data: member -> user
+-- 1. profiles.role — drop old CHECK, migrate member/viewer -> user, re-add
+--    widened CHECK (super_admin | tenant_admin | manager | user).
+--    'viewer' (legacy OAuth-callback default, now 'user' in code) is folded in.
 -- ============================================================================
-UPDATE public.profiles    SET role = 'user' WHERE role = 'member';
-UPDATE public.invitations SET role = 'user' WHERE role = 'member';
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_role_check;
+
+UPDATE public.profiles SET role = 'user' WHERE role IN ('member', 'viewer');
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_role_check
+  CHECK (role = ANY (ARRAY['super_admin'::text, 'tenant_admin'::text, 'manager'::text, 'user'::text]));
+
+-- New profiles default to the User tier (invited users get their role set
+-- explicitly by /api/invites/accept).
+ALTER TABLE public.profiles ALTER COLUMN role SET DEFAULT 'user';
 
 -- ============================================================================
--- 2. invitations.role CHECK: allow user | manager | tenant_admin
+-- 2. invitations.role — drop old CHECK, migrate member -> user, re-add widened
+--    CHECK (user | manager | tenant_admin).
 -- ============================================================================
 ALTER TABLE public.invitations
   DROP CONSTRAINT IF EXISTS invitations_role_check;
+
+UPDATE public.invitations SET role = 'user' WHERE role = 'member';
 
 ALTER TABLE public.invitations
   ADD CONSTRAINT invitations_role_check
@@ -39,13 +58,7 @@ ALTER TABLE public.invitations
 ALTER TABLE public.invitations ALTER COLUMN role SET DEFAULT 'user';
 
 -- ============================================================================
--- 3. profiles.role default -> user (covers any direct insert; invited users
---    always get their role set explicitly by /api/invites/accept)
--- ============================================================================
-ALTER TABLE public.profiles ALTER COLUMN role SET DEFAULT 'user';
-
--- ============================================================================
--- 4. Fix is_tenant_admin() — it checked 'admin' but the app uses 'tenant_admin'
+-- 3. Fix is_tenant_admin() — it checked 'admin' but the app uses 'tenant_admin'
 --    (bug carried since 20260419000000_add_rls_helper_functions.sql).
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.is_tenant_admin()
@@ -63,7 +76,7 @@ AS $$
 $$;
 
 -- ============================================================================
--- 5. is_tenant_manager() — admits Managers (and above) for any future RLS that
+-- 4. is_tenant_manager() — admits Managers (and above) for any future RLS that
 --    should allow user-management actions.
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.is_tenant_manager()
