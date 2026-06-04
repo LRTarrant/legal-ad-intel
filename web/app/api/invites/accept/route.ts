@@ -85,11 +85,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Update the profile's role to match the invitation's role
-    // (the handle_new_user trigger may default to 'member')
-    // Set trial_expires_at for member roles only — admins get unlimited access
+    // (the handle_new_user trigger may default to 'user')
+    // Set trial_expires_at for the User tier only — Managers and Admins get
+    // unlimited access.
     const profileUpdate: Record<string, unknown> = { role: invitation.role };
 
-    if (invitation.role === "member" && invitation.trial_days != null) {
+    if (invitation.role === "user" && invitation.trial_days != null) {
       const trialExpiresAt = new Date();
       trialExpiresAt.setDate(trialExpiresAt.getDate() + invitation.trial_days);
       profileUpdate.trial_expires_at = trialExpiresAt.toISOString();

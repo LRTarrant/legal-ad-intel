@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
+import { isAdmin as isAdminRole, canManageUsers } from "@/lib/roles";
 import {
   Anchor,
   Antenna,
@@ -208,6 +209,8 @@ const STATE_GROUP_KEYS: StateGroupKey[] = ["A-C", "D-H", "I-M", "N-Z"];
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Managers (and Admins) can reach User Management but no other admin surface.
+  const [canManage, setCanManage] = useState(false);
   // Set alongside isAdmin from the same profile fetch below. Intentionally
   // NOT using web/lib/admin/use-super-admin.ts to avoid a second identical
   // SELECT against profiles — please don't "clean this up" by swapping in
@@ -246,8 +249,11 @@ export function Sidebar() {
           .select("role")
           .eq("id", user.id)
           .single();
-        if (profile && ["tenant_admin", "super_admin"].includes(profile.role)) {
+        if (profile && isAdminRole(profile.role)) {
           setIsAdmin(true);
+        }
+        if (profile && canManageUsers(profile.role)) {
+          setCanManage(true);
         }
         if (
           profile &&
@@ -528,18 +534,19 @@ export function Sidebar() {
               {renderNavLink({ label: "Broadcast Intel", href: "/broadcast-intel", Icon: Antenna })}
             </div>
           </div>
-          {isAdmin && (
+          {canManage && (
             <div className="mt-4 border-t border-white/10 pt-4">
               <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
                 Admin
               </p>
               <div className="flex flex-col gap-0.5 pl-2">
+                {/* User Management is open to Managers; the rest is Admin-only. */}
                 {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
                 {isSuperAdmin && renderNavLink({ label: "API Costs", href: "/admin/api-costs", Icon: DollarSign })}
-                {renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
-                {renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
-                {renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}
-                {renderNavLink({ label: "State Data Sources", href: "/admin/data-sources", Icon: Database })}
+                {isAdmin && renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
+                {isAdmin && renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
+                {isAdmin && renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}
+                {isAdmin && renderNavLink({ label: "State Data Sources", href: "/admin/data-sources", Icon: Database })}
               </div>
             </div>
           )}

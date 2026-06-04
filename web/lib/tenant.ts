@@ -51,6 +51,42 @@ function setCached(key: string, branding: TenantBranding) {
 }
 
 // ---------------------------------------------------------------------------
+// Absolute base URL for a tenant (for emails / links)
+// ---------------------------------------------------------------------------
+
+/**
+ * Canonical https base URL for a tenant, e.g.
+ *   { slug: "transport", domain: null } → https://transport.legalmarketingintelligence.com
+ *   { slug: "lmi",       domain: null } → https://legalmarketingintelligence.com (apex)
+ *   { domain: "foo.com" }               → https://foo.com (custom domain wins)
+ *
+ * Slug-based (not request-host based) so links are correct regardless of where
+ * the admin happens to be browsing — consistent with how `resolveTenant` maps
+ * a subdomain back to a tenant slug.
+ */
+export function tenantBaseUrl(
+  tenant: { slug?: string | null; domain?: string | null } | null,
+): string {
+  // 1. Custom domain wins.
+  if (tenant?.domain) return `https://${tenant.domain}`;
+
+  // 2. Branded subdomain from slug.
+  const root = (
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.legalmarketingintelligence.com"
+  )
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/+$/, "");
+
+  if (tenant?.slug && tenant.slug !== "lmi") {
+    return `https://${tenant.slug}.${root}`;
+  }
+
+  // 3. Main/LMI tenant → apex app URL.
+  return `https://${root}`;
+}
+
+// ---------------------------------------------------------------------------
 // Core resolution logic
 // ---------------------------------------------------------------------------
 

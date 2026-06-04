@@ -34,7 +34,7 @@ export async function GET(request: Request) {
           await supabase.from("profiles").insert({
             id: user.id,
             tenant_id: LMI_TENANT_ID,
-            role: "viewer",
+            role: "user",
             full_name: fullName,
           });
         }
