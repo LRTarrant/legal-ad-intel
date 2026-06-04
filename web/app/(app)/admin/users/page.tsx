@@ -171,6 +171,34 @@ export default function AdminUsersPage() {
     return canRemoveUser(currentUserRole, u.role);
   }
 
+  // Whether the current admin may edit this row's role (Admin-only, not self,
+  // and must have authority over the target's current role).
+  function canEditRole(u: UserRow): boolean {
+    if (!currentUserId || !currentUserRole) return false;
+    if (u.id === currentUserId) return false;
+    if (!isAdmin(currentUserRole)) return false;
+    return canRemoveUser(currentUserRole, u.role);
+  }
+
+  async function handleChangeRole(userId: string, newRole: string) {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast("error", data.error ?? "Failed to update role");
+        return;
+      }
+      showToast("success", `Role updated to ${roleLabel(newRole)}`);
+      fetchData();
+    } catch {
+      showToast("error", "Failed to update role");
+    }
+  }
+
   async function handleRemoveUser() {
     if (!removeTarget) return;
     setRemoving(true);
@@ -269,16 +297,37 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{u.email}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <span
-                        className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={
-                          isAdmin(u.role) || u.role === "manager"
-                            ? { backgroundColor: `${accentColor}20`, color: accentColor }
-                            : { backgroundColor: "#e2e8f0", color: "#475569" }
-                        }
-                      >
-                        {roleLabel(u.role)}
-                      </span>
+                      {canEditRole(u) ? (
+                        <select
+                          value={u.role}
+                          onChange={(e) => {
+                            if (e.target.value !== u.role) {
+                              handleChangeRole(u.id, e.target.value);
+                            }
+                          }}
+                          aria-label={`Change role for ${u.full_name ?? u.email}`}
+                          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+                        >
+                          {Array.from(
+                            new Set([u.role, ...invitableRoles(currentUserRole)]),
+                          ).map((r) => (
+                            <option key={r} value={r}>
+                              {roleLabel(r)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={
+                            isAdmin(u.role) || u.role === "manager"
+                              ? { backgroundColor: `${accentColor}20`, color: accentColor }
+                              : { backgroundColor: "#e2e8f0", color: "#475569" }
+                          }
+                        >
+                          {roleLabel(u.role)}
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
                       {formatDate(u.last_sign_in_at)}

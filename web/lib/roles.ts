@@ -87,3 +87,20 @@ export function canRemoveUser(
   if (callerRole === "manager") return roleRank(targetRole) <= RANK.user;
   return false;
 }
+
+/**
+ * Whether `callerRole` may change a user currently holding `targetRole` to
+ * `newRole`. Role changes are **Admin-only**: the caller must have authority
+ * over the current target (same rule as removal — can't touch a super_admin or
+ * a peer admin) and may only assign a role they could invite (never super_admin
+ * via the UI). Self-changes are rejected by the caller, not here.
+ */
+export function canChangeRole(
+  callerRole: string | null | undefined,
+  targetRole: string | null | undefined,
+  newRole: string,
+): boolean {
+  if (!isAdmin(callerRole)) return false;
+  if (!invitableRoles(callerRole).includes(newRole as Role)) return false;
+  return canRemoveUser(callerRole, targetRole);
+}
