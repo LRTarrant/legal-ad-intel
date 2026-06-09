@@ -55,13 +55,14 @@ export const newMexicoConfig: StateConfig = {
 
   // Source: U.S. Census ACS 2024 1-year estimates (tables B08006, B08013, B08303).
   // driveAlone = 703,793 / 954,026 workers = 73.8%.
-  // nationalAvg = U.S. drove-alone share, ACS 2024 1-yr = 114,469,544 / 165,360,450 = 69.2%.
+  // nationalAvg = 68.7, the cross-config house baseline (see _types.ts "commonly 68.7").
+  // (ACS 2024 1-yr US drove-alone is ~69.2%; kept at 68.7 for consistency across all state pages.)
   // avgCommuteMinutes = 20,554,380 aggregate minutes (B08013_001) / 856,080 workers
   // who did not work at home (B08303_001) = 24.0. (Aggregate travel time excludes
   // work-from-home, so the denominator is commuters, not all 954,026 workers.)
   commuteStats: {
     driveAlone: 73.8,
-    nationalAvg: 69.2,
+    nationalAvg: 68.7,
     avgCommuteMinutes: 24.0,
   },
 
@@ -81,7 +82,7 @@ export const newMexicoConfig: StateConfig = {
       "New Mexico applies pure comparative negligence: a plaintiff's recovery is reduced in proportion to their share of fault but is never barred, even if the plaintiff is more at fault than the defendant (Scott v. Rizzo, 96 N.M. 682, 1981). This is more plaintiff-favorable than the modified comparative regimes of most neighboring states. The personal injury statute of limitations is three years from the date of injury (NMSA § 37-1-8). New Mexico imposes no general statutory cap on non-economic damages in standard PI cases — the only damages cap is under the Medical Malpractice Act, which applies solely to qualifying med-mal claims, not auto, premises, or product cases. New Mexico is an at-fault (tort) state for auto insurance. Bernalillo County (Albuquerque) is the dominant litigation venue, with Santa Fe and Doña Ana (Las Cruces) counties as secondary centers.",
 
     autoAudience:
-      "New Mexico's crash exposure concentrates along three interstate corridors: I-25 (running north–south from Las Cruces through Albuquerque to Santa Fe and the Colorado line), I-40 (the east–west transcontinental route through Albuquerque), and I-10 (crossing the southern part of the state through Las Cruces toward El Paso and Arizona). Drive-alone commuting (73.8%) exceeds the national average (69.2%), with most case volume concentrated in the Albuquerque-Santa Fe metro along the I-25/I-40 interchange. Rural fatalities (260 of 409 in 2024, roughly 64%) dominate the state's fatal-crash profile, reflecting long-distance travel across sparsely populated terrain.",
+      "New Mexico's crash exposure concentrates along three interstate corridors: I-25 (running north–south from Las Cruces through Albuquerque to Santa Fe and the Colorado line), I-40 (the east–west transcontinental route through Albuquerque), and I-10 (crossing the southern part of the state through Las Cruces toward El Paso and Arizona). Drive-alone commuting (73.8%) exceeds the national average (68.7%), with most case volume concentrated in the Albuquerque-Santa Fe metro along the I-25/I-40 interchange. Rural fatalities (260 of 409 in 2024, roughly 64%) dominate the state's fatal-crash profile, reflecting long-distance travel across sparsely populated terrain.",
 
     truckAudience:
       "New Mexico sits on two major freight arteries. I-40 is a primary transcontinental truck route connecting California and the West Coast to Texas and the Southeast, passing directly through Albuquerque. I-25 carries north–south freight between El Paso/Mexico-border commerce and Denver. I-10 across the south links the El Paso and Phoenix freight networks. The long rural stretches between population centers mean truck-involved crashes often occur far from metro trauma centers, and interstate carriers with multi-state insurance structures and complex venue questions are common defendants. New Mexico's high rural fatality share (64%) correlates with the heavy long-haul exposure on these corridors.",
