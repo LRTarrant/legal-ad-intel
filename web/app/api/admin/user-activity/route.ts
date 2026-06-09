@@ -58,9 +58,11 @@ export async function GET(req: NextRequest) {
 
   // Aggregate via the super_admin-gated RPC, invoked with the caller's session
   // (the RPC's internal is_super_admin() guard requires a real auth.uid()).
+  // The function isn't in the generated database.types.ts until the migration's
+  // types are regenerated post-merge, so cast around the typed rpc() signature.
   const { data: rows, error: rpcError } = await supabase.rpc(
-    "get_activity_user_summary",
-    { p_from: fromISO, p_to: toISO },
+    "get_activity_user_summary" as never,
+    { p_from: fromISO, p_to: toISO } as never,
   );
 
   if (rpcError) {
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const summary = (rows ?? []) as SummaryRow[];
+  const summary = (rows ?? []) as unknown as SummaryRow[];
 
   if (summary.length === 0) {
     return NextResponse.json({
