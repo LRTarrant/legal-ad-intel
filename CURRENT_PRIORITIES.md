@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-06-08 (Admin GA4 Site Analytics dashboard shipped + live)
+Last updated: 2026-06-09 (State Intelligence v2 buildout complete — all 51 jurisdictions live)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -9,6 +9,7 @@ Keep it short and current — update weekly.
 
 ## 0. Recently shipped
 
+- **2026-06-09 — State Intelligence v2 buildout complete — all 51 jurisdictions live.** Built the remaining 28 states + DC via a reusable multi-agent `state-batch` workflow (per-state research → adversarial verify → integrate → PR) across 4 batches (PRs #405 / #406 / #408 / #409), taking State Intelligence from 23 to all 50 states + DC. Also relabeled the FARS 2024 data as the Annual Report File (PR #407) after confirming it matches NHTSA's ARF exactly. Each page browser-verified on production. Follow-ups logged in §5. The 6 legacy v1 states (AL/AZ/CA/FL/GA/TN) remain on their hand-written pages.
 - **2026-06-08 — Admin Site Analytics dashboard (GA4) — live.** `/admin/analytics` (admin-gated) renders 30-day GA4 KPIs + top pages / traffic sources / geography / U.S. states & cities via the GA Data API. Closed out the long-open PR #271 (rebased + modernized to `isAdmin()`), then hotfixed the serverless gRPC transport in PR #404 (`fallback: true` → REST). Auth is OAuth2 refresh-token (not a service-account key); env vars + runbook in `docs/ga4-dashboard-setup.md`. Verified live against the real property.
 
 ---
@@ -126,6 +127,17 @@ Closed in this arc:
   FARS 2024 final. `is_preliminary` column added to `state_crash_statistics`; codegen
   script gains `--skip` arg and idempotency fix. All 18 demo-set state pages now render
   with honestly-labeled data and no placeholder zeros.
+- 2026-06-09: **State Intelligence v2 buildout COMPLETE** — all 51 jurisdictions (50 states + DC)
+  live. 28 new states + DC built via a multi-agent `state-batch` workflow across 4 batches
+  (PRs #405 / #406 / #408 / #409). The per-state verify stage caught real errors pre-merge
+  (NE repealed helmet law, OK/IA alcohol figures, NM/WV commute math, AK damages cap, DE DMA
+  rank). DC is a special config (100% urban → rural=0, boating + workplace hidden, pure
+  contributory negligence with a vulnerable-user exception).
+- 2026-06-09: **FARS relabel (PR #407)** — confirmed `state_crash_statistics` year=2024 IS the
+  FARS 2024 Annual Report File (matched NHTSA exactly), not a preliminary estimate. Flipped
+  `is_preliminary=false` for 2024 (51 rows) + relabeled all configs "FARS 2024 (preliminary)"
+  → "FARS 2024 Annual Report File"; reconciled OK/IA alcohol to the authoritative DB. This
+  RESOLVES the relabeling queue item below (done now as ARF, not deferred to "final").
 
 Queue (next data-fill pass):
 - BLS CFOI ingestion for 10 Tier 2 states (CO, IN, KY, LA, MA, MD, MN, MO, SC, WI).
@@ -139,10 +151,23 @@ Queue (next data-fill pass):
 - PA FARS verification — pending NHTSA final state-level 2024 release. Resolve
   PennDOT 244 vs proposed FARS 275 alcohol direction at that time; then add PA row
   to `state_crash_statistics` and re-run codegen.
-- FARS 2024 (preliminary) → final relabeling — when NHTSA ships final state tables
-  (expected late 2026 / early 2027): `UPDATE state_crash_statistics SET is_preliminary
-  = false WHERE year = 2024` and re-run `sync-fars-data.ts`. Labels drop the
-  "(preliminary)" qualifier automatically. Single-row update + script re-run.
+- FARS 2024 FINAL FILE relabel (future) — the 2024 data is currently the Annual Report File
+  (labeled "FARS 2024 Annual Report File" as of PR #407). When NHTSA ships the 2024 FINAL
+  file (~1–2 yrs out), reload `state_crash_statistics` + adjust the `sync-fars-data.ts`
+  qualifier if needed. NOTE: the `sync-fars-data.ts` slug map is STALE — it skips every state
+  added in batches 1–4, so a future codegen run needs the map updated first (and review its
+  Tier-1 state-DOT overwrite behavior before running).
+
+Post-buildout follow-ups (optional, not scheduled — logged 2026-06-09):
+- Migrate the 6 legacy v1 states (AL, AZ, CA, FL, GA, TN) onto the v2 config system to retire
+  the duplicate hand-written ~1,900-line pages. Pure refactor: same UI, config-driven data.
+- Fleet-wide `nationalAvg` bump 68.7 → 69.2 (ACS 2024 1-yr national drive-alone share). One-line
+  change across all state configs + the `_types.ts` "commonly 68.7" comment. Cosmetic consistency.
+- Rewrite `docs/state-onboarding.md` around the v2 config + `state-batch` workflow — it currently
+  documents only the legacy v1 `onboard_state.py` path (CLAUDE.md §12 flags this).
+- BLS CFOI workplace data for the states still showing `showWorkplaceSection:false` — several
+  small batch 1–4 states (small-state BLS tables suppress the industry breakdown) plus the 10
+  Tier-2 states below. Manual per-state load from BLS CFOI tables + flag flip; no pipeline yet.
 
 Parked (no action unless conditions change):
 - WorkplaceStatsBlock sourceLabel symmetry — "BLS CFOI" is hardcoded in the v2 client.
