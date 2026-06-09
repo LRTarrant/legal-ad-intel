@@ -574,6 +574,7 @@ export function Sidebar() {
                 {isSuperAdmin && renderNavLink({ label: "API Costs", href: "/admin/api-costs", Icon: DollarSign })}
                 {isAdmin && renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
                 {isAdmin && renderNavLink({ label: "Site Analytics", href: "/admin/analytics", Icon: BarChart3 })}
+                {isSuperAdmin && renderNavLink({ label: "User Activity", href: "/admin/user-activity", Icon: Activity })}
                 {isAdmin && renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
                 {isAdmin && renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}
                 {isAdmin && renderNavLink({ label: "State Data Sources", href: "/admin/data-sources", Icon: Database })}
