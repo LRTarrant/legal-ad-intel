@@ -31,7 +31,12 @@ export function getGa4Client(): BetaAnalyticsDataClient | null {
     refreshToken: cfg.refreshToken,
   });
 
-  cachedClient = new BetaAnalyticsDataClient({ authClient });
+  // `fallback: true` forces the HTTP/REST transport instead of the default
+  // gRPC one. gRPC does not run in Vercel serverless functions — the call
+  // fails before producing a valid status, surfacing as the all-undefined
+  // error "undefined undefined: undefined". REST is the supported serverless
+  // transport and works the same against the Data API.
+  cachedClient = new BetaAnalyticsDataClient({ authClient, fallback: true });
   return cachedClient;
 }
 
