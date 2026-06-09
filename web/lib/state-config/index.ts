@@ -1,17 +1,25 @@
+import { arkansasConfig } from "./arkansas";
 import { coloradoConfig } from "./colorado";
+import { connecticutConfig } from "./connecticut";
 import { illinoisConfig } from "./illinois";
 import { indianaConfig } from "./indiana";
+import { iowaConfig } from "./iowa";
+import { kansasConfig } from "./kansas";
 import { kentuckyConfig } from "./kentucky";
 import { louisianaConfig } from "./louisiana";
 import { massachusettsConfig } from "./massachusetts";
 import { marylandConfig } from "./maryland";
 import { michiganConfig } from "./michigan";
 import { minnesotaConfig } from "./minnesota";
+import { mississippiConfig } from "./mississippi";
 import { missouriConfig } from "./missouri";
+import { nevadaConfig } from "./nevada";
 import { newJerseyConfig } from "./new-jersey";
 import { newYorkConfig } from "./new-york";
 import { northCarolinaConfig } from "./north-carolina";
 import { ohioConfig } from "./ohio";
+import { oklahomaConfig } from "./oklahoma";
+import { oregonConfig } from "./oregon";
 import { pennsylvaniaConfig } from "./pennsylvania";
 import { southCarolinaConfig } from "./south-carolina";
 import { tennesseeConfig } from "./tennessee";
@@ -29,20 +37,28 @@ import type { StateConfig } from "./_types";
  * /app/(app)/state-intelligence/{slug}/ during the migration period.
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
+  arkansas: arkansasConfig,
   colorado: coloradoConfig,
+  connecticut: connecticutConfig,
   illinois: illinoisConfig,
   indiana: indianaConfig,
+  iowa: iowaConfig,
+  kansas: kansasConfig,
   kentucky: kentuckyConfig,
   louisiana: louisianaConfig,
   maryland: marylandConfig,
   massachusetts: massachusettsConfig,
   michigan: michiganConfig,
   minnesota: minnesotaConfig,
+  mississippi: mississippiConfig,
   missouri: missouriConfig,
+  nevada: nevadaConfig,
   "new-jersey": newJerseyConfig,
   "new-york": newYorkConfig,
   "north-carolina": northCarolinaConfig,
   ohio: ohioConfig,
+  oklahoma: oklahomaConfig,
+  oregon: oregonConfig,
   pennsylvania: pennsylvaniaConfig,
   "south-carolina": southCarolinaConfig,
   tennessee: tennesseeConfig,
