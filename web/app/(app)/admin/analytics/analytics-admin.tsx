@@ -9,6 +9,12 @@ import {
   Activity,
   RefreshCw,
 } from "lucide-react";
+import { TimeframeSelector } from "../_components/timeframe-selector";
+import {
+  resolveTimeframe,
+  PRESET_LABELS,
+  type ResolvedTimeframe,
+} from "@/lib/analytics-timeframe";
 
 type GaRow = Record<string, string | number | null>;
 
@@ -48,12 +54,19 @@ export function AnalyticsAdmin() {
   const [data, setData] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeframe, setTimeframe] = useState<ResolvedTimeframe>(() =>
+    resolveTimeframe("30d"),
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/analytics/summary", {
+      const qs = new URLSearchParams({
+        startDate: timeframe.startDate,
+        endDate: timeframe.endDate,
+      });
+      const res = await fetch(`/api/admin/analytics/summary?${qs}`, {
         cache: "no-store",
       });
       const body = await res.json().catch(() => ({}));
@@ -69,7 +82,7 @@ export function AnalyticsAdmin() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timeframe]);
 
   useEffect(() => {
     fetchData();
@@ -101,11 +114,14 @@ export function AnalyticsAdmin() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-charcoal">Site Analytics</h1>
           <p className="mt-1 text-sm text-slate-gray">
-            Google Analytics 4 — last 30 days
+            Google Analytics 4 —{" "}
+            {timeframe.preset === "custom"
+              ? `${timeframe.startDate} → ${timeframe.endDate}`
+              : PRESET_LABELS[timeframe.preset].toLowerCase()}
             {data?.generatedAt && (
               <span className="ml-2 text-slate-400">
                 · updated {new Date(data.generatedAt).toLocaleString()}
@@ -113,14 +129,22 @@ export function AnalyticsAdmin() {
             )}
           </p>
         </div>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <TimeframeSelector
+            value={timeframe}
+            onChange={setTimeframe}
+            accentColor={accentColor}
+            disabled={loading}
+          />
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Error */}

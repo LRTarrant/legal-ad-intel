@@ -1,12 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/roles";
 import { getGa4Client, getGa4Config, rowsFromResponse } from "@/lib/ga4";
+import { resolveFromParams, daysBetween } from "@/lib/analytics-timeframe";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-const DATE_RANGE = { startDate: "30daysAgo", endDate: "today" };
 
 const OVERVIEW_METRICS = [
   { name: "activeUsers" },
@@ -22,8 +21,15 @@ const TABLE_METRICS = [
   { name: "engagementRate" },
 ];
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createClient();
+
+  const sp = req.nextUrl.searchParams;
+  const { startDate, endDate } = resolveFromParams(
+    sp.get("startDate"),
+    sp.get("endDate"),
+  );
+  const DATE_RANGE = { startDate, endDate };
 
   const {
     data: { user },
@@ -143,7 +149,7 @@ export async function GET() {
 
     return NextResponse.json({
       generatedAt: new Date().toISOString(),
-      dateRange: { ...DATE_RANGE, days: 30 },
+      dateRange: { ...DATE_RANGE, days: daysBetween(startDate, endDate) },
       overview,
       sources: rowsFromResponse(sourcesRes[0]),
       pages: rowsFromResponse(pagesRes[0]),

@@ -32,6 +32,11 @@ export function isAdmin(role?: string | null): boolean {
   return role === "tenant_admin" || role === "super_admin";
 }
 
+/** LMI system-wide super admin (founder-global, cross-tenant access). */
+export function isSuperAdmin(role?: string | null): boolean {
+  return role === "super_admin";
+}
+
 /** May access user-management surfaces (invite/remove Users, view roster). */
 export function canManageUsers(role?: string | null): boolean {
   return isAdmin(role) || role === "manager";
