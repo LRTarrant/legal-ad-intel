@@ -12,23 +12,23 @@ export const nevadaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Nevada — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across Las Vegas, Reno, and Elko.",
   },
 
-  // Source: NHTSA FARS 2024 (preliminary). Fatality counts only — Nevada does
+  // Source: NHTSA FARS 2024 Annual Report File. Fatality counts only — Nevada does
   // not publish a comparable annual state-DOT crash report with motorcycle /
   // speed / total-crash breakouts on the same vintage, so those fields are null/0.
   trafficStats: {
-    totalCrashes: 0, // not published on the FARS 2024 preliminary vintage
+    totalCrashes: 0, // not published on the FARS 2024 vintage
     totalFatalities: 417,
     motorcycleFatalities: null, // no citable NV-DOT 2024 figure
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 113,
     alcoholRelatedPct: 27.1,
-    unrestrainedFatalities: 0, // not broken out on the FARS 2024 preliminary vintage
-    distractedDrivingFatalCrashes: 0, // not broken out on the FARS 2024 preliminary vintage
+    unrestrainedFatalities: 0, // not broken out on the FARS 2024 vintage
+    distractedDrivingFatalCrashes: 0, // not broken out on the FARS 2024 vintage
     urbanFatalities: 309,
     ruralFatalities: 104,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Nevada 2023
@@ -81,7 +81,7 @@ export const nevadaConfig: StateConfig = {
       "Las Vegas runs one of the most active construction markets in the West — Strip resort, casino, and stadium projects plus rapid Clark County residential growth — and Reno's industrial and data-center buildout adds a second hub. Third-party liability (crane, scaffold, electrical, and OSHA-cited incidents involving a non-employer at fault) is the primary recovery path where workers' compensation limits direct claims. Note: Nevada's BLS CFOI 2023 release does not break out a construction-industry fatality count in the state major-event table, so this surface relies on the statewide total (57 workplace fatalities in 2023) rather than an industry split.",
 
     ruralUrbanContext:
-      "Nevada's population and case volume are extremely concentrated: roughly three-quarters of fatalities are urban (309 urban vs. 104 rural in FARS 2024 preliminary), reflecting how dominant the Las Vegas Valley and Reno are within an otherwise vast, sparsely populated state. The rural fatality share, while smaller in count, runs along the long I-80 and US-95 desert corridors where emergency-response times are long and speeds are high. Rural northern and central Nevada (Elko, Humboldt, White Pine, Nye counties) has lower broadband penetration; digital-only campaigns underreach those markets, making radio and outdoor along the interstate corridors necessary complements.",
+      "Nevada's population and case volume are extremely concentrated: roughly three-quarters of fatalities are urban (309 urban vs. 104 rural in FARS 2024), reflecting how dominant the Las Vegas Valley and Reno are within an otherwise vast, sparsely populated state. The rural fatality share, while smaller in count, runs along the long I-80 and US-95 desert corridors where emergency-response times are long and speeds are high. Rural northern and central Nevada (Elko, Humboldt, White Pine, Nye counties) has lower broadband penetration; digital-only campaigns underreach those markets, making radio and outdoor along the interstate corridors necessary complements.",
 
     judicialContext:
       "Clark County (Las Vegas) is the center of gravity for Nevada civil litigation and the venue where the large majority of PI cases are filed and tried; it is generally regarded as a plaintiff-workable venue, particularly for auto, premises, and casino/hospitality-related injury claims. Washoe County (Reno) is the secondary venue for northern Nevada. Rural Nevada counties produce far smaller dockets. Venue analysis — plaintiff residency and crash location — matters because Clark County's jury pool and case economics differ markedly from the rural districts.",
@@ -107,7 +107,7 @@ export const nevadaConfig: StateConfig = {
       "Las Vegas draws tens of millions of out-of-state and international visitors annually, producing a large volume of tourist injury exposure — pedestrian and rideshare crashes on and around the Strip, casino and resort premises injuries, and I-15 collisions involving California drivers. Injured visitors typically do not know Nevada PI attorneys or the state's 2-year SOL and often leave the state before treatment concludes. Geo-fenced digital around the Strip and resort corridors, airport-adjacent placement, and partnerships with hospitality and medical providers can capture these cases before visitors engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "NHTSA FARS 2024 (preliminary); BLS Census of Fatal Occupational Injuries — Nevada 2023; U.S. Census ACS 2024 1-year estimates",
+      "NHTSA FARS 2024 Annual Report File; BLS Census of Fatal Occupational Injuries — Nevada 2023; U.S. Census ACS 2024 1-year estimates",
   },
 
   features: {

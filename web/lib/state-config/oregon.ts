@@ -12,8 +12,8 @@ export const oregonConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Oregon — combining FARS crash and fatality data, demographics, judicial profiles, and market opportunity signals across Portland, Eugene, Medford-Klamath Falls, and Bend.",
   },
 
-  // Source: NHTSA FARS 2024 (preliminary). Fatality counts only; FARS does not
-  // publish motorcycle or speed-related splits in the preliminary release and we
+  // Source: NHTSA FARS 2024 Annual Report File. Fatality counts only; FARS does not
+  // publish motorcycle or speed-related splits in the release and we
   // have no citable Oregon DOT 2024 figure for those, so they stay null.
   // totalCrashes / unrestrainedFatalities / distractedDrivingFatalCrashes are
   // non-nullable and have no citable 2024 source here, so they are set to 0.
@@ -30,7 +30,7 @@ export const oregonConfig: StateConfig = {
     urbanFatalities: 247,
     ruralFatalities: 291,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Oregon 2023 reported a
@@ -84,10 +84,10 @@ export const oregonConfig: StateConfig = {
       "Oregon is a major West Coast freight corridor. I-5 links the ports and distribution hubs of California, Oregon, and Washington and carries continuous interstate trucking through the Willamette Valley. I-84 is the primary east-west freight route connecting Portland to the inland Northwest and the I-80/I-15 network beyond Idaho. The Port of Portland and Willamette Valley distribution infrastructure generate heavy commercial-vehicle volume. Trucking PI cases on I-5 and I-84 frequently involve interstate carriers with multi-state insurance structures and venue questions across the Oregon–Washington and Oregon–Idaho lines.",
 
     motorcycleAudience:
-      "Oregon has a universal motorcycle helmet law: every operator and passenger must wear an approved helmet regardless of age or experience (ORS 814.269). The Cascade scenic routes, the Columbia River Gorge along I-84, and the coastal Highway 101 corridor draw recreational riders, including out-of-state visitors from Washington and California. The FARS 2024 preliminary release does not break out Oregon motorcycle fatalities, so that count is shown as not reported. The 2-year SOL (ORS 12.110) makes early intake critical for motorcycle cases.",
+      "Oregon has a universal motorcycle helmet law: every operator and passenger must wear an approved helmet regardless of age or experience (ORS 814.269). The Cascade scenic routes, the Columbia River Gorge along I-84, and the coastal Highway 101 corridor draw recreational riders, including out-of-state visitors from Washington and California. The FARS 2024 release does not break out Oregon motorcycle fatalities, so that count is shown as not reported. The 2-year SOL (ORS 12.110) makes early intake critical for motorcycle cases.",
 
     ruralUrbanContext:
-      "Oregon's 2024 fatalities split 291 rural to 247 urban (FARS preliminary) — rural roads account for the majority of traffic deaths despite holding a minority of the population. Eastern and southern Oregon, including the high desert around Bend, the Klamath Basin, and the long rural stretches of I-84, carry disproportionate fatal-crash exposure relative to their population. These non-metro markets also have lower broadband penetration, so digital-only campaigns underperform there; radio, outdoor, and community media are necessary complements for plaintiff firms targeting rural Oregon.",
+      "Oregon's 2024 fatalities split 291 rural to 247 urban (FARS) — rural roads account for the majority of traffic deaths despite holding a minority of the population. Eastern and southern Oregon, including the high desert around Bend, the Klamath Basin, and the long rural stretches of I-84, carry disproportionate fatal-crash exposure relative to their population. These non-metro markets also have lower broadband penetration, so digital-only campaigns underperform there; radio, outdoor, and community media are necessary complements for plaintiff firms targeting rural Oregon.",
 
     judicialContext:
       "Multnomah County (Portland) is Oregon's dominant and most plaintiff-favorable venue, consistently producing the state's highest auto and premises verdicts. Lane County (Eugene) and the Willamette Valley counties are moderate-to-favorable. Jackson County (Medford) and Deschutes County (Bend) are smaller, more conservative benches. Venue analysis — plaintiff residency and crash location — can materially shift expected case value across Oregon's metros.",
@@ -113,7 +113,7 @@ export const oregonConfig: StateConfig = {
       "The Oregon Coast (Highway 101), the Columbia River Gorge (I-84), and the Cascades draw significant out-of-state visitors and riders from Washington and California. Visitors injured in Oregon may not know local PI attorneys or Oregon's 2-year SOL and mandatory-PIP framework. Geo-fenced digital along the coastal and Gorge corridors, paired with partnerships near resort and recreation areas, can capture these cases before visitors engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "NHTSA FARS 2024 (preliminary); U.S. Census ACS 2024 1-year; BLS CFOI 2023",
+      "NHTSA FARS 2024 Annual Report File; U.S. Census ACS 2024 1-year; BLS CFOI 2023",
   },
 
   // No injuryData yet; add when Oregon-specific deep crash data is integrated.

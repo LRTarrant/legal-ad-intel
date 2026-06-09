@@ -15,18 +15,18 @@ export const indianaConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/INDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 832, // FARS 2024 (preliminary)
+    totalFatalities: 832, // FARS 2024 Annual Report File
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 185, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 22.2, // 185 / 832 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 185, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 22.2, // 185 / 832 FARS 2024 Annual Report File
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 337, // FARS 2024 (preliminary)
-    ruralFatalities: 491, // FARS 2024 (preliminary)
+    urbanFatalities: 337, // FARS 2024 Annual Report File
+    ruralFatalities: 491, // FARS 2024 Annual Report File
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

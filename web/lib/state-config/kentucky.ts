@@ -15,18 +15,18 @@ export const kentuckyConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/KYTC figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 707, // FARS 2024 (preliminary)
+    totalFatalities: 707, // FARS 2024 Annual Report File
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 185, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 26.2, // 185 / 707 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 185, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 26.2, // 185 / 707 FARS 2024 Annual Report File
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 265, // FARS 2024 (preliminary)
-    ruralFatalities: 438, // FARS 2024 (preliminary)
+    urbanFatalities: 265, // FARS 2024 Annual Report File
+    ruralFatalities: 438, // FARS 2024 Annual Report File
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

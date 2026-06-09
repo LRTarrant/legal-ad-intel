@@ -15,19 +15,19 @@ export const illinoisConfig: StateConfig = {
   // Source: state DOT annual crash report (2024).
   trafficStats: {
     totalCrashes: 303913,
-    totalFatalities: 1177, // FARS 2024 (preliminary)
+    totalFatalities: 1177, // FARS 2024 Annual Report File
     motorcycleFatalities: 144,
     speedRelatedFatalities: null, // not broken out in IDOT 2024 summary tables
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 285, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 24.2, // 285 / 1177 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 285, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 24.2, // 285 / 1177 FARS 2024 Annual Report File
     unrestrainedFatalities: 255,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 799, // FARS 2024 (preliminary)
-    ruralFatalities: 376, // FARS 2024 (preliminary)
+    urbanFatalities: 799, // FARS 2024 Annual Report File
+    ruralFatalities: 376, // FARS 2024 Annual Report File
     reportYear: 2024,
     sourceLabel: "IDOT 2024",
-    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesSourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Illinois 2023.

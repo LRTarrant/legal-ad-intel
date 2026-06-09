@@ -12,8 +12,8 @@ export const washingtonConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Washington — combining FARS crash data, workplace-fatality data, demographics, judicial profiles, and market opportunity signals across Seattle-Tacoma, Spokane, Vancouver/Clark County, the Tri-Cities, and Bellingham.",
   },
 
-  // Source: FARS 2024 (preliminary) — fatality counts already loaded in our DB.
-  // urban/rural and alcohol splits are the FARS preliminary breakdowns for WA.
+  // Source: FARS 2024 Annual Report File — fatality counts already loaded in our DB.
+  // urban/rural and alcohol splits are the FARS breakdowns for WA.
   // motorcycle / speed / unrestrained / distracted are left null/0 because no
   // authoritative WA WTSC/WSDOT 2024 figure was confirmed at author time.
   trafficStats: {
@@ -29,7 +29,7 @@ export const washingtonConfig: StateConfig = {
     urbanFatalities: 428,
     ruralFatalities: 291,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Washington 2023
@@ -88,7 +88,7 @@ export const washingtonConfig: StateConfig = {
       "Washington has extensive recreational and commercial maritime activity across Puget Sound, the San Juan Islands, Lake Washington, and the Columbia River, plus the nation's largest ferry system. Boating and on-water incidents generate seasonal personal-injury and wrongful-death cases distinct from auto volume, concentrated in the summer months and in the Puget Sound and San Juan boating corridors.",
 
     ruralUrbanContext:
-      "Washington's FARS 2024 preliminary split is close to even — 291 rural fatalities versus 428 urban — but the rural share is disproportionate relative to where most of the state's population lives in the urban Puget Sound corridor. Eastern Washington (the Columbia Basin, Palouse, and Okanogan) and the rural stretches of Highway 2, Highway 12, and US-97 carry high per-capita fatality rates on two-lane highways. These rural and small-metro markets have lower broadband penetration than the Seattle metro, so digital-only campaigns underreach them; radio, outdoor, and community media remain necessary complements for plaintiff firms targeting non-metro Washington.",
+      "Washington's FARS 2024 split is close to even — 291 rural fatalities versus 428 urban — but the rural share is disproportionate relative to where most of the state's population lives in the urban Puget Sound corridor. Eastern Washington (the Columbia Basin, Palouse, and Okanogan) and the rural stretches of Highway 2, Highway 12, and US-97 carry high per-capita fatality rates on two-lane highways. These rural and small-metro markets have lower broadband penetration than the Seattle metro, so digital-only campaigns underreach them; radio, outdoor, and community media remain necessary complements for plaintiff firms targeting non-metro Washington.",
 
     judicialContext:
       "King County (Seattle) is among the more plaintiff-favorable venues on the West Coast and produces the state's highest auto, premises, and product verdicts. Pierce County (Tacoma) and Snohomish County (Everett) are also workable plaintiff venues in the central Puget Sound. Spokane County anchors eastern Washington and tends to be more moderate, as do the smaller agricultural counties of the Columbia Basin and Yakima Valley. With no cap on non-economic damages after Sofie v. Fibreboard, venue selection — plaintiff residency and crash-location analysis — can materially shift expected case value, particularly when a King County venue is available.",
@@ -114,7 +114,7 @@ export const washingtonConfig: StateConfig = {
       "The I-5 border crossing at Blaine, the San Juan Islands, the North Cascades, and the Mount Rainier and Olympic park corridors draw heavy out-of-state and cross-border traffic from Oregon and British Columbia. Visitors injured in Washington often do not know local PI attorneys or the state's 3-year SOL and pure-comparative-fault rule. Geo-fenced digital along I-5 near the border, I-90 over Snoqualmie, and the SR-20 North Cascades and Mount Rainier approach routes can capture cases from this high-volume seasonal and cross-border segment before they engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) traffic fatalities; BLS Census of Fatal Occupational Injuries — Washington 2023; U.S. Census ACS (Census Reporter, ACS 2024 1-year).",
+      "FARS 2024 Annual Report File traffic fatalities; BLS Census of Fatal Occupational Injuries — Washington 2023; U.S. Census ACS (Census Reporter, ACS 2024 1-year).",
   },
 
   // Boating section is relevant for WA (Puget Sound / San Juans / ferries);

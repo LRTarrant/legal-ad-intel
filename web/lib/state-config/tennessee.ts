@@ -19,19 +19,19 @@ export const tennesseeConfig: StateConfig = {
 
   trafficStats: {
     totalCrashes: 212_780,
-    totalFatalities: 1197, // FARS 2024 (preliminary)
+    totalFatalities: 1197, // FARS 2024 Annual Report File
     motorcycleFatalities: 186,
     speedRelatedFatalities: 344,
     speedRelatedPct: 26.5,
-    alcoholRelatedFatalities: 309, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 25.8, // 309 / 1197 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 309, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 25.8, // 309 / 1197 FARS 2024 Annual Report File
     unrestrainedFatalities: 397,
     distractedDrivingFatalCrashes: 54,
-    urbanFatalities: 713, // FARS 2024 (preliminary)
-    ruralFatalities: 483, // FARS 2024 (preliminary)
+    urbanFatalities: 713, // FARS 2024 Annual Report File
+    ruralFatalities: 483, // FARS 2024 Annual Report File
     reportYear: 2024,
     sourceLabel: "TDOSHS 2024",
-    fatalitiesSourceLabel: "FARS 2024 (preliminary)",
+    fatalitiesSourceLabel: "FARS 2024 Annual Report File",
   },
 
   workplaceStats: {
