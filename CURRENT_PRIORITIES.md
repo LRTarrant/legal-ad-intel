@@ -1,9 +1,15 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-05-12 (CPSC research complete; data-source arc fully scoped)
+Last updated: 2026-06-08 (Admin GA4 Site Analytics dashboard shipped + live)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
+
+---
+
+## 0. Recently shipped
+
+- **2026-06-08 — Admin Site Analytics dashboard (GA4) — live.** `/admin/analytics` (admin-gated) renders 30-day GA4 KPIs + top pages / traffic sources / geography / U.S. states & cities via the GA Data API. Closed out the long-open PR #271 (rebased + modernized to `isAdmin()`), then hotfixed the serverless gRPC transport in PR #404 (`fallback: true` → REST). Auth is OAuth2 refresh-token (not a service-account key); env vars + runbook in `docs/ga4-dashboard-setup.md`. Verified live against the real property.
 
 ---
 
