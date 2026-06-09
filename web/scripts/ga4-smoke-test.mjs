@@ -33,7 +33,8 @@ const authClient = new UserRefreshClient({
   refreshToken: GA_REFRESH_TOKEN,
 });
 
-const client = new BetaAnalyticsDataClient({ authClient });
+// fallback: true mirrors lib/ga4.ts — REST transport (gRPC fails in serverless).
+const client = new BetaAnalyticsDataClient({ authClient, fallback: true });
 
 try {
   const [res] = await client.runReport({
