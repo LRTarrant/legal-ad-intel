@@ -12,9 +12,9 @@ export const newJerseyConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in New Jersey — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across the New York and Philadelphia DMAs (Newark, Jersey City, Edison, Camden, Atlantic City).",
   },
 
-  // Source: FARS 2024 preliminary (already in our DB). Rural + urban (100 + 561
+  // Source: FARS 2024 (already in our DB). Rural + urban (100 + 561
   // = 661) is 9 short of the 670 total because 9 fatalities have an unknown
-  // rural/urban classification in the preliminary FARS file — mirrored as-is.
+  // rural/urban classification in the FARS file — mirrored as-is.
   trafficStats: {
     totalCrashes: 0, // no citable NJ statewide crash-volume figure verified; left 0
     totalFatalities: 670,
@@ -28,7 +28,7 @@ export const newJerseyConfig: StateConfig = {
     urbanFatalities: 561,
     ruralFatalities: 100,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — New Jersey 2023.
@@ -81,7 +81,7 @@ export const newJerseyConfig: StateConfig = {
       "New Jersey runs a continuous high-density construction pipeline: port and warehouse expansion around Newark/Elizabeth, transit and infrastructure work (Gateway, NJ Transit), and residential and commercial development across the northern counties and the Jersey Shore. Construction fatalities were 16 of 81 New Jersey workplace deaths in 2023 (about 20%). Third-party liability — crane, scaffold, electrical, and OSHA-cited incidents involving a non-employer at fault — is the primary recovery path where workers' compensation limits direct claims against the employer. Workers on active North Jersey and Shore-area job sites and their families are the primary target.",
 
     ruralUrbanContext:
-      "New Jersey is overwhelmingly urban: 561 of the 670 FARS 2024 preliminary fatalities were urban versus 100 rural (9 unclassified). The rural share concentrates in the northwest highlands (Sussex, Warren, Hunterdon) and the Pinelands and farm belt of the south (Salem, Cumberland, Atlantic, Burlington). Those rural pockets have higher per-capita fatality rates and thinner broadband than the metro core, so radio, outdoor, and community media still matter there. But the dominant planning fact is the opposite of most states: New Jersey's case volume lives in dense urban and suburban corridors, and the media buy is governed by two out-of-state DMAs rather than any in-state market.",
+      "New Jersey is overwhelmingly urban: 561 of the 670 FARS 2024 fatalities were urban versus 100 rural (9 unclassified). The rural share concentrates in the northwest highlands (Sussex, Warren, Hunterdon) and the Pinelands and farm belt of the south (Salem, Cumberland, Atlantic, Burlington). Those rural pockets have higher per-capita fatality rates and thinner broadband than the metro core, so radio, outdoor, and community media still matter there. But the dominant planning fact is the opposite of most states: New Jersey's case volume lives in dense urban and suburban corridors, and the media buy is governed by two out-of-state DMAs rather than any in-state market.",
 
     judicialContext:
       "New Jersey has a unified Superior Court system organized into 15 vicinages. Essex County (Newark) and Middlesex County are high-volume civil venues; Camden and Atlantic counties anchor the south. Plaintiff-favorability varies by vicinage, and venue analysis — plaintiff residency, defendant's place of business, and where the crash or injury occurred — can shift expected case value. New Jersey's mass-tort program (centralized in specific vicinages such as Middlesex/Atlantic) is one of the most active in the nation, a relevant signal for firms running both single-event PI and mass-tort intake.",
@@ -107,7 +107,7 @@ export const newJerseyConfig: StateConfig = {
       "The Jersey Shore and Atlantic City draw heavy seasonal traffic from the New York and Philadelphia metros and beyond. Out-of-state visitors injured in New Jersey often don't know local PI counsel, the state's 2-year SOL, or its no-fault PIP rules — and their own out-of-state auto coverage interacts in non-obvious ways with a New Jersey crash. Geo-fenced digital along the Garden State Parkway and Atlantic City Expressway, paired with Shore-area and casino-corridor placements during peak season, can capture these cases before visitors engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) for fatalities; BLS CFOI 2023 for workplace fatalities; U.S. Census ACS 2024 1-year for commuting.",
+      "FARS 2024 Annual Report File for fatalities; BLS CFOI 2023 for workplace fatalities; U.S. Census ACS 2024 1-year for commuting.",
   },
 
   // BLS CFOI 2023 gives total, construction, transportation incidents, and

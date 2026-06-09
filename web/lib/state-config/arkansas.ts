@@ -12,10 +12,10 @@ export const arkansasConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Arkansas — combining FARS crash data, workplace fatality data, demographics, judicial profiles, and market opportunity signals across Little Rock, Northwest Arkansas, Fort Smith, and Jonesboro.",
   },
 
-  // Source: NHTSA FARS 2024 (preliminary). Rural/urban + alcohol fields from
+  // Source: NHTSA FARS 2024 Annual Report File. Rural/urban + alcohol fields from
   // FARS; motorcycle/speed not separately citable for AR 2024 → null.
   // totalCrashes / unrestrainedFatalities / distractedDrivingFatalCrashes are
-  // non-nullable and not citable from FARS preliminary → set to 0.
+  // non-nullable and not citable from FARS → set to 0.
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 603,
@@ -29,7 +29,7 @@ export const arkansasConfig: StateConfig = {
     urbanFatalities: 191,
     ruralFatalities: 411,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: Census of Fatal Occupational Injuries — Arkansas 2023, published by
@@ -87,7 +87,7 @@ export const arkansasConfig: StateConfig = {
       "Construction accounted for 18 of Arkansas's 92 workplace fatalities in 2023 (roughly 20%), the second-leading industry behind trade/transportation/utilities. Northwest Arkansas is in a sustained commercial and residential building boom tied to Walmart, Tyson, and J.B. Hunt headquarters growth, and central Arkansas has steady public-infrastructure activity. Third-party liability — incidents involving a non-employer at fault such as equipment, scaffold, or roadway-work-zone hazards — is the primary recovery path where workers' compensation limits direct claims against the employer.",
 
     ruralUrbanContext:
-      "Arkansas fatalities skew heavily rural: FARS 2024 (preliminary) puts 411 of 603 fatalities (68%) on rural roads versus 191 urban. The state's population outside Little Rock and Northwest Arkansas is dispersed across the Delta (east), the Ozarks (north), and the Ouachitas (south/west), with lower broadband penetration in many of those counties. Digital-only campaigns underreach rural Arkansas; radio, outdoor, and local-broadcast complements are essential for plaintiff firms targeting case volume along I-40 and the rural state-highway network.",
+      "Arkansas fatalities skew heavily rural: FARS 2024 Annual Report File puts 411 of 603 fatalities (68%) on rural roads versus 191 urban. The state's population outside Little Rock and Northwest Arkansas is dispersed across the Delta (east), the Ozarks (north), and the Ouachitas (south/west), with lower broadband penetration in many of those counties. Digital-only campaigns underreach rural Arkansas; radio, outdoor, and local-broadcast complements are essential for plaintiff firms targeting case volume along I-40 and the rural state-highway network.",
 
     judicialContext:
       "Pulaski County (Little Rock) is Arkansas's primary venue and generally its most plaintiff-receptive, followed by the Northwest Arkansas counties (Benton, Washington) as their population and caseload grow. Many rural Arkansas venues are more conservative on damages. Venue analysis — plaintiff residency, crash location, and defendant's principal place of business — can meaningfully shift expected case value, particularly for trucking cases involving interstate carriers with multi-state insurance structures.",
@@ -113,7 +113,7 @@ export const arkansasConfig: StateConfig = {
       "Eastern Arkansas (the Delta) sits inside the Memphis DMA, so media buys placed in Memphis reach Crittenden and surrounding Arkansas counties — a planning consideration when allocating spend. Separately, the Ozark and Ouachita scenic routes draw out-of-state motorcyclists and visitors from Missouri, Oklahoma, and Texas who may be unfamiliar with Arkansas's 3-year SOL and 50%-bar fault rule. Geo-targeted digital along the I-40, I-49, and mountain-route corridors can capture these cases before they engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "NHTSA FARS 2024 (preliminary); Arkansas Department of Labor and Licensing — Census of Fatal Occupational Injuries 2023; U.S. Census ACS 2024 1-year.",
+      "NHTSA FARS 2024 Annual Report File; Arkansas Department of Labor and Licensing — Census of Fatal Occupational Injuries 2023; U.S. Census ACS 2024 1-year.",
   },
 
   // BLS CFOI data verified via the Arkansas Department of Labor mirror; the

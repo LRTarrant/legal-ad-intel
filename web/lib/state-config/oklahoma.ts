@@ -12,26 +12,25 @@ export const oklahomaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Oklahoma — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across Oklahoma City, Tulsa, Lawton, and the Sherman-Ada border market.",
   },
 
-  // Source: NHTSA FARS 2024 (preliminary). Statewide fatality counts only;
-  // motorcycle and speed-related fatalities are not broken out in the
-  // preliminary FARS release for Oklahoma, so they remain null. totalCrashes,
-  // unrestrainedFatalities, and distractedDrivingFatalCrashes are not carried
-  // in the preliminary FARS counts used here and are set to 0 (no citable
-  // Oklahoma-DOT 2024 figure verified).
+  // Source: NHTSA FARS 2024 Annual Report File. Statewide fatality counts only;
+  // motorcycle and speed-related fatalities are not broken out in the FARS ARF
+  // for Oklahoma, so they remain null. totalCrashes, unrestrainedFatalities, and
+  // distractedDrivingFatalCrashes are not carried in the FARS ARF counts used
+  // here and are set to 0 (no citable Oklahoma-DOT 2024 figure verified).
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 645,
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 225,
-    alcoholRelatedPct: 34.9,
+    alcoholRelatedFatalities: 164,
+    alcoholRelatedPct: 25.4, // 164 / 645
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
     urbanFatalities: 272,
     ruralFatalities: 372,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Oklahoma 2023.
@@ -78,13 +77,13 @@ export const oklahomaConfig: StateConfig = {
       "Oklahoma's crash exposure concentrates along the interstate spine: I-35 runs north-to-south through Oklahoma City and the Texas-to-Kansas freight lane, I-40 crosses the state east-to-west through Oklahoma City, and I-44 connects Lawton through Oklahoma City to Tulsa and the Missouri border. Drive-alone commuting (76.8%) runs well above the national average (68.7%), concentrating vehicle exposure in the Oklahoma City and Tulsa metro rings. The Oklahoma City metro (Oklahoma, Cleveland, and Canadian counties) and the Tulsa metro drive the largest share of case volume; Lawton and the Sherman-Ada border market are secondary.",
 
     truckAudience:
-      "Oklahoma sits at the crossroads of two major freight corridors. I-40 is a primary east-west transcontinental truck route, and I-35 is the NAFTA/USMCA north-south freight lane between Texas and the upper Midwest; the two cross in Oklahoma City. I-44 (the Turner Turnpike) carries heavy commercial traffic between Oklahoma City and Tulsa. The state's energy and agriculture sectors add oilfield-service and heavy-equipment vehicle traffic on rural routes. Trucking PI cases on these corridors frequently involve interstate carriers with multi-state insurance structures and venue questions, and the high rural fatality share (372 of 645 in FARS 2024 preliminary) reflects exposure on these high-speed two-lane and interstate segments.",
+      "Oklahoma sits at the crossroads of two major freight corridors. I-40 is a primary east-west transcontinental truck route, and I-35 is the NAFTA/USMCA north-south freight lane between Texas and the upper Midwest; the two cross in Oklahoma City. I-44 (the Turner Turnpike) carries heavy commercial traffic between Oklahoma City and Tulsa. The state's energy and agriculture sectors add oilfield-service and heavy-equipment vehicle traffic on rural routes. Trucking PI cases on these corridors frequently involve interstate carriers with multi-state insurance structures and venue questions, and the high rural fatality share (372 of 645 in FARS 2024) reflects exposure on these high-speed two-lane and interstate segments.",
 
     motorcycleAudience:
-      "Oklahoma requires motorcycle helmets only for riders under 18; riders 18 and older may ride without a helmet (47 O.S. § 12-609). Motorcycle fatalities are not broken out in the preliminary FARS 2024 release used here, but the partial-helmet regime, the Route 66 corridor, and the southeastern Ouachita and Arbuckle mountain routes draw recreational riders, including out-of-state visitors. The 2-year SOL makes early intake particularly important for motorcycle cases, where injuries are often severe and liability disputes hinge on early scene evidence.",
+      "Oklahoma requires motorcycle helmets only for riders under 18; riders 18 and older may ride without a helmet (47 O.S. § 12-609). Motorcycle fatalities are not broken out in the FARS 2024 release used here, but the partial-helmet regime, the Route 66 corridor, and the southeastern Ouachita and Arbuckle mountain routes draw recreational riders, including out-of-state visitors. The 2-year SOL makes early intake particularly important for motorcycle cases, where injuries are often severe and liability disputes hinge on early scene evidence.",
 
     ruralUrbanContext:
-      "Oklahoma's fatalities skew rural: FARS 2024 preliminary records 372 rural fatalities against 272 urban, even though population concentrates in the Oklahoma City and Tulsa metros. Rural counties along I-40, I-35, and US-69/US-75 see disproportionate crash severity tied to higher speeds, longer EMS response times, and lower seat-belt use. Many rural Oklahoma markets have weaker broadband penetration, so digital-only campaigns underreach them. Radio, outdoor, and community media are necessary complements for plaintiff firms targeting non-metro Oklahoma.",
+      "Oklahoma's fatalities skew rural: FARS 2024 records 372 rural fatalities against 272 urban, even though population concentrates in the Oklahoma City and Tulsa metros. Rural counties along I-40, I-35, and US-69/US-75 see disproportionate crash severity tied to higher speeds, longer EMS response times, and lower seat-belt use. Many rural Oklahoma markets have weaker broadband penetration, so digital-only campaigns underreach them. Radio, outdoor, and community media are necessary complements for plaintiff firms targeting non-metro Oklahoma.",
 
     judicialContext:
       "Oklahoma County (Oklahoma City) and Tulsa County are the state's primary plaintiff venues and produce the largest auto, premises, and commercial-vehicle verdicts. The 2019 Beason decision removing the non-economic damages cap meaningfully raised the ceiling on catastrophic-injury and wrongful-death case value statewide. Venue selection — driven by plaintiff residency and crash location — and the at-fault, 51%-bar comparative regime are the two levers that most shift expected case value in Oklahoma.",
@@ -103,10 +102,10 @@ export const oklahomaConfig: StateConfig = {
 
     internetAccessTitle: "Rural Oklahoma Connectivity Gap",
     internetAccessTip:
-      "Oklahoma's rural counties — particularly across the panhandle, the southeast, and the I-40/US-69 corridors — have lower broadband penetration than the Oklahoma City and Tulsa metros. Digital-only campaigns underreach these markets even though they carry the majority of the state's traffic fatalities (372 rural of 645 in FARS 2024 preliminary). Local radio, outdoor advertising, and community partnerships are necessary channels for plaintiff firms seeking cases outside the two major metros.",
+      "Oklahoma's rural counties — particularly across the panhandle, the southeast, and the I-40/US-69 corridors — have lower broadband penetration than the Oklahoma City and Tulsa metros. Digital-only campaigns underreach these markets even though they carry the majority of the state's traffic fatalities (372 rural of 645 in FARS 2024). Local radio, outdoor advertising, and community partnerships are necessary channels for plaintiff firms seeking cases outside the two major metros.",
 
     footerSourcesLabel:
-      "NHTSA FARS 2024 (preliminary); U.S. Census ACS 2024 1-year; BLS CFOI 2023; Oklahoma Statutes Title 12 & Title 23.",
+      "NHTSA FARS 2024 Annual Report File; U.S. Census ACS 2024 1-year; BLS CFOI 2023; Oklahoma Statutes Title 12 & Title 23.",
   },
 
   features: {

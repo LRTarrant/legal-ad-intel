@@ -16,9 +16,10 @@
  *   Reads is_preliminary from state_crash_statistics.
  *   is_preliminary = true  → inline comment "// FARS {year} (preliminary)"
  *                            Tier 2 sourceLabel: "FARS {year} (preliminary)"
- *   is_preliminary = false → inline comment "// FARS {year}"
- *                            Tier 2 sourceLabel: "FARS {year}"
- *   Flip is_preliminary to false in Supabase once NHTSA publishes final tables.
+ *   is_preliminary = false → inline comment "// FARS {year} Annual Report File"
+ *                            Tier 2 sourceLabel: "FARS {year} Annual Report File"
+ *   is_preliminary=false denotes the FARS Annual Report File (the current
+ *   authoritative release), not the lower-detail preliminary early estimate.
  *
  * Uses native fetch (Node 18+) — no SDK dependency, runs from repo root.
  *
@@ -226,7 +227,7 @@ function processFile(
 ): FileResult {
   let content = readFileSync(filePath, "utf-8");
   const log: string[] = [];
-  const qualifier  = row.is_preliminary ? " (preliminary)" : "";
+  const qualifier  = row.is_preliminary ? " (preliminary)" : " Annual Report File";
   const yearLabel  = `FARS ${row.year}${qualifier}`;
 
   // ── Downgrade guard ───────────────────────────────────────────────────────

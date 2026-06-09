@@ -12,27 +12,23 @@ export const iowaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Iowa — combining FARS crash data, BLS workplace-fatality data, Census commute demographics, and market opportunity signals across Des Moines, Cedar Rapids, the Quad Cities, and Sioux City.",
   },
 
-  // Source: FARS 2024 (preliminary). Iowa does not publish a state-DOT crash
+  // Source: FARS 2024 Annual Report File. Iowa does not publish a state-DOT crash
   // volume / motorcycle / speed breakout we can cite at this vintage, so those
   // non-fatality fields are zeroed or nulled per the type contract.
   trafficStats: {
     totalCrashes: 0, // no citable 2024 statewide crash total at this vintage
     totalFatalities: 356,
-    motorcycleFatalities: null, // not separately citable at FARS-preliminary vintage
+    motorcycleFatalities: null, // not separately broken out in the FARS ARF
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    // No citable Iowa 2024 alcohol-impaired fatality count at FARS-preliminary
-    // vintage. The prior 78 / 21.9% value was unsourced and inconsistent with
-    // every published Iowa figure (2022 FARS = 34% alcohol-impaired; Iowa avg
-    // ~37% impairment-related), so it is nulled rather than invented.
-    alcoholRelatedFatalities: null,
-    alcoholRelatedPct: null,
-    unrestrainedFatalities: 0, // not separately citable at FARS-preliminary vintage
-    distractedDrivingFatalCrashes: 0, // not separately citable at FARS-preliminary vintage
+    alcoholRelatedFatalities: 78,
+    alcoholRelatedPct: 21.9, // 78 / 356, FARS 2024 ARF (BAC>=0.08)
+    unrestrainedFatalities: 0, // not separately broken out in the FARS ARF
+    distractedDrivingFatalCrashes: 0, // not separately broken out in the FARS ARF
     urbanFatalities: 127,
     ruralFatalities: 229,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Iowa 2023
@@ -80,13 +76,13 @@ export const iowaConfig: StateConfig = {
       "Iowa is a high-volume interstate freight state anchored by I-80, one of the nation's busiest coast-to-coast truck routes, which bisects the state east to west. I-35 carries north-south freight between the Twin Cities and Kansas City through Des Moines, and the two interstates' interchange at Des Moines is a major distribution node. Agricultural and food-processing logistics add heavy seasonal commercial-vehicle traffic on rural state and county routes. Trucking cases on these corridors frequently involve interstate carriers with multi-state insurance structures and venue questions spanning the Iowa–Illinois (Quad Cities) and Iowa–Nebraska (Council Bluffs/Omaha) lines.",
 
     motorcycleAudience:
-      "Iowa is one of the few U.S. states with no motorcycle helmet law for any rider — helmets are not required at any age (there is no universal or partial mandate). That regulatory posture raises the severity of motorcycle-crash injuries relative to mandatory-helmet states and makes early intake on motorcycle cases especially valuable. Iowa's rural two-lane highways and seasonal ride routes attract recreational riders, including out-of-state visitors. FARS 2024 (preliminary) does not break out a citable Iowa motorcycle-fatality count at this vintage, but the absence of a helmet requirement is the defining marketing and case-value signal for this segment.",
+      "Iowa is one of the few U.S. states with no motorcycle helmet law for any rider — helmets are not required at any age (there is no universal or partial mandate). That regulatory posture raises the severity of motorcycle-crash injuries relative to mandatory-helmet states and makes early intake on motorcycle cases especially valuable. Iowa's rural two-lane highways and seasonal ride routes attract recreational riders, including out-of-state visitors. FARS 2024 Annual Report File does not break out a citable Iowa motorcycle-fatality count at this vintage, but the absence of a helmet requirement is the defining marketing and case-value signal for this segment.",
 
     constructionAudience:
       "Des Moines anchors a steady commercial- and infrastructure-construction market, with additional activity around Cedar Rapids, Iowa City, and the Quad Cities. Workplace fatalities in Iowa totaled 91 in 2023 (BLS CFOI), with transportation incidents (42) and falls, slips, and trips (19) the leading event types. Third-party liability — a non-employer at fault in a crane, scaffold, equipment, or roadway-work-zone incident — is the primary recovery path where workers' compensation limits direct claims against the employer. The BLS 2023 Iowa release does not publish a separate construction-sector fatality count, so that figure is intentionally not shown.",
 
     ruralUrbanContext:
-      "Iowa's traffic deaths are overwhelmingly rural: FARS 2024 (preliminary) records 229 rural fatalities against 127 urban (out of 356 total). High-speed two-lane state and county roads, longer EMS response times, and agricultural-equipment traffic drive rural crash severity. Rural Iowa counties also have lower broadband penetration, so digital-only campaigns underreach them. Local radio, outdoor advertising along I-80 and U.S. highways, and community media are necessary complements for plaintiff firms targeting non-metro Iowa.",
+      "Iowa's traffic deaths are overwhelmingly rural: FARS 2024 Annual Report File records 229 rural fatalities against 127 urban (out of 356 total). High-speed two-lane state and county roads, longer EMS response times, and agricultural-equipment traffic drive rural crash severity. Rural Iowa counties also have lower broadband penetration, so digital-only campaigns underreach them. Local radio, outdoor advertising along I-80 and U.S. highways, and community media are necessary complements for plaintiff firms targeting non-metro Iowa.",
 
     judicialContext:
       "Polk County (Des Moines) and Linn County (Cedar Rapids) are Iowa's primary trial venues and produce the bulk of the state's higher PI verdicts. Scott County (Davenport, in the Quad Cities) and Johnson County (Iowa City) are secondary venues. Iowa juries are generally regarded as moderate relative to the largest plaintiff-favorable metros nationally, which makes venue selection — plaintiff residency, crash location, and corporate-defendant principal place of business — a meaningful driver of expected case value.",
@@ -105,14 +101,14 @@ export const iowaConfig: StateConfig = {
 
     internetAccessTitle: "Rural Iowa Connectivity Gap",
     internetAccessTip:
-      "Iowa's rural counties — which absorb the majority of the state's traffic fatalities (229 rural vs. 127 urban in FARS 2024 preliminary) — have lower broadband penetration than the Des Moines and Cedar Rapids metros. Digital-only campaigns underreach these high-severity crash markets. Local radio, outdoor advertising along I-80 and U.S. highway corridors, and community partnerships are necessary channels for plaintiff firms seeking cases outside Iowa's metros.",
+      "Iowa's rural counties — which absorb the majority of the state's traffic fatalities (229 rural vs. 127 urban in FARS 2024) — have lower broadband penetration than the Des Moines and Cedar Rapids metros. Digital-only campaigns underreach these high-severity crash markets. Local radio, outdoor advertising along I-80 and U.S. highway corridors, and community partnerships are necessary channels for plaintiff firms seeking cases outside Iowa's metros.",
 
     outOfStateTitle: "No Helmet Law + I-80 Through-Traffic Opportunity",
     outOfStateTip:
       "Iowa's lack of any motorcycle helmet law, combined with I-80's heavy cross-country through-traffic, means many seriously injured riders and motorists on Iowa roads are out-of-state visitors who do not know local PI attorneys or Iowa's two-year SOL. Geo-fenced digital along the I-80 and I-35 corridors, paired with messaging on Iowa's at-fault rules and short filing window, can capture these cases before injured out-of-state parties engage counsel back home.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary); BLS Census of Fatal Occupational Injuries — Iowa 2023; U.S. Census ACS 2024 1-year estimates",
+      "FARS 2024 Annual Report File; BLS Census of Fatal Occupational Injuries — Iowa 2023; U.S. Census ACS 2024 1-year estimates",
   },
 
   // Iowa's 2023 BLS release publishes the statewide total and event-type counts

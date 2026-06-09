@@ -12,11 +12,11 @@ export const kansasConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Kansas — combining FARS crash and fatality data, demographics, judicial profiles, and market opportunity signals across Wichita, the Kansas City metro (eastern Kansas), Topeka, and southeast Kansas.",
   },
 
-  // Fatality fields: FARS 2024 (preliminary). totalCrashes is not a FARS
-  // preliminary figure and no citable Kansas DOT 2024 total-crash count was
+  // Fatality fields: FARS 2024 Annual Report File. totalCrashes is not a FARS
+  // figure and no citable Kansas DOT 2024 total-crash count was
   // verified, so it is set to 0 rather than fabricated. urban/rural split is
-  // from FARS 2024 preliminary. motorcycle and speed fatalities are not in the
-  // FARS preliminary release and no citable KDOT 2024 figure was found → null.
+  // from FARS 2024. motorcycle and speed fatalities are not in the
+  // FARS release and no citable KDOT 2024 figure was found → null.
   trafficStats: {
     totalCrashes: 0,
     totalFatalities: 339,
@@ -30,7 +30,7 @@ export const kansasConfig: StateConfig = {
     urbanFatalities: 152,
     ruralFatalities: 186,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Kansas 2023 (released
@@ -80,13 +80,13 @@ export const kansasConfig: StateConfig = {
       "Kansas is a national freight crossroads. I-70 carries cross-country east-west truck traffic, and I-35 is a core segment of the NAFTA/CANAMEX freight spine linking the Kansas City logistics hub south toward Wichita, Oklahoma, and Texas. The Kansas City metro is one of the largest rail and trucking distribution hubs in the country, generating heavy commercial-vehicle volume on the eastern Kansas side of the state line. Rural stretches of I-70 across western Kansas combine high speeds, long-haul fatigue exposure, and lower seat-belt-use rates. Trucking cases on these corridors frequently involve interstate carriers with multi-state insurance structures and venue questions spanning the Kansas City metro line.",
 
     motorcycleAudience:
-      "Kansas requires helmets only for riders under 18 (K.S.A. 8-1598); riders 18 and older may ride without a helmet, which raises injury severity in motorcycle crashes and strengthens the value of serious-injury cases. The Flint Hills, the Kansas City metro ring, and the I-35 corridor toward Wichita see recreational riding traffic, including out-of-state riders. Statewide motorcycle fatality counts are not broken out in the FARS 2024 preliminary release, so a precise figure is not shown here. The 2-year SOL (K.S.A. 60-513) makes early intake critical for these higher-severity cases.",
+      "Kansas requires helmets only for riders under 18 (K.S.A. 8-1598); riders 18 and older may ride without a helmet, which raises injury severity in motorcycle crashes and strengthens the value of serious-injury cases. The Flint Hills, the Kansas City metro ring, and the I-35 corridor toward Wichita see recreational riding traffic, including out-of-state riders. Statewide motorcycle fatality counts are not broken out in the FARS 2024 release, so a precise figure is not shown here. The 2-year SOL (K.S.A. 60-513) makes early intake critical for these higher-severity cases.",
 
     constructionAudience:
       "The Wichita aviation-manufacturing cluster, the Kansas City metro construction market on the eastern side of the state, and ongoing highway work along I-70 and I-35 drive Kansas construction exposure. Third-party liability — crane, scaffold, electrical, trench, and OSHA-cited incidents involving a non-employer at fault — is the primary recovery path where workers' compensation limits direct claims against the employer. A separate Kansas 2023 construction-industry fatality count was not citably broken out by BLS, so no construction-specific figure is shown; transportation incidents were the leading workplace-fatality event in Kansas (about 70% of the state's 53 fatal work injuries in 2023). Workers on active Wichita and Kansas City job sites and their families are the primary target.",
 
     ruralUrbanContext:
-      "Kansas's 2024 traffic fatalities skew rural: 186 of 339 fatalities (about 55%) occurred on rural roads versus 152 on urban roads (FARS 2024 preliminary). Western and central Kansas counties along I-70 and the state's two-lane highway network carry high fatality rates per crash despite low population density, driven by higher speeds and longer EMS response times. These rural markets also have lower broadband penetration, so digital-only campaigns underreach them. Radio, outdoor along the interstate corridors, and community media are essential complements for plaintiff firms targeting non-metro Kansas.",
+      "Kansas's 2024 traffic fatalities skew rural: 186 of 339 fatalities (about 55%) occurred on rural roads versus 152 on urban roads (FARS 2024). Western and central Kansas counties along I-70 and the state's two-lane highway network carry high fatality rates per crash despite low population density, driven by higher speeds and longer EMS response times. These rural markets also have lower broadband penetration, so digital-only campaigns underreach them. Radio, outdoor along the interstate corridors, and community media are essential complements for plaintiff firms targeting non-metro Kansas.",
 
     judicialContext:
       "Case value and venue in Kansas concentrate in the metropolitan judicial districts: Sedgwick County (Wichita), Johnson and Wyandotte counties (the eastern Kansas / Kansas City metro), and Shawnee County (Topeka). The elimination of the non-economic damages cap in Hilburn v. Enerpipe (2019) removed a ceiling that previously constrained expected case value statewide, which raises the stakes on venue selection and on full development of non-economic damages. Plaintiff residency and crash-location analysis can shift expected recovery materially across Kansas's mix of urban and rural districts.",
@@ -112,7 +112,7 @@ export const kansasConfig: StateConfig = {
       "I-70 and I-35 carry heavy out-of-state passenger and freight traffic through Kansas. Out-of-state travelers injured in Kansas may not know local PI attorneys, the state's 2-year SOL, or that Kansas is a no-fault PIP state with a threshold to sue for pain and suffering. Geo-fenced digital along the I-70 and I-35 corridors and around the Kansas City metro line can capture these cases before injured travelers engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) — NHTSA Fatality Analysis Reporting System; BLS Census of Fatal Occupational Injuries (Kansas 2023); U.S. Census ACS 2024 1-year estimates",
+      "FARS 2024 Annual Report File — NHTSA Fatality Analysis Reporting System; BLS Census of Fatal Occupational Injuries (Kansas 2023); U.S. Census ACS 2024 1-year estimates",
   },
 
   // No injuryData yet; add when state-specific deep crash data is integrated.

@@ -15,18 +15,18 @@ export const wisconsinConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/WisDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 595, // FARS 2024 (preliminary)
+    totalFatalities: 595, // FARS 2024 Annual Report File
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 202, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 33.9, // 202 / 595 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 202, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 33.9, // 202 / 595 FARS 2024 Annual Report File
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 254, // FARS 2024 (preliminary)
-    ruralFatalities: 341, // FARS 2024 (preliminary)
+    urbanFatalities: 254, // FARS 2024 Annual Report File
+    ruralFatalities: 341, // FARS 2024 Annual Report File
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

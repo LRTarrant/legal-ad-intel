@@ -12,22 +12,22 @@ export const connecticutConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Connecticut — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across Hartford, New Haven, Stamford, Bridgeport, Waterbury, and New London.",
   },
 
-  // Source: FARS 2024 (preliminary). Connecticut repealed no-fault auto in 1993;
+  // Source: FARS 2024 Annual Report File. Connecticut repealed no-fault auto in 1993;
   // standard tort liability applies. Motorcycle/speed not broken out in our data.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 310, // FARS 2024 (preliminary)
+    totalFatalities: 310, // FARS 2024 Annual Report File
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 109, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 35.2, // 109 / 310 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 109, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 35.2, // 109 / 310 FARS 2024 Annual Report File
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 269, // FARS 2024 (preliminary)
-    ruralFatalities: 39, // FARS 2024 (preliminary)
+    urbanFatalities: 269, // FARS 2024 Annual Report File
+    ruralFatalities: 39, // FARS 2024 Annual Report File
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Connecticut 2023.
@@ -73,13 +73,13 @@ export const connecticutConfig: StateConfig = {
       "Connecticut is a through-state for Northeast freight. I-95 is one of the busiest truck corridors on the Eastern Seaboard, carrying interstate carriers between the New York metro and Providence/Boston. I-84 links the Hudson Valley and western Massachusetts freight networks through Danbury and Hartford, and I-91 feeds the Springfield, MA distribution belt. Trucking PI cases on these corridors frequently involve out-of-state carriers with multi-state insurance structures, and Connecticut's 2-year SOL (§ 52-584) makes early intake critical before evidence and ELD data are lost.",
 
     motorcycleAudience:
-      "Connecticut requires helmets only for riders under 18 (Conn. Gen. Stat. § 14-289g); riders 18 and older may legally ride without a helmet, which raises injury severity in adult motorcycle crashes. Motorcycle fatalities are not separately broken out in our FARS 2024 preliminary data for Connecticut. Recreational riding in the Litchfield Hills and eastern Connecticut, plus heavy out-of-state rider traffic on I-95 and along the shoreline, makes early intake on motorcycle cases important given the 2-year SOL.",
+      "Connecticut requires helmets only for riders under 18 (Conn. Gen. Stat. § 14-289g); riders 18 and older may legally ride without a helmet, which raises injury severity in adult motorcycle crashes. Motorcycle fatalities are not separately broken out in our FARS 2024 data for Connecticut. Recreational riding in the Litchfield Hills and eastern Connecticut, plus heavy out-of-state rider traffic on I-95 and along the shoreline, makes early intake on motorcycle cases important given the 2-year SOL.",
 
     constructionAudience:
       "Construction accounted for 10 of Connecticut's 33 workplace fatalities in 2023 (30.3%), the single largest industry share. Active markets include downtown Hartford and Stamford office and residential development, New Haven's biotech and Yale-anchored expansion, and ongoing I-95 and rail-corridor infrastructure work. Third-party liability — crane, scaffold, electrical, and OSHA-cited incidents involving a non-employer at fault — is the primary recovery path where workers' compensation limits direct claims against the employer. Workers on active Fairfield County and Hartford-area job sites and their families are the primary target.",
 
     ruralUrbanContext:
-      "Connecticut is heavily urban: FARS 2024 preliminary data records 269 urban fatalities against 39 rural. The rural exposure concentrates in the northeast 'Quiet Corner' (Windham and Tolland counties) and the northwest Litchfield Hills, where two-lane state routes and lower seatbelt-use patterns raise per-crash severity. Because rural volume is small in absolute terms, plaintiff firms should weight spend toward the coastal I-95 and central I-91 metros, treating rural counties as a radio-and-outdoor supplement rather than a primary digital target.",
+      "Connecticut is heavily urban: FARS 2024 data records 269 urban fatalities against 39 rural. The rural exposure concentrates in the northeast 'Quiet Corner' (Windham and Tolland counties) and the northwest Litchfield Hills, where two-lane state routes and lower seatbelt-use patterns raise per-crash severity. Because rural volume is small in absolute terms, plaintiff firms should weight spend toward the coastal I-95 and central I-91 metros, treating rural counties as a radio-and-outdoor supplement rather than a primary digital target.",
 
     judicialContext:
       "Connecticut organizes its trial courts into judicial districts rather than counties for civil purposes. The Hartford, New Haven, Fairfield (Bridgeport), and Stamford-Norwalk judicial districts handle the bulk of high-value PI litigation. Fairfield County juries, drawn from one of the wealthiest counties in the nation, can return substantial verdicts, while Hartford and New Haven offer deep, experienced civil benches. Venue selection — driven by plaintiff residency and crash or injury location — can materially shift expected case value across these districts.",
@@ -101,7 +101,7 @@ export const connecticutConfig: StateConfig = {
       "Connecticut's I-95 shoreline, the Foxwoods and Mohegan Sun casino corridor in the southeast, and the Litchfield Hills draw heavy out-of-state traffic from New York, New Jersey, and Massachusetts. Out-of-state visitors injured in Connecticut often do not know local PI attorneys or the state's 2-year SOL. Geo-fenced digital along I-95 and the casino corridor, combined with shoreline and tourism-area partnerships, can capture these cases before injured visitors engage out-of-state counsel.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) · BLS CFOI 2023 · U.S. Census ACS 2024 1-year",
+      "FARS 2024 Annual Report File · BLS CFOI 2023 · U.S. Census ACS 2024 1-year",
   },
 
   features: {

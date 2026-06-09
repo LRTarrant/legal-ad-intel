@@ -15,18 +15,18 @@ export const southCarolinaConfig: StateConfig = {
   // Placeholder values; to be filled with real FARS/SCDOT figures.
   trafficStats: {
     totalCrashes: 0,
-    totalFatalities: 1038, // FARS 2024 (preliminary)
+    totalFatalities: 1038, // FARS 2024 Annual Report File
     motorcycleFatalities: null,
     speedRelatedFatalities: null,
     speedRelatedPct: null,
-    alcoholRelatedFatalities: 344, // FARS 2024 (preliminary)
-    alcoholRelatedPct: 33.1, // 344 / 1038 FARS 2024 (preliminary)
+    alcoholRelatedFatalities: 344, // FARS 2024 Annual Report File
+    alcoholRelatedPct: 33.1, // 344 / 1038 FARS 2024 Annual Report File
     unrestrainedFatalities: 0,
     distractedDrivingFatalCrashes: 0,
-    urbanFatalities: 563, // FARS 2024 (preliminary)
-    ruralFatalities: 475, // FARS 2024 (preliminary)
+    urbanFatalities: 563, // FARS 2024 Annual Report File
+    ruralFatalities: 475, // FARS 2024 Annual Report File
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Placeholder values; to be filled with BLS CFOI figures.

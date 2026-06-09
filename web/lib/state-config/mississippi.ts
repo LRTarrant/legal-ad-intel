@@ -12,14 +12,14 @@ export const mississippiConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Mississippi — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across Jackson, Hattiesburg-Laurel, Biloxi-Gulfport, and the Columbus-Tupelo-West Point market.",
   },
 
-  // Source: FARS 2024 (preliminary). Fatality counts are the verbatim
-  // preliminary 2024 figures. Mississippi has no published statewide
+  // Source: FARS 2024 Annual Report File. Fatality counts are the verbatim
+  // 2024 figures. Mississippi has no published statewide
   // crash-volume / motorcycle / speed breakout that is citable at this
   // vintage, so those fields are 0 / null pending a state-DOT figure.
   trafficStats: {
     totalCrashes: 0, // no citable statewide 2024 crash-volume figure
     totalFatalities: 753,
-    motorcycleFatalities: null, // not in FARS preliminary; no citable MS DOT 2024 figure
+    motorcycleFatalities: null, // not in FARS; no citable MS DOT 2024 figure
     speedRelatedFatalities: null,
     speedRelatedPct: null,
     alcoholRelatedFatalities: 140,
@@ -29,7 +29,7 @@ export const mississippiConfig: StateConfig = {
     urbanFatalities: 219,
     ruralFatalities: 505,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // BLS CFOI: a verified statewide total exists for Mississippi 2023 (72 fatal
@@ -87,7 +87,7 @@ export const mississippiConfig: StateConfig = {
       "Mississippi has a universal motorcycle helmet law (Miss. Code Ann. § 63-7-64) requiring all riders and passengers to wear a helmet regardless of age, which tends to reduce fatal head-injury claims relative to partial-helmet states but does not eliminate serious-injury motorcycle litigation. The Gulf Coast (US-90, I-10) and the Natchez Trace Parkway draw recreational riders, including out-of-state visitors. The 3-year SOL (§ 15-1-49) gives a somewhat longer intake window than the 2-year states, but early intake remains important for evidence preservation.",
 
     ruralUrbanContext:
-      "Mississippi's fatality burden is overwhelmingly rural: 505 of 753 preliminary 2024 fatalities (about 67%) occurred on rural roads, versus 219 urban. This reflects the state's dispersed population and reliance on high-speed two-lane state and US highways outside the Jackson, Gulf Coast, and Hattiesburg metros. Rural counties have lower broadband penetration, so digital-only campaigns underreach the very markets producing the most serious crashes. Local radio, outdoor advertising along the I-55/I-20/I-10 corridors, and community media are necessary complements for plaintiff firms targeting non-metro Mississippi.",
+      "Mississippi's fatality burden is overwhelmingly rural: 505 of 753 2024 fatalities (about 67%) occurred on rural roads, versus 219 urban. This reflects the state's dispersed population and reliance on high-speed two-lane state and US highways outside the Jackson, Gulf Coast, and Hattiesburg metros. Rural counties have lower broadband penetration, so digital-only campaigns underreach the very markets producing the most serious crashes. Local radio, outdoor advertising along the I-55/I-20/I-10 corridors, and community media are necessary complements for plaintiff firms targeting non-metro Mississippi.",
 
     judicialContext:
       "Mississippi historically produced some of the highest plaintiff verdicts in the country before its early-2000s tort-reform wave, which introduced the § 11-1-60 non-economic damages caps. Hinds County (Jackson) remains the state's most prominent plaintiff venue. Coast counties (Harrison, Jackson, Hancock) and the Delta also have plaintiff-leaning jury pools. Venue analysis — plaintiff residency and crash location — meaningfully affects expected case value, and the statutory non-economic cap should be modeled into every projection.",
@@ -113,13 +113,13 @@ export const mississippiConfig: StateConfig = {
       "North Mississippi (DeSoto County and the surrounding suburbs) sits inside the Memphis, TN DMA, and far south Mississippi falls within the New Orleans, LA DMA. Firms advertising in those neighboring DMAs reach Mississippi residents who will litigate under Mississippi law — pure comparative negligence, the 3-year SOL, and the § 11-1-60 non-economic cap. In-state media buys in Jackson and the Gulf Coast will not cover DeSoto County; reaching it requires a Memphis-DMA placement.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) — NHTSA Fatality Analysis Reporting System; U.S. Census ACS 2024 1-year estimates; Miss. Code Ann. §§ 11-7-15, 15-1-49, 11-1-60, 63-7-64",
+      "FARS 2024 Annual Report File — NHTSA Fatality Analysis Reporting System; U.S. Census ACS 2024 1-year estimates; Miss. Code Ann. §§ 11-7-15, 15-1-49, 11-1-60, 63-7-64",
 
     keyTakeaways: [
       "Pure comparative negligence (Miss. Code Ann. § 11-7-15) — recovery reduced by fault, never barred, even for majority-at-fault plaintiffs.",
       "3-year PI statute of limitations (§ 15-1-49); 1-year + 90-day notice for governmental claims under the MS Tort Claims Act.",
       "Statutory non-economic damages cap: $1M in non-med-mal cases, $500K in med-mal (§ 11-1-60) — model into expected case value.",
-      "Rural-dominant fatality mix (505 of 753 preliminary 2024 fatalities); pair digital with radio/outdoor along I-55, I-20, and I-10.",
+      "Rural-dominant fatality mix (505 of 753 2024 fatalities); pair digital with radio/outdoor along I-55, I-20, and I-10.",
       "Cross-border DMAs: Memphis covers north MS (DeSoto County), New Orleans covers far south MS — in-state buys miss them.",
     ],
   },

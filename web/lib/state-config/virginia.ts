@@ -12,11 +12,11 @@ export const virginiaConfig: StateConfig = {
       "Cross-signal intelligence for plaintiff firm advertising and case acquisition in Virginia — combining FARS crash data, demographics, judicial profiles, and market opportunity signals across Northern Virginia (Washington DC market), Richmond, Norfolk-Hampton Roads, Roanoke-Lynchburg, and Charlottesville.",
   },
 
-  // Source: FARS 2024 (preliminary) — already loaded in our DB.
+  // Source: FARS 2024 Annual Report File — already loaded in our DB.
   // Urban/rural split, alcohol-related, and totals are FARS-derived.
   // Motorcycle, speed, total-crash, unrestrained, and distracted-driving
   // counts are left null/0 — no citable Virginia DMV "Crash Facts 2024"
-  // figure was located to back them, and FARS preliminary does not break
+  // figure was located to back them, and FARS does not break
   // them out here. Do not invent.
   trafficStats: {
     totalCrashes: 0, // no citable VA DMV "Crash Facts 2024" total located
@@ -31,7 +31,7 @@ export const virginiaConfig: StateConfig = {
     urbanFatalities: 459,
     ruralFatalities: 456,
     reportYear: 2024,
-    sourceLabel: "FARS 2024 (preliminary)",
+    sourceLabel: "FARS 2024 Annual Report File",
   },
 
   // Source: BLS Census of Fatal Occupational Injuries — Virginia 2023
@@ -95,7 +95,7 @@ export const virginiaConfig: StateConfig = {
       "Virginia is a major East Coast freight state. I-81 along the western Shenandoah Valley is one of the most truck-dense interstates in the nation, carrying through-freight between the Northeast and the Southeast with a heavy share of commercial vehicles. I-95 funnels North-South freight through Richmond and Northern Virginia, and the Port of Virginia (Norfolk-Hampton Roads) generates dense drayage and container-truck traffic across the Hampton Roads region. Trucking cases on these corridors frequently involve interstate carriers with multi-state insurance structures. Virginia's pure contributory-negligence rule raises the stakes on commercial-vehicle cases: clean liability against the carrier is essential, since any contributory fault assigned to the injured driver bars recovery entirely.",
 
     motorcycleAudience:
-      "Virginia enforces a universal motorcycle helmet law — all riders and passengers must wear a helmet regardless of age, one of the stronger helmet mandates in the country. Motorcycle fatality counts are not broken out in our FARS preliminary dataset for Virginia, so a state-specific figure is intentionally omitted here. The Blue Ridge Parkway, Skyline Drive, and the western mountain routes draw significant recreational riders, including out-of-state visitors from Maryland, North Carolina, and the Washington metro. Under pure contributory negligence, any allegation that a rider contributed to the crash (lane positioning, speed, gear) can defeat the claim — early scene investigation and witness preservation are critical, and the 2-year SOL leaves little room to delay intake.",
+      "Virginia enforces a universal motorcycle helmet law — all riders and passengers must wear a helmet regardless of age, one of the stronger helmet mandates in the country. Motorcycle fatality counts are not broken out in our FARS dataset for Virginia, so a state-specific figure is intentionally omitted here. The Blue Ridge Parkway, Skyline Drive, and the western mountain routes draw significant recreational riders, including out-of-state visitors from Maryland, North Carolina, and the Washington metro. Under pure contributory negligence, any allegation that a rider contributed to the crash (lane positioning, speed, gear) can defeat the claim — early scene investigation and witness preservation are critical, and the 2-year SOL leaves little room to delay intake.",
 
     constructionAudience:
       "Northern Virginia's data-center and commercial-construction boom (Loudoun and Prince William counties host the densest data-center cluster in the world) and the Hampton Roads shipyard and port-infrastructure base generate substantial construction and industrial activity. Third-party liability — crane, scaffold, electrical, and OSHA-cited incidents involving a non-employer at fault — is the primary recovery path where workers' compensation limits direct claims against the employer. Virginia's contributory-negligence rule and conservative jury tendencies make liability clarity essential on these cases. (BLS CFOI 2023 recorded 117 fatal work injuries in Virginia, including 14 in construction.)",
@@ -127,7 +127,7 @@ export const virginiaConfig: StateConfig = {
       "The Blue Ridge Parkway, Skyline Drive, Shenandoah National Park, and the Virginia Beach oceanfront draw heavy out-of-state visitor and rider traffic from Maryland, North Carolina, and the Washington metro. Out-of-state visitors injured in Virginia often do not know local PI counsel, the 2-year SOL, or — critically — that Virginia's contributory-negligence rule can bar their claim outright. Geo-fenced digital along the Blue Ridge, I-81, and the Virginia Beach corridors, paired with hospitality-partner referral channels, can capture these seasonal cases before visitors engage out-of-state attorneys.",
 
     footerSourcesLabel:
-      "FARS 2024 (preliminary) — NHTSA Fatality Analysis Reporting System; U.S. Census ACS (commuting); Va. Code § 8.01-243 (statute of limitations)",
+      "FARS 2024 Annual Report File — NHTSA Fatality Analysis Reporting System; U.S. Census ACS (commuting); Va. Code § 8.01-243 (statute of limitations)",
   },
 
   features: {
