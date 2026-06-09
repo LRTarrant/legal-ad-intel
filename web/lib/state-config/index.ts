@@ -1,20 +1,26 @@
 import { arkansasConfig } from "./arkansas";
 import { coloradoConfig } from "./colorado";
 import { connecticutConfig } from "./connecticut";
+import { hawaiiConfig } from "./hawaii";
+import { idahoConfig } from "./idaho";
 import { illinoisConfig } from "./illinois";
 import { indianaConfig } from "./indiana";
 import { iowaConfig } from "./iowa";
 import { kansasConfig } from "./kansas";
 import { kentuckyConfig } from "./kentucky";
 import { louisianaConfig } from "./louisiana";
+import { maineConfig } from "./maine";
 import { massachusettsConfig } from "./massachusetts";
 import { marylandConfig } from "./maryland";
 import { michiganConfig } from "./michigan";
 import { minnesotaConfig } from "./minnesota";
 import { mississippiConfig } from "./mississippi";
 import { missouriConfig } from "./missouri";
+import { nebraskaConfig } from "./nebraska";
 import { nevadaConfig } from "./nevada";
+import { newHampshireConfig } from "./new-hampshire";
 import { newJerseyConfig } from "./new-jersey";
+import { newMexicoConfig } from "./new-mexico";
 import { newYorkConfig } from "./new-york";
 import { northCarolinaConfig } from "./north-carolina";
 import { ohioConfig } from "./ohio";
@@ -24,8 +30,10 @@ import { pennsylvaniaConfig } from "./pennsylvania";
 import { southCarolinaConfig } from "./south-carolina";
 import { tennesseeConfig } from "./tennessee";
 import { texasConfig } from "./texas";
+import { utahConfig } from "./utah";
 import { virginiaConfig } from "./virginia";
 import { washingtonConfig } from "./washington";
+import { westVirginiaConfig } from "./west-virginia";
 import { wisconsinConfig } from "./wisconsin";
 import type { StateConfig } from "./_types";
 
@@ -40,20 +48,26 @@ export const STATE_CONFIGS: Record<string, StateConfig> = {
   arkansas: arkansasConfig,
   colorado: coloradoConfig,
   connecticut: connecticutConfig,
+  hawaii: hawaiiConfig,
+  idaho: idahoConfig,
   illinois: illinoisConfig,
   indiana: indianaConfig,
   iowa: iowaConfig,
   kansas: kansasConfig,
   kentucky: kentuckyConfig,
   louisiana: louisianaConfig,
+  maine: maineConfig,
   maryland: marylandConfig,
   massachusetts: massachusettsConfig,
   michigan: michiganConfig,
   minnesota: minnesotaConfig,
   mississippi: mississippiConfig,
   missouri: missouriConfig,
+  nebraska: nebraskaConfig,
   nevada: nevadaConfig,
+  "new-hampshire": newHampshireConfig,
   "new-jersey": newJerseyConfig,
+  "new-mexico": newMexicoConfig,
   "new-york": newYorkConfig,
   "north-carolina": northCarolinaConfig,
   ohio: ohioConfig,
@@ -63,8 +77,10 @@ export const STATE_CONFIGS: Record<string, StateConfig> = {
   "south-carolina": southCarolinaConfig,
   tennessee: tennesseeConfig,
   texas: texasConfig,
+  utah: utahConfig,
   virginia: virginiaConfig,
   washington: washingtonConfig,
+  "west-virginia": westVirginiaConfig,
   wisconsin: wisconsinConfig,
 };
 
