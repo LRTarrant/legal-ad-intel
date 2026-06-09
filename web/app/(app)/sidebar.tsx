@@ -40,6 +40,7 @@ import {
   Map,
   ListChecks,
   Database,
+  BarChart3,
   Droplets,
   Tractor,
   FlameKindling,
@@ -544,6 +545,7 @@ export function Sidebar() {
                 {renderNavLink({ label: "User Management", href: "/admin/users", Icon: UserCog })}
                 {isSuperAdmin && renderNavLink({ label: "API Costs", href: "/admin/api-costs", Icon: DollarSign })}
                 {isAdmin && renderNavLink({ label: "Tort Images", href: "/admin/tort-images", Icon: ImageIcon })}
+                {isAdmin && renderNavLink({ label: "Site Analytics", href: "/admin/analytics", Icon: BarChart3 })}
                 {isAdmin && renderNavLink({ label: "State Rollout", href: "/admin/rollout", Icon: Map })}
                 {isAdmin && renderNavLink({ label: "Tort Prioritization", href: "/admin/torts", Icon: ListChecks })}
                 {isAdmin && renderNavLink({ label: "State Data Sources", href: "/admin/data-sources", Icon: Database })}

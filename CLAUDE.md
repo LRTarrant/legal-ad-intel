@@ -284,7 +284,7 @@ Names and purposes only. Don't commit values; see `web/.env.example` for the loc
 - `SUPABASE_DB_PASSWORD` — DB password from project settings.
 
 **Open PRs add (not yet on main):**
-- `GA4_PROPERTY_ID`, `GA_CLIENT_EMAIL`, `GA_PRIVATE_KEY` — Google Analytics 4 Data API for the admin analytics dashboard (PR #271).
+- `GA4_PROPERTY_ID`, `GA_CLIENT_ID`, `GA_CLIENT_SECRET`, `GA_REFRESH_TOKEN` — Google Analytics 4 Data API for the admin analytics dashboard (PR #271). **OAuth2 user-refresh-token auth, not a service-account key** (`web/lib/ga4.ts` uses `UserRefreshClient`; some GCP orgs block service-account key creation). Setup runbook: `docs/ga4-dashboard-setup.md`.
 
 ---
 
