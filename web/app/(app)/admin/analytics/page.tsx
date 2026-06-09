@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/roles";
 import { AnalyticsAdmin } from "./analytics-admin";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function AdminAnalyticsPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["tenant_admin", "super_admin"].includes(profile.role)) {
+  if (!isAdmin(profile?.role)) {
     redirect("/overview");
   }
 

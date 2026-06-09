@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/roles";
 import { getGa4Client, getGa4Config, rowsFromResponse } from "@/lib/ga4";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["tenant_admin", "super_admin"].includes(profile.role)) {
+  if (!isAdmin(profile?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
