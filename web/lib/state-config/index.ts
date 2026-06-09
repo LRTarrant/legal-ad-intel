@@ -8,6 +8,7 @@ import { marylandConfig } from "./maryland";
 import { michiganConfig } from "./michigan";
 import { minnesotaConfig } from "./minnesota";
 import { missouriConfig } from "./missouri";
+import { newJerseyConfig } from "./new-jersey";
 import { newYorkConfig } from "./new-york";
 import { northCarolinaConfig } from "./north-carolina";
 import { ohioConfig } from "./ohio";
@@ -15,6 +16,8 @@ import { pennsylvaniaConfig } from "./pennsylvania";
 import { southCarolinaConfig } from "./south-carolina";
 import { tennesseeConfig } from "./tennessee";
 import { texasConfig } from "./texas";
+import { virginiaConfig } from "./virginia";
+import { washingtonConfig } from "./washington";
 import { wisconsinConfig } from "./wisconsin";
 import type { StateConfig } from "./_types";
 
@@ -36,6 +39,7 @@ export const STATE_CONFIGS: Record<string, StateConfig> = {
   michigan: michiganConfig,
   minnesota: minnesotaConfig,
   missouri: missouriConfig,
+  "new-jersey": newJerseyConfig,
   "new-york": newYorkConfig,
   "north-carolina": northCarolinaConfig,
   ohio: ohioConfig,
@@ -43,6 +47,8 @@ export const STATE_CONFIGS: Record<string, StateConfig> = {
   "south-carolina": southCarolinaConfig,
   tennessee: tennesseeConfig,
   texas: texasConfig,
+  virginia: virginiaConfig,
+  washington: washingtonConfig,
   wisconsin: wisconsinConfig,
 };
 

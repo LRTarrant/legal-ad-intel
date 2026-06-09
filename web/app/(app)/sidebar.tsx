@@ -186,6 +186,7 @@ const STATE_PROFILES: NavItem[] = [
   { label: "Michigan", href: "/state-intelligence/v2/michigan", Icon: MapPin },
   { label: "Minnesota", href: "/state-intelligence/v2/minnesota", Icon: MapPin },
   { label: "Missouri", href: "/state-intelligence/v2/missouri", Icon: MapPin },
+  { label: "New Jersey", href: "/state-intelligence/v2/new-jersey", Icon: MapPin },
   { label: "New York", href: "/state-intelligence/v2/new-york", Icon: MapPin },
   { label: "North Carolina", href: "/state-intelligence/v2/north-carolina", Icon: MapPin },
   { label: "Ohio", href: "/state-intelligence/v2/ohio", Icon: MapPin },
@@ -193,6 +194,8 @@ const STATE_PROFILES: NavItem[] = [
   { label: "South Carolina", href: "/state-intelligence/v2/south-carolina", Icon: MapPin },
   { label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin },
   { label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin },
+  { label: "Virginia", href: "/state-intelligence/v2/virginia", Icon: MapPin },
+  { label: "Washington", href: "/state-intelligence/v2/washington", Icon: MapPin },
   { label: "Wisconsin", href: "/state-intelligence/v2/wisconsin", Icon: MapPin },
 ];
 
