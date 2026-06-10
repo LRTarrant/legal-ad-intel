@@ -15,7 +15,9 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # ~150 metros x 6 clusters x ~3 keywords x 1.5s delay ~= 2h sequentially.
+    # Raised from 45 (sized for the original 3-state, 12-metro seed).
+    timeout-minutes: 240
 
     steps:
       - name: Checkout repository
