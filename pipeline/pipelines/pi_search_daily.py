@@ -240,14 +240,15 @@ def step_fetch_raw(step) -> list[dict]:
                              on_conflict="metro_id,case_type,keyword_used,advertiser_domain,observed_date",
                              resolution="ignore-duplicates")
         step.set_counts(rows_in=0, rows_out=count)
-        return rows
+        return count
 
-    rows: list[dict] = []
     total_api_ads = 0
+    total_inserted = 0
     per_metro_counts: dict[str, int] = {}
     failed_searches: list[str] = []
 
     for metro in metros:
+        metro_rows: list[dict] = []
         metro_count = 0
         metro_key = f"{metro['state_abbr']}:{metro['metro_name']}"
         location = metro.get("searchapi_location", metro["metro_label"])
@@ -267,7 +268,7 @@ def step_fetch_raw(step) -> list[dict]:
                     ad_rows = _extract_ads(serp_data, metro, cluster["case_type"], keyword)
                     total_api_ads += len(ad_rows)
                     metro_count += len(ad_rows)
-                    rows.extend(ad_rows)
+                    metro_rows.extend(ad_rows)
                 except Exception as e:
                     logger.error("  Search failed: '%s' — %s", keyword, e)
                     failed_searches.append(keyword)
@@ -276,19 +277,25 @@ def step_fetch_raw(step) -> list[dict]:
 
         per_metro_counts[metro_key] = metro_count
 
+        # Flush after each metro so a timeout or transient failure mid-run keeps
+        # the metros already processed (idempotent via on-conflict ignore). With
+        # ~150 metros, a single end-of-loop insert loses everything on a timeout.
+        if metro_rows:
+            total_inserted += _bulk_insert(
+                "pi_search_observations", metro_rows,
+                on_conflict="metro_id,case_type,keyword_used,advertiser_domain,observed_date",
+                resolution="ignore-duplicates")
+
     step.set_metadata({
         "source": "searchapi_google",
         "total_api_ads": total_api_ads,
-        "unique_rows": len(rows),
+        "rows_inserted": total_inserted,
         "per_metro_counts": per_metro_counts,
         "failed_searches": failed_searches[:50],
     })
 
-    count = _bulk_insert("pi_search_observations", rows,
-                         on_conflict="metro_id,case_type,keyword_used,advertiser_domain,observed_date",
-                         resolution="ignore-duplicates")
-    step.set_counts(rows_in=0, rows_out=count)
-    return rows
+    step.set_counts(rows_in=0, rows_out=total_inserted)
+    return total_inserted
 
 
 def step_build_profiles(step) -> int:
@@ -439,13 +446,13 @@ def main():
 
     with PipelineRun("pi_search_daily", trigger=trigger) as run:
         with run.step("fetch_raw") as step:
-            raw_rows = step_fetch_raw(step)
+            raw_count = step_fetch_raw(step)
 
         with run.step("build_profiles") as step:
             step_build_profiles(step)
 
         with run.step("publish") as step:
-            step_publish(step, len(raw_rows))
+            step_publish(step, raw_count)
 
 
 if __name__ == "__main__":
