@@ -848,6 +848,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
           viewBox={AL_VIEWBOX}
           stateName="Alabama"
           csvFileName="alabama-county-intelligence.csv"
+          judicialProfiles={data.judicialProfiles}
         />
       ) : (
         <div className="rounded-lg bg-white p-6 shadow-sm border">

@@ -19,8 +19,6 @@ import {
   ChevronDown,
   Lightbulb,
   CloudLightning,
-  Search,
-  BarChart3,
   Database,
   Target,
 } from "lucide-react";
@@ -44,6 +42,11 @@ import {
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { arizonaCompetitiveData } from "@/lib/data/competitive-landscape/arizona";
+import { CountyIntelligenceMap } from "../../components/county-intelligence-map";
+import {
+  COUNTY_GEOMETRY as AZ_COUNTY_GEOMETRY,
+  VIEWBOX as AZ_VIEWBOX,
+} from "@/lib/data/state-geometry/arizona";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -221,49 +224,11 @@ function fmtCur(n: number | null | undefined): string {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
-function getProfileColor(profile: string | null): string {
-  if (!profile) return "bg-slate-100 text-slate-600";
-  const p = profile.toLowerCase();
-  if (p.includes("liberal") || p.includes("plaintiff"))
-    return "bg-emerald-100 text-emerald-700";
-  if (p.includes("conservative") || p.includes("defense"))
-    return "bg-red-100 text-red-700";
-  if (p.includes("moderate"))
-    return "bg-amber-100 text-amber-700";
-  return "bg-slate-100 text-slate-600";
-}
-
-function getProfileBorderColor(profile: string | null): string {
-  if (!profile) return "border-l-slate-300";
-  const p = profile.toLowerCase();
-  if (p.includes("liberal") || p.includes("plaintiff"))
-    return "border-l-emerald-500";
-  if (p.includes("conservative") || p.includes("defense"))
-    return "border-l-red-500";
-  if (p.includes("moderate"))
-    return "border-l-amber-500";
-  return "border-l-slate-300";
-}
-
-type SortKey =
-  | "county"
-  | "population"
-  | "fatal_crashes"
-  | "total_deaths"
-  | "truck_deaths"
-  | "moto_deaths"
-  | "deaths_per_100k"
-  | "rural_pct"
-  | "judicial_profile";
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function ArizonaClient({ data }: { data: ArizonaPageData }) {
-  const [sortKey, setSortKey] = useState<SortKey>("deaths_per_100k");
-  const [sortAsc, setSortAsc] = useState(false);
-  const [countyFilter, setCountyFilter] = useState("");
   const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
   const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
@@ -272,87 +237,6 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
   useEffect(() => {
     trackStateViewed({ state_code: "AZ", state_name: "Arizona" });
   }, []);
-
-  /* -- Sorted / filtered accident table data -- */
-  const filteredAccidentData = useMemo(() => {
-    let rows = [...data.accidentSummary];
-    if (countyFilter.trim()) {
-      const f = countyFilter.toLowerCase();
-      rows = rows.filter((r) => r.county.toLowerCase().includes(f));
-    }
-    rows.sort((a, b) => {
-      let aVal: number | string | null = null;
-      let bVal: number | string | null = null;
-      switch (sortKey) {
-        case "county":
-          aVal = a.county;
-          bVal = b.county;
-          break;
-        case "population":
-          aVal = a.total_population;
-          bVal = b.total_population;
-          break;
-        case "fatal_crashes":
-          aVal = a.fatal_crashes;
-          bVal = b.fatal_crashes;
-          break;
-        case "total_deaths":
-          aVal = a.total_deaths;
-          bVal = b.total_deaths;
-          break;
-        case "truck_deaths":
-          aVal = a.truck_deaths;
-          bVal = b.truck_deaths;
-          break;
-        case "moto_deaths":
-          aVal = a.moto_deaths;
-          bVal = b.moto_deaths;
-          break;
-        case "deaths_per_100k":
-          aVal = a.deaths_per_100k;
-          bVal = b.deaths_per_100k;
-          break;
-        case "rural_pct":
-          aVal = a.rural_pct;
-          bVal = b.rural_pct;
-          break;
-        case "judicial_profile":
-          aVal = a.judicial_profile;
-          bVal = b.judicial_profile;
-          break;
-      }
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return sortAsc
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
-      }
-      return sortAsc
-        ? (aVal as number) - (bVal as number)
-        : (bVal as number) - (aVal as number);
-    });
-    return rows;
-  }, [data.accidentSummary, countyFilter, sortKey, sortAsc]);
-
-  function handleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortKey(key);
-      setSortAsc(key === "county");
-    }
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return null;
-    return sortAsc ? (
-      <ChevronUp className="w-3 h-3 inline ml-0.5" />
-    ) : (
-      <ChevronDown className="w-3 h-3 inline ml-0.5" />
-    );
-  }
 
   /* -- MSA sorted data -- */
   const sortedMSA = useMemo(() => {
@@ -441,26 +325,6 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
     }
     return counts;
   }, [data.judicialProfiles]);
-
-  /* -- Judicial + fatality merged for section 8 -- */
-  const judicialWithFatalities = useMemo(() => {
-    const accidentMap = new Map<string, AccidentSummaryRow>();
-    for (const r of data.accidentSummary) {
-      accidentMap.set(r.county.toLowerCase(), r);
-    }
-    return data.judicialProfiles.map((j) => {
-      const countyKey = j.county_name
-        .replace(/ County$/i, "")
-        .toLowerCase();
-      const acc = accidentMap.get(countyKey);
-      return {
-        county: j.county_name.replace(/ County$/i, ""),
-        profile: j.judicial_profile,
-        population: acc?.total_population ?? null,
-        deathsPer100k: acc?.deaths_per_100k ?? null,
-      };
-    });
-  }, [data.judicialProfiles, data.accidentSummary]);
 
   /* -- Top storm chart data -- */
   const topStorms = data.stormSummary.slice(0, 10);
@@ -1005,167 +869,27 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 5. ACCIDENT DATA BY COUNTY (Interactive Table)               */}
+      {/* 5. COUNTY INTELLIGENCE (map + merged accident/judicial table) */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-2">
-          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Accident Data by County
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          15 Arizona counties &mdash; sortable by any column. Click headers to
-          sort.
-        </p>
-
-        <div className="mb-4 flex items-center gap-2">
-          <Search className="w-4 h-4 text-slate-gray" />
-          <input
-            type="text"
-            placeholder="Filter by county name..."
-            value={countyFilter}
-            onChange={(e) => setCountyFilter(e.target.value)}
-            className="rounded-md border border-cloud bg-cloud/40 px-3 py-1.5 text-sm text-midnight-navy placeholder:text-slate-gray/60 focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
-          />
-        </div>
-
-        {data.accidentSummary.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-cloud">
-                  {[
-                    { key: "county" as SortKey, label: "County" },
-                    { key: "population" as SortKey, label: "Population" },
-                    { key: "fatal_crashes" as SortKey, label: "Fatal Crashes" },
-                    { key: "total_deaths" as SortKey, label: "Total Deaths" },
-                    { key: "truck_deaths" as SortKey, label: "Truck Deaths" },
-                    { key: "moto_deaths" as SortKey, label: "Moto Deaths" },
-                    {
-                      key: "deaths_per_100k" as SortKey,
-                      label: "Deaths/100K",
-                    },
-                    { key: "rural_pct" as SortKey, label: "Rural %" },
-                    {
-                      key: "judicial_profile" as SortKey,
-                      label: "Judicial Profile",
-                    },
-                  ].map((col) => (
-                    <th
-                      key={col.key}
-                      onClick={() => handleSort(col.key)}
-                      className="py-3 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-gray cursor-pointer hover:text-midnight-navy select-none whitespace-nowrap"
-                    >
-                      {col.label}
-                      <SortIcon col={col.key} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccidentData.map((row, i) => {
-                  const isTop5 =
-                    row.deaths_per_100k != null &&
-                    data.accidentSummary
-                      .filter((r) => r.deaths_per_100k != null)
-                      .sort(
-                        (a, b) =>
-                          (b.deaths_per_100k ?? 0) - (a.deaths_per_100k ?? 0)
-                      )
-                      .slice(0, 5)
-                      .some((r) => r.county === row.county);
-                  const isBottom5 =
-                    row.deaths_per_100k != null &&
-                    data.accidentSummary
-                      .filter((r) => r.deaths_per_100k != null)
-                      .sort(
-                        (a, b) =>
-                          (a.deaths_per_100k ?? 0) - (b.deaths_per_100k ?? 0)
-                      )
-                      .slice(0, 5)
-                      .some((r) => r.county === row.county);
-
-                  return (
-                    <tr
-                      key={row.county}
-                      className={`border-b border-cloud/50 transition-colors ${
-                        isTop5
-                          ? "bg-red-50/50"
-                          : isBottom5
-                          ? "bg-emerald-50/50"
-                          : i % 2 === 0
-                          ? "bg-white"
-                          : "bg-cloud/20"
-                      }`}
-                    >
-                      <td className="py-2.5 px-2 font-medium text-midnight-navy whitespace-nowrap">
-                        {row.county}
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                        {fmtNum(row.total_population)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                        {fmtNum(row.fatal_crashes)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right font-semibold text-midnight-navy">
-                        {fmtNum(row.total_deaths)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                        {fmtNum(row.truck_deaths)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                        {fmtNum(row.moto_deaths)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right font-bold text-midnight-navy">
-                        {row.deaths_per_100k != null
-                          ? row.deaths_per_100k.toFixed(1)
-                          : "\u2014"}
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                        {row.rural_pct != null
-                          ? `${row.rural_pct.toFixed(1)}%`
-                          : "\u2014"}
-                      </td>
-                      <td className="py-2.5 px-2">
-                        {row.judicial_profile ? (
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
-                              row.judicial_profile
-                            )}`}
-                          >
-                            {row.judicial_profile}
-                          </span>
-                        ) : (
-                          <span className="text-slate-gray">&mdash;</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
+      {data.accidentSummary.length > 0 ? (
+        <CountyIntelligenceMap
+          rows={data.accidentSummary}
+          geometry={AZ_COUNTY_GEOMETRY}
+          viewBox={AZ_VIEWBOX}
+          stateName="Arizona"
+          csvFileName="arizona-county-intelligence.csv"
+          judicialProfiles={data.judicialProfiles}
+        />
+      ) : (
+        <div className="rounded-lg bg-white p-6 shadow-sm border">
           <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
             <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
             <p className="text-sm font-medium text-midnight-navy/60">
-              Accident summary data loading...
+              County intelligence data loading...
             </p>
           </div>
-        )}
-
-        <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-slate-gray">
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-100 border border-red-300" />{" "}
-            Top 5 most dangerous
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-100 border border-emerald-300" />{" "}
-            Bottom 5 safest
-          </span>
         </div>
-      </div>
+      )}
 
       {/* ============================================================ */}
       {/* 6. RURAL VS URBAN ANALYSIS                                   */}
@@ -1437,112 +1161,6 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
             <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
             <p className="text-sm font-medium text-midnight-navy/60">
               MSA demographics data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 8. JUDICIAL PROFILES BY COUNTY                               */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-2">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Judicial Profiles by County
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          Judicial leanings for Arizona&apos;s 15 counties
-        </p>
-
-        {data.judicialProfiles.length > 0 ? (
-          <>
-            <div className="mb-4 flex flex-wrap gap-3">
-              {Object.entries(profileCounts)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([profile, count]) => (
-                  <span
-                    key={profile}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${getProfileColor(
-                      profile
-                    )}`}
-                  >
-                    {count} {profile}
-                  </span>
-                ))}
-            </div>
-
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b border-cloud">
-                    <th className="py-3 pr-4 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      County
-                    </th>
-                    <th className="py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Judicial Profile
-                    </th>
-                    <th className="py-3 px-3 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Population
-                    </th>
-                    <th className="py-3 pl-3 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Fatality Rate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {judicialWithFatalities
-                    .sort((a, b) => a.county.localeCompare(b.county))
-                    .map((row) => (
-                      <tr
-                        key={row.county}
-                        className={`border-b border-cloud/50 border-l-4 ${getProfileBorderColor(
-                          row.profile
-                        )}`}
-                      >
-                        <td className="py-2.5 pr-4 pl-2 font-medium text-midnight-navy whitespace-nowrap">
-                          {row.county}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
-                              row.profile
-                            )}`}
-                          >
-                            {row.profile}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-midnight-navy/80">
-                          {fmtNum(row.population)}
-                        </td>
-                        <td className="py-2.5 pl-3 text-right font-semibold text-midnight-navy">
-                          {row.deathsPer100k != null
-                            ? row.deathsPer100k.toFixed(1)
-                            : "\u2014"}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                Maricopa (Moderate, 4.6M pop) and Pima (Liberal, 1.1M pop)
-                together represent 76% of the state&apos;s population.
-                Pima&apos;s liberal judicial profile combined with Tucson&apos;s
-                high crash volume makes it a strong venue for plaintiff filings.
-                Coconino (Liberal, Flagstaff) and Mohave (Liberal, Lake Havasu)
-                are also favorable for smaller-market cases.
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              Judicial profile data loading...
             </p>
           </div>
         )}
