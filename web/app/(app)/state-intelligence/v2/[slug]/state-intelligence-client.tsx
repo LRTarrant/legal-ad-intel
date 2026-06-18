@@ -18,7 +18,6 @@ import {
   ChevronDown,
   Lightbulb,
   CloudLightning,
-  Search,
   BarChart3,
   Database,
   Target,
@@ -45,6 +44,11 @@ import { StateAdvertisingSection } from "../../../components/state-advertising-s
 import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 import type { StateConfig } from "@/lib/state-config";
+import { CountyIntelligenceMap } from "../../../components/county-intelligence-map";
+import {
+  GEOMETRY_LOADERS,
+  type GeometryModule,
+} from "@/lib/data/state-geometry/registry";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -180,41 +184,6 @@ function fmtCur(n: number | null | undefined): string {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
-function getProfileColor(profile: string | null): string {
-  if (!profile) return "bg-slate-100 text-slate-600";
-  const p = profile.toLowerCase();
-  if (p.includes("liberal") || p.includes("plaintiff"))
-    return "bg-emerald-100 text-emerald-700";
-  if (p.includes("conservative") || p.includes("defense"))
-    return "bg-red-100 text-red-700";
-  if (p.includes("moderate"))
-    return "bg-amber-100 text-amber-700";
-  return "bg-slate-100 text-slate-600";
-}
-
-function getProfileBorderColor(profile: string | null): string {
-  if (!profile) return "border-l-slate-300";
-  const p = profile.toLowerCase();
-  if (p.includes("liberal") || p.includes("plaintiff"))
-    return "border-l-emerald-500";
-  if (p.includes("conservative") || p.includes("defense"))
-    return "border-l-red-500";
-  if (p.includes("moderate"))
-    return "border-l-amber-500";
-  return "border-l-slate-300";
-}
-
-type SortKey =
-  | "county"
-  | "population"
-  | "fatal_crashes"
-  | "total_deaths"
-  | "truck_deaths"
-  | "moto_deaths"
-  | "deaths_per_100k"
-  | "rural_pct"
-  | "judicial_profile";
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -241,9 +210,6 @@ export function StateIntelligenceClient({
   const showCrashEmbeds =
     features.showCrashEmbeds ??
     (config.crashEmbeds != null && config.crashEmbeds.length > 0);
-  const [sortKey, setSortKey] = useState<SortKey>("deaths_per_100k");
-  const [sortAsc, setSortAsc] = useState(false);
-  const [countyFilter, setCountyFilter] = useState("");
   const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
   const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
@@ -256,86 +222,26 @@ export function StateIntelligenceClient({
     });
   }, [config.stateCode, config.stateName]);
 
-  /* -- Sorted / filtered accident table data -- */
-  const filteredAccidentData = useMemo(() => {
-    let rows = [...data.accidentSummary];
-    if (countyFilter.trim()) {
-      const f = countyFilter.toLowerCase();
-      rows = rows.filter((r) => r.county.toLowerCase().includes(f));
-    }
-    rows.sort((a, b) => {
-      let aVal: number | string | null = null;
-      let bVal: number | string | null = null;
-      switch (sortKey) {
-        case "county":
-          aVal = a.county;
-          bVal = b.county;
-          break;
-        case "population":
-          aVal = a.total_population;
-          bVal = b.total_population;
-          break;
-        case "fatal_crashes":
-          aVal = a.fatal_crashes;
-          bVal = b.fatal_crashes;
-          break;
-        case "total_deaths":
-          aVal = a.total_deaths;
-          bVal = b.total_deaths;
-          break;
-        case "truck_deaths":
-          aVal = a.truck_deaths;
-          bVal = b.truck_deaths;
-          break;
-        case "moto_deaths":
-          aVal = a.moto_deaths;
-          bVal = b.moto_deaths;
-          break;
-        case "deaths_per_100k":
-          aVal = a.deaths_per_100k;
-          bVal = b.deaths_per_100k;
-          break;
-        case "rural_pct":
-          aVal = a.rural_pct;
-          bVal = b.rural_pct;
-          break;
-        case "judicial_profile":
-          aVal = a.judicial_profile;
-          bVal = b.judicial_profile;
-          break;
-      }
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return sortAsc
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
-      }
-      return sortAsc
-        ? (aVal as number) - (bVal as number)
-        : (bVal as number) - (aVal as number);
-    });
-    return rows;
-  }, [data.accidentSummary, countyFilter, sortKey, sortAsc]);
-
-  function handleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortKey(key);
-      setSortAsc(key === "county");
-    }
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return null;
-    return sortAsc ? (
-      <ChevronUp className="w-3 h-3 inline ml-0.5" />
-    ) : (
-      <ChevronDown className="w-3 h-3 inline ml-0.5" />
-    );
-  }
+  /* -- Lazy-load this state's county geometry (code-split per state) -- */
+  const [geo, setGeo] = useState<{ slug: string; mod: GeometryModule } | null>(
+    null
+  );
+  useEffect(() => {
+    let active = true;
+    const loader = GEOMETRY_LOADERS[config.slug];
+    if (!loader) return;
+    loader()
+      .then((m) => {
+        if (active) setGeo({ slug: config.slug, mod: m });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [config.slug]);
+  // Derived so a slug change shows the loader until new geometry resolves,
+  // without a synchronous setState inside the effect.
+  const geometry = geo && geo.slug === config.slug ? geo.mod : null;
 
   /* -- MSA sorted data -- */
   const sortedMSA = useMemo(() => {
@@ -424,26 +330,6 @@ export function StateIntelligenceClient({
     }
     return counts;
   }, [data.judicialProfiles]);
-
-  /* -- Judicial + fatality merged -- */
-  const judicialWithFatalities = useMemo(() => {
-    const accidentMap = new Map<string, AccidentSummaryRow>();
-    for (const r of data.accidentSummary) {
-      accidentMap.set(r.county.toLowerCase(), r);
-    }
-    return data.judicialProfiles.map((j) => {
-      const countyKey = j.county_name
-        .replace(/ County$/i, "")
-        .toLowerCase();
-      const acc = accidentMap.get(countyKey);
-      return {
-        county: j.county_name.replace(/ County$/i, ""),
-        profile: j.judicial_profile,
-        population: acc?.total_population ?? null,
-        deathsPer100k: acc?.deaths_per_100k ?? null,
-      };
-    });
-  }, [data.judicialProfiles, data.accidentSummary]);
 
   /* -- Top storm chart data -- */
   const topStorms = data.stormSummary.slice(0, 10);
@@ -977,122 +863,27 @@ export function StateIntelligenceClient({
       </div>
 
       {/* ============================================================ */}
-      {/* 6. ACCIDENT DATA BY COUNTY (Interactive Table)               */}
+      {/* 6. COUNTY INTELLIGENCE (map + merged accident/judicial table) */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-2">
-          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Accident Data by County
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          {data.accidentSummary.length}{" "}{config.stateName} counties &mdash; sortable by any column. Click headers to sort.
-        </p>
-
-        <div className="mb-4 flex items-center gap-2">
-          <Search className="w-4 h-4 text-slate-gray" />
-          <input
-            type="text"
-            placeholder="Filter by county name..."
-            value={countyFilter}
-            onChange={(e) => setCountyFilter(e.target.value)}
-            className="rounded-md border border-cloud bg-cloud/40 px-3 py-1.5 text-sm text-midnight-navy placeholder:text-slate-gray/60 focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
-          />
-        </div>
-
-        {data.accidentSummary.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-cloud">
-                  {[
-                    { key: "county" as SortKey, label: "County" },
-                    { key: "population" as SortKey, label: "Population" },
-                    { key: "fatal_crashes" as SortKey, label: "Fatal Crashes" },
-                    { key: "total_deaths" as SortKey, label: "Total Deaths" },
-                    { key: "truck_deaths" as SortKey, label: "Truck Deaths" },
-                    { key: "moto_deaths" as SortKey, label: "Moto Deaths" },
-                    {
-                      key: "deaths_per_100k" as SortKey,
-                      label: "Deaths/100K",
-                    },
-                    { key: "rural_pct" as SortKey, label: "Rural %" },
-                    {
-                      key: "judicial_profile" as SortKey,
-                      label: "Judicial Profile",
-                    },
-                  ].map((col) => (
-                    <th
-                      key={col.key}
-                      onClick={() => handleSort(col.key)}
-                      className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
-                    >
-                      {col.label}
-                      <SortIcon col={col.key} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccidentData.map((row) => (
-                  <tr
-                    key={row.county}
-                    className="border-b border-cloud/60 hover:bg-cloud/30 transition-colors"
-                  >
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      {row.county}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(row.total_population)}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-midnight-navy">
-                      {fmtNum(row.fatal_crashes)}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-red-600">
-                      {fmtNum(row.total_deaths)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(row.truck_deaths)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(row.moto_deaths)}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-midnight-navy">
-                      {row.deaths_per_100k != null
-                        ? row.deaths_per_100k.toFixed(1)
-                        : "\u2014"}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(row.rural_pct)}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      {row.judicial_profile ? (
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
-                            row.judicial_profile
-                          )}`}
-                        >
-                          {row.judicial_profile}
-                        </span>
-                      ) : (
-                        <span className="text-slate-gray/50">&mdash;</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
+      {data.accidentSummary.length > 0 && geometry ? (
+        <CountyIntelligenceMap
+          rows={data.accidentSummary}
+          geometry={geometry.COUNTY_GEOMETRY}
+          viewBox={geometry.VIEWBOX}
+          stateName={config.stateName}
+          csvFileName={`${config.slug}-county-intelligence.csv`}
+          judicialProfiles={data.judicialProfiles}
+        />
+      ) : (
+        <div className="rounded-lg bg-white p-6 shadow-sm border">
           <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
             <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
             <p className="text-sm font-medium text-midnight-navy/60">
-              Accident data loading...
+              County intelligence data loading...
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* 7. RURAL vs. URBAN ANALYSIS                                  */}
@@ -1325,103 +1116,6 @@ export function StateIntelligenceClient({
             <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
             <p className="text-sm font-medium text-midnight-navy/60">
               MSA demographic data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 9. JUDICIAL PROFILES BY COUNTY                               */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Judicial Profiles by County
-          </h2>
-        </div>
-
-        {judicialWithFatalities.length > 0 ? (
-          <>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {Object.entries(profileCounts).map(([profile, count]) => (
-                <span
-                  key={profile}
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${getProfileColor(
-                    profile
-                  )}`}
-                >
-                  {profile}: {count}
-                </span>
-              ))}
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b border-cloud">
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                      County
-                    </th>
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Judicial Profile
-                    </th>
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray text-right">
-                      Population
-                    </th>
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray text-right">
-                      Deaths/100K
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {judicialWithFatalities
-                    .sort((a, b) => (b.population ?? 0) - (a.population ?? 0))
-                    .map((row) => (
-                      <tr
-                        key={row.county}
-                        className={`border-b border-cloud/60 hover:bg-cloud/30 transition-colors border-l-4 ${getProfileBorderColor(
-                          row.profile
-                        )}`}
-                      >
-                        <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                          {row.county}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${getProfileColor(
-                              row.profile
-                            )}`}
-                          >
-                            {row.profile}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-midnight-navy/80">
-                          {fmtNum(row.population)}
-                        </td>
-                        <td className="py-2.5 pl-3 text-right font-semibold text-midnight-navy">
-                          {row.deathsPer100k != null
-                            ? row.deathsPer100k.toFixed(1)
-                            : "\u2014"}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                {content.judicialContext ??
-                  `Filing venue selection in ${config.stateName} matters — judicial leanings can vary significantly between urban and rural counties. Top metros concentrate population and case volume, but mid-size counties may have more favorable juries depending on the case type.`}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              Judicial profile data loading...
             </p>
           </div>
         )}

@@ -32,6 +32,11 @@ export interface CountyGeometry {
   d: string;
 }
 
+export interface JudicialRow {
+  county_name: string;
+  judicial_profile: string | null;
+}
+
 interface Props {
   rows: CountyIntelRow[];
   geometry: CountyGeometry[];
@@ -39,6 +44,12 @@ interface Props {
   stateName: string;
   /** e.g. "alabama-county-intelligence.csv" */
   csvFileName: string;
+  /**
+   * Optional separate judicial-profile list (e.g. getJudicialProfiles). Used to
+   * color counties that have a profile but no accident rows, and as a fallback
+   * when the accident row's judicial_profile is null.
+   */
+  judicialProfiles?: JudicialRow[];
   defaultView?: ViewMode;
 }
 
@@ -56,6 +67,8 @@ type SortKey =
   | "profile";
 
 interface MergedCounty {
+  /** Unique row identity (name is NOT unique — VA/MD/MO/NV have same-named city + county). */
+  key: string;
   name: string;
   d: string;
   profile: string; // "Conservative" | "Liberal" | "Moderate" | "Unknown"
@@ -127,12 +140,27 @@ function profileOf(raw: string | null): string {
   return "Unknown";
 }
 
+/**
+ * Normalize a county name for joining across sources (geometry, accident rows,
+ * judicial list): strip the trailing descriptor (County / Parish / Borough /
+ * Census Area / Municipality) and all non-alphanumerics, then lowercase. This
+ * collapses "DeKalb"/"De Kalb", "St. Clair"/"St Clair", "Acadia Parish"/"Acadia".
+ */
+function normName(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .replace(/\s+(county|parish|borough|census area|municipality|city and borough|municipio)\s*$/i, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toLowerCase();
+}
+
 export function CountyIntelligenceMap({
   rows,
   geometry,
   viewBox,
   stateName,
   csvFileName,
+  judicialProfiles,
   defaultView = "judicial",
 }: Props) {
   const [mode, setMode] = useState<ViewMode>(defaultView);
@@ -144,16 +172,27 @@ export function CountyIntelligenceMap({
   const [filter, setFilter] = useState("");
   const [tableOpen, setTableOpen] = useState(false);
 
-  /* -- Join live rows onto static geometry -- */
+  /* -- Join live rows onto static geometry (by normalized county name) -- */
   const counties: MergedCounty[] = useMemo(() => {
     const byName = new Map<string, CountyIntelRow>();
-    for (const r of rows) byName.set(r.county.toLowerCase(), r);
-    return geometry.map((g) => {
-      const r = byName.get(g.name.toLowerCase());
+    for (const r of rows) {
+      const k = normName(r.county);
+      if (k) byName.set(k, r);
+    }
+    const judByName = new Map<string, string>();
+    for (const j of judicialProfiles ?? []) {
+      const k = normName(j.county_name);
+      if (k && j.judicial_profile) judByName.set(k, j.judicial_profile);
+    }
+    return geometry.map((g, i) => {
+      const nkey = normName(g.name);
+      const r = byName.get(nkey);
+      const rawProfile = r?.judicial_profile ?? judByName.get(nkey) ?? null;
       return {
+        key: `${g.name}#${i}`,
         name: g.name,
         d: g.d,
-        profile: profileOf(r?.judicial_profile ?? null),
+        profile: profileOf(rawProfile),
         pop: r?.total_population ?? null,
         crashes: r?.fatal_crashes ?? 0,
         deaths: r?.total_deaths ?? 0,
@@ -163,7 +202,7 @@ export function CountyIntelligenceMap({
         rural: r?.rural_pct ?? null,
       };
     });
-  }, [rows, geometry]);
+  }, [rows, geometry, judicialProfiles]);
 
   /* -- Profile counts / chips -- */
   const counts = useMemo(() => {
@@ -200,8 +239,8 @@ export function CountyIntelligenceMap({
     return m;
   }, [counties]);
 
-  const activeName = hovered || selected;
-  const active = counties.find((c) => c.name === activeName) || null;
+  const activeKey = hovered || selected;
+  const active = counties.find((c) => c.key === activeKey) || null;
   const isJud = mode === "judicial";
 
   /* -- State summary -- */
@@ -473,7 +512,7 @@ export function CountyIntelligenceMap({
             style={{ width: "100%", height: "auto", maxHeight: 600, display: "block", overflow: "visible" }}
           >
             {counties.map((c) => {
-              const isActive = c.name === hovered || c.name === selected;
+              const isActive = c.key === hovered || c.key === selected;
               let fill: string;
               let stroke: string;
               let sw: number;
@@ -496,7 +535,7 @@ export function CountyIntelligenceMap({
               }
               return (
                 <path
-                  key={c.name}
+                  key={c.key}
                   d={c.d}
                   style={{
                     fill,
@@ -506,9 +545,9 @@ export function CountyIntelligenceMap({
                     transition: "fill 140ms ease, stroke 140ms ease",
                     strokeLinejoin: "round",
                   }}
-                  onMouseEnter={() => setHovered(c.name)}
+                  onMouseEnter={() => setHovered(c.key)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected((s) => (s === c.name ? null : c.name))}
+                  onClick={() => setSelected((s) => (s === c.key ? null : c.key))}
                 />
               );
             })}
@@ -622,7 +661,7 @@ export function CountyIntelligenceMap({
                     </div>
                   ))}
                 </div>
-                {selected && selected === activeName && (
+                {selected && selected === activeKey && (
                   <button
                     onClick={() => setSelected(null)}
                     style={{ marginTop: 12, fontSize: 12, color: "#1A8C96", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
@@ -764,14 +803,14 @@ export function CountyIntelligenceMap({
                 </thead>
                 <tbody>
                   {tableRows.map((c) => {
-                    const isActive = c.name === hovered || c.name === selected;
+                    const isActive = c.key === hovered || c.key === selected;
                     const col = JUD_COLORS[c.profile];
                     return (
                       <tr
-                        key={c.name}
-                        onMouseEnter={() => setHovered(c.name)}
+                        key={c.key}
+                        onMouseEnter={() => setHovered(c.key)}
                         onMouseLeave={() => setHovered(null)}
-                        onClick={() => setSelected((s) => (s === c.name ? null : c.name))}
+                        onClick={() => setSelected((s) => (s === c.key ? null : c.key))}
                         style={{
                           borderBottom: "1px solid #F1F5F9",
                           background: isActive ? "rgba(26,140,150,.10)" : "#fff",
