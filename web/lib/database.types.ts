@@ -1313,6 +1313,7 @@ export type Database = {
           created_at: string | null
           fips_full: string
           id: number
+          mean_commute_minutes: number | null
           median_age: number | null
           median_gross_rent: number | null
           median_home_value: number | null
@@ -1360,6 +1361,7 @@ export type Database = {
           created_at?: string | null
           fips_full: string
           id?: number
+          mean_commute_minutes?: number | null
           median_age?: number | null
           median_gross_rent?: number | null
           median_home_value?: number | null
@@ -1407,6 +1409,7 @@ export type Database = {
           created_at?: string | null
           fips_full?: string
           id?: number
+          mean_commute_minutes?: number | null
           median_age?: number | null
           median_gross_rent?: number | null
           median_home_value?: number | null
@@ -7177,24 +7180,36 @@ export type Database = {
           tort_name: string
         }[]
       }
-      faers_glp1_drug_breakdown: {
+      faers_drug_breakdown_by_reactions: {
         Args: { p_brand_map: Json; p_reaction_pts: string[] }
         Returns: {
           brand: string
           consumer_reports: number
           deaths: number
           hospitalizations: number
+          lawyer_reports: number
           max_receivedate: string
           top_reactions: Json
           total_events: number
         }[]
       }
-      faers_glp1_monthly_trend: {
+      faers_monthly_trend_by_reactions: {
         Args: { p_brand_map: Json; p_reaction_pts: string[] }
         Returns: {
           brand: string
           event_count: number
           month: string
+        }[]
+      }
+      get_activity_user_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          event_count: number
+          last_event_at: string
+          login_count: number
+          page_view_count: number
+          tenant_id: string
+          user_id: string
         }[]
       }
       get_ad_saturation_windowed: {
@@ -8399,6 +8414,7 @@ export type Database = {
       }
       is_super_admin: { Args: never; Returns: boolean }
       is_tenant_admin: { Args: never; Returns: boolean }
+      is_tenant_manager: { Args: never; Returns: boolean }
       my_tenant_id: { Args: never; Returns: string }
       refresh_ad_aggregates: { Args: never; Returns: Json }
       refresh_competition_scores: { Args: never; Returns: undefined }
