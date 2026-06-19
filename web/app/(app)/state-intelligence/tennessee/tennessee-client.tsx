@@ -43,7 +43,11 @@ import {
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { tennesseeCompetitiveData } from "@/lib/data/competitive-landscape/tennessee";
-import { CountyIntelligenceMap } from "../../components/county-intelligence-map";
+import {
+  CountyIntelligenceMap,
+  FARS_DATA_YEARS,
+  BOATING_DATA_YEARS,
+} from "../../components/county-intelligence-map";
 import {
   COUNTY_GEOMETRY as TN_COUNTY_GEOMETRY,
   VIEWBOX as TN_VIEWBOX,
@@ -910,8 +914,17 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
           geometry={TN_COUNTY_GEOMETRY}
           viewBox={TN_VIEWBOX}
           stateName="Tennessee"
+          stateCode="TN"
           csvFileName="tennessee-county-intelligence.csv"
           judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
           demographics={data.censusDemographics.map((d) => ({
             county_name: d.county_name,
             median_age: d.median_age,

@@ -42,7 +42,11 @@ import {
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { alabamaCompetitiveData } from "@/lib/data/competitive-landscape/alabama";
-import { CountyIntelligenceMap } from "../../components/county-intelligence-map";
+import {
+  CountyIntelligenceMap,
+  FARS_DATA_YEARS,
+  BOATING_DATA_YEARS,
+} from "../../components/county-intelligence-map";
 import {
   COUNTY_GEOMETRY as AL_COUNTY_GEOMETRY,
   VIEWBOX as AL_VIEWBOX,
@@ -850,8 +854,17 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
           geometry={AL_COUNTY_GEOMETRY}
           viewBox={AL_VIEWBOX}
           stateName="Alabama"
+          stateCode="AL"
           csvFileName="alabama-county-intelligence.csv"
           judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
           demographics={data.censusDemographics.map((d) => ({
             county_name: d.county_name,
             median_age: d.median_age,

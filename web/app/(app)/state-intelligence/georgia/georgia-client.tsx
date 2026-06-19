@@ -52,7 +52,11 @@ import { georgiaCompetitiveData } from "@/lib/data/competitive-landscape/georgia
 import { gaInjuryData } from "@/lib/data/ga-injury-stats";
 import type { InjuryRow } from "@/components/state-intelligence/StateInjuryTable";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
-import { CountyIntelligenceMap } from "../../components/county-intelligence-map";
+import {
+  CountyIntelligenceMap,
+  FARS_DATA_YEARS,
+  BOATING_DATA_YEARS,
+} from "../../components/county-intelligence-map";
 import {
   COUNTY_GEOMETRY as GA_COUNTY_GEOMETRY,
   VIEWBOX as GA_VIEWBOX,
@@ -1050,8 +1054,17 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           geometry={GA_COUNTY_GEOMETRY}
           viewBox={GA_VIEWBOX}
           stateName="Georgia"
+          stateCode="GA"
           csvFileName="georgia-county-intelligence.csv"
           judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
           demographics={data.censusDemographics.map((d) => ({
             county_name: d.county_name,
             median_age: d.median_age,
