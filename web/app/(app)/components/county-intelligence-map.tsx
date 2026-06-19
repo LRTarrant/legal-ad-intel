@@ -557,7 +557,8 @@ export function CountyIntelligenceMap({
           </div>
           <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6B7280" }}>
             {hasDemographics ? "Accident exposure, judicial leaning, and census demographics" : "Accident exposure and judicial leaning"} across all {counties.length}{" "}
-            {stateName} counties &mdash; one combined view.
+            {stateName}{" "}
+            counties &mdash; one combined view.
           </p>
         </div>
         <span
