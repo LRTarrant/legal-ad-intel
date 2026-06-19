@@ -126,6 +126,8 @@ interface CensusDemographicsRow {
   pct_white: number | null;
   pct_black: number | null;
   pct_hispanic: number | null;
+  pct_asian: number | null;
+  pct_native: number | null;
   median_household_income: number | null;
   per_capita_income: number | null;
   pct_poverty: number | null;
@@ -134,6 +136,7 @@ interface CensusDemographicsRow {
   pct_with_internet: number | null;
   pct_disability: number | null;
   pct_veterans: number | null;
+  mean_commute_minutes: number | null;
 }
 
 interface MSADemographicsRow {
@@ -1049,6 +1052,18 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           stateName="Georgia"
           csvFileName="georgia-county-intelligence.csv"
           judicialProfiles={data.judicialProfiles}
+          demographics={data.censusDemographics.map((d) => ({
+            county_name: d.county_name,
+            median_age: d.median_age,
+            pct_white: d.pct_white,
+            pct_black: d.pct_black,
+            pct_hispanic: d.pct_hispanic,
+            pct_asian: d.pct_asian,
+            pct_native: d.pct_native,
+            median_household_income: d.median_household_income,
+            pct_poverty: d.pct_poverty,
+            mean_commute_minutes: d.mean_commute_minutes,
+          }))}
         />
       ) : (
         <div className="rounded-lg bg-white p-6 shadow-sm border">

@@ -86,6 +86,8 @@ interface CensusDemographicsRow {
   pct_white: number | null;
   pct_black: number | null;
   pct_hispanic: number | null;
+  pct_asian: number | null;
+  pct_native: number | null;
   median_household_income: number | null;
   per_capita_income: number | null;
   pct_poverty: number | null;
@@ -94,6 +96,7 @@ interface CensusDemographicsRow {
   pct_with_internet: number | null;
   pct_disability: number | null;
   pct_veterans: number | null;
+  mean_commute_minutes: number | null;
 }
 
 interface MSADemographicsRow {
