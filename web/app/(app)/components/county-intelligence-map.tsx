@@ -11,9 +11,28 @@
  *
  * Reusable across states: pass the per-county `rows` (live, from
  * get_state_accident_summary) plus the static `geometry` for that state.
+ *
+ * Optional layers:
+ *  - `demographics` — census race/income/poverty/age/commute per county.
+ *  - `boating` — per-county USCG boating accidents/deaths/injuries; when present
+ *    a "Boating" heat metric is added and boating deaths join the detail card.
+ *  - `stateCode` + `farsYears`/`boatingYears` — enables an interactive year
+ *    filter that re-queries get_state_accident_summary / get_state_boating_summary
+ *    for a single year (NULL = all years, the default).
  */
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { getSupabase } from "@/lib/supabase";
+
+/**
+ * Years present in the source datasets (single source of truth for the year
+ * dropdown + coverage caption across all callers). Extend FARS when a new NHTSA
+ * Annual Report File year lands; extend boating when USCG BARD publishes a new
+ * year. Both `fars_fatalities` and `boating_accidents` carry a plain `year` col.
+ */
+export const FARS_DATA_YEARS = [2019, 2020, 2021, 2022, 2023, 2024];
+export const BOATING_DATA_YEARS = [2019, 2020, 2021, 2022, 2023];
 
 export interface CountyIntelRow {
   county: string;
@@ -25,6 +44,14 @@ export interface CountyIntelRow {
   deaths_per_100k: number | null;
   rural_pct: number | null;
   judicial_profile: string | null;
+}
+
+/** Per-county USCG boating summary (from get_state_boating_summary). */
+export interface BoatingMapRow {
+  county: string;
+  accident_count: number;
+  total_deaths: number;
+  total_injuries: number;
 }
 
 export interface CountyGeometry {
@@ -74,11 +101,27 @@ interface Props {
    * detail card and table show a demographics layer including mean commute time.
    */
   demographics?: CountyDemographicsRow[];
+  /**
+   * Optional per-county boating summary. When provided, a "Boating" heat metric
+   * is enabled and boating deaths/accidents/injuries appear in the detail card,
+   * table, and CSV.
+   */
+  boating?: BoatingMapRow[];
+  /** State abbreviation (e.g. "AL"). Required to enable the year filter. */
+  stateCode?: string;
+  /** Years available for the FARS crash data (drives the year dropdown). */
+  farsYears?: number[];
+  /** Years available for the USCG boating data (drives the coverage caption). */
+  boatingYears?: number[];
+  /** Link to the full boating analysis page. Default `/boating-accidents`. */
+  boatingHref?: string;
+  /** Link to the market (MSA) demographics page. Default `/market-demographics`. */
+  marketsHref?: string;
   defaultView?: ViewMode;
 }
 
 type ViewMode = "judicial" | "heat" | "overlay";
-type MetricKey = "rate" | "deaths" | "truck" | "moto";
+type MetricKey = "rate" | "deaths" | "truck" | "moto" | "boating";
 type SortKey =
   | "name"
   | "pop"
@@ -86,6 +129,7 @@ type SortKey =
   | "deaths"
   | "truck"
   | "moto"
+  | "boat"
   | "rate"
   | "rural"
   | "profile"
@@ -110,6 +154,10 @@ interface MergedCounty {
   moto: number;
   rate: number | null;
   rural: number | null;
+  // Boating (null when the county has no boating row for the active year)
+  boatAccidents: number | null;
+  boatDeaths: number | null;
+  boatInjuries: number | null;
   // Census demographics (null when no demographics row joined)
   white: number | null;
   black: number | null;
@@ -145,6 +193,7 @@ const METRIC_META: Record<MetricKey, { label: string; dec: number; field: keyof 
   deaths: { label: "Total deaths", dec: 0, field: "deaths" },
   truck: { label: "Truck deaths", dec: 0, field: "truck" },
   moto: { label: "Motorcycle deaths", dec: 0, field: "moto" },
+  boating: { label: "Boating deaths", dec: 0, field: "boatDeaths" },
 };
 
 function tint(hex: string, amt: number): string {
@@ -218,9 +267,16 @@ export function CountyIntelligenceMap({
   csvFileName,
   judicialProfiles,
   demographics,
+  boating,
+  stateCode,
+  farsYears,
+  boatingYears,
+  boatingHref = "/boating-accidents",
+  marketsHref = "/market-demographics",
   defaultView = "judicial",
 }: Props) {
   const hasDemographics = (demographics?.length ?? 0) > 0;
+  const boatingEnabled = boating !== undefined;
   const [mode, setMode] = useState<ViewMode>(defaultView);
   const [metric, setMetric] = useState<MetricKey>("rate");
   const [hovered, setHovered] = useState<string | null>(null);
@@ -230,12 +286,60 @@ export function CountyIntelligenceMap({
   const [filter, setFilter] = useState("");
   const [tableOpen, setTableOpen] = useState(false);
 
+  /* -- Year filter: null = all years (server-fetched props); a year value
+        re-queries the two summary RPCs and overrides rows + boating. -- */
+  const yearFilterEnabled = !!stateCode && (farsYears?.length ?? 0) > 0;
+  const [year, setYear] = useState<number | null>(null);
+  const [yearLoading, setYearLoading] = useState(false);
+  const [override, setOverride] = useState<{ rows: CountyIntelRow[]; boating: BoatingMapRow[] } | null>(null);
+
+  const activeRows = override?.rows ?? rows;
+  const activeBoating = override?.boating ?? boating ?? [];
+  const boatingYearsSet = useMemo(() => new Set(boatingYears ?? []), [boatingYears]);
+  const boatingHasYear = year == null || boatingYearsSet.has(year);
+
+  async function selectYear(y: number | null) {
+    setYear(y);
+    if (y == null) {
+      setOverride(null);
+      return;
+    }
+    if (!stateCode) return;
+    setYearLoading(true);
+    try {
+      const sb = getSupabase() as unknown as {
+        rpc: (f: string, p: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+      };
+      const [acc, boat] = await Promise.all([
+        sb.rpc("get_state_accident_summary", { p_state: stateCode, p_year: y }),
+        boatingEnabled
+          ? sb.rpc("get_state_boating_summary", { p_state: stateCode, p_year: y })
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (acc.error) throw acc.error;
+      const accRows = ((acc.data ?? []) as CountyIntelRow[]).filter(
+        (r) => r.county !== null && r.county !== undefined,
+      );
+      const boatRows = boat.error ? [] : ((boat.data ?? []) as BoatingMapRow[]);
+      setOverride({ rows: accRows, boating: boatRows });
+    } catch (e) {
+      console.error("[CountyIntelligenceMap] year refetch failed", e);
+    } finally {
+      setYearLoading(false);
+    }
+  }
+
   /* -- Join live rows onto static geometry (by normalized county name) -- */
   const counties: MergedCounty[] = useMemo(() => {
     const byName = new Map<string, CountyIntelRow>();
-    for (const r of rows) {
+    for (const r of activeRows) {
       const k = normName(r.county);
       if (k) byName.set(k, r);
+    }
+    const boatByName = new Map<string, BoatingMapRow>();
+    for (const bRow of activeBoating) {
+      const k = normName(bRow.county);
+      if (k) boatByName.set(k, bRow);
     }
     const judByName = new Map<string, string>();
     for (const j of judicialProfiles ?? []) {
@@ -250,6 +354,7 @@ export function CountyIntelligenceMap({
     return geometry.map((g, i) => {
       const nkey = normName(g.name);
       const r = byName.get(nkey);
+      const bRow = boatByName.get(nkey);
       const dRow = demoByName.get(nkey);
       const rawProfile = r?.judicial_profile ?? judByName.get(nkey) ?? null;
       return {
@@ -264,6 +369,9 @@ export function CountyIntelligenceMap({
         moto: r?.moto_deaths ?? 0,
         rate: r?.deaths_per_100k ?? null,
         rural: r?.rural_pct ?? null,
+        boatAccidents: bRow?.accident_count ?? null,
+        boatDeaths: bRow?.total_deaths ?? null,
+        boatInjuries: bRow?.total_injuries ?? null,
         white: dRow?.pct_white ?? null,
         black: dRow?.pct_black ?? null,
         hispanic: dRow?.pct_hispanic ?? null,
@@ -275,7 +383,7 @@ export function CountyIntelligenceMap({
         commute: dRow?.mean_commute_minutes ?? null,
       };
     });
-  }, [rows, geometry, judicialProfiles, demographics]);
+  }, [activeRows, activeBoating, geometry, judicialProfiles, demographics]);
 
   /* -- Profile counts / chips -- */
   const counts = useMemo(() => {
@@ -357,6 +465,10 @@ export function CountyIntelligenceMap({
             av = a.moto;
             bv = b.moto;
             break;
+          case "boat":
+            av = a.boatDeaths;
+            bv = b.boatDeaths;
+            break;
           case "rural":
             av = a.rural;
             bv = b.rural;
@@ -432,6 +544,7 @@ export function CountyIntelligenceMap({
       "Total Deaths",
       "Truck Deaths",
       "Motorcycle Deaths",
+      ...(boatingEnabled ? ["Boating Accidents", "Boating Deaths", "Boating Injuries"] : []),
       "Deaths per 100K",
       "Rural %",
       "Judicial Profile",
@@ -459,6 +572,7 @@ export function CountyIntelligenceMap({
           c.deaths,
           c.truck,
           c.moto,
+          ...(boatingEnabled ? [c.boatAccidents ?? "", c.boatDeaths ?? "", c.boatInjuries ?? ""] : []),
           c.rate ?? "",
           c.rural ?? "",
           c.profile,
@@ -492,6 +606,32 @@ export function CountyIntelligenceMap({
 
   const dec = METRIC_META[metric].dec;
 
+  const heatMetrics: [MetricKey, string][] = [
+    ["rate", "Deaths/100K"],
+    ["deaths", "Total deaths"],
+    ["truck", "Truck"],
+    ["moto", "Motorcycle"],
+    ...((boatingEnabled ? [["boating", "Boating"]] : []) as [MetricKey, string][]),
+  ];
+
+  /* -- Active-county accident-exposure stats, with the selected metric pulled
+        to the front and highlighted (so toggling Truck/Moto/Boating changes
+        what the card foregrounds). -- */
+  function exposureStats(c: MergedCounty) {
+    const base: { key: MetricKey; label: string; value: string }[] = [
+      { key: "rate", label: "Deaths / 100K", value: c.rate != null ? c.rate.toFixed(1) : "—" },
+      { key: "deaths", label: "Total deaths", value: fmt(c.deaths) },
+      { key: "truck", label: "Truck deaths", value: fmt(c.truck) },
+      { key: "moto", label: "Motorcycle deaths", value: fmt(c.moto) },
+      ...(boatingEnabled
+        ? [{ key: "boating" as MetricKey, label: "Boating deaths", value: c.boatDeaths == null ? "—" : fmt(c.boatDeaths) }]
+        : []),
+    ];
+    const selectedStat = base.find((s) => s.key === metric);
+    const rest = base.filter((s) => s.key !== metric);
+    return selectedStat ? [selectedStat, ...rest] : base;
+  }
+
   interface ColDef {
     key: SortKey;
     label: string;
@@ -521,10 +661,19 @@ export function CountyIntelligenceMap({
     { key: "deaths", label: "Total Deaths", align: "right", emphasize: true, value: (c) => fmt(c.deaths) },
     { key: "truck", label: "Truck", align: "right", value: (c) => fmt(c.truck) },
     { key: "moto", label: "Moto", align: "right", value: (c) => fmt(c.moto) },
+    ...(boatingEnabled
+      ? ([{ key: "boat", label: "Boating", align: "right", value: (c) => (c.boatDeaths == null ? "—" : fmt(c.boatDeaths)) }] as ColDef[])
+      : []),
     { key: "rate", label: "Deaths/100K", align: "right", emphasize: true, value: (c) => (c.rate != null ? c.rate.toFixed(1) : "—") },
     { key: "rural", label: "Rural %", align: "right", value: (c) => (c.rural != null ? c.rural.toFixed(1) + "%" : "—") },
     { key: "profile", label: "Judicial", align: "left", kind: "profile", value: (c) => c.profile },
   ];
+
+  const coverageParts: string[] = [];
+  if (farsYears?.length) coverageParts.push(`FARS ${Math.min(...farsYears)}–${Math.max(...farsYears)}`);
+  if (boatingEnabled && boatingYears?.length)
+    coverageParts.push(`USCG boating ${Math.min(...boatingYears)}–${Math.max(...boatingYears)}`);
+  const coverageText = coverageParts.join(" · ");
 
   return (
     <div
@@ -560,6 +709,12 @@ export function CountyIntelligenceMap({
             {stateName}{" "}
             counties &mdash; one combined view.
           </p>
+          {coverageText && (
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94A3B8" }}>
+              Data coverage: {coverageText}
+              {year != null ? ` — showing ${year}` : " — showing all years"}
+            </p>
+          )}
         </div>
         <span
           style={{
@@ -628,12 +783,7 @@ export function CountyIntelligenceMap({
               Heat metric
             </div>
             <div style={{ display: "inline-flex", gap: 3, background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 9, padding: 3 }}>
-              {([
-                ["rate", "Deaths/100K"],
-                ["deaths", "Total deaths"],
-                ["truck", "Truck"],
-                ["moto", "Motorcycle"],
-              ] as [MetricKey, string][]).map(([k, l]) => (
+              {heatMetrics.map(([k, l]) => (
                 <button key={k} onClick={() => setMetric(k)} style={segStyle(metric === k)}>
                   {l}
                 </button>
@@ -641,7 +791,45 @@ export function CountyIntelligenceMap({
             </div>
           </div>
         )}
+        {yearFilterEnabled && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 5 }}>
+              Year{yearLoading ? " — loading…" : ""}
+            </div>
+            <select
+              value={year ?? ""}
+              onChange={(e) => selectYear(e.target.value === "" ? null : Number(e.target.value))}
+              disabled={yearLoading}
+              style={{
+                padding: "7px 11px",
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: "inherit",
+                color: "#0B1D3A",
+                background: "#fff",
+                border: "1px solid #E2E8F0",
+                borderRadius: 8,
+                cursor: yearLoading ? "wait" : "pointer",
+              }}
+            >
+              <option value="">All years</option>
+              {[...(farsYears ?? [])]
+                .sort((a, b) => b - a)
+                .map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
       </div>
+
+      {metric === "boating" && !boatingHasYear && (
+        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#B45309", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 8, padding: "7px 11px" }}>
+          USCG boating data is only available through {boatingYears?.length ? Math.max(...boatingYears) : 2023}. No boating figures for {year}.
+        </p>
+      )}
 
       {/* map + side panel */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginTop: 18, alignItems: "stretch" }}>
@@ -655,6 +843,8 @@ export function CountyIntelligenceMap({
             borderRadius: 10,
             background: "#FBFCFD",
             padding: 10,
+            opacity: yearLoading ? 0.55 : 1,
+            transition: "opacity 150ms ease",
           }}
         >
           <svg
@@ -867,55 +1057,89 @@ export function CountyIntelligenceMap({
                       </div>
                     </div>
 
-                    {/* accident exposure footer */}
+                    {/* accident exposure footer (selected metric foregrounded) */}
                     <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px dashed #E2E8F0" }}>
                       <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 9 }}>
                         Accident exposure
                       </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-                        {[
-                          { label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
-                          { label: "Fatal crashes", value: fmt(active.crashes) },
-                          { label: "Total deaths", value: fmt(active.deaths) },
-                          { label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
-                        ].map((a) => (
-                          <div key={a.label}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{a.value}</div>
-                            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{a.label}</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                        {exposureStats(active).map((s, i) => {
+                          const hot = mode !== "judicial" && i === 0;
+                          return (
+                            <div
+                              key={s.key}
+                              style={{
+                                padding: hot ? "6px 11px" : "6px 0",
+                                borderRadius: hot ? 8 : 0,
+                                background: hot ? tint(DEMO_ACCENT, 0.9) : "transparent",
+                                border: hot ? `1px solid ${tint(DEMO_ACCENT, 0.7)}` : "1px solid transparent",
+                              }}
+                            >
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{s.label}</div>
+                            </div>
+                          );
+                        })}
+                        <div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>
+                            {rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—"}
                           </div>
-                        ))}
+                          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>Rank by rate</div>
+                        </div>
                       </div>
+                      {boatingEnabled && active.boatAccidents != null && (
+                        <div style={{ marginTop: 9, fontSize: 12, color: "#475569" }}>
+                          Boating: <strong style={{ color: "#0B1D3A" }}>{fmt(active.boatAccidents)}</strong> accidents
+                          {" · "}
+                          <strong style={{ color: "#0B1D3A" }}>{fmt(active.boatInjuries)}</strong> injuries
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 1,
-                      background: "#EEF2F6",
-                      border: "1px solid #EEF2F6",
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      marginTop: 14,
-                    }}
-                  >
-                    {[
-                      { label: "Population", value: fmt(active.pop) },
-                      { label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
-                      { label: "Fatal crashes", value: fmt(active.crashes) },
-                      { label: "Total deaths", value: fmt(active.deaths) },
-                      { label: "Truck deaths", value: fmt(active.truck) },
-                      { label: "Motorcycle", value: fmt(active.moto) },
-                      { label: "Rural share", value: active.rural != null ? active.rural.toFixed(1) + "%" : "—" },
-                      { label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
-                    ].map((s) => (
-                      <div key={s.label} style={{ background: "#fff", padding: "10px 12px" }}>
-                        <div style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", color: "#94A3B8" }}>{s.label}</div>
-                        <div style={{ fontSize: 17, fontWeight: 700, color: "#0B1D3A", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                  <>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 1,
+                        background: "#EEF2F6",
+                        border: "1px solid #EEF2F6",
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        marginTop: 14,
+                      }}
+                    >
+                      {[
+                        { key: "pop", label: "Population", value: fmt(active.pop) },
+                        { key: "rate", label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
+                        { key: "crashes", label: "Fatal crashes", value: fmt(active.crashes) },
+                        { key: "deaths", label: "Total deaths", value: fmt(active.deaths) },
+                        { key: "truck", label: "Truck deaths", value: fmt(active.truck) },
+                        { key: "moto", label: "Motorcycle", value: fmt(active.moto) },
+                        ...(boatingEnabled
+                          ? [{ key: "boating", label: "Boating deaths", value: active.boatDeaths == null ? "—" : fmt(active.boatDeaths) }]
+                          : []),
+                        { key: "rural", label: "Rural share", value: active.rural != null ? active.rural.toFixed(1) + "%" : "—" },
+                        { key: "rank", label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
+                      ].map((s) => {
+                        const hot = mode !== "judicial" && s.key === metric;
+                        return (
+                          <div key={s.label} style={{ background: hot ? tint(DEMO_ACCENT, 0.9) : "#fff", padding: "10px 12px" }}>
+                            <div style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", color: hot ? "#0B1D3A" : "#94A3B8", fontWeight: hot ? 700 : 400 }}>{s.label}</div>
+                            <div style={{ fontSize: 17, fontWeight: 700, color: "#0B1D3A", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {boatingEnabled && active.boatAccidents != null && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: "#475569" }}>
+                        Boating: <strong style={{ color: "#0B1D3A" }}>{fmt(active.boatAccidents)}</strong> accidents
+                        {" · "}
+                        <strong style={{ color: "#0B1D3A" }}>{fmt(active.boatInjuries)}</strong> injuries
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
                 {selected && selected === activeKey && (
                   <button
@@ -1116,6 +1340,57 @@ export function CountyIntelligenceMap({
             </div>
           </div>
         )}
+      </div>
+
+      {/* deeper-analysis links */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
+        {boatingEnabled && (
+          <Link
+            href={boatingHref}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#1A8C96",
+              textDecoration: "none",
+              border: "1px solid #1A8C96",
+              borderRadius: 8,
+              padding: "8px 13px",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c1.3 0 1.9.5 2.5 1" />
+              <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76" />
+              <path d="M19 13V7a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v6" />
+              <path d="M12 10v4" />
+            </svg>
+            Full boating accident analysis &rarr;
+          </Link>
+        )}
+        <Link
+          href={marketsHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#0B1D3A",
+            textDecoration: "none",
+            border: "1px solid #E2E8F0",
+            borderRadius: 8,
+            padding: "8px 13px",
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          Market demographics by metro (MSA) &rarr;
+        </Link>
       </div>
 
       {/* insight callout */}

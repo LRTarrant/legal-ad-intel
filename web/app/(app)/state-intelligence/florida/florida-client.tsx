@@ -43,7 +43,11 @@ import {
 import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
 import { StateAdvertisingSection } from "../../components/state-advertising-section";
 import { floridaCompetitiveData } from "@/lib/data/competitive-landscape/florida";
-import { CountyIntelligenceMap } from "../../components/county-intelligence-map";
+import {
+  CountyIntelligenceMap,
+  FARS_DATA_YEARS,
+  BOATING_DATA_YEARS,
+} from "../../components/county-intelligence-map";
 import {
   COUNTY_GEOMETRY as FL_COUNTY_GEOMETRY,
   VIEWBOX as FL_VIEWBOX,
@@ -852,8 +856,17 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
           geometry={FL_COUNTY_GEOMETRY}
           viewBox={FL_VIEWBOX}
           stateName="Florida"
+          stateCode="FL"
           csvFileName="florida-county-intelligence.csv"
           judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
           demographics={data.censusDemographics.map((d) => ({
             county_name: d.county_name,
             median_age: d.median_age,

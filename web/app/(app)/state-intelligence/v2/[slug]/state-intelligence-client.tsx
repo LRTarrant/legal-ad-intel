@@ -11,14 +11,10 @@ import {
   Bike,
   HardHat,
   Anchor,
-  TrendingUp,
   FileText,
   MapPin,
-  ChevronUp,
-  ChevronDown,
   Lightbulb,
   CloudLightning,
-  BarChart3,
   Database,
   Target,
 } from "lucide-react";
@@ -44,7 +40,11 @@ import { StateAdvertisingSection } from "../../../components/state-advertising-s
 import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 import type { StateConfig } from "@/lib/state-config";
-import { CountyIntelligenceMap } from "../../../components/county-intelligence-map";
+import {
+  CountyIntelligenceMap,
+  FARS_DATA_YEARS,
+  BOATING_DATA_YEARS,
+} from "../../../components/county-intelligence-map";
 import {
   GEOMETRY_LOADERS,
   type GeometryModule,
@@ -175,11 +175,6 @@ function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
-function fmtPct(n: number | null | undefined): string {
-  if (n == null) return "\u2014";
-  return `${n.toFixed(1)}%`;
-}
-
 function fmtCur(n: number | null | undefined): string {
   if (n == null) return "\u2014";
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
@@ -213,8 +208,6 @@ export function StateIntelligenceClient({
   const showCrashEmbeds =
     features.showCrashEmbeds ??
     (config.crashEmbeds != null && config.crashEmbeds.length > 0);
-  const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
-  const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
@@ -246,29 +239,6 @@ export function StateIntelligenceClient({
   // without a synchronous setState inside the effect.
   const geometry = geo && geo.slug === config.slug ? geo.mod : null;
 
-  /* -- MSA sorted data -- */
-  const sortedMSA = useMemo(() => {
-    const rows = [...data.msaDemographics];
-    rows.sort((a, b) => {
-      switch (msaSortKey) {
-        case "pop":
-          return msaSortAsc
-            ? a.total_population - b.total_population
-            : b.total_population - a.total_population;
-        case "income":
-          return msaSortAsc
-            ? (a.median_household_income ?? 0) - (b.median_household_income ?? 0)
-            : (b.median_household_income ?? 0) - (a.median_household_income ?? 0);
-        case "poverty":
-          return msaSortAsc
-            ? (a.pct_poverty ?? 0) - (b.pct_poverty ?? 0)
-            : (b.pct_poverty ?? 0) - (a.pct_poverty ?? 0);
-        default:
-          return 0;
-      }
-    });
-    return rows;
-  }, [data.msaDemographics, msaSortKey, msaSortAsc]);
 
   /* -- Aggregate stats -- */
   const totalFatalCrashes = data.accidentSummary.reduce(
@@ -320,9 +290,6 @@ export function StateIntelligenceClient({
     .sort((a, b) => b.moto_deaths - a.moto_deaths)
     .slice(0, 5);
 
-  /* -- Rural/Urban aggregates -- */
-  const ruralRow = data.ruralUrban.find((r) => r.category === "Rural");
-  const urbanRow = data.ruralUrban.find((r) => r.category === "Urban");
 
   /* -- Judicial profile counts -- */
   const profileCounts = useMemo(() => {
@@ -874,8 +841,17 @@ export function StateIntelligenceClient({
           geometry={geometry.COUNTY_GEOMETRY}
           viewBox={geometry.VIEWBOX}
           stateName={config.stateName}
+          stateCode={config.stateCode}
           csvFileName={`${config.slug}-county-intelligence.csv`}
           judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
           demographics={data.censusDemographics.map((d) => ({
             county_name: d.county_name,
             median_age: d.median_age,
@@ -899,242 +875,6 @@ export function StateIntelligenceClient({
           </div>
         </div>
       )}
-
-      {/* ============================================================ */}
-      {/* 7. RURAL vs. URBAN ANALYSIS                                  */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Rural vs. Urban Analysis
-          </h2>
-        </div>
-
-        {ruralRow && urbanRow ? (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-cloud">
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Metric
-                    </th>
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Rural
-                    </th>
-                    <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Urban
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-cloud/60">
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Fatal Crashes
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(ruralRow.fatal_crashes)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(urbanRow.fatal_crashes)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/60">
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Total Deaths
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(ruralRow.total_deaths)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(urbanRow.total_deaths)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/60">
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Avg Median Income
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtCur(ruralRow.avg_median_income)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtCur(urbanRow.avg_median_income)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/60">
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Avg Poverty Rate
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(ruralRow.avg_poverty_pct)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(urbanRow.avg_poverty_pct)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/60">
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Avg Internet Access
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(ruralRow.avg_internet_pct)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(urbanRow.avg_internet_pct)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      Avg Uninsured Rate
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(ruralRow.avg_uninsured_pct)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(urbanRow.avg_uninsured_pct)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                {content.ruralUrbanContext ??
-                  `${config.stateName}'s rural counties have disproportionately high fatality rates despite lower total crash counts. Rural areas tend to have lower internet access and higher uninsured rates, limiting digital-only advertising reach and increasing the severity of untreated injuries.`}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              Rural/urban data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 8. MARKET DEMOGRAPHICS BY METRO                              */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Market Demographics by Metro
-          </h2>
-        </div>
-
-        {data.msaDemographics.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-cloud">
-                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                    Metro Area
-                  </th>
-                  <th
-                    onClick={() => {
-                      if (msaSortKey === "pop") setMsaSortAsc(!msaSortAsc);
-                      else {
-                        setMsaSortKey("pop");
-                        setMsaSortAsc(false);
-                      }
-                    }}
-                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
-                  >
-                    Population
-                    {msaSortKey === "pop" &&
-                      (msaSortAsc ? (
-                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                      ) : (
-                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                      ))}
-                  </th>
-                  <th
-                    onClick={() => {
-                      if (msaSortKey === "income") setMsaSortAsc(!msaSortAsc);
-                      else {
-                        setMsaSortKey("income");
-                        setMsaSortAsc(false);
-                      }
-                    }}
-                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
-                  >
-                    Median Income
-                    {msaSortKey === "income" &&
-                      (msaSortAsc ? (
-                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                      ) : (
-                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                      ))}
-                  </th>
-                  <th
-                    onClick={() => {
-                      if (msaSortKey === "poverty") setMsaSortAsc(!msaSortAsc);
-                      else {
-                        setMsaSortKey("poverty");
-                        setMsaSortAsc(false);
-                      }
-                    }}
-                    className="cursor-pointer whitespace-nowrap px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray hover:text-midnight-navy"
-                  >
-                    Poverty %
-                    {msaSortKey === "poverty" &&
-                      (msaSortAsc ? (
-                        <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                      ) : (
-                        <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                      ))}
-                  </th>
-                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                    Uninsured %
-                  </th>
-                  <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                    Employed %
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedMSA.map((row) => (
-                  <tr
-                    key={row.cbsa_code}
-                    className="border-b border-cloud/60 hover:bg-cloud/30 transition-colors"
-                  >
-                    <td className="py-2.5 px-3 font-medium text-midnight-navy">
-                      {row.cbsa_title}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtNum(row.total_population)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtCur(row.median_household_income)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(row.pct_poverty)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(row.pct_uninsured)}
-                    </td>
-                    <td className="py-2.5 px-3 text-midnight-navy/80">
-                      {fmtPct(row.pct_employed)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              MSA demographic data loading...
-            </p>
-          </div>
-        )}
-      </div>
 
       {/* ============================================================ */}
       {/* 10. PI VIABILITY DEEP DIVE                                   */}
