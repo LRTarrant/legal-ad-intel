@@ -15,7 +15,7 @@
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { geoMercator, geoPath } from "d3-geo";
+import { geoMercator, geoConicEqualArea, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 
 const ATLAS_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json";
@@ -40,6 +40,19 @@ const STATES = {
 
 const PAD = 12;
 
+// Base (unfitted) projection per state. Default is Mercator, which is fine for
+// the lower-48 + Hawaii. Alaska is special-cased: its Aleutian chain straddles
+// the antimeridian (180°), so Mercator throws those islands to the far edge of
+// the frame and squashes the rest of the state into a thin ~15%-wide strip.
+// Use the Albers conic that d3's geoAlbersUsa uses for its Alaska inset, which
+// keeps the chain contiguous and gives a true-to-shape, full-height map.
+function baseProjection(fips) {
+  if (fips === "02") {
+    return geoConicEqualArea().rotate([154, 0]).parallels([55, 65]);
+  }
+  return geoMercator();
+}
+
 async function loadAtlas() {
   if (existsSync(CACHE)) {
     return JSON.parse(readFileSync(CACHE, "utf8"));
@@ -62,12 +75,12 @@ function generate(allCounties, fips, slug, W) {
 
   // Derive the state's natural aspect ratio so the viewBox is tight (no
   // letterboxing of wide states into a portrait box).
-  const probe = geoMercator().fitWidth(W - 2 * PAD, fc);
+  const probe = baseProjection(fips).fitWidth(W - 2 * PAD, fc);
   const bounds = geoPath(probe).bounds(fc); // [[x0,y0],[x1,y1]]
   const aspect = (bounds[1][1] - bounds[0][1]) / (bounds[1][0] - bounds[0][0]);
   const H = Math.round((W - 2 * PAD) * aspect) + 2 * PAD;
 
-  const projection = geoMercator().fitExtent(
+  const projection = baseProjection(fips).fitExtent(
     [[PAD, PAD], [W - PAD, H - PAD]],
     fc,
   );
