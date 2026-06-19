@@ -12,11 +12,8 @@ import {
   Bike,
   HardHat,
   Anchor,
-  TrendingUp,
   FileText,
   MapPin,
-  ChevronUp,
-  ChevronDown,
   Lightbulb,
   CloudLightning,
   Database,
@@ -228,11 +225,6 @@ function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
-function fmtPct(n: number | null | undefined): string {
-  if (n == null) return "\u2014";
-  return `${n.toFixed(1)}%`;
-}
-
 function fmtCur(n: number | null | undefined): string {
   if (n == null) return "\u2014";
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
@@ -245,38 +237,12 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function FloridaClient({ data }: { data: FloridaPageData }) {
-  const [msaSortKey, setMsaSortKey] = useState<"pop" | "income" | "poverty">("pop");
-  const [msaSortAsc, setMsaSortAsc] = useState(false);
   const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
   const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
   useEffect(() => {
     trackStateViewed({ state_code: "FL", state_name: "Florida" });
   }, []);
-
-  /* -- MSA sorted data -- */
-  const sortedMSA = useMemo(() => {
-    const rows = [...data.msaDemographics];
-    rows.sort((a, b) => {
-      switch (msaSortKey) {
-        case "pop":
-          return msaSortAsc
-            ? a.total_population - b.total_population
-            : b.total_population - a.total_population;
-        case "income":
-          return msaSortAsc
-            ? (a.median_household_income ?? 0) - (b.median_household_income ?? 0)
-            : (b.median_household_income ?? 0) - (a.median_household_income ?? 0);
-        case "poverty":
-          return msaSortAsc
-            ? (a.pct_poverty ?? 0) - (b.pct_poverty ?? 0)
-            : (b.pct_poverty ?? 0) - (a.pct_poverty ?? 0);
-        default:
-          return 0;
-      }
-    });
-    return rows;
-  }, [data.msaDemographics, msaSortKey, msaSortAsc]);
 
   /* -- Aggregate stats -- */
   const totalFatalCrashes = data.accidentSummary.reduce(
@@ -319,10 +285,6 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
     .filter((r) => r.moto_deaths > 0)
     .sort((a, b) => b.moto_deaths - a.moto_deaths)
     .slice(0, 5);
-
-  /* -- Rural/Urban aggregates -- */
-  const ruralRow = data.ruralUrban.find((r) => r.category === "Rural");
-  const urbanRow = data.ruralUrban.find((r) => r.category === "Urban");
 
   /* -- Judicial profile counts -- */
   const profileCounts = useMemo(() => {
@@ -890,294 +852,6 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
           </div>
         </div>
       )}
-
-      {/* ============================================================ */}
-      {/* 6. RURAL-ROAD VS URBAN-ROAD ANALYSIS                        */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Rural-Road vs. Urban-Road Analysis
-          </h2>
-        </div>
-
-        {ruralRow && urbanRow ? (
-          <>
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-cloud">
-                    <th className="py-3 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                      Metric
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                      Rural
-                    </th>
-                    <th className="py-3 pl-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
-                      Urban
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Fatal Crashes
-                    </td>
-                    <td className="py-3 px-3 text-right font-semibold text-midnight-navy">
-                      {fmtNum(ruralRow.fatal_crashes)}
-                    </td>
-                    <td className="py-3 pl-3 text-right font-semibold text-midnight-navy">
-                      {fmtNum(urbanRow.fatal_crashes)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Total Deaths
-                    </td>
-                    <td className="py-3 px-3 text-right font-semibold text-midnight-navy">
-                      {fmtNum(ruralRow.total_deaths)}
-                    </td>
-                    <td className="py-3 pl-3 text-right font-semibold text-midnight-navy">
-                      {fmtNum(urbanRow.total_deaths)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Avg Median Income
-                    </td>
-                    <td className="py-3 px-3 text-right text-midnight-navy">
-                      {fmtCur(ruralRow.avg_median_income)}
-                    </td>
-                    <td className="py-3 pl-3 text-right text-midnight-navy">
-                      {fmtCur(urbanRow.avg_median_income)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Avg Poverty Rate
-                    </td>
-                    <td className="py-3 px-3 text-right text-midnight-navy">
-                      {fmtPct(ruralRow.avg_poverty_pct)}
-                    </td>
-                    <td className="py-3 pl-3 text-right text-midnight-navy">
-                      {fmtPct(urbanRow.avg_poverty_pct)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Avg Internet Access
-                    </td>
-                    <td className="py-3 px-3 text-right text-midnight-navy">
-                      {fmtPct(ruralRow.avg_internet_pct)}
-                    </td>
-                    <td className="py-3 pl-3 text-right text-midnight-navy">
-                      {fmtPct(urbanRow.avg_internet_pct)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-cloud/50">
-                    <td className="py-3 pr-4 text-midnight-navy">
-                      Avg Uninsured Rate
-                    </td>
-                    <td className="py-3 px-3 text-right text-midnight-navy">
-                      {fmtPct(ruralRow.avg_uninsured_pct)}
-                    </td>
-                    <td className="py-3 pl-3 text-right text-midnight-navy">
-                      {fmtPct(urbanRow.avg_uninsured_pct)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-                <p className="text-sm text-midnight-navy/80">
-                  78% of Florida&apos;s fatal crashes occur on rural-classified
-                  roads &mdash; but this reflects road design, not geography.
-                  Florida&apos;s high-speed, undivided highways in rapidly growing
-                  suburban areas carry rural functional classifications despite
-                  serving dense populations. These roads combine high speeds with
-                  high traffic volumes, creating lethal conditions. Plaintiff firms
-                  should target the I-4 corridor, US-27, US-441, and US-19 &mdash;
-                  all classified as rural roads but running through populated areas.
-                </p>
-              </div>
-
-              <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-                <p className="text-sm text-midnight-navy/80">
-                  Florida&apos;s {COMMUTE_FL.wfh}% WFH rate (vs 7.8% national
-                  pre-pandemic) reflects its retiree and remote-worker economy.
-                  High-carpool counties (Hardee {COMMUTE_FL.highCarpoolCounties[0].pct}%,
-                  DeSoto {COMMUTE_FL.highCarpoolCounties[1].pct}%,
-                  Hendry {COMMUTE_FL.highCarpoolCounties[3].pct}%) correlate with
-                  agricultural and construction labor. St. Johns ({COMMUTE_FL.highWfhCounties[0].pct}% WFH)
-                  represents the affluent suburban professional demographic.
-                </p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              Rural/urban comparison data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 7. MARKET DEMOGRAPHICS BY METRO                              */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Market Demographics by Metro
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-slate-gray">
-          Florida&apos;s {data.msaDemographics.length} Metropolitan Statistical
-          Areas
-        </p>
-
-        {data.msaDemographics.length > 0 ? (
-          <>
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b border-cloud">
-                    <th className="py-3 pr-4 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      MSA Name
-                    </th>
-                    <th
-                      className="py-3 px-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray cursor-pointer hover:text-midnight-navy"
-                      onClick={() => {
-                        if (msaSortKey === "pop") setMsaSortAsc(!msaSortAsc);
-                        else {
-                          setMsaSortKey("pop");
-                          setMsaSortAsc(false);
-                        }
-                      }}
-                    >
-                      Population
-                      {msaSortKey === "pop" &&
-                        (msaSortAsc ? (
-                          <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                        ))}
-                    </th>
-                    <th
-                      className="py-3 px-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray cursor-pointer hover:text-midnight-navy"
-                      onClick={() => {
-                        if (msaSortKey === "income")
-                          setMsaSortAsc(!msaSortAsc);
-                        else {
-                          setMsaSortKey("income");
-                          setMsaSortAsc(false);
-                        }
-                      }}
-                    >
-                      Median Income
-                      {msaSortKey === "income" &&
-                        (msaSortAsc ? (
-                          <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                        ))}
-                    </th>
-                    <th
-                      className="py-3 px-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray cursor-pointer hover:text-midnight-navy"
-                      onClick={() => {
-                        if (msaSortKey === "poverty")
-                          setMsaSortAsc(!msaSortAsc);
-                        else {
-                          setMsaSortKey("poverty");
-                          setMsaSortAsc(false);
-                        }
-                      }}
-                    >
-                      Poverty %
-                      {msaSortKey === "poverty" &&
-                        (msaSortAsc ? (
-                          <ChevronUp className="w-3 h-3 inline ml-0.5" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3 inline ml-0.5" />
-                        ))}
-                    </th>
-                    <th className="py-3 px-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Uninsured %
-                    </th>
-                    <th className="py-3 pl-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-                      Employment %
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedMSA.map((row) => {
-                    const isBig6 = BIG6.some((m) =>
-                      row.cbsa_title.startsWith(m)
-                    );
-                    return (
-                      <tr
-                        key={row.cbsa_code}
-                        className={`border-b border-cloud/50 transition-colors ${
-                          isBig6 ? "bg-intelligence-teal/5" : ""
-                        }`}
-                      >
-                        <td className="py-2.5 pr-4 font-medium text-midnight-navy whitespace-nowrap">
-                          {row.cbsa_title}
-                          {isBig6 && (
-                            <span className="ml-1.5 rounded-full bg-intelligence-teal/10 px-1.5 py-0.5 text-[9px] font-bold text-intelligence-teal">
-                              Major
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                          {fmtNum(row.total_population)}
-                        </td>
-                        <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                          {fmtCur(row.median_household_income)}
-                        </td>
-                        <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                          {fmtPct(row.pct_poverty)}
-                        </td>
-                        <td className="py-2.5 px-2 text-right text-midnight-navy/80">
-                          {fmtPct(row.pct_uninsured)}
-                        </td>
-                        <td className="py-2.5 pl-2 text-right text-midnight-navy/80">
-                          {fmtPct(row.pct_employed)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                Florida&apos;s Big 6 metros &mdash; Miami-Fort Lauderdale (6.1M),
-                Tampa-St. Petersburg (3.3M), Orlando-Kissimmee (2.7M),
-                Jacksonville (1.7M), North Port-Sarasota (900K), and Cape
-                Coral-Fort Myers (800K) &mdash; concentrate the majority of the
-                state&apos;s population and PI case volume. Digital campaigns
-                should prioritize these metros for reach, while supplementing with
-                radio/billboard in smaller MSAs.
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              MSA demographics data loading...
-            </p>
-          </div>
-        )}
-      </div>
 
       {/* ============================================================ */}
       {/* 9. PI VIABILITY DEEP DIVE                                    */}
