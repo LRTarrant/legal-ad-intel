@@ -86,6 +86,8 @@ export interface CensusDemographicsRow {
   pct_white: number | null;
   pct_black: number | null;
   pct_hispanic: number | null;
+  pct_asian: number | null;
+  pct_native: number | null;
   median_household_income: number | null;
   per_capita_income: number | null;
   pct_poverty: number | null;
@@ -94,6 +96,7 @@ export interface CensusDemographicsRow {
   pct_with_internet: number | null;
   pct_disability: number | null;
   pct_veterans: number | null;
+  mean_commute_minutes: number | null;
 }
 
 export interface MSADemographicsRow {
@@ -191,6 +194,8 @@ async function fetchCensusDemographics(
     pct_white: toNum(r.pct_white),
     pct_black: toNum(r.pct_black),
     pct_hispanic: toNum(r.pct_hispanic),
+    pct_asian: toNum(r.pct_asian),
+    pct_native: toNum(r.pct_native),
     median_household_income: toNum(r.median_household_income),
     per_capita_income: toNum(r.per_capita_income),
     pct_poverty: toNum(r.pct_poverty),
@@ -199,6 +204,7 @@ async function fetchCensusDemographics(
     pct_with_internet: toNum(r.pct_with_internet),
     pct_disability: toNum(r.pct_disability),
     pct_veterans: toNum(r.pct_veterans),
+    mean_commute_minutes: toNum(r.mean_commute_minutes),
   })) as CensusDemographicsRow[];
 }
 
