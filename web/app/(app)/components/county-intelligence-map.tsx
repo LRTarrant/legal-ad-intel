@@ -37,6 +37,25 @@ export interface JudicialRow {
   judicial_profile: string | null;
 }
 
+/**
+ * Per-county census demographics (from the `census_demographics` table). Optional
+ * — when supplied, the detail card and table gain a demographics layer (race &
+ * ethnicity mix, median income, poverty, median age, and mean commute time).
+ * Joined to geometry/accident rows by normalized county name.
+ */
+export interface CountyDemographicsRow {
+  county_name: string;
+  median_age: number | null;
+  pct_white: number | null;
+  pct_black: number | null;
+  pct_hispanic: number | null;
+  pct_asian: number | null;
+  pct_native: number | null;
+  median_household_income: number | null;
+  pct_poverty: number | null;
+  mean_commute_minutes: number | null;
+}
+
 interface Props {
   rows: CountyIntelRow[];
   geometry: CountyGeometry[];
@@ -50,6 +69,11 @@ interface Props {
    * when the accident row's judicial_profile is null.
    */
   judicialProfiles?: JudicialRow[];
+  /**
+   * Optional per-county census demographics. When present (and non-empty), the
+   * detail card and table show a demographics layer including mean commute time.
+   */
+  demographics?: CountyDemographicsRow[];
   defaultView?: ViewMode;
 }
 
@@ -64,7 +88,14 @@ type SortKey =
   | "moto"
   | "rate"
   | "rural"
-  | "profile";
+  | "profile"
+  | "white"
+  | "black"
+  | "hispanic"
+  | "age"
+  | "income"
+  | "poverty"
+  | "commute";
 
 interface MergedCounty {
   /** Unique row identity (name is NOT unique — VA/MD/MO/NV have same-named city + county). */
@@ -79,6 +110,16 @@ interface MergedCounty {
   moto: number;
   rate: number | null;
   rural: number | null;
+  // Census demographics (null when no demographics row joined)
+  white: number | null;
+  black: number | null;
+  hispanic: number | null;
+  asian: number | null;
+  native: number | null;
+  income: number | null;
+  poverty: number | null;
+  age: number | null;
+  commute: number | null;
 }
 
 const JUD_COLORS: Record<string, string> = {
@@ -131,6 +172,21 @@ function fmt(n: number | null | undefined): string {
   return n == null ? "—" : n.toLocaleString();
 }
 
+function money(n: number | null | undefined): string {
+  return n == null ? "—" : "$" + Math.round(n / 1000) + "K";
+}
+
+function pct(n: number | null | undefined): string {
+  return n == null ? "—" : n.toFixed(1) + "%";
+}
+
+function commuteFmt(n: number | null | undefined): string {
+  return n == null ? "—" : n.toFixed(1) + " min";
+}
+
+/** Accent used for the demographics layer (race bars, commute highlight). */
+const DEMO_ACCENT = "#1A8C96";
+
 function profileOf(raw: string | null): string {
   if (!raw) return "Unknown";
   const p = raw.trim().toLowerCase();
@@ -161,8 +217,10 @@ export function CountyIntelligenceMap({
   stateName,
   csvFileName,
   judicialProfiles,
+  demographics,
   defaultView = "judicial",
 }: Props) {
+  const hasDemographics = (demographics?.length ?? 0) > 0;
   const [mode, setMode] = useState<ViewMode>(defaultView);
   const [metric, setMetric] = useState<MetricKey>("rate");
   const [hovered, setHovered] = useState<string | null>(null);
@@ -184,9 +242,15 @@ export function CountyIntelligenceMap({
       const k = normName(j.county_name);
       if (k && j.judicial_profile) judByName.set(k, j.judicial_profile);
     }
+    const demoByName = new Map<string, CountyDemographicsRow>();
+    for (const dRow of demographics ?? []) {
+      const k = normName(dRow.county_name);
+      if (k) demoByName.set(k, dRow);
+    }
     return geometry.map((g, i) => {
       const nkey = normName(g.name);
       const r = byName.get(nkey);
+      const dRow = demoByName.get(nkey);
       const rawProfile = r?.judicial_profile ?? judByName.get(nkey) ?? null;
       return {
         key: `${g.name}#${i}`,
@@ -200,9 +264,18 @@ export function CountyIntelligenceMap({
         moto: r?.moto_deaths ?? 0,
         rate: r?.deaths_per_100k ?? null,
         rural: r?.rural_pct ?? null,
+        white: dRow?.pct_white ?? null,
+        black: dRow?.pct_black ?? null,
+        hispanic: dRow?.pct_hispanic ?? null,
+        asian: dRow?.pct_asian ?? null,
+        native: dRow?.pct_native ?? null,
+        income: dRow?.median_household_income ?? null,
+        poverty: dRow?.pct_poverty ?? null,
+        age: dRow?.median_age ?? null,
+        commute: dRow?.mean_commute_minutes ?? null,
       };
     });
-  }, [rows, geometry, judicialProfiles]);
+  }, [rows, geometry, judicialProfiles, demographics]);
 
   /* -- Profile counts / chips -- */
   const counts = useMemo(() => {
@@ -288,6 +361,34 @@ export function CountyIntelligenceMap({
             av = a.rural;
             bv = b.rural;
             break;
+          case "white":
+            av = a.white;
+            bv = b.white;
+            break;
+          case "black":
+            av = a.black;
+            bv = b.black;
+            break;
+          case "hispanic":
+            av = a.hispanic;
+            bv = b.hispanic;
+            break;
+          case "age":
+            av = a.age;
+            bv = b.age;
+            break;
+          case "income":
+            av = a.income;
+            bv = b.income;
+            break;
+          case "poverty":
+            av = a.poverty;
+            bv = b.poverty;
+            break;
+          case "commute":
+            av = a.commute;
+            bv = b.commute;
+            break;
           case "rate":
           default:
             av = a.rate;
@@ -314,6 +415,19 @@ export function CountyIntelligenceMap({
     const head = [
       "County",
       "Population",
+      ...(hasDemographics
+        ? [
+            "% White",
+            "% Black",
+            "% Hispanic",
+            "% Asian",
+            "% Native",
+            "Median Age",
+            "Median HH Income",
+            "Poverty %",
+            "Mean Commute (min)",
+          ]
+        : []),
       "Fatal Crashes",
       "Total Deaths",
       "Truck Deaths",
@@ -328,6 +442,19 @@ export function CountyIntelligenceMap({
         [
           c.name,
           c.pop ?? "",
+          ...(hasDemographics
+            ? [
+                c.white ?? "",
+                c.black ?? "",
+                c.hispanic ?? "",
+                c.asian ?? "",
+                c.native ?? "",
+                c.age ?? "",
+                c.income ?? "",
+                c.poverty ?? "",
+                c.commute ?? "",
+              ]
+            : []),
           c.crashes,
           c.deaths,
           c.truck,
@@ -365,16 +492,38 @@ export function CountyIntelligenceMap({
 
   const dec = METRIC_META[metric].dec;
 
-  const colDefs: { key: SortKey; label: string; align: "left" | "right" }[] = [
-    { key: "name", label: "County", align: "left" },
-    { key: "pop", label: "Population", align: "right" },
-    { key: "crashes", label: "Fatal Crashes", align: "right" },
-    { key: "deaths", label: "Total Deaths", align: "right" },
-    { key: "truck", label: "Truck", align: "right" },
-    { key: "moto", label: "Moto", align: "right" },
-    { key: "rate", label: "Deaths/100K", align: "right" },
-    { key: "rural", label: "Rural %", align: "right" },
-    { key: "profile", label: "Judicial", align: "left" },
+  interface ColDef {
+    key: SortKey;
+    label: string;
+    align: "left" | "right";
+    /** Special cell rendering: county name (bold) or judicial badge. */
+    kind?: "name" | "profile";
+    /** Bold + navy numeric cell. */
+    emphasize?: boolean;
+    value: (c: MergedCounty) => string;
+  }
+
+  const colDefs: ColDef[] = [
+    { key: "name", label: "County", align: "left", kind: "name", value: (c) => c.name },
+    { key: "pop", label: "Population", align: "right", value: (c) => fmt(c.pop) },
+    ...(hasDemographics
+      ? ([
+          { key: "white", label: "% White", align: "right", value: (c) => pct(c.white) },
+          { key: "black", label: "% Black", align: "right", value: (c) => pct(c.black) },
+          { key: "hispanic", label: "% Hispanic", align: "right", value: (c) => pct(c.hispanic) },
+          { key: "age", label: "Median Age", align: "right", value: (c) => (c.age != null ? c.age.toFixed(1) : "—") },
+          { key: "income", label: "Med. Income", align: "right", value: (c) => money(c.income) },
+          { key: "poverty", label: "Poverty %", align: "right", value: (c) => pct(c.poverty) },
+          { key: "commute", label: "Commute", align: "right", emphasize: true, value: (c) => commuteFmt(c.commute) },
+        ] as ColDef[])
+      : []),
+    { key: "crashes", label: "Fatal Crashes", align: "right", value: (c) => fmt(c.crashes) },
+    { key: "deaths", label: "Total Deaths", align: "right", emphasize: true, value: (c) => fmt(c.deaths) },
+    { key: "truck", label: "Truck", align: "right", value: (c) => fmt(c.truck) },
+    { key: "moto", label: "Moto", align: "right", value: (c) => fmt(c.moto) },
+    { key: "rate", label: "Deaths/100K", align: "right", emphasize: true, value: (c) => (c.rate != null ? c.rate.toFixed(1) : "—") },
+    { key: "rural", label: "Rural %", align: "right", value: (c) => (c.rural != null ? c.rural.toFixed(1) + "%" : "—") },
+    { key: "profile", label: "Judicial", align: "left", kind: "profile", value: (c) => c.profile },
   ];
 
   return (
@@ -407,8 +556,9 @@ export function CountyIntelligenceMap({
             <h2 style={{ fontSize: 24, fontWeight: 700, color: "#0B1D3A", margin: 0 }}>County Intelligence</h2>
           </div>
           <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6B7280" }}>
-            Accident exposure and judicial leaning across all {counties.length}{" "}
-            {stateName} counties &mdash; one combined view.
+            {hasDemographics ? "Accident exposure, judicial leaning, and census demographics" : "Accident exposure and judicial leaning"} across all {counties.length}{" "}
+            {stateName}{" "}
+            counties &mdash; one combined view.
           </p>
         </div>
         <span
@@ -633,34 +783,140 @@ export function CountyIntelligenceMap({
                     {active.profile}
                   </span>
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 1,
-                    background: "#EEF2F6",
-                    border: "1px solid #EEF2F6",
-                    borderRadius: 8,
-                    overflow: "hidden",
-                    marginTop: 14,
-                  }}
-                >
-                  {[
-                    { label: "Population", value: fmt(active.pop) },
-                    { label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
-                    { label: "Fatal crashes", value: fmt(active.crashes) },
-                    { label: "Total deaths", value: fmt(active.deaths) },
-                    { label: "Truck deaths", value: fmt(active.truck) },
-                    { label: "Motorcycle", value: fmt(active.moto) },
-                    { label: "Rural share", value: active.rural != null ? active.rural.toFixed(1) + "%" : "—" },
-                    { label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
-                  ].map((s) => (
-                    <div key={s.label} style={{ background: "#fff", padding: "10px 12px" }}>
-                      <div style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", color: "#94A3B8" }}>{s.label}</div>
-                      <div style={{ fontSize: 17, fontWeight: 700, color: "#0B1D3A", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                {hasDemographics ? (
+                  <>
+                    {/* demographic stat cells */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 1,
+                        background: "#EEF2F6",
+                        border: "1px solid #EEF2F6",
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        marginTop: 14,
+                      }}
+                    >
+                      {[
+                        { label: "Population", value: fmt(active.pop) },
+                        { label: "Median age", value: active.age != null ? active.age.toFixed(1) : "—" },
+                        { label: "Median HH income", value: money(active.income) },
+                        { label: "Poverty rate", value: pct(active.poverty) },
+                      ].map((s) => (
+                        <div key={s.label} style={{ background: "#fff", padding: "9px 12px" }}>
+                          <div style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", color: "#94A3B8" }}>{s.label}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+
+                    {/* mean commute time — highlighted (new signal) */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        marginTop: 10,
+                        padding: "10px 13px",
+                        borderRadius: 8,
+                        background: tint(DEMO_ACCENT, 0.9),
+                        border: `1px solid ${tint(DEMO_ACCENT, 0.7)}`,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={DEMO_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span style={{ fontSize: 11, letterSpacing: ".05em", textTransform: "uppercase", color: "#0B1D3A", fontWeight: 600 }}>Mean commute</span>
+                      </div>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{commuteFmt(active.commute)}</span>
+                    </div>
+
+                    {/* race & ethnicity bars */}
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 10 }}>
+                        Race &amp; ethnicity
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                        {[
+                          { label: "White", v: active.white },
+                          { label: "Black", v: active.black },
+                          { label: "Hispanic", v: active.hispanic },
+                          { label: "Asian", v: active.asian },
+                          { label: "Native", v: active.native },
+                        ].map((b) => (
+                          <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ width: 60, fontSize: 12, color: "#475569", flex: "none" }}>{b.label}</span>
+                            <div style={{ flex: 1, height: 8, borderRadius: 999, background: "#EDF1F5", overflow: "hidden" }}>
+                              <div
+                                style={{
+                                  width: Math.max(2, Math.min(100, b.v ?? 0)) + "%",
+                                  height: "100%",
+                                  borderRadius: 999,
+                                  background: DEMO_ACCENT,
+                                  transition: "width 220ms ease",
+                                }}
+                              />
+                            </div>
+                            <span style={{ width: 44, textAlign: "right", fontSize: 12, fontWeight: 600, color: "#0B1D3A", fontVariantNumeric: "tabular-nums", flex: "none" }}>{pct(b.v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* accident exposure footer */}
+                    <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px dashed #E2E8F0" }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 9 }}>
+                        Accident exposure
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+                        {[
+                          { label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
+                          { label: "Fatal crashes", value: fmt(active.crashes) },
+                          { label: "Total deaths", value: fmt(active.deaths) },
+                          { label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
+                        ].map((a) => (
+                          <div key={a.label}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{a.value}</div>
+                            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{a.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 1,
+                      background: "#EEF2F6",
+                      border: "1px solid #EEF2F6",
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      marginTop: 14,
+                    }}
+                  >
+                    {[
+                      { label: "Population", value: fmt(active.pop) },
+                      { label: "Deaths / 100K", value: active.rate != null ? active.rate.toFixed(1) : "—" },
+                      { label: "Fatal crashes", value: fmt(active.crashes) },
+                      { label: "Total deaths", value: fmt(active.deaths) },
+                      { label: "Truck deaths", value: fmt(active.truck) },
+                      { label: "Motorcycle", value: fmt(active.moto) },
+                      { label: "Rural share", value: active.rural != null ? active.rural.toFixed(1) + "%" : "—" },
+                      { label: "Rank by rate", value: rateRank.has(active.name) ? "#" + rateRank.get(active.name) : "—" },
+                    ].map((s) => (
+                      <div key={s.label} style={{ background: "#fff", padding: "10px 12px" }}>
+                        <div style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", color: "#94A3B8" }}>{s.label}</div>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: "#0B1D3A", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {selected && selected === activeKey && (
                   <button
                     onClick={() => setSelected(null)}
@@ -672,7 +928,9 @@ export function CountyIntelligenceMap({
               </div>
             ) : (
               <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 14 }}>Hover or tap a county for detail.</div>
+                <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 14 }}>
+                  {hasDemographics ? "Hover or tap a county for census demographics & accident exposure." : "Hover or tap a county for detail."}
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                   {[
                     { label: "Counties", value: String(counties.length) },
@@ -818,17 +1076,38 @@ export function CountyIntelligenceMap({
                           transition: "background 120ms ease",
                         }}
                       >
-                        <td style={{ padding: "9px 8px", fontSize: 12, fontWeight: 600, color: "#0B1D3A", whiteSpace: "nowrap" }}>{c.name}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" }}>{fmt(c.pop)}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" }}>{fmt(c.crashes)}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{fmt(c.deaths)}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" }}>{fmt(c.truck)}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" }}>{fmt(c.moto)}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", fontWeight: 700, color: "#0B1D3A", fontVariantNumeric: "tabular-nums" }}>{c.rate != null ? c.rate.toFixed(1) : "—"}</td>
-                        <td style={{ padding: "9px 8px", fontSize: 12, textAlign: "right", color: "#475569", fontVariantNumeric: "tabular-nums" }}>{c.rural != null ? c.rural.toFixed(1) + "%" : "—"}</td>
-                        <td style={{ padding: "9px 8px" }}>
-                          <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: tint(col, 0.85), color: col, whiteSpace: "nowrap" }}>{c.profile}</span>
-                        </td>
+                        {colDefs.map((cd) => {
+                          if (cd.kind === "name") {
+                            return (
+                              <td key={cd.key} style={{ padding: "9px 8px", fontSize: 12, fontWeight: 600, color: "#0B1D3A", whiteSpace: "nowrap" }}>
+                                {c.name}
+                              </td>
+                            );
+                          }
+                          if (cd.kind === "profile") {
+                            return (
+                              <td key={cd.key} style={{ padding: "9px 8px" }}>
+                                <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: tint(col, 0.85), color: col, whiteSpace: "nowrap" }}>{c.profile}</span>
+                              </td>
+                            );
+                          }
+                          return (
+                            <td
+                              key={cd.key}
+                              style={{
+                                padding: "9px 8px",
+                                fontSize: 12,
+                                textAlign: "right",
+                                fontWeight: cd.emphasize ? 700 : 400,
+                                color: cd.emphasize ? "#0B1D3A" : "#475569",
+                                fontVariantNumeric: "tabular-nums",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {cd.value(c)}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
