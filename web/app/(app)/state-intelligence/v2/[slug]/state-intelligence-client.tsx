@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -30,13 +30,7 @@ import {
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../../components/state-advertising-section";
+import { CompetitiveAnalysis } from "./competitive-analysis";
 import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 import type { StateConfig } from "@/lib/state-config";
@@ -208,8 +202,6 @@ export function StateIntelligenceClient({
   const showCrashEmbeds =
     features.showCrashEmbeds ??
     (config.crashEmbeds != null && config.crashEmbeds.length > 0);
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
   useEffect(() => {
     trackStateViewed({
@@ -345,6 +337,16 @@ export function StateIntelligenceClient({
       </div>
 
       {/* ============================================================ */}
+      {/* GROUP HEADER                                                */}
+      {/* ============================================================ */}
+      <div className="flex items-center gap-3 pt-2">
+        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+          Overview
+        </h2>
+        <div className="h-px flex-1 bg-cloud" />
+      </div>
+
+      {/* ============================================================ */}
       {/* 2. STATE SNAPSHOT                                            */}
       {/* ============================================================ */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -473,6 +475,60 @@ export function StateIntelligenceClient({
       )}
 
       {/* ============================================================ */}
+      {/* 6. COUNTY INTELLIGENCE (map + merged accident/judicial table) */}
+      {/* ============================================================ */}
+      {data.accidentSummary.length > 0 && geometry ? (
+        <CountyIntelligenceMap
+          rows={data.accidentSummary}
+          geometry={geometry.COUNTY_GEOMETRY}
+          viewBox={geometry.VIEWBOX}
+          stateName={config.stateName}
+          stateCode={config.stateCode}
+          csvFileName={`${config.slug}-county-intelligence.csv`}
+          judicialProfiles={data.judicialProfiles}
+          boating={data.boatingSummary.map((b) => ({
+            county: b.county,
+            accident_count: b.accident_count,
+            total_deaths: b.total_deaths,
+            total_injuries: b.total_injuries,
+          }))}
+          farsYears={FARS_DATA_YEARS}
+          boatingYears={BOATING_DATA_YEARS}
+          demographics={data.censusDemographics.map((d) => ({
+            county_name: d.county_name,
+            median_age: d.median_age,
+            pct_white: d.pct_white,
+            pct_black: d.pct_black,
+            pct_hispanic: d.pct_hispanic,
+            pct_asian: d.pct_asian,
+            pct_native: d.pct_native,
+            median_household_income: d.median_household_income,
+            pct_poverty: d.pct_poverty,
+            mean_commute_minutes: d.mean_commute_minutes,
+          }))}
+        />
+      ) : (
+        <div className="rounded-lg bg-white p-6 shadow-sm border">
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              County intelligence data loading...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* GROUP HEADER                                                */}
+      {/* ============================================================ */}
+      <div className="flex items-center gap-3 pt-2">
+        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+          Legal Landscape &amp; PI Viability
+        </h2>
+        <div className="h-px flex-1 bg-cloud" />
+      </div>
+
+      {/* ============================================================ */}
       {/* 4. LEGAL LANDSCAPE                                           */}
       {/* ============================================================ */}
       <div className="rounded-lg bg-white p-6 shadow-sm border">
@@ -545,6 +601,79 @@ export function StateIntelligenceClient({
               <p className="text-sm text-midnight-navy/80">
                 {content.legalLandscape ??
                   `${config.stateName}'s negligence rule, damages caps, and statute of limitations define the boundaries of recoverable claims and the urgency of case intake. Comparative-fault rules, non-economic caps, and punitive exposure vary significantly by state and drive both case-selection criteria and advertising positioning.`}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+            <p className="text-sm font-medium text-midnight-navy/60">
+              PI viability data loading...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 10. PI VIABILITY DEEP DIVE                                   */}
+      {/* ============================================================ */}
+      <div className="rounded-lg bg-white p-6 shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            PI Viability Deep Dive
+          </h2>
+        </div>
+
+        {piData ? (
+          <>
+            <div className="rounded-lg bg-white p-4 mb-4">
+              <p className="mb-3 text-xs font-semibold text-midnight-navy">
+                Component Scores
+              </p>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart
+                  data={[
+                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
+                  ]}
+                  layout="vertical"
+                  margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
+                >
+                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={160}
+                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
+                  />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                    {[
+                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
+                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
+                    ].map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
+              <p className="text-sm text-midnight-navy/80">
+                {content.legalLandscape ??
+                  `${config.stateName}'s negligence and damages-cap regime sets the boundaries of recoverable claims. Statute-of-limitations and comparative-fault rules drive both case-selection criteria and the urgency of intake. Firms with aggressive, fast intake pipelines have an edge in higher-urgency states.`}
               </p>
             </div>
           </>
@@ -833,136 +962,19 @@ export function StateIntelligenceClient({
       </div>
 
       {/* ============================================================ */}
-      {/* 6. COUNTY INTELLIGENCE (map + merged accident/judicial table) */}
+      {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      {data.accidentSummary.length > 0 && geometry ? (
-        <CountyIntelligenceMap
-          rows={data.accidentSummary}
-          geometry={geometry.COUNTY_GEOMETRY}
-          viewBox={geometry.VIEWBOX}
-          stateName={config.stateName}
-          stateCode={config.stateCode}
-          csvFileName={`${config.slug}-county-intelligence.csv`}
-          judicialProfiles={data.judicialProfiles}
-          boating={data.boatingSummary.map((b) => ({
-            county: b.county,
-            accident_count: b.accident_count,
-            total_deaths: b.total_deaths,
-            total_injuries: b.total_injuries,
-          }))}
-          farsYears={FARS_DATA_YEARS}
-          boatingYears={BOATING_DATA_YEARS}
-          demographics={data.censusDemographics.map((d) => ({
-            county_name: d.county_name,
-            median_age: d.median_age,
-            pct_white: d.pct_white,
-            pct_black: d.pct_black,
-            pct_hispanic: d.pct_hispanic,
-            pct_asian: d.pct_asian,
-            pct_native: d.pct_native,
-            median_household_income: d.median_household_income,
-            pct_poverty: d.pct_poverty,
-            mean_commute_minutes: d.mean_commute_minutes,
-          }))}
-        />
-      ) : (
-        <div className="rounded-lg bg-white p-6 shadow-sm border">
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              County intelligence data loading...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* 10. PI VIABILITY DEEP DIVE                                   */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            PI Viability Deep Dive
-          </h2>
-        </div>
-
-        {piData ? (
-          <>
-            <div className="rounded-lg bg-white p-4 mb-4">
-              <p className="mb-3 text-xs font-semibold text-midnight-navy">
-                Component Scores
-              </p>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart
-                  data={[
-                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                  ]}
-                  layout="vertical"
-                  margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
-                >
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
-                  />
-                  <Tooltip contentStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                    {[
-                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                    ].map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                {content.legalLandscape ??
-                  `${config.stateName}'s negligence and damages-cap regime sets the boundaries of recoverable claims. Statute-of-limitations and comparative-fault rules drive both case-selection criteria and the urgency of intake. Firms with aggressive, fast intake pipelines have an edge in higher-urgency states.`}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              PI viability data loading...
-            </p>
-          </div>
-        )}
+      <div className="flex items-center gap-3 pt-2">
+        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+          Competitive Analysis
+        </h2>
+        <div className="h-px flex-1 bg-cloud" />
       </div>
 
       {/* ============================================================ */}
-      {/* 11. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* COMPETITIVE ANALYSIS (PI-firm competition, DMA-filtered)    */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr={config.stateCode} onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 12. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={config.competitiveData} />
-
-      {/* ============================================================ */}
-      {/* 12b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr={config.stateCode} stateName={config.stateName} />
+      <CompetitiveAnalysis stateName={config.stateName} stateCode={config.stateCode} />
 
       {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1056,7 +1068,7 @@ export function StateIntelligenceClient({
           pageDescription:
             content.askAiPageContext ??
             `State-level intelligence for plaintiff firm advertising and case acquisition in ${config.stateName} — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, state crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.`,
-          dataSummary: `State: ${config.stateName}. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: ${data.accidentSummary.length}. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction).${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: ${config.stateName}. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: ${data.accidentSummary.length}. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction).`,
         }}
       />
 
