@@ -5,18 +5,16 @@ import { Swords, Database, ChevronDown, ExternalLink, Loader2 } from "lucide-rea
 import { getSupabase } from "@/lib/supabase";
 
 /* ------------------------------------------------------------------ */
-/*  Competitive Analysis — PI-firm advertising competition by DMA.    */
+/*  Competitive Analysis — PI-firm advertising competition.           */
 /*                                                                    */
-/*  Replaces the legacy PIAdvertisingSection / CompetitiveLandscape   */
-/*  Table / StateAdvertisingSection on the v2 state page.             */
-/*                                                                    */
-/*  Phase 1 (this): Paid Search tab is LIVE — get_pi_competitors_by_  */
-/*  dma over geo-targeted Google search observations, filtered by the */
-/*  Nielsen DMA dropdown (/api/dma-markets). Competitors are shown    */
-/*  domain-led: the pipeline's advertiser_name is an ad headline, so  */
-/*  the firm domain is the reliable identity.                         */
-/*  SEO (Phase 2) + YouTube (Phase 4) are "coming soon". TikTok is    */
-/*  disabled — TikTok publishes no US ad library (EU/UK DSA only).    */
+/*  Paid Search (Phase 1): get_pi_competitors_by_dma over geo-        */
+/*  targeted Google ad observations, filtered by Nielsen DMA.         */
+/*  SEO (Phase 2): get_seo_competitors_by_tort over organic SERP      */
+/*  results, filtered by PI case type. Organic data is NATIONAL (no   */
+/*  geo dimension) so the SEO tab swaps the DMA dropdown for a case-  */
+/*  type dropdown and labels its scope national.                      */
+/*  YouTube (Phase 4) is "coming soon". TikTok is disabled — TikTok   */
+/*  publishes no US ad library (EU/UK DSA only).                      */
 /* ------------------------------------------------------------------ */
 
 type ChannelKey = "paid_search" | "seo" | "youtube" | "tiktok" | "traditional";
@@ -36,6 +34,31 @@ const CHANNEL_TABS: ChannelTab[] = [
   { key: "traditional", label: "Traditional Media", disabled: true, badge: "Soon" },
 ];
 
+// SEO case types (organic data is national — keyed by tort_slug, not DMA).
+const SEO_CASE_TYPES: { slug: string; label: string }[] = [
+  { slug: "motor_vehicle", label: "Motor Vehicle" },
+  { slug: "truck_accident", label: "Truck" },
+  { slug: "motorcycle", label: "Motorcycle" },
+  { slug: "boating", label: "Boating" },
+  { slug: "nursing_home", label: "Nursing Home" },
+  { slug: "workers_comp", label: "Workers' Comp" },
+];
+
+// Known directory / aggregator domains — tagged so firm rows read at a glance.
+const DIRECTORY_DOMAINS = new Set([
+  "nolo.com",
+  "justia.com",
+  "forbes.com",
+  "findlaw.com",
+  "lawyers.com",
+  "avvo.com",
+  "wikipedia.org",
+  "en.wikipedia.org",
+  "superlawyers.com",
+  "expertise.com",
+  "martindale.com",
+]);
+
 interface DmaOption {
   dma_code: string;
   display_name: string;
@@ -49,6 +72,19 @@ interface PiCompetitor {
   avg_ad_position: number | null;
   metros_active: string[] | null;
   case_types_active: string[] | null;
+  first_seen: string | null;
+  last_seen: string | null;
+}
+
+interface SeoCompetitor {
+  domain: string;
+  advertiser_name: string | null;
+  organic_appearances: number;
+  avg_position: number | null;
+  best_position: number | null;
+  top_3_count: number;
+  top_10_count: number;
+  keywords_tracked: number;
   first_seen: string | null;
   last_seen: string | null;
 }
@@ -77,11 +113,19 @@ export function CompetitiveAnalysis({
   stateCode: string;
 }) {
   const [activeChannel, setActiveChannel] = useState<ChannelKey>("paid_search");
+
+  // Paid Search state (Phase 1)
   const [selectedDma, setSelectedDma] = useState<string>("all");
   const [dmaOptions, setDmaOptions] = useState<DmaOption[]>([]);
   const [competitors, setCompetitors] = useState<PiCompetitor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // SEO state (Phase 2)
+  const [selectedCaseType, setSelectedCaseType] = useState<string>("motor_vehicle");
+  const [seoCompetitors, setSeoCompetitors] = useState<SeoCompetitor[]>([]);
+  const [seoLoading, setSeoLoading] = useState(false);
+  const [seoError, setSeoError] = useState<string | null>(null);
 
   // DMA dropdown — Nielsen list for this state (full list; some have no data).
   useEffect(() => {
@@ -123,14 +167,44 @@ export function CompetitiveAnalysis({
   }, [stateCode, selectedDma]);
 
   useEffect(() => {
-    void loadCompetitors();
-  }, [loadCompetitors]);
+    if (activeChannel === "paid_search") void loadCompetitors();
+  }, [activeChannel, loadCompetitors]);
+
+  // SEO competitor set — national organic, filtered by case type.
+  const loadSeo = useCallback(async () => {
+    setSeoLoading(true);
+    setSeoError(null);
+    const sb = getSupabase() as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: SeoCompetitor[] | null; error: { message: string } | null }>;
+    };
+    const { data, error: rpcError } = await sb.rpc("get_seo_competitors_by_tort", {
+      p_tort_slug: selectedCaseType,
+      p_days: 90,
+    });
+    if (rpcError) {
+      setSeoError("Couldn't load SEO data.");
+      setSeoCompetitors([]);
+    } else {
+      setSeoCompetitors(data ?? []);
+    }
+    setSeoLoading(false);
+  }, [selectedCaseType]);
+
+  useEffect(() => {
+    if (activeChannel === "seo") void loadSeo();
+  }, [activeChannel, loadSeo]);
 
   const selectedDmaLabel =
     selectedDma === "all"
       ? "all markets"
       : (dmaOptions.find((d) => d.dma_code === selectedDma)?.display_name ??
         "this market");
+
+  const selectedCaseLabel =
+    SEO_CASE_TYPES.find((c) => c.slug === selectedCaseType)?.label ?? "this case type";
 
   return (
     <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
@@ -141,34 +215,65 @@ export function CompetitiveAnalysis({
         </h2>
       </div>
       <p className="mb-4 text-sm text-slate-gray">
-        PI-firm advertising competition in {stateName}, filtered by DMA market
+        {activeChannel === "seo"
+          ? `Organic-search competition for PI case types (measured nationally)`
+          : `PI-firm advertising competition in ${stateName}, filtered by DMA market`}
       </p>
 
-      {/* DMA market dropdown — full Nielsen list for the state */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <label
-          htmlFor="dma-market"
-          className="text-xs font-semibold uppercase tracking-wider text-slate-gray"
-        >
-          DMA Market
-        </label>
-        <div className="relative">
-          <select
-            id="dma-market"
-            value={selectedDma}
-            onChange={(e) => setSelectedDma(e.target.value)}
-            className="appearance-none rounded-md border border-cloud bg-white py-1.5 pl-3 pr-8 text-sm text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+      {/* Filter control — DMA for Paid Search, case type for SEO */}
+      {activeChannel === "seo" ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <label
+            htmlFor="seo-case-type"
+            className="text-xs font-semibold uppercase tracking-wider text-slate-gray"
           >
-            <option value="all">All DMA markets</option>
-            {dmaOptions.map((d) => (
-              <option key={d.dma_code} value={d.dma_code}>
-                {d.display_name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-gray" />
+            Case Type
+          </label>
+          <div className="relative">
+            <select
+              id="seo-case-type"
+              value={selectedCaseType}
+              onChange={(e) => setSelectedCaseType(e.target.value)}
+              className="appearance-none rounded-md border border-cloud bg-white py-1.5 pl-3 pr-8 text-sm text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+            >
+              {SEO_CASE_TYPES.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-gray" />
+          </div>
+          <span className="text-xs text-slate-gray/70">
+            Organic rankings are measured nationally, not by DMA.
+          </span>
         </div>
-      </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <label
+            htmlFor="dma-market"
+            className="text-xs font-semibold uppercase tracking-wider text-slate-gray"
+          >
+            DMA Market
+          </label>
+          <div className="relative">
+            <select
+              id="dma-market"
+              value={selectedDma}
+              onChange={(e) => setSelectedDma(e.target.value)}
+              className="appearance-none rounded-md border border-cloud bg-white py-1.5 pl-3 pr-8 text-sm text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+            >
+              <option value="all">All DMA markets</option>
+              {dmaOptions.map((d) => (
+                <option key={d.dma_code} value={d.dma_code}>
+                  {d.display_name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-gray" />
+          </div>
+        </div>
+      )}
 
       {/* Channel tabs */}
       <div className="mb-4 flex flex-wrap gap-1 border-b border-cloud">
@@ -207,6 +312,13 @@ export function CompetitiveAnalysis({
           competitors={competitors}
           dmaLabel={selectedDmaLabel}
         />
+      ) : activeChannel === "seo" ? (
+        <SeoPanel
+          loading={seoLoading}
+          error={seoError}
+          competitors={seoCompetitors}
+          caseLabel={selectedCaseLabel}
+        />
       ) : activeChannel === "tiktok" ? (
         <ComingSoon
           title="TikTok competitive data is not available in the U.S."
@@ -214,8 +326,8 @@ export function CompetitiveAnalysis({
         />
       ) : (
         <ComingSoon
-          title={`${activeChannel === "seo" ? "SEO" : "YouTube"} competition for ${stateName}`}
-          body="Wiring in a follow-up — PI-firm presence on this channel, filtered by DMA."
+          title={`YouTube competition for ${stateName}`}
+          body="Wiring in a follow-up — PI-firm presence on this channel."
         />
       )}
     </div>
@@ -324,6 +436,121 @@ function PaidSearchPanel({
               </td>
             </tr>
           ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SeoPanel({
+  loading,
+  error,
+  competitors,
+  caseLabel: caseLabelText,
+}: {
+  loading: boolean;
+  error: string | null;
+  competitors: SeoCompetitor[];
+  caseLabel: string;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-intelligence-teal/60" />
+        <p className="text-sm text-slate-gray">Loading organic competitors…</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">{error}</p>
+      </div>
+    );
+  }
+  if (competitors.length === 0) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">
+          No organic data for {caseLabelText} yet.
+        </p>
+        <p className="mt-1 text-xs text-slate-gray">
+          Organic data for this case type is accruing — check back over the next
+          few days.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <p className="mb-3 text-xs text-slate-gray">
+        Domains ranked by organic Google appearances for {caseLabelText} search
+        terms (national, last 90 days). Includes directories and aggregators —
+        the full field a firm competes against for organic clicks.
+      </p>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-cloud">
+            <th className="py-2 pr-2 text-xs font-semibold uppercase tracking-wider text-slate-gray w-8">
+              #
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Domain
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Organic appearances
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Avg position
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Top 10
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Keywords
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((c, i) => {
+            const isDirectory = DIRECTORY_DOMAINS.has(c.domain.toLowerCase());
+            return (
+              <tr key={c.domain} className="border-b border-cloud/60">
+                <td className="py-2 pr-2 text-slate-gray">{i + 1}</td>
+                <td className="py-2 px-3">
+                  <a
+                    href={`https://${c.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-midnight-navy hover:text-intelligence-teal"
+                  >
+                    {c.domain}
+                    <ExternalLink className="w-3 h-3 text-slate-gray/50" />
+                  </a>
+                  {isDirectory && (
+                    <span className="ml-1.5 rounded-full bg-cloud px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-gray/70">
+                      Directory
+                    </span>
+                  )}
+                </td>
+                <td className="py-2 px-3 text-right font-mono text-midnight-navy">
+                  {c.organic_appearances.toLocaleString()}
+                </td>
+                <td className="py-2 px-3 text-right text-midnight-navy">
+                  {c.avg_position != null ? c.avg_position.toFixed(1) : "—"}
+                </td>
+                <td className="py-2 px-3 text-right text-midnight-navy">
+                  {c.top_10_count.toLocaleString()}
+                </td>
+                <td className="py-2 px-3 text-right text-midnight-navy">
+                  {c.keywords_tracked.toLocaleString()}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
