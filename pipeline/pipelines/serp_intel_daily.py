@@ -81,6 +81,8 @@ SERP_SEARCH_TERMS: dict[str, list[str]] = {
     "truck_accident":    ["truck accident lawyer", "18 wheeler accident attorney"],
     "nursing_home":      ["nursing home abuse lawyer", "nursing home neglect lawsuit"],
     "workers_comp":      ["workers compensation lawyer", "workers comp attorney near me"],
+    "motorcycle":        ["motorcycle accident lawyer", "motorcycle accident attorney"],
+    "boating":           ["boat accident lawyer", "boating accident attorney"],
     "roblox_abuse":      ["roblox child abuse lawsuit", "roblox predator lawsuit"],
     "social_media_addiction": ["social media addiction lawsuit", "tiktok addiction lawsuit teens"],
     "depo_provera":          ["depo provera lawsuit", "depo provera meningioma", "depo provera brain tumor lawyer"],

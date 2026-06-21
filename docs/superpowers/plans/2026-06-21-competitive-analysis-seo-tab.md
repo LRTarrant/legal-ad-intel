@@ -1,3 +1,232 @@
+# Competitive Analysis Phase 2 — SEO tab Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Light up the SEO tab on the v2 State Intelligence "Competitive Analysis" surface with national organic-search competition data, filtered by PI case type.
+
+**Architecture:** A new organic-only Postgres RPC (`get_seo_competitors_by_tort`) aggregates `serp_results_normalized`; the existing `competitive-analysis.tsx` gains an SEO panel that swaps the DMA dropdown for a case-type dropdown (organic data has no geo dimension). Two PI case types (motorcycle, boating) missing from the SERP pipeline are added via a keyword config change + `torts` seed so their data accrues.
+
+**Tech Stack:** Supabase Postgres (SQL RPC, `SECURITY DEFINER`), Next.js 16 / React 19 client component, Python 3.12 ETL (`serp_intel_daily.py`), pytest.
+
+## Global Constraints
+
+- Spec: `docs/superpowers/specs/2026-06-21-competitive-analysis-seo-tab-design.md`.
+- SEO data is **national** — no DMA/state/metro dimension. The SEO tab must not imply geo filtering; show a "measured nationally" note.
+- Case-type set (slug → label), exact: `motor_vehicle`→Motor Vehicle, `truck_accident`→Truck, `motorcycle`→Motorcycle, `boating`→Boating, `nursing_home`→Nursing Home, `workers_comp`→Workers' Comp.
+- RPC is **organic-only** (`result_type = 'organic'`). Do NOT reuse `get_serp_visibility_windowed` (it blends paid + organic).
+- Show **all** organic domains, not just law firms; lightly tag known directory/aggregator domains.
+- Migrations are applied by the user / auto-apply on merge (CLAUDE.md §3). Do NOT apply via Supabase MCP (desyncs migration history — memory rule). Validate RPC logic read-only against prod, then commit; it applies on merge.
+- RPC calls use the untyped `getSupabase().rpc()` cast pattern from Phase 1 — no `database.types.ts` regen needed pre-merge.
+- Project: Supabase `project_id = inmktpwhpkiknctznrys`. Branch: `feat/competitive-analysis-seo`.
+- TypeScript: run `npx tsc --noEmit` only AFTER `npm install` in `web/`. `pr-typecheck.yml` fails only on net-new errors vs main.
+
+---
+
+### Task 1: SEO competitors RPC + PI torts seed (migration)
+
+**Files:**
+- Create: `supabase/migrations/20260621000000_add_seo_competitors_rpc_and_pi_torts.sql`
+
+**Interfaces:**
+- Produces: RPC `get_seo_competitors_by_tort(p_tort_slug TEXT, p_days INTEGER DEFAULT 90)` returning rows of `(domain TEXT, advertiser_name TEXT, organic_appearances BIGINT, avg_position NUMERIC, best_position INTEGER, top_3_count BIGINT, top_10_count BIGINT, keywords_tracked BIGINT, first_seen DATE, last_seen DATE)`. Consumed by Task 3.
+- Produces: `torts` rows `motorcycle` + `boating` (category `personal_injury`). Consumed by Task 2 (pipeline picks up only slugs present in `torts`).
+
+- [ ] **Step 1: Confirm no migration timestamp collision**
+
+Run: `ls supabase/migrations/ | grep ^20260621`
+Expected: no output (empty). If anything returns, bump the filename timestamp (e.g. `20260621010000`) before continuing.
+
+- [ ] **Step 2: Validate the RPC body logic read-only against prod (the "failing test")**
+
+Before writing the function, run its SELECT body inline against prod with a literal slug to confirm it returns sane rows. Use the Supabase MCP `execute_sql` (read-only SELECT — safe, not a schema change), `project_id = inmktpwhpkiknctznrys`:
+
+```sql
+SELECT
+    n.domain,
+    MAX(ae.canonical_name) AS advertiser_name,
+    COUNT(*) AS organic_appearances,
+    ROUND(AVG(n.position)::numeric, 1) AS avg_position,
+    MIN(n.position) AS best_position,
+    COUNT(*) FILTER (WHERE n.position IS NOT NULL AND n.position <= 3) AS top_3_count,
+    COUNT(*) FILTER (WHERE n.position IS NOT NULL AND n.position <= 10) AS top_10_count,
+    COUNT(DISTINCT n.query) AS keywords_tracked,
+    MIN(n.fetched_at)::date AS first_seen,
+    MAX(n.fetched_at)::date AS last_seen
+FROM public.serp_results_normalized n
+LEFT JOIN public.advertiser_entities ae ON ae.id = n.advertiser_entity_id
+WHERE n.result_type = 'organic'
+  AND n.tort_slug = 'motor_vehicle'
+  AND n.fetched_at >= now() - (90 || ' days')::interval
+GROUP BY n.domain
+ORDER BY organic_appearances DESC
+LIMIT 50;
+```
+
+Expected: a non-empty ranked list of domains (e.g. firm + directory domains like forbes.com/nolo.com), `organic_appearances` descending, `avg_position` between 1 and ~100, `top_10_count <= organic_appearances`. If empty or nonsensical, stop and re-check column names against the spec's data inventory before writing the migration.
+
+- [ ] **Step 3: Write the migration file**
+
+Create `supabase/migrations/20260621000000_add_seo_competitors_rpc_and_pi_torts.sql`:
+
+```sql
+-- ============================================================================
+-- Competitive Analysis Phase 2 (SEO tab): organic-only competitor RPC + the two
+-- PI torts (motorcycle, boating) the SEO surface needs but the SERP pipeline
+-- did not yet track.
+--
+-- SEO data (serp_results_normalized) is NATIONAL — no geo dimension — so this
+-- RPC is keyed on tort_slug, NOT DMA. Organic-only on purpose:
+-- get_serp_visibility_windowed blends paid + organic and is unsuitable here.
+-- ============================================================================
+
+-- 1. PI torts the SERP pipeline will start tracking (keyed by ad pipeline; these
+--    are NOT mass_torts advertising pages, so no tort-page registration needed).
+INSERT INTO public.torts (slug, label, category)
+VALUES
+    ('motorcycle', 'Motorcycle Accident', 'personal_injury'),
+    ('boating',    'Boating Accident',    'personal_injury')
+ON CONFLICT (slug) DO NOTHING;
+
+-- 2. Organic SEO competitors for a case type, national, last p_days window.
+CREATE OR REPLACE FUNCTION public.get_seo_competitors_by_tort(
+    p_tort_slug TEXT,
+    p_days INTEGER DEFAULT 90
+)
+RETURNS TABLE (
+    domain TEXT,
+    advertiser_name TEXT,
+    organic_appearances BIGINT,
+    avg_position NUMERIC,
+    best_position INTEGER,
+    top_3_count BIGINT,
+    top_10_count BIGINT,
+    keywords_tracked BIGINT,
+    first_seen DATE,
+    last_seen DATE
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT
+        n.domain,
+        MAX(ae.canonical_name) AS advertiser_name,
+        COUNT(*) AS organic_appearances,
+        ROUND(AVG(n.position)::numeric, 1) AS avg_position,
+        MIN(n.position) AS best_position,
+        COUNT(*) FILTER (WHERE n.position IS NOT NULL AND n.position <= 3) AS top_3_count,
+        COUNT(*) FILTER (WHERE n.position IS NOT NULL AND n.position <= 10) AS top_10_count,
+        COUNT(DISTINCT n.query) AS keywords_tracked,
+        MIN(n.fetched_at)::date AS first_seen,
+        MAX(n.fetched_at)::date AS last_seen
+    FROM public.serp_results_normalized n
+    LEFT JOIN public.advertiser_entities ae ON ae.id = n.advertiser_entity_id
+    WHERE n.result_type = 'organic'
+      AND n.tort_slug = p_tort_slug
+      AND n.fetched_at >= now() - (p_days || ' days')::interval
+    GROUP BY n.domain
+    ORDER BY organic_appearances DESC
+    LIMIT 50;
+$$;
+
+COMMENT ON FUNCTION public.get_seo_competitors_by_tort(TEXT, INTEGER) IS
+    'Organic-search competitors (all domains, not just firms) for a PI case '
+    'type over the last p_days. NATIONAL — serp_results_normalized has no geo '
+    'dimension. Aggregated from serp_results_normalized (result_type=organic).';
+
+GRANT EXECUTE ON FUNCTION public.get_seo_competitors_by_tort(TEXT, INTEGER)
+    TO anon, authenticated, service_role;
+```
+
+- [ ] **Step 4: Verify the file is syntactically self-consistent**
+
+Run: `grep -c "get_seo_competitors_by_tort" supabase/migrations/20260621000000_add_seo_competitors_rpc_and_pi_torts.sql`
+Expected: `3` (CREATE, COMMENT, GRANT).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/migrations/20260621000000_add_seo_competitors_rpc_and_pi_torts.sql
+git commit -m "feat(competitive-analysis): SEO competitors RPC + motorcycle/boating torts"
+```
+
+---
+
+### Task 2: Add motorcycle + boating SERP keywords
+
+**Files:**
+- Modify: `pipeline/pipelines/serp_intel_daily.py` (the `SERP_SEARCH_TERMS` dict, after the `workers_comp` line ~84)
+- Create: `pipeline/tests/test_serp_keywords.py`
+
+**Interfaces:**
+- Consumes: `torts` rows from Task 1 (the pipeline skips slugs not in `torts`; documented dependency, not a code import).
+- Produces: SERP ingest for `motorcycle` + `boating` on the next daily run (data accrues over days).
+
+- [ ] **Step 1: Write the failing test**
+
+Create `pipeline/tests/test_serp_keywords.py`:
+
+```python
+from pipelines.serp_intel_daily import SERP_SEARCH_TERMS
+
+
+def test_motorcycle_keywords_present():
+    assert "motorcycle" in SERP_SEARCH_TERMS
+    assert len(SERP_SEARCH_TERMS["motorcycle"]) >= 2
+
+
+def test_boating_keywords_present():
+    assert "boating" in SERP_SEARCH_TERMS
+    assert len(SERP_SEARCH_TERMS["boating"]) >= 2
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `cd pipeline && pytest tests/test_serp_keywords.py -v`
+Expected: 2 FAILS (`assert "motorcycle" in SERP_SEARCH_TERMS` → KeyError-style assertion failure; both slugs absent).
+
+- [ ] **Step 3: Add the keywords**
+
+In `pipeline/pipelines/serp_intel_daily.py`, immediately after the `"workers_comp":` line in `SERP_SEARCH_TERMS`, add:
+
+```python
+    "motorcycle":        ["motorcycle accident lawyer", "motorcycle accident attorney"],
+    "boating":           ["boat accident lawyer", "boating accident attorney"],
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `cd pipeline && pytest tests/test_serp_keywords.py -v`
+Expected: 2 PASS.
+
+- [ ] **Step 5: Run the full pipeline test suite (no regressions)**
+
+Run: `cd pipeline && pytest tests/ -q`
+Expected: all pass (no new failures introduced).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add pipeline/pipelines/serp_intel_daily.py pipeline/tests/test_serp_keywords.py
+git commit -m "feat(serp): track motorcycle + boating PI keywords"
+```
+
+---
+
+### Task 3: SEO panel + case-type dropdown in competitive-analysis.tsx
+
+**Files:**
+- Modify (rewrite whole): `web/app/(app)/state-intelligence/v2/[slug]/competitive-analysis.tsx`
+
+**Interfaces:**
+- Consumes: RPC `get_seo_competitors_by_tort(p_tort_slug, p_days)` from Task 1.
+- Produces: an interactive SEO tab (no downstream consumers).
+
+Rewrite the whole file (per repo convention — one write beats many edits) with the content below. This preserves the entire Phase 1 Paid Search path and adds: SEO state + loader, a case-type dropdown shown when the SEO tab is active (DMA dropdown shown only for Paid Search), and a `SeoPanel`.
+
+- [ ] **Step 1: Replace the file with the updated component**
+
+```tsx
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -566,3 +795,90 @@ function ComingSoon({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
+```
+
+- [ ] **Step 2: Install deps (required before tsc)**
+
+Run: `cd web && npm install`
+Expected: completes without error.
+
+- [ ] **Step 3: Type-check**
+
+Run: `cd web && npx tsc --noEmit 2>&1 | grep "competitive-analysis"`
+Expected: no output (no errors in this file). The repo has a known baseline of unrelated errors; only this file must be clean.
+
+- [ ] **Step 4: Build**
+
+Run: `cd web && npm run build`
+Expected: build succeeds.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add "web/app/(app)/state-intelligence/v2/[slug]/competitive-analysis.tsx"
+git commit -m "feat(competitive-analysis): SEO tab — national organic competition by case type"
+```
+
+---
+
+### Task 4: Docs + open PR
+
+**Files:**
+- Modify: `memory.md`
+- Modify: `CURRENT_PRIORITIES.md`
+
+- [ ] **Step 1: Log the work in memory.md**
+
+Append to the "Recent PRs / shipped work" section of `memory.md` a dated entry covering: SEO tab is Phase 2 of Competitive Analysis; data is national organic from `serp_results_normalized` (no geo — SEO tab uses a case-type dropdown, not DMA); new organic-only RPC `get_seo_competitors_by_tort` (do NOT reuse `get_serp_visibility_windowed`, which blends paid); motorcycle + boating added to the SERP pipeline + `torts` and accrue over days; all organic domains shown with directory tagging. Also note Phase 1 (PR #428) reference.
+
+- [ ] **Step 2: Update CURRENT_PRIORITIES.md**
+
+Add a short "Recently shipped" entry for the Competitive Analysis SEO tab and note the program's next channels (YouTube = Phase 4; Traditional Media pending; TikTok permanently out — no US data).
+
+- [ ] **Step 3: Commit docs**
+
+```bash
+git add memory.md CURRENT_PRIORITIES.md
+git commit -m "docs(memory): log Competitive Analysis Phase 2 — SEO tab"
+```
+
+- [ ] **Step 4: Push and open the PR**
+
+```bash
+git push -u origin feat/competitive-analysis-seo
+gh pr create --title "Competitive Analysis Phase 2: SEO by case type" --body "$(cat <<'EOF'
+## Summary
+Lights up the **SEO** tab on the v2 State Intelligence Competitive Analysis surface (follows PR #428, Paid Search).
+
+- **Migration `20260621000000`** — `get_seo_competitors_by_tort(p_tort_slug, p_days=90)` (organic-only, national; NOT the paid-blending windowed RPC) + `torts` seed for `motorcycle` + `boating`.
+- **`serp_intel_daily.py`** — adds motorcycle + boating keyword pairs; their organic data accrues over the next daily runs.
+- **`competitive-analysis.tsx`** — SEO panel + a case-type dropdown (organic data is national, so no DMA filter); shows all organic domains ranked, with directory/aggregator tagging.
+
+## Notes
+- SEO is national by design — the same competitor set renders on every state page for a given case type. The "measured nationally" note makes this explicit.
+- Motorcycle/Boating show an "accruing" empty state until the pipeline backfills them.
+- RPC uses the Phase 1 untyped `.rpc()` cast; `database.types.ts` regen is post-merge.
+
+## Testing
+- Pipeline keyword test added (`pytest tests/test_serp_keywords.py`); full suite green.
+- RPC body validated read-only against prod (sane ranked rows for `motor_vehicle`).
+- `npm run build` + `tsc` green (no net-new errors in the changed file).
+- Post-merge: browser-verify on prod per CLAUDE.md §2.7 (SEO tab renders real competitors on 2+ states, case-type switch refetches, network 2xx, no console errors, screenshot).
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+Expected: PR URL printed. CI (`pr-typecheck` + Vercel) should go green.
+
+---
+
+## Post-merge (not a task — operational follow-up)
+
+1. Confirm the migration auto-applied (re-run `supabase-migrations` if it hits the known `setup-cli` rate-limit transient: `gh run rerun --failed <id>`).
+2. Browser-verify on prod per CLAUDE.md §2.7.
+3. After a daily SERP run or two, confirm `motorcycle`/`boating` rows appear: `SELECT tort_slug, COUNT(*) FROM serp_results_normalized WHERE tort_slug IN ('motorcycle','boating') GROUP BY tort_slug;`
+4. Regenerate `web/lib/database.types.ts` so the new RPC is typed (per the standing decision to regen after schema changes).
+</content>
+</invoke>
