@@ -1,3 +1,153 @@
+# Competitive Analysis Phase 4b — YouTube tab Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Wire the YouTube channel tab on the v2 State Intelligence "Competitive Analysis" surface to the `youtube_ad_creatives` data — a firm-level, national ranking of PI firms by YouTube/video advertising.
+
+**Architecture:** A new read-only Postgres RPC (`get_youtube_competitors`) aggregates `youtube_ad_creatives` per advertiser domain; the existing `competitive-analysis.tsx` gains a `YouTubePanel` and a YouTube branch in its control row (no filter control — national, no case-type). Mirrors the SEO tab pattern.
+
+**Tech Stack:** Supabase Postgres (SQL RPC, `SECURITY DEFINER`), Next.js 16 / React 19 client component.
+
+## Global Constraints
+
+- Spec: `docs/superpowers/specs/2026-06-22-youtube-competitive-tab-design.md`.
+- Firm-level, **national** — no DMA filter, no case-type filter. YouTube tab's control row shows only a "measured nationally" note.
+- Domain-led identity (`advertiser_name` is often the agency, so the domain is the firm identity).
+- RPC excludes junk domains: `advertiser_domain NOT IN ('google.com','youtube.com')`.
+- RPC ordered by `active_creatives DESC, longest_running_days DESC NULLS LAST`, `LIMIT p_limit` (default 50). `SECURITY DEFINER`, `SET search_path = public`, granted anon/authenticated/service_role.
+- Per-row **"view ads ↗"** link → `https://adstransparency.google.com/advertiser/{advertiser_ar_id}?region=US` (only when `advertiser_ar_id` present). Domain links to `https://{advertiser_domain}`.
+- RPC called via the untyped `getSupabase().rpc()` cast (no `database.types.ts` gate; regen post-merge), same as the SEO/Paid Search tabs.
+- Migrations apply on merge — do NOT apply via Supabase MCP. Validate the RPC body read-only against prod first.
+- Project: Supabase `project_id = inmktpwhpkiknctznrys`. Migration timestamp `20260622020000` (verify: `ls supabase/migrations/ | grep ^20260622`).
+- TypeScript: run `npx tsc --noEmit` only AFTER `npm install` in `web/`; only the changed file must be clean vs the known baseline.
+
+---
+
+### Task 1: `get_youtube_competitors` RPC (migration)
+
+**Files:**
+- Create: `supabase/migrations/20260622020000_add_youtube_competitors_rpc.sql`
+
+**Interfaces:**
+- Consumes: `youtube_ad_creatives` table (Phase 4a, on main).
+- Produces: RPC `get_youtube_competitors(p_limit INTEGER DEFAULT 50)` returning `(advertiser_domain TEXT, advertiser_name TEXT, advertiser_ar_id TEXT, active_creatives BIGINT, longest_running_days INTEGER, first_shown DATE, last_shown DATE)`. Consumed by Task 2.
+
+- [ ] **Step 1: Confirm no migration timestamp collision**
+
+Run: `ls supabase/migrations/ | grep ^20260622020000`
+Expected: no output. If anything returns, bump to `20260622030000` and use that throughout.
+
+- [ ] **Step 2: Validate the RPC body read-only against prod (the "failing test")**
+
+Run the SELECT body inline against prod via Supabase MCP `execute_sql` (`project_id = inmktpwhpkiknctznrys`) — read-only, safe:
+
+```sql
+SELECT
+    y.advertiser_domain,
+    mode() WITHIN GROUP (ORDER BY y.advertiser_name) AS advertiser_name,
+    mode() WITHIN GROUP (ORDER BY y.advertiser_ar_id) AS advertiser_ar_id,
+    COUNT(*) AS active_creatives,
+    MAX(y.total_days_shown) AS longest_running_days,
+    MIN(y.first_shown) AS first_shown,
+    MAX(y.last_shown) AS last_shown
+FROM public.youtube_ad_creatives y
+WHERE y.advertiser_domain NOT IN ('google.com', 'youtube.com')
+GROUP BY y.advertiser_domain
+ORDER BY active_creatives DESC, longest_running_days DESC NULLS LAST
+LIMIT 50;
+```
+
+Expected: a ranked list of real PI firms (e.g. `thebarnesfirm.com`, `forthepeople.com`, `getgordon.com`), **`google.com` absent**, `active_creatives` descending, `longest_running_days` populated. If `google.com` appears or the list is empty, stop and re-check before writing the migration.
+
+- [ ] **Step 3: Write the migration file**
+
+Create `supabase/migrations/20260622020000_add_youtube_competitors_rpc.sql`:
+
+```sql
+-- ============================================================================
+-- Competitive Analysis Phase 4b: get_youtube_competitors RPC.
+-- Firm-level, national ranking of PI firms by YouTube/video advertising,
+-- aggregated from youtube_ad_creatives (Phase 4a). No DMA / case-type filter —
+-- Transparency video creatives carry no geo or keyword tag.
+--
+-- Junk filter: google.com / youtube.com snuck into the pi_search seed and
+-- return Google's own ads (google.com ranked #1 with 100 creatives) — they are
+-- not PI competitors. The list is small and extensible.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.get_youtube_competitors(
+    p_limit INTEGER DEFAULT 50
+)
+RETURNS TABLE (
+    advertiser_domain TEXT,
+    advertiser_name TEXT,
+    advertiser_ar_id TEXT,
+    active_creatives BIGINT,
+    longest_running_days INTEGER,
+    first_shown DATE,
+    last_shown DATE
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT
+        y.advertiser_domain,
+        mode() WITHIN GROUP (ORDER BY y.advertiser_name) AS advertiser_name,
+        mode() WITHIN GROUP (ORDER BY y.advertiser_ar_id) AS advertiser_ar_id,
+        COUNT(*) AS active_creatives,
+        MAX(y.total_days_shown) AS longest_running_days,
+        MIN(y.first_shown) AS first_shown,
+        MAX(y.last_shown) AS last_shown
+    FROM public.youtube_ad_creatives y
+    WHERE y.advertiser_domain NOT IN ('google.com', 'youtube.com')
+    GROUP BY y.advertiser_domain
+    ORDER BY active_creatives DESC, longest_running_days DESC NULLS LAST
+    LIMIT p_limit;
+$$;
+
+COMMENT ON FUNCTION public.get_youtube_competitors(INTEGER) IS
+    'Firm-level national ranking of PI firms by YouTube/video advertising '
+    '(active creatives + longevity), from youtube_ad_creatives. Excludes '
+    'google.com/youtube.com seed junk.';
+
+GRANT EXECUTE ON FUNCTION public.get_youtube_competitors(INTEGER)
+    TO anon, authenticated, service_role;
+```
+
+- [ ] **Step 4: Verify the file has the required clauses**
+
+Run each; each must print `1`:
+```bash
+F=supabase/migrations/20260622020000_add_youtube_competitors_rpc.sql
+grep -c "CREATE OR REPLACE FUNCTION public.get_youtube_competitors" "$F"
+grep -c "NOT IN ('google.com', 'youtube.com')" "$F"
+grep -c "GRANT EXECUTE ON FUNCTION public.get_youtube_competitors" "$F"
+```
+Expected: `1` from each.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/migrations/20260622020000_add_youtube_competitors_rpc.sql
+git commit -m "feat(competitive-analysis): get_youtube_competitors RPC"
+```
+
+---
+
+### Task 2: YouTube panel + control-row branch in competitive-analysis.tsx
+
+**Files:**
+- Modify (rewrite whole): `web/app/(app)/state-intelligence/v2/[slug]/competitive-analysis.tsx`
+
+**Interfaces:**
+- Consumes: RPC `get_youtube_competitors(p_limit)` from Task 1.
+
+Rewrite the whole file (repo convention — one write over many edits) with the content below. It preserves the entire Paid Search + SEO paths and adds: a `YouTubeCompetitor` interface, YouTube state + loader + effect, a YouTube branch in the subtitle and control row (note only, no dropdown), a YouTube panel branch, and the `YouTubePanel` component.
+
+- [ ] **Step 1: Replace the file with the updated component**
+
+```tsx
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -736,3 +886,85 @@ function ComingSoon({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
+```
+
+- [ ] **Step 2: Install deps (required before tsc)**
+
+Run: `cd web && npm install`
+Expected: completes without error.
+
+- [ ] **Step 3: Type-check the changed file**
+
+Run: `cd web && npx tsc --noEmit 2>&1 | grep "competitive-analysis"`
+Expected: no output (no errors in this file).
+
+- [ ] **Step 4: Build**
+
+Run: `cd web && npm run build`
+Expected: build succeeds.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add "web/app/(app)/state-intelligence/v2/[slug]/competitive-analysis.tsx"
+git commit -m "feat(competitive-analysis): YouTube tab — firm-level video-ad ranking"
+```
+
+---
+
+### Task 3: Docs + open PR
+
+**Files:**
+- Modify: `memory.md`
+- Modify: `CURRENT_PRIORITIES.md`
+
+- [ ] **Step 1: Log in memory.md**
+
+Append to the bottom of the "Recent PRs / shipped work" section of `memory.md` a dated (2026-06-22) entry: Competitive Analysis Phase 4b — YouTube tab live; new `get_youtube_competitors` RPC (firm-level, national, aggregates `youtube_ad_creatives`, excludes `google.com`/`youtube.com` seed junk); YouTube tab in `competitive-analysis.tsx` has no filter control (national, no case-type tag) and a per-row "view ads" link to each firm's Google Ads Transparency page; domain-led identity (advertiser_name is often the agency). Note this completes the Competitive Analysis channel program except Traditional Media (pending) and TikTok (permanently out).
+
+- [ ] **Step 2: Update CURRENT_PRIORITIES.md**
+
+In §0 add a "Recently shipped" entry for Phase 4b (YouTube tab live). In the §2 **D. Competitive Analysis** track, move Phase 4b from "Next" to "Shipped" and note Traditional Media is now the only remaining channel.
+
+- [ ] **Step 3: Commit docs**
+
+```bash
+git add memory.md CURRENT_PRIORITIES.md
+git commit -m "docs(memory): log Competitive Analysis Phase 4b — YouTube tab"
+```
+
+- [ ] **Step 4: Push and open the PR**
+
+```bash
+git push -u origin feat/youtube-competitive-tab
+gh pr create --title "Competitive Analysis Phase 4b: YouTube tab" --body "$(cat <<'EOF'
+## Summary
+Wires the **YouTube** tab on the v2 State Intelligence Competitive Analysis surface to the `youtube_ad_creatives` data shipped in Phase 4a (#430). Completes the YouTube channel end-to-end.
+
+- **Migration `20260622020000`** — `get_youtube_competitors(p_limit=50)` RPC: firm-level, national aggregate of `youtube_ad_creatives` (active creatives, longest-running, last seen), domain-led, **excludes `google.com`/`youtube.com`** seed junk.
+- **`competitive-analysis.tsx`** — YouTube panel: no filter control (national, no case-type), table of # · Firm (domain) · Active video ads · Longest running · Last seen, plus a per-row **"view ads ↗"** link to the firm's Google Ads Transparency page.
+
+## Notes
+- Firm-level + national by design (Transparency video carries no case-type tag, no DMA). Same firm list on every state page — the "measured nationally" note makes this explicit.
+- RPC uses the untyped `.rpc()` cast; `database.types.ts` regen is post-merge.
+
+## Testing
+- RPC body validated read-only against prod (real PI firms ranked; `google.com` filtered out).
+- `npm run build` + `tsc` green (no net-new errors in the changed file).
+- Post-merge: browser-verify on prod (CLAUDE.md §2.7) — YouTube tab renders the firm ranking, "view ads" opens the right Transparency page, no DMA/case-type control, network 2xx, no console errors.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+Expected: PR URL printed; `pr-typecheck` + Vercel checks pass.
+
+---
+
+## Post-merge (operational follow-up, not a task)
+
+1. Confirm the migration auto-applied (re-run `supabase-migrations` if it hits the known `setup-cli` rate-limit transient).
+2. Browser-verify on prod per CLAUDE.md §2.7.
+3. Regenerate `web/lib/database.types.ts` so the new RPC is typed (standing post-schema-change practice).
+</content>
