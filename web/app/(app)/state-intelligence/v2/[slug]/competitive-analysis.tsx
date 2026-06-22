@@ -14,11 +14,12 @@ import { getSupabase } from "@/lib/supabase";
 /*  YouTube (Phase 4b): get_youtube_competitors over Google Ads       */
 /*  Transparency video creatives — firm-level, national (no DMA, no   */
 /*  case-type tag), with a link to each firm's Transparency page.     */
-/*  TikTok is disabled — TikTok publishes no US ad library (EU/UK     */
-/*  DSA only).                                                         */
+/*  Meta (Phase 5b) replaces the prior social tab — the prior network  */
+/*  had no US ad library; Meta's Ad Library is national/US. Shown as  */
+/*  a "Soon" placeholder until 5b wires the panel.                    */
 /* ------------------------------------------------------------------ */
 
-type ChannelKey = "paid_search" | "seo" | "youtube" | "tiktok" | "traditional";
+type ChannelKey = "paid_search" | "seo" | "youtube" | "meta" | "traditional";
 
 interface ChannelTab {
   key: ChannelKey;
@@ -31,7 +32,7 @@ const CHANNEL_TABS: ChannelTab[] = [
   { key: "paid_search", label: "Paid Search" },
   { key: "seo", label: "SEO" },
   { key: "youtube", label: "YouTube" },
-  { key: "tiktok", label: "TikTok", disabled: true, badge: "No US data" },
+  { key: "meta", label: "Meta", disabled: true, badge: "Soon" },
   { key: "traditional", label: "Traditional Media", disabled: true, badge: "Soon" },
 ];
 
@@ -375,11 +376,6 @@ export function CompetitiveAnalysis({
           loading={ytLoading}
           error={ytError}
           competitors={ytCompetitors}
-        />
-      ) : activeChannel === "tiktok" ? (
-        <ComingSoon
-          title="TikTok competitive data is not available in the U.S."
-          body="TikTok only publishes an ad library for the EU/UK (DSA mandate); there is no U.S. ad-library source to attribute ads to firms. We'll wire this up if that changes."
         />
       ) : (
         <ComingSoon
