@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-06-09 (State Intelligence v2 buildout complete — all 51 jurisdictions live)
+Last updated: 2026-06-22 (Competitive Analysis Phases 1–2–4a shipped; Phase 4b — YouTube tab — is next)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -75,6 +75,15 @@ Short-term definition of done:
   - Documented GitHub Action
   - Clear table naming (raw/normalized/published)
   - Basic run-logging and failure-handling rules
+
+### D. Competitive Analysis (PI-firm ad competition by channel)
+
+**Goal:** On each v2 State Intelligence page, show which firms a PI firm competes against, per advertising channel.
+
+Status:
+- **Shipped:** Phase 1 Paid Search by DMA (#428), Phase 2 SEO by case type (#429, national), Phase 4a YouTube video-ad ingest (#430, data layer).
+- **Next:** Phase 4b — the YouTube tab (`get_youtube_competitors` RPC + wire `competitive-analysis.tsx`, firm-level ranking), once `youtube_ad_creatives` accrues from the daily pipeline.
+- **Deferred/out:** Traditional Media (broadcast_* tables) pending; TikTok permanently out (no US ad library).
 
 ---
 
