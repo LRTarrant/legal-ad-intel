@@ -4271,6 +4271,7 @@ export type Database = {
       pi_metros: {
         Row: {
           created_at: string | null
+          dma_code: string | null
           id: string
           metro_label: string
           metro_name: string
@@ -4280,6 +4281,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          dma_code?: string | null
           id?: string
           metro_label: string
           metro_name: string
@@ -4289,6 +4291,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          dma_code?: string | null
           id?: string
           metro_label?: string
           metro_name?: string
@@ -6888,6 +6891,71 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_ad_creatives: {
+        Row: {
+          ad_format: string
+          advertiser_ar_id: string | null
+          advertiser_domain: string
+          advertiser_id: string | null
+          advertiser_name: string | null
+          creative_id: string
+          details_link: string | null
+          first_ingested_at: string
+          first_shown: string | null
+          id: string
+          last_shown: string | null
+          raw_json: Json | null
+          region: string
+          target_domain: string | null
+          total_days_shown: number | null
+          updated_at: string
+        }
+        Insert: {
+          ad_format?: string
+          advertiser_ar_id?: string | null
+          advertiser_domain: string
+          advertiser_id?: string | null
+          advertiser_name?: string | null
+          creative_id: string
+          details_link?: string | null
+          first_ingested_at?: string
+          first_shown?: string | null
+          id?: string
+          last_shown?: string | null
+          raw_json?: Json | null
+          region?: string
+          target_domain?: string | null
+          total_days_shown?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ad_format?: string
+          advertiser_ar_id?: string | null
+          advertiser_domain?: string
+          advertiser_id?: string | null
+          advertiser_name?: string | null
+          creative_id?: string
+          details_link?: string | null
+          first_ingested_at?: string
+          first_shown?: string | null
+          id?: string
+          last_shown?: string | null
+          raw_json?: Json | null
+          region?: string
+          target_domain?: string | null
+          total_days_shown?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_ad_creatives_advertiser_id_fkey"
+            columns: ["advertiser_id"]
+            isOneToOne: false
+            referencedRelation: "advertiser_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       ad_saturation_summary: {
@@ -8106,6 +8174,20 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_pi_competitors_by_dma: {
+        Args: { p_dma_code?: string; p_state: string }
+        Returns: {
+          advertiser_domain: string
+          advertiser_name: string
+          avg_ad_position: number
+          case_types_active: string[]
+          first_seen: string
+          last_seen: string
+          metros_active: string[]
+          total_observations: number
+          website: string
+        }[]
+      }
       get_pi_metro_saturation: {
         Args: { p_state: string }
         Returns: {
@@ -8175,6 +8257,21 @@ export type Database = {
           total_spend: number
         }[]
       }
+      get_seo_competitors_by_tort: {
+        Args: { p_days?: number; p_tort_slug: string }
+        Returns: {
+          advertiser_name: string
+          avg_position: number
+          best_position: number
+          domain: string
+          first_seen: string
+          keywords_tracked: number
+          last_seen: string
+          organic_appearances: number
+          top_10_count: number
+          top_3_count: number
+        }[]
+      }
       get_serp_visibility_windowed: {
         Args: { p_end_date: string; p_start_date: string; p_tort_slug?: string }
         Returns: {
@@ -8195,7 +8292,7 @@ export type Database = {
         }[]
       }
       get_state_accident_summary: {
-        Args: { p_state: string }
+        Args: { p_state: string; p_year?: number }
         Returns: {
           county: string
           deaths_per_100k: number
@@ -8210,7 +8307,7 @@ export type Database = {
         }[]
       }
       get_state_boating_summary: {
-        Args: { p_state: string }
+        Args: { p_state: string; p_year?: number }
         Returns: {
           accident_count: number
           county: string
@@ -8410,6 +8507,18 @@ export type Database = {
           total_creatives: number
           total_observations: number
           total_spend: number
+        }[]
+      }
+      get_youtube_competitors: {
+        Args: { p_limit?: number }
+        Returns: {
+          active_creatives: number
+          advertiser_ar_id: string
+          advertiser_domain: string
+          advertiser_name: string
+          first_shown: string
+          last_shown: string
+          longest_running_days: number
         }[]
       }
       is_super_admin: { Args: never; Returns: boolean }
