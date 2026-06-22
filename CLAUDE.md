@@ -310,6 +310,7 @@ All schedules are UTC.
 | `load-storm-events.yml` | monthly 5th 06:00 | `scripts/load_storm_events.py` |
 | `recall-watchlist-weekly.yml` | Mon 12:00 | openFDA → CourtListener cases → parties → thermometer |
 | `faers-weekly.yml` | Mon 03:00 | `pipelines.faers_weekly` (openFDA `/drug/event.json`, `serious:1` only) |
+| `youtube-ads-daily.yml` | daily 13:00 | `pipelines.youtube_ads_daily` (PI-firm YouTube video ads via SearchApi Transparency) |
 | `supabase-migrations.yml` | on push to main (paths: `supabase/migrations/`) | `supabase db push` |
 | `repair-migration-history.yml` | manual only | one-shot `migration repair` for local-only versions |
 | `pr-typecheck.yml` | every PR to main | TS net-new error gate |
