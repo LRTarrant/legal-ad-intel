@@ -10,11 +10,12 @@ import { getSupabase } from "@/lib/supabase";
 /*  Paid Search (Phase 1): get_pi_competitors_by_dma over geo-        */
 /*  targeted Google ad observations, filtered by Nielsen DMA.         */
 /*  SEO (Phase 2): get_seo_competitors_by_tort over organic SERP      */
-/*  results, filtered by PI case type. Organic data is NATIONAL (no   */
-/*  geo dimension) so the SEO tab swaps the DMA dropdown for a case-  */
-/*  type dropdown and labels its scope national.                      */
-/*  YouTube (Phase 4) is "coming soon". TikTok is disabled — TikTok   */
-/*  publishes no US ad library (EU/UK DSA only).                      */
+/*  results, filtered by PI case type (national).                     */
+/*  YouTube (Phase 4b): get_youtube_competitors over Google Ads       */
+/*  Transparency video creatives — firm-level, national (no DMA, no   */
+/*  case-type tag), with a link to each firm's Transparency page.     */
+/*  TikTok is disabled — TikTok publishes no US ad library (EU/UK     */
+/*  DSA only).                                                         */
 /* ------------------------------------------------------------------ */
 
 type ChannelKey = "paid_search" | "seo" | "youtube" | "tiktok" | "traditional";
@@ -89,6 +90,16 @@ interface SeoCompetitor {
   last_seen: string | null;
 }
 
+interface YouTubeCompetitor {
+  advertiser_domain: string;
+  advertiser_name: string | null;
+  advertiser_ar_id: string | null;
+  active_creatives: number;
+  longest_running_days: number | null;
+  first_shown: string | null;
+  last_shown: string | null;
+}
+
 const CASE_TYPE_LABELS: Record<string, string> = {
   general_pi: "General PI",
   motor_vehicle: "Motor Vehicle",
@@ -126,6 +137,11 @@ export function CompetitiveAnalysis({
   const [seoCompetitors, setSeoCompetitors] = useState<SeoCompetitor[]>([]);
   const [seoLoading, setSeoLoading] = useState(false);
   const [seoError, setSeoError] = useState<string | null>(null);
+
+  // YouTube state (Phase 4b)
+  const [ytCompetitors, setYtCompetitors] = useState<YouTubeCompetitor[]>([]);
+  const [ytLoading, setYtLoading] = useState(false);
+  const [ytError, setYtError] = useState<string | null>(null);
 
   // DMA dropdown — Nielsen list for this state (full list; some have no data).
   useEffect(() => {
@@ -197,6 +213,32 @@ export function CompetitiveAnalysis({
     if (activeChannel === "seo") void loadSeo();
   }, [activeChannel, loadSeo]);
 
+  // YouTube competitor set — national, firm-level (no filter).
+  const loadYouTube = useCallback(async () => {
+    setYtLoading(true);
+    setYtError(null);
+    const sb = getSupabase() as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: YouTubeCompetitor[] | null; error: { message: string } | null }>;
+    };
+    const { data, error: rpcError } = await sb.rpc("get_youtube_competitors", {
+      p_limit: 50,
+    });
+    if (rpcError) {
+      setYtError("Couldn't load YouTube data.");
+      setYtCompetitors([]);
+    } else {
+      setYtCompetitors(data ?? []);
+    }
+    setYtLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeChannel === "youtube") void loadYouTube();
+  }, [activeChannel, loadYouTube]);
+
   const selectedDmaLabel =
     selectedDma === "all"
       ? "all markets"
@@ -206,6 +248,13 @@ export function CompetitiveAnalysis({
   const selectedCaseLabel =
     SEO_CASE_TYPES.find((c) => c.slug === selectedCaseType)?.label ?? "this case type";
 
+  const subtitle =
+    activeChannel === "seo"
+      ? "Organic-search competition for PI case types (measured nationally)"
+      : activeChannel === "youtube"
+        ? "YouTube / video ad presence by PI firm (measured nationally)"
+        : `PI-firm advertising competition in ${stateName}, filtered by DMA market`;
+
   return (
     <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
       <div className="flex items-center gap-2 mb-1">
@@ -214,13 +263,9 @@ export function CompetitiveAnalysis({
           Competitive Analysis
         </h2>
       </div>
-      <p className="mb-4 text-sm text-slate-gray">
-        {activeChannel === "seo"
-          ? `Organic-search competition for PI case types (measured nationally)`
-          : `PI-firm advertising competition in ${stateName}, filtered by DMA market`}
-      </p>
+      <p className="mb-4 text-sm text-slate-gray">{subtitle}</p>
 
-      {/* Filter control — DMA for Paid Search, case type for SEO */}
+      {/* Filter control — DMA for Paid Search, case type for SEO, none for YouTube */}
       {activeChannel === "seo" ? (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <label
@@ -246,6 +291,12 @@ export function CompetitiveAnalysis({
           </div>
           <span className="text-xs text-slate-gray/70">
             Organic rankings are measured nationally, not by DMA.
+          </span>
+        </div>
+      ) : activeChannel === "youtube" ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-gray/70">
+            YouTube / video ad presence is measured nationally, not by DMA.
           </span>
         </div>
       ) : (
@@ -319,6 +370,12 @@ export function CompetitiveAnalysis({
           competitors={seoCompetitors}
           caseLabel={selectedCaseLabel}
         />
+      ) : activeChannel === "youtube" ? (
+        <YouTubePanel
+          loading={ytLoading}
+          error={ytError}
+          competitors={ytCompetitors}
+        />
       ) : activeChannel === "tiktok" ? (
         <ComingSoon
           title="TikTok competitive data is not available in the U.S."
@@ -326,8 +383,8 @@ export function CompetitiveAnalysis({
         />
       ) : (
         <ComingSoon
-          title={`YouTube competition for ${stateName}`}
-          body="Wiring in a follow-up — PI-firm presence on this channel."
+          title={`Traditional media for ${stateName}`}
+          body="Wiring in a follow-up — broadcast / radio presence by market."
         />
       )}
     </div>
@@ -551,6 +608,119 @@ function SeoPanel({
               </tr>
             );
           })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function YouTubePanel({
+  loading,
+  error,
+  competitors,
+}: {
+  loading: boolean;
+  error: string | null;
+  competitors: YouTubeCompetitor[];
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-intelligence-teal/60" />
+        <p className="text-sm text-slate-gray">Loading YouTube advertisers…</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">{error}</p>
+      </div>
+    );
+  }
+  if (competitors.length === 0) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">
+          No YouTube video-ad data yet.
+        </p>
+        <p className="mt-1 text-xs text-slate-gray">
+          The daily pipeline populates this from the Google Ads Transparency
+          Center.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <p className="mb-3 text-xs text-slate-gray">
+        Plaintiff firms running YouTube / video ads (Google Ads Transparency
+        Center, national), ranked by active creatives and longevity. Firms are
+        identified by domain.
+      </p>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-cloud">
+            <th className="py-2 pr-2 text-xs font-semibold uppercase tracking-wider text-slate-gray w-8">
+              #
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Firm (domain)
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Active video ads
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Longest running
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Last seen
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray" />
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((c, i) => (
+            <tr key={c.advertiser_domain} className="border-b border-cloud/60">
+              <td className="py-2 pr-2 text-slate-gray">{i + 1}</td>
+              <td className="py-2 px-3">
+                <a
+                  href={`https://${c.advertiser_domain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-midnight-navy hover:text-intelligence-teal"
+                >
+                  {c.advertiser_domain}
+                  <ExternalLink className="w-3 h-3 text-slate-gray/50" />
+                </a>
+              </td>
+              <td className="py-2 px-3 text-right font-mono text-midnight-navy">
+                {c.active_creatives.toLocaleString()}
+              </td>
+              <td className="py-2 px-3 text-right text-midnight-navy">
+                {c.longest_running_days != null
+                  ? `${c.longest_running_days.toLocaleString()} days`
+                  : "—"}
+              </td>
+              <td className="py-2 px-3 text-midnight-navy">{c.last_shown ?? "—"}</td>
+              <td className="py-2 px-3">
+                {c.advertiser_ar_id && (
+                  <a
+                    href={`https://adstransparency.google.com/advertiser/${c.advertiser_ar_id}?region=US`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-intelligence-teal hover:underline"
+                  >
+                    view ads
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
