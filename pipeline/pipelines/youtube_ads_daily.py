@@ -173,19 +173,55 @@ def _seed_rows() -> list[dict]:
     }]
 
 
+def _get_all_pages(table: str, params: dict, page_size: int = 1000) -> list[dict]:
+    """Read every row from a table, paging past PostgREST's default 1000-row cap.
+
+    `_get` issues a single un-ranged request, so a bare read of a table with
+    more than 1000 rows (e.g. pi_search_observations, advertiser_entities)
+    silently truncates. Loop with limit/offset until a short page returns.
+    Mirrors the offset paging in advertiser_rematch_daily.py.
+    """
+    rows: list[dict] = []
+    offset = 0
+    while True:
+        page = _get(table, {
+            **params,
+            "limit": str(page_size),
+            "offset": str(offset),
+        })
+        rows.extend(page)
+        if len(page) < page_size:
+            break
+        offset += len(page)
+    return rows
+
+
 def step_fetch_raw(step) -> list[dict]:
     """Fetch video creatives for every known PI-firm domain and upsert them."""
-    obs = _get("pi_search_observations", {"select": "advertiser_domain"})
+    # Paged reads — these tables exceed PostgREST's 1000-row cap, so a bare
+    # _get would truncate the seed to a non-deterministic subset.
+    obs = _get_all_pages("pi_search_observations", {"select": "advertiser_domain"})
     domains = sorted({(o.get("advertiser_domain") or "").strip().lower()
                       for o in obs if o.get("advertiser_domain")})
     domains = [d for d in domains if d]
 
-    advertisers = _get("advertiser_entities",
-                       {"select": "id,canonical_name,website,aliases"})
+    advertisers = _get_all_pages(
+        "advertiser_entities", {"select": "id,canonical_name,website,aliases"})
     domain_mapper = DomainMapper(advertisers)
 
     if not SEARCHAPI_API_KEY:
-        print("  WARNING: SEARCHAPI_API_KEY not set — using seed data")
+        # Read the live dry-run flag from the environment — the module-level
+        # `DRY_RUN` import is bound at import time and stays stale when main()
+        # flips it for --dry-run, so it cannot gate a live-table write.
+        dry = os.environ.get("DRY_RUN", "").strip().lower() == "true"
+        if not dry:
+            print("  WARNING: SEARCHAPI_API_KEY not set and not a dry run — "
+                  "skipping (refusing to write seed data to the live table)")
+            step.set_metadata({"source": "no_api_key_skipped",
+                               "domains_in_seed": len(domains)})
+            step.set_counts(rows_in=0, rows_out=0)
+            return []
+        print("  WARNING: SEARCHAPI_API_KEY not set — using seed data (dry run)")
         rows = _dedup_rows(_seed_rows(), ("creative_id",))
         count = _bulk_insert("youtube_ad_creatives", rows,
                              on_conflict="creative_id",

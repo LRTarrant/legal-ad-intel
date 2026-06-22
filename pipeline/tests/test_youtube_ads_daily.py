@@ -47,3 +47,27 @@ def test_creatives_missing_id_are_skipped():
     creatives = [{"advertiser": {"name": "No Id LLC"}, "format": "video"}]
     rows = _creatives_to_rows(creatives, "example.com", _empty_mapper())
     assert rows == []
+
+
+def test_envelope_ad_creatives_key_parses_through():
+    # Locks in the SearchApi google_ads_transparency_center envelope: creatives
+    # live under the top-level "ad_creatives" key (confirmed via live probe).
+    # A wrong key here would silently yield zero rows on every domain.
+    envelope = {
+        "search_information": {"total_results": 600},
+        "ad_creatives": [{
+            "id": "CR777",
+            "target_domain": "forthepeople.com",
+            "advertiser": {"id": "AR1", "name": "Morgan & Morgan, P.A."},
+            "first_shown_datetime": "2025-10-16T14:18:17Z",
+            "last_shown_datetime": "2026-06-21T23:23:47Z",
+            "total_days_shown": 249,
+            "format": "video",
+            "details_link": "https://adstransparency.google.com/y",
+        }],
+    }
+    creatives = envelope.get("ad_creatives", [])
+    rows = _creatives_to_rows(creatives, "forthepeople.com", _empty_mapper())
+    assert len(rows) == 1
+    assert rows[0]["creative_id"] == "CR777"
+    assert rows[0]["total_days_shown"] == 249

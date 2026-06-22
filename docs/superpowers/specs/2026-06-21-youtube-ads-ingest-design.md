@@ -104,7 +104,7 @@ pytest with a mocked SearchApi response (a small fixture mirroring the probe: 2 
 ## Known limitations (documented, not defects)
 
 - **National only** — Transparency has no DMA/geo dimension. The 4b tab will be national, like SEO.
-- **`num=100` per domain** caps mega-advertisers (Morgan & Morgan: 600). Firm ranking stays valid ordinally for ~all firms; `search_information.total_results` is captured in `raw_json` if a later pass wants true totals. Raising the cap / paginating is a 4b-or-later refinement.
+- **`num=100` per domain** caps mega-advertisers (Morgan & Morgan: 600). Firm ranking stays valid ordinally for ~all firms. Note: `search_information.total_results` (the true per-firm count) is **not** stored — `raw_json` holds only the per-creative object, not the response envelope. Capturing true totals (a `total_results` column or stashing the envelope) and/or raising the cap / paginating is a 4b-or-later refinement.
 - **Seed = paid-search advertisers** (`pi_search_observations`). A YouTube-only brand advertiser not in paid search would be missed; unioning more domain sources is a later expansion.
 - **`last_shown` freshness** is handled by the daily merge-duplicates upsert (re-fetch updates the row).
 
