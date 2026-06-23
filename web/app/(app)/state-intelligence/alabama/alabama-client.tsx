@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import Link from "next/link";
+import { useMemo, useEffect } from "react";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
-  ArrowLeft,
   AlertTriangle,
   Scale,
   Car,
@@ -20,26 +18,9 @@ import {
   Database,
   Target,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { alabamaCompetitiveData } from "@/lib/data/competitive-landscape/alabama";
 import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
@@ -49,6 +30,7 @@ import {
   COUNTY_GEOMETRY as AL_COUNTY_GEOMETRY,
   VIEWBOX as AL_VIEWBOX,
 } from "@/lib/data/state-geometry/alabama";
+import { AlabamaCompetitiveAnalysis } from "./competitive/competitive-analysis-section";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -154,64 +136,22 @@ export interface AlabamaPageData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Hardcoded Constants (ALDOT, BLS, ACS)                              */
+/*  Hardcoded Constants (ALDOT, BLS)                                   */
 /* ------------------------------------------------------------------ */
 
 const ALDOT = {
-  totalCrashes: 143_487,
-  totalInjuries: 37_792,
-  totalFatalities: 975,
-  ratePerVMT: 1.36,
-  nationalRate: 1.26,
-  ruralFatalShare: 0.58,
-  motorcycleFatalities: 92,
   largeTruckFatalities: 134,
-  pedestrianFatalities: 120,
-  bicycleFatalities: 11,
-  workZoneFatalities: 23,
+  motorcycleFatalities: 92,
   impairedDrivingDeaths: 196,
 };
 
 const BLS = {
   constructionWorkers: 101_300,
-  constructionPctPrivate: 6.0,
   constructionYoY: 2.2,
   truckingWorkers: 26_934,
-  truckingYoY: -0.7,
-  transportWarehouseTotal: 75_529,
-  constructionAvgPay: 69_214,
-  truckingAvgPay: 63_951,
-  totalWorkplaceFatalities: 75,
-  constructionFatalities: 15,
   workplaceFatalityRate: 3.6,
-  nationalWorkplaceRate: 3.3,
+  constructionFatalities: 15,
 };
-
-const COMMUTE = {
-  driveAlone: 81.5,
-  carpool: 8.2,
-  wfh: 7.8,
-  highCarpoolCounties: [
-    { county: "Winston", pct: 17.2 },
-    { county: "Greene", pct: 14.1 },
-    { county: "Crenshaw", pct: 12.9 },
-    { county: "DeKalb", pct: 12.9 },
-    { county: "Franklin", pct: 12.8 },
-  ],
-  highWfhCounties: [
-    { county: "Shelby", pct: 15.2 },
-    { county: "Madison", pct: 13.6 },
-    { county: "Baldwin", pct: 10.0 },
-  ],
-};
-
-const PERCAPITA_TOP = [
-  { county: "Greene", rate: 92.0, pop: 7_424 },
-  { county: "Lowndes", rate: 67.8, pop: 9_276 },
-  { county: "Butler", rate: 61.7, pop: 18_868 },
-  { county: "Conecuh", rate: 53.2, pop: 11_597 },
-  { county: "Bullock", rate: 53.0, pop: 10_357 },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -219,24 +159,43 @@ const PERCAPITA_TOP = [
 
 function formatNegligenceRule(rule: string): string {
   const map: Record<string, string> = {
-    'pure_comparative': 'Pure Comparative',
-    'modified_51': 'Modified Comparative (51% Bar)',
-    'modified_50': 'Modified Comparative (50% Bar)',
-    'contributory': 'Contributory Negligence',
+    pure_comparative: "Pure Comparative",
+    modified_51: "Modified Comparative (51% Bar)",
+    modified_50: "Modified Comparative (50% Bar)",
+    contributory: "Contributory",
   };
   return map[rule] || rule;
 }
 
 function fmtNum(n: number | null | undefined): string {
-  if (n == null) return "\u2014";
+  if (n == null) return "—";
   return n.toLocaleString();
 }
 
 function fmtCur(n: number | null | undefined): string {
-  if (n == null) return "\u2014";
+  if (n == null) return "—";
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function fmtMillions(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+  return n.toLocaleString();
+}
+
+/** Viability band: green / amber / red. */
+function viabilityBand(score: number): { label: string; tone: "good" | "mid" | "bad" } {
+  if (score >= 75) return { label: "Favorable", tone: "good" };
+  if (score >= 50) return { label: "Challenging", tone: "mid" };
+  return { label: "Difficult", tone: "bad" };
+}
+
+function scoreColor(s: number): string {
+  if (s <= 25) return "#DC2626";
+  if (s <= 74) return "#E0A030";
+  return "#16A34A";
 }
 
 /* ------------------------------------------------------------------ */
@@ -244,54 +203,34 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function AlabamaClient({ data }: { data: AlabamaPageData }) {
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
-
   useEffect(() => {
     trackStateViewed({ state_code: "AL", state_name: "Alabama" });
   }, []);
 
+  const piData = data.piViability;
+
   /* -- Aggregate stats -- */
-  const totalFatalCrashes = data.accidentSummary.reduce(
-    (s, r) => s + r.fatal_crashes,
-    0
-  );
-  const totalDeaths = data.accidentSummary.reduce(
-    (s, r) => s + r.total_deaths,
-    0
-  );
-  const totalTruckDeaths = data.accidentSummary.reduce(
-    (s, r) => s + r.truck_deaths,
-    0
-  );
-  const totalMotoDeaths = data.accidentSummary.reduce(
-    (s, r) => s + r.moto_deaths,
-    0
-  );
-  const totalBoatingAccidents = data.boatingSummary.reduce(
-    (s, r) => s + r.accident_count,
-    0
-  );
-  const totalStormEvents = data.stormSummary.reduce(
-    (s, r) => s + r.event_count,
-    0
-  );
+  const totalFatalCrashes = data.accidentSummary.reduce((s, r) => s + r.fatal_crashes, 0);
+  const totalDeaths = data.accidentSummary.reduce((s, r) => s + r.total_deaths, 0);
+  const totalTruckDeaths = data.accidentSummary.reduce((s, r) => s + r.truck_deaths, 0);
+  const totalMotoDeaths = data.accidentSummary.reduce((s, r) => s + r.moto_deaths, 0);
+  const totalBoatingAccidents = data.boatingSummary.reduce((s, r) => s + r.accident_count, 0);
   const mvaDeaths = totalDeaths - totalTruckDeaths - totalMotoDeaths;
 
-  /* -- Top 5 counties for each case type -- */
+  const statePopulation = data.censusDemographics.reduce(
+    (s, d) => s + (d.total_population || 0),
+    0,
+  );
+
+  /* -- Top 5 counties per case type -- */
   const top5MVA = [...data.accidentSummary]
-    .map((r) => ({
-      county: r.county,
-      count: r.total_deaths - r.truck_deaths - r.moto_deaths,
-    }))
+    .map((r) => ({ county: r.county, count: r.total_deaths - r.truck_deaths - r.moto_deaths }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
-
   const top5Truck = [...data.accidentSummary]
     .filter((r) => r.truck_deaths > 0)
     .sort((a, b) => b.truck_deaths - a.truck_deaths)
     .slice(0, 5);
-
   const top5Moto = [...data.accidentSummary]
     .filter((r) => r.moto_deaths > 0)
     .sort((a, b) => b.moto_deaths - a.moto_deaths)
@@ -307,48 +246,80 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
     return counts;
   }, [data.judicialProfiles]);
 
-  /* -- Top storm chart data -- */
-  const topStorms = data.stormSummary.slice(0, 10);
+  const judConservative = profileCounts["Conservative"] ?? 0;
+  const judLiberal = profileCounts["Liberal"] ?? 0;
+  const judModerate = profileCounts["Moderate"] ?? 0;
+  const judTotal = judConservative + judLiberal + judModerate || 1;
 
-  /* -- PI viability bar chart data -- */
-  const piData = data.piViability;
+  const composite = piData?.composite_score ?? 0;
+  const band = viabilityBand(Number(composite));
 
-  /* -- Big 4 MSA codes -- */
-  const BIG4 = ["Birmingham", "Huntsville", "Mobile", "Montgomery"];
+  const componentScores = piData
+    ? [
+        { name: "Negligence rule", score: piData.negligence_score ?? 0 },
+        { name: "Non-economic caps", score: piData.non_economic_score ?? 0 },
+        { name: "Punitive caps", score: piData.punitive_score ?? 0 },
+        { name: "Med-mal caps", score: piData.med_mal_score ?? 0 },
+        { name: "Statute of limitations", score: piData.sol_score ?? 0 },
+        { name: "Jury verdicts", score: piData.verdict_score ?? 0 },
+      ]
+    : [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* ============================================================ */}
-      {/* 1. STATE HEADER                                              */}
+      {/* STICKY CONTEXT BAR                                           */}
+      {/* ============================================================ */}
+      <div className="sticky top-0 z-30 -mx-4 border-b border-cloud bg-white/90 px-4 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="flex h-13 items-center gap-3 py-2.5">
+          <span className="text-base font-bold text-midnight-navy">Alabama</span>
+          <span className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-red-600">
+            Contributory
+          </span>
+          <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-amber-600">
+            Viability {composite || "—"}
+          </span>
+          <nav className="ml-auto hidden items-center gap-4 md:flex">
+            {[
+              ["#overview", "Overview"],
+              ["#legal", "Legal"],
+              ["#competition", "Competition"],
+              ["#signals", "Signals"],
+              ["#sources", "Sources"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="text-[13px] font-semibold text-slate-gray hover:text-midnight-navy"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* PAGE HEADER                                                  */}
       {/* ============================================================ */}
       <div>
-        <Link
-          href="/overview"
-          className="text-sm text-slate-gray hover:text-midnight-navy"
-        >
-          <span className="flex items-center gap-1">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Overview
-          </span>
-        </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            Alabama
-          </h1>
-          <span className="rounded-full bg-red-500/10 border border-red-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-red-600">
-            Contributory Negligence State
-          </span>
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-intelligence-teal">
+          State Intelligence
         </div>
-        <p className="mt-1 text-lg text-slate-gray">
-          State Intelligence Report
-        </p>
-        <p className="mt-1 text-sm text-slate-gray max-w-3xl">
-          Cross-signal intelligence for plaintiff firm advertising and case
-          acquisition in Alabama &mdash; combining accident data, demographics,
-          judicial profiles, and market opportunity signals across MVA, trucking,
-          motorcycle, construction, and boating.
-        </p>
-        <div className="mt-4">
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-heading text-3xl font-bold text-midnight-navy">Alabama</h1>
+              <span className="rounded-full border border-red-300 bg-red-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600">
+                Contributory Negligence State
+              </span>
+            </div>
+            <p className="mt-2 max-w-2xl text-base text-slate-gray">
+              Cross-signal intelligence for plaintiff-firm advertising and case
+              acquisition &mdash; accident exposure, judicial posture, and PI
+              competition by market.
+            </p>
+          </div>
           <BuildCampaignLink
             variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
           />
@@ -356,774 +327,483 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 2. STATE SNAPSHOT                                            */}
+      {/* VERDICT BAR                                                  */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Car className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Fatal Crashes
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {fmtNum(totalFatalCrashes)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            2019&ndash;2024 &middot; FARS
-          </p>
+      <div>
+        <div className="mb-3 flex items-center gap-2.5">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-gray/70">
+            The verdict
+          </span>
+          <span className="h-px flex-1 bg-cloud" />
+          <span className="text-[11.5px] text-slate-gray/70">
+            Should a firm advertise here &mdash; and where?
+          </span>
         </div>
-
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Fatality Rate
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {ALDOT.ratePerVMT}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            per 100M VMT &middot; vs {ALDOT.nationalRate} national &middot; 8%
-            above
-          </p>
-        </div>
-
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <MapPin className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Rural Fatal Share
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">58%</p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            of all traffic fatalities
-          </p>
-        </div>
-
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Scale className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              PI Viability
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {piData?.composite_score ?? "\u2014"}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            composite score
-          </p>
-        </div>
-
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <HardHat className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Workplace Fatality
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {BLS.workplaceFatalityRate}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">
-            per 100K FTE &middot; vs {BLS.nationalWorkplaceRate} national
-          </p>
-        </div>
-
-        <div className="rounded-lg bg-white p-4 shadow-sm border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <CloudLightning className="w-3.5 h-3.5 text-intelligence-teal" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
-              Storm Events
-            </p>
-          </div>
-          <p className="text-3xl font-bold text-midnight-navy">
-            {fmtNum(data.stormCount)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-gray">NOAA records</p>
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          <VerdictCard
+            top="#E0A030"
+            label="PI viability"
+            value={composite ? String(composite) : "—"}
+            valueSuffix="/100"
+            chip={band.label}
+            chipTone={band.tone}
+            note="Strong caps & verdicts, dragged down by the negligence rule."
+          />
+          <VerdictCard
+            top="#DC2626"
+            label="Negligence rule"
+            value="Contributory"
+            chip="High bar"
+            chipTone="bad"
+            note="1 of 4 states (+DC). Any plaintiff fault bars recovery."
+          />
+          <VerdictCard
+            top="#16A34A"
+            label="Top opportunity"
+            value="Motor Vehicle"
+            chip="High demand"
+            chipTone="good"
+            note={`${fmtNum(mvaDeaths)} MVA deaths · concentrated in the Birmingham DMA.`}
+          />
+          <VerdictCard
+            top="#2E5E8C"
+            label="Competition"
+            value="Moderate"
+            chip="Metros crowded"
+            chipTone="info"
+            note="Shunnarah & Morgan dominate; the metros are crowded."
+          />
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* 3. LEGAL LANDSCAPE                                           */}
+      {/* MOAT TEASER BAND                                             */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Legal Landscape
-          </h2>
+      <div className="rounded-2xl bg-midnight-navy p-6 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-lg font-bold">What the data alone won&apos;t tell you</div>
+          <a href="#signals" className="text-[13px] font-semibold text-white/80 hover:text-white">
+            All proprietary signals &rarr;
+          </a>
         </div>
-
-        {piData ? (
-          <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Negligence Rule
-                </p>
-                <p className="text-sm font-bold text-red-600">
-                  {formatNegligenceRule(piData.negligence_rule)}
-                </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="flex gap-3">
+            <span className="w-[6px] flex-none rounded-full bg-intelligence-teal" />
+            <div>
+              <div className="text-sm font-bold">Greene County is a media desert</div>
+              <div className="mt-1 text-[12.5px] leading-relaxed text-white/75">
+                Highest fatality rate in the state (552/100K) &mdash; but high
+                poverty and low internet make radio &amp; community outreach the
+                only channels that reach it.
               </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Statute of Limitations
-                </p>
-                <p className="text-sm font-semibold text-midnight-navy">
-                  {piData.statute_of_limitations}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Non-Economic Damage Caps
-                </p>
-                <p className="text-sm text-midnight-navy">
-                  {piData.non_economic_cap ?? "None"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Punitive Damage Caps
-                </p>
-                <p className="text-sm text-midnight-navy">
-                  {piData.punitive_cap ?? "None"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Average Jury Verdict
-                </p>
-                <p className="text-sm font-semibold text-midnight-navy">
-                  {piData.avg_jury_verdict != null
-                    ? typeof piData.avg_jury_verdict === "string" &&
-                      /^[a-zA-Z]/.test(piData.avg_jury_verdict)
-                      ? piData.avg_jury_verdict
-                      : fmtCur(Number(piData.avg_jury_verdict))
-                    : "\u2014"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Composite Score
-                </p>
-                <p className="text-sm font-bold text-intelligence-teal">
-                  {piData.composite_score}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-md border-l-4 border-red-500 bg-red-50 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                Alabama is one of only 4 states (plus D.C.) that follows pure
-                contributory negligence &mdash; any plaintiff fault bars recovery
-                entirely. This makes case selection and liability evidence
-                critical for advertising ROI. Target cases with clear defendant
-                liability.
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              PI viability data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 4. CASE TYPE OPPORTUNITIES                                   */}
-      {/* ============================================================ */}
-      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Target className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Case Type Opportunities
-          </h2>
-        </div>
-        <p className="mb-6 text-sm text-slate-gray">
-          Data-driven targeting recommendations by case type
-        </p>
-
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {/* MVA Card */}
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Car className="w-5 h-5 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Motor Vehicle Accidents
-              </h3>
-            </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">MVA Fatal Deaths (FARS)</span>
-                <span className="font-semibold text-midnight-navy">
-                  {fmtNum(mvaDeaths)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Top Counties</span>
-                <span className="font-medium text-midnight-navy text-right">
-                  {top5MVA.map((r) => r.county).join(", ")}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Rural Share</span>
-                <span className="font-medium text-midnight-navy">58%</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Impaired Driving Deaths (2023)</span>
-                <span className="font-semibold text-midnight-navy">
-                  {ALDOT.impairedDrivingDeaths}
-                </span>
-              </div>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">
-                  Audience:
-                </span>{" "}
-                Target ages 25-44 in high-fatality rural counties. Carpool
-                corridors (Winston, DeKalb, Franklin) indicate blue-collar
-                commuter populations with high road exposure. Impaired driving accounts for 20% of fatalities &mdash; consider campaigns tied to holiday weekends and enforcement awareness.
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Radio + digital in rural markets; CTV in Birmingham, Huntsville,
-                Mobile metros
-              </p>
             </div>
           </div>
-
-          {/* Large Truck Card */}
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Truck className="w-5 h-5 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Large Truck Accidents
-              </h3>
-            </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">
-                  Truck Fatal Deaths (FARS)
-                </span>
-                <span className="font-semibold text-midnight-navy">
-                  {fmtNum(totalTruckDeaths)}
-                </span>
+          <div className="flex gap-3">
+            <span className="w-[6px] flex-none rounded-full bg-intelligence-teal" />
+            <div>
+              <div className="text-sm font-bold">DUI deaths spike on a calendar</div>
+              <div className="mt-1 text-[12.5px] leading-relaxed text-white/75">
+                1 in 5 Alabama traffic deaths are impaired &mdash; clustered on
+                holiday weekends. Time-triggered campaigns catch victims while
+                they&apos;re searching.
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">
-                  ALDOT 2023 Truck Fatalities
-                </span>
-                <span className="font-semibold text-midnight-navy">
-                  {ALDOT.largeTruckFatalities}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Top Counties</span>
-                <span className="font-medium text-midnight-navy text-right">
-                  {top5Truck.map((r) => r.county).join(", ")}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Trucking Workers</span>
-                <span className="font-medium text-midnight-navy">
-                  {fmtNum(BLS.truckingWorkers)}
-                </span>
-              </div>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">
-                  Audience:
-                </span>{" "}
-                Commercial trucking corridors (I-65, I-20, I-59). Target CDL
-                holders&apos; families and occupants of passenger vehicles struck
-                by trucks.
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Billboard corridors + digital geo-fencing along major interstates
-              </p>
-            </div>
-          </div>
-
-          {/* Motorcycle Card */}
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Bike className="w-5 h-5 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Motorcycle Accidents
-              </h3>
-            </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">
-                  Motorcycle Fatal Deaths (FARS)
-                </span>
-                <span className="font-semibold text-midnight-navy">
-                  {fmtNum(totalMotoDeaths)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">
-                  ALDOT 2023 Motorcycle Fatalities
-                </span>
-                <span className="font-semibold text-midnight-navy">
-                  {ALDOT.motorcycleFatalities}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Top Counties</span>
-                <span className="font-medium text-midnight-navy text-right">
-                  {top5Moto.map((r) => r.county).join(", ")}
-                </span>
-              </div>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">
-                  Audience:
-                </span>{" "}
-                Target 35-64 males in suburban/exurban counties. Baldwin, Mobile,
-                Jefferson highest volume.
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Seasonal spring/summer campaigns. Social media + streaming audio
-                targeting motorcycle enthusiast interests.
-              </p>
-            </div>
-          </div>
-
-          {/* Construction Card */}
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <HardHat className="w-5 h-5 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Construction Accidents
-              </h3>
-            </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Construction Workers</span>
-                <span className="font-semibold text-midnight-navy">
-                  {fmtNum(BLS.constructionWorkers)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">
-                  Construction Fatalities (2023)
-                </span>
-                <span className="font-semibold text-midnight-navy">
-                  {BLS.constructionFatalities}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Fatality Rate</span>
-                <span className="font-semibold text-midnight-navy">
-                  {BLS.workplaceFatalityRate}/100K FTE
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Employment Growth</span>
-                <span className="font-medium text-emerald-600">
-                  +{BLS.constructionYoY}% YoY
-                </span>
-              </div>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">
-                  Audience:
-                </span>{" "}
-                Construction boom counties with growing employment. Target
-                construction workers&apos; families, union halls, and safety
-                equipment retailers.
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Spanish-language media in Franklin/DeKalb (high Hispanic
-                construction workforce). Radio in rural construction corridors.
-              </p>
-            </div>
-          </div>
-
-          {/* Boating Card */}
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Anchor className="w-5 h-5 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Boating Accidents
-              </h3>
-            </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Total Boating Accidents</span>
-                <span className="font-semibold text-midnight-navy">
-                  {fmtNum(totalBoatingAccidents)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-gray">Top Counties</span>
-                <span className="font-medium text-midnight-navy text-right">
-                  {data.boatingSummary
-                    .slice(0, 5)
-                    .map((r) => r.county)
-                    .join(", ")}
-                </span>
-              </div>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">
-                  Audience:
-                </span>{" "}
-                Lakefront and Gulf Coast counties. Target boating enthusiast
-                demographics, marina-adjacent areas.
-              </p>
-            </div>
-            <div className="rounded-md bg-cloud/60 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
-                Seasonal spring/summer. Local radio + geo-targeted digital around
-                major waterways.
-              </p>
             </div>
           </div>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* 5. COUNTY INTELLIGENCE (map + merged accident/judicial table) */}
+      {/* SECTION 1 — ALABAMA OVERVIEW                                 */}
       {/* ============================================================ */}
-      {data.accidentSummary.length > 0 ? (
-        <CountyIntelligenceMap
-          rows={data.accidentSummary}
-          geometry={AL_COUNTY_GEOMETRY}
-          viewBox={AL_VIEWBOX}
-          stateName="Alabama"
-          stateCode="AL"
-          csvFileName="alabama-county-intelligence.csv"
-          judicialProfiles={data.judicialProfiles}
-          boating={data.boatingSummary.map((b) => ({
-            county: b.county,
-            accident_count: b.accident_count,
-            total_deaths: b.total_deaths,
-            total_injuries: b.total_injuries,
-          }))}
-          farsYears={FARS_DATA_YEARS}
-          boatingYears={BOATING_DATA_YEARS}
-          demographics={data.censusDemographics.map((d) => ({
-            county_name: d.county_name,
-            median_age: d.median_age,
-            pct_white: d.pct_white,
-            pct_black: d.pct_black,
-            pct_hispanic: d.pct_hispanic,
-            pct_asian: d.pct_asian,
-            pct_native: d.pct_native,
-            median_household_income: d.median_household_income,
-            pct_poverty: d.pct_poverty,
-            mean_commute_minutes: d.mean_commute_minutes,
-          }))}
-        />
-      ) : (
-        <div className="rounded-lg bg-white p-6 shadow-sm border">
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              County intelligence data loading...
-            </p>
+      <div id="overview" className="scroll-mt-20">
+        <SectionHeading n={1} title="Alabama Overview" />
+
+        {/* snapshot stat row */}
+        <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          <SnapshotCard
+            label="Population"
+            value={statePopulation ? fmtMillions(statePopulation) : "—"}
+            sub="2024 Census (county sum)"
+          />
+          <SnapshotCard
+            label="Fatal Crashes"
+            value={fmtNum(totalFatalCrashes)}
+            sub="2019–2024 · FARS"
+          />
+          <SnapshotCard
+            label="Counties"
+            value={String(data.judicialProfiles.length || 67)}
+            sub={`${judConservative} Cons · ${judLiberal} Lib · ${judModerate} Mod`}
+          />
+          <SnapshotCard label="Top DMA" value="Birmingham" sub="1.18M · DMA 630" valueText />
+        </div>
+
+        {/* County Intelligence (live component — ship as-is, moved to top) */}
+        <div className="mt-4">
+          {data.accidentSummary.length > 0 ? (
+            <CountyIntelligenceMap
+              rows={data.accidentSummary}
+              geometry={AL_COUNTY_GEOMETRY}
+              viewBox={AL_VIEWBOX}
+              stateName="Alabama"
+              stateCode="AL"
+              csvFileName="alabama-county-intelligence.csv"
+              judicialProfiles={data.judicialProfiles}
+              boating={data.boatingSummary.map((b) => ({
+                county: b.county,
+                accident_count: b.accident_count,
+                total_deaths: b.total_deaths,
+                total_injuries: b.total_injuries,
+              }))}
+              farsYears={FARS_DATA_YEARS}
+              boatingYears={BOATING_DATA_YEARS}
+              demographics={data.censusDemographics.map((d) => ({
+                county_name: d.county_name,
+                median_age: d.median_age,
+                pct_white: d.pct_white,
+                pct_black: d.pct_black,
+                pct_hispanic: d.pct_hispanic,
+                pct_asian: d.pct_asian,
+                pct_native: d.pct_native,
+                median_household_income: d.median_household_income,
+                pct_poverty: d.pct_poverty,
+                mean_commute_minutes: d.mean_commute_minutes,
+              }))}
+            />
+          ) : (
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                <Database className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
+                <p className="text-sm font-medium text-midnight-navy/60">
+                  County intelligence data loading...
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* SECTION 2 — LEGAL LANDSCAPE & PI VIABILITY                   */}
+      {/* ============================================================ */}
+      <div id="legal" className="scroll-mt-20">
+        <SectionHeading n={2} title="Legal Landscape & PI Viability" />
+
+        <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-intelligence-teal" />
+            <h3 className="font-heading text-xl font-bold text-midnight-navy">
+              Should a firm bring PI cases in Alabama?
+            </h3>
           </div>
-        </div>
-      )}
+          <p className="mt-1.5 text-sm text-slate-gray">
+            Negligence rule, statute, damage caps, judicial mix and case-type
+            demand &mdash; one combined read on PI viability.
+          </p>
 
-      {/* ============================================================ */}
-      {/* 9. PI VIABILITY DEEP DIVE                                    */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            PI Viability Deep Dive
-          </h2>
-        </div>
+          {piData ? (
+            <>
+              {/* viability + facts */}
+              <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
+                {/* composite panel */}
+                <div className="flex flex-col rounded-xl border border-cloud bg-cloud/30 p-5">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Composite PI viability
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="font-mono text-5xl font-semibold text-midnight-navy">
+                      {composite}
+                    </span>
+                    <span className="font-mono text-base text-slate-gray">/ 100</span>
+                  </div>
+                  <ScoreChip band={band} />
+                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-cloud">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${composite}%`,
+                        background: scoreColor(Number(composite)),
+                      }}
+                    />
+                  </div>
+                  <p className="mt-3.5 text-[12.5px] leading-relaxed text-slate-gray">
+                    Strong damage-cap and jury-verdict signals are pulled down by
+                    Alabama&apos;s{" "}
+                    <span className="font-semibold text-red-600">
+                      pure contributory negligence
+                    </span>{" "}
+                    rule &mdash; the single biggest drag on viability.
+                  </p>
+                </div>
 
-        {piData ? (
-          <>
-            <div className="rounded-lg bg-white p-4 mb-4">
-              <p className="mb-3 text-xs font-semibold text-midnight-navy">
-                Component Scores
-              </p>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart
-                  data={[
-                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                  ]}
-                  layout="vertical"
-                  margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
-                >
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
+                {/* facts grid */}
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-cloud bg-cloud sm:grid-cols-3">
+                  <Fact
+                    label="Negligence rule"
+                    value={formatNegligenceRule(piData.negligence_rule)}
+                    valueClass="text-red-600"
+                    note="Any plaintiff fault bars recovery. 1 of 4 states (+DC)."
                   />
-                  <Tooltip contentStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                    {[
-                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                    ].map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                  <Fact
+                    label="Statute of limitations"
+                    value={piData.statute_of_limitations}
+                    note="From date of injury."
+                  />
+                  <Fact
+                    label="Non-econ caps"
+                    value={piData.non_economic_cap ?? "None"}
+                    note="Personal injury."
+                  />
+                  <Fact
+                    label="Punitive caps"
+                    value={piData.punitive_cap ?? "None"}
+                    note="Statutory limit."
+                  />
+                  <Fact
+                    label="Avg. jury verdict"
+                    value={
+                      piData.avg_jury_verdict != null
+                        ? typeof piData.avg_jury_verdict === "string" &&
+                          /^[a-zA-Z]/.test(piData.avg_jury_verdict)
+                          ? piData.avg_jury_verdict
+                          : fmtCur(Number(piData.avg_jury_verdict))
+                        : "—"
+                    }
+                    note="Median PI award."
+                  />
+                  <Fact label="Composite score" value={String(composite)} note="0–100 scale." />
+                </div>
+              </div>
 
-            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                Alabama&apos;s contributory negligence rule significantly impacts
-                the composite PI viability score. The pure contributory
-                negligence standard &mdash; shared by only 4 other states plus
-                D.C. &mdash; means any plaintiff fault bars recovery entirely,
-                making case selection critical.
+              {/* component scores + judicial mix */}
+              <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+                <div>
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Component scores
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    {componentScores.map((c) => (
+                      <div key={c.name} className="flex items-center gap-3">
+                        <span className="w-[150px] flex-none text-[12.5px] text-slate-gray">
+                          {c.name}
+                        </span>
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-cloud">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${c.score}%`,
+                              background: scoreColor(c.score),
+                            }}
+                          />
+                        </div>
+                        <span className="w-9 flex-none text-right font-mono text-[12.5px] font-semibold text-midnight-navy">
+                          {c.score}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Judicial profile mix
+                  </div>
+                  <div className="flex h-2.5 overflow-hidden rounded-full border border-cloud">
+                    <div
+                      style={{ width: `${(judConservative / judTotal) * 100}%`, background: "#DC616A" }}
+                    />
+                    <div
+                      style={{ width: `${(judLiberal / judTotal) * 100}%`, background: "#4E85F0" }}
+                    />
+                    <div
+                      style={{ width: `${(judModerate / judTotal) * 100}%`, background: "#E5AE4F" }}
+                    />
+                  </div>
+                  <div className="mt-3.5 flex flex-col gap-2">
+                    <JudRow color="#DC616A" label="Conservative" count={judConservative} />
+                    <JudRow color="#4E85F0" label="Liberal" count={judLiberal} />
+                    <JudRow color="#E5AE4F" label="Moderate" count={judModerate} />
+                  </div>
+                </div>
+              </div>
+
+              {/* case-type opportunities */}
+              <div id="case-types" className="mt-7 scroll-mt-20">
+                <div className="mb-3.5 flex flex-wrap items-baseline gap-2.5">
+                  <Target className="h-4 w-4 text-intelligence-teal" />
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+                    Case-type opportunities
+                  </div>
+                  <div className="text-[12.5px] text-slate-gray/80">
+                    Data-driven audience &amp; media recommendations by case type
+                  </div>
+                </div>
+                <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+                  <CaseCard
+                    icon={<Car className="h-4 w-4 text-intelligence-teal" />}
+                    title="Motor Vehicle"
+                    demand="High demand"
+                    demandTone="good"
+                    stat={fmtNum(mvaDeaths)}
+                    statLabel="MVA fatal deaths · 2019–24"
+                    counties={top5MVA.slice(0, 3).map((r) => r.county).join(" · ")}
+                    audience="Adults 25–44 in high-fatality rural counties — carpool corridors like Winston, DeKalb & Franklin skew blue-collar with heavy road exposure. Impaired driving drives ~20% of fatalities."
+                    media="Radio + digital in rural markets; CTV in Birmingham, Huntsville & Mobile metros. Lean into holiday-weekend and DUI-enforcement windows."
+                  />
+                  <CaseCard
+                    icon={<Truck className="h-4 w-4 text-intelligence-teal" />}
+                    title="Large Truck"
+                    demand="High demand"
+                    demandTone="good"
+                    stat={fmtNum(totalTruckDeaths)}
+                    statLabel="Truck fatal deaths · 2019–24"
+                    counties={top5Truck.slice(0, 3).map((r) => r.county).join(" · ")}
+                    audience="Families of CDL holders and occupants of passenger vehicles struck along commercial corridors — I-65, I-20 & I-59 carry the heaviest freight traffic."
+                    media="Billboard corridors plus digital geo-fencing along the major interstates where collisions concentrate."
+                  />
+                  <CaseCard
+                    icon={<Bike className="h-4 w-4 text-intelligence-teal" />}
+                    title="Motorcycle"
+                    demand="Moderate"
+                    demandTone="mid"
+                    stat={fmtNum(totalMotoDeaths)}
+                    statLabel="Motorcycle deaths · 2019–24"
+                    counties={top5Moto.slice(0, 3).map((r) => r.county).join(" · ")}
+                    audience="Males 35–64 in suburban/exurban counties; Baldwin, Mobile & Jefferson carry the highest rider volume."
+                    media="Seasonal spring/summer flights — social plus streaming audio against motorcycle-enthusiast interests."
+                  />
+                  <CaseCard
+                    icon={<HardHat className="h-4 w-4 text-intelligence-teal" />}
+                    title="Construction"
+                    demand="Moderate"
+                    demandTone="mid"
+                    stat={fmtNum(BLS.constructionFatalities)}
+                    statLabel="On-site fatalities · 2023"
+                    counties="Franklin · DeKalb · Cullman"
+                    audience="Construction-boom counties with rising employment — reach workers' families, union halls and safety-equipment retailers."
+                    media="Spanish-language media in Franklin/DeKalb (high Hispanic workforce); radio across rural construction corridors."
+                  />
+                  <CaseCard
+                    icon={<Anchor className="h-4 w-4 text-intelligence-teal" />}
+                    title="Boating"
+                    demand="Seasonal"
+                    demandTone="info"
+                    stat={fmtNum(totalBoatingAccidents)}
+                    statLabel="Boating accidents · USCG 2019–23"
+                    counties={data.boatingSummary.slice(0, 3).map((r) => r.county).join(" · ")}
+                    audience="Lakefront and Gulf Coast counties — boating-enthusiast and marina-adjacent demographics around Baldwin & Mobile."
+                    media="Seasonal spring/summer; local radio + geo-targeted digital around major waterways and launch points."
+                  />
+                </div>
+              </div>
+
+              {/* insight callout */}
+              <div className="mt-6 rounded-r-lg border-l-[3px] border-red-500 bg-red-50 px-4 py-3.5">
+                <p className="text-[13px] leading-relaxed text-midnight-navy/80">
+                  Alabama is one of only 4 states (plus D.C.) that follows{" "}
+                  <strong>pure contributory negligence</strong> &mdash; any
+                  plaintiff fault bars recovery entirely. This makes case
+                  selection and clear-liability evidence the deciding factor for
+                  advertising ROI. Target cases with unambiguous defendant fault.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="mt-5 rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+              <Database className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
+              <p className="text-sm font-medium text-midnight-navy/60">
+                PI viability data loading...
               </p>
             </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              PI viability data loading...
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ============================================================ */}
-      {/* 10. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* SECTION 3 — COMPETITIVE ANALYSIS                             */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="AL" onDataLoaded={handlePIAdDataLoaded} />
+      <AlabamaCompetitiveAnalysis stateName="Alabama" stateCode="AL" />
 
       {/* ============================================================ */}
-      {/* 11. COMPETITIVE LANDSCAPE                                    */}
+      {/* SECTION 4 — PROPRIETARY SIGNALS                              */}
       {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={alabamaCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="AL" stateName="Alabama" />
-
-      {/* ============================================================ */}
-      {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
-      {/* ============================================================ */}
-      <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Lightbulb className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Cross-Signal Insights
-          </h2>
-        </div>
-        <p className="mb-6 text-sm text-slate-gray">
-          Non-obvious opportunities surfaced by cross-referencing multiple data
-          sources
-        </p>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {/* Insight 1 */}
-          <div className="rounded-lg border border-red-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-red-500" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Greene County: Highest Risk, Lowest Resources
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                Fatality rate: <strong>552.3 per 100K</strong> (2019&ndash;2024, highest in state)
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                Population: <strong>7,424</strong>
-              </p>
-            </div>
-            <div className="rounded-md bg-red-50 border border-red-100 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Greene County&apos;s extreme fatality rate reflects a pattern
-                across Alabama&apos;s Black Belt counties &mdash; high poverty,
-                limited infrastructure, low internet access. Radio and community
-                outreach are the only viable advertising channels here.
-              </p>
-            </div>
+      <div id="signals" className="scroll-mt-20">
+        <SectionHeading n={4} title="Proprietary Signals" />
+        <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
+          <div className="mb-1 flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-intelligence-teal" />
+            <h3 className="font-heading text-xl font-bold text-midnight-navy">
+              Cross-signal insights
+            </h3>
           </div>
+          <p className="mb-6 text-sm text-slate-gray">
+            Non-obvious opportunities surfaced by cross-referencing multiple data
+            sources
+          </p>
 
-          {/* Insight 2 */}
-          <div className="rounded-lg border border-intelligence-teal/30 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <HardHat className="w-4 h-4 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Construction Boom + High Road Fatalities
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                Construction employment up{" "}
-                <strong>{BLS.constructionYoY}% YoY</strong> (
-                {fmtNum(BLS.constructionWorkers)} workers)
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                <strong>{BLS.constructionFatalities}</strong> construction
-                fatalities in 2023
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                High-carpool counties (Winston, DeKalb) overlap with
-                construction workforce
-              </p>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Growing construction activity creates both workplace injury cases
-                and increased road exposure for commuters. Target construction
-                accident AND MVA cases in these corridors simultaneously.
-              </p>
-            </div>
-          </div>
-
-          {/* Insight 3 */}
-          <div className="rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Huntsville-Madison: Tech Growth Creates New PI Market
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                Madison County WFH rate: <strong>13.6%</strong> (among highest)
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                Huntsville MSA population: <strong>517K</strong> (fastest-growing
-                metro)
-              </p>
-            </div>
-            <div className="rounded-md bg-emerald-50 border border-emerald-100 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Rapid population growth + infrastructure lag = rising accident
-                rates. Digital-first advertising strategy viable here given high
-                internet penetration. Early mover advantage for plaintiff firms
-                establishing market presence.
-              </p>
-            </div>
-          </div>
-
-          {/* Insight 4 */}
-          <div className="rounded-lg border border-amber-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <CloudLightning className="w-4 h-4 text-amber-500" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Tornado Alley Overlap with High-Fatality Counties
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                Storm events: <strong>{fmtNum(data.stormCount)}</strong> NOAA
-                records
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                Multiple high-fatality counties also in tornado-prone areas
-              </p>
-            </div>
-            <div className="rounded-md bg-amber-50 border border-amber-100 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Property damage and injury from severe weather can compound with
-                traffic incidents during evacuations and storm response. Consider
-                weather-triggered advertising campaigns in storm season.
-              </p>
-            </div>
-          </div>
-
-          {/* Insight 5 */}
-          <div className="rounded-lg border border-intelligence-teal/30 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Truck className="w-4 h-4 text-intelligence-teal" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Interstate Corridors: Trucking + MVA Convergence
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                I-65 (Birmingham to Mobile), I-20 (Birmingham to Atlanta), I-59
-                (Birmingham to Chattanooga)
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                <strong>{ALDOT.largeTruckFatalities}</strong> truck fatalities
-                (2023), <strong>{fmtNum(BLS.truckingWorkers)}</strong> trucking
-                workers
-              </p>
-            </div>
-            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Alabama&apos;s position as a Southeast logistics hub means heavy
-                commercial truck traffic on interstates. Geo-fence digital ads
-                along I-65/I-20/I-59 corridors targeting truck accident victims.
-                Billboards at major truck stops and weigh stations reach CDL
-                drivers for workplace injury cases.
-              </p>
-            </div>
-          </div>
-
-          {/* Insight 6 */}
-          <div className="rounded-lg border border-red-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-red-500" />
-              <h3 className="text-sm font-bold text-midnight-navy">
-                Impaired Driving: 1 in 5 Alabama Traffic Deaths
-              </h3>
-            </div>
-            <div className="space-y-1.5 mb-3">
-              <p className="text-xs text-midnight-navy/70">
-                <strong>{ALDOT.impairedDrivingDeaths}</strong> impaired driving deaths in 2023 (ALDOT)
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                <strong>20%</strong> of all traffic fatalities
-              </p>
-              <p className="text-xs text-midnight-navy/70">
-                DUI conviction rates vary significantly by county
-              </p>
-            </div>
-            <div className="rounded-md bg-red-50 border border-red-100 p-3">
-              <p className="text-[11px] text-midnight-navy/70">
-                Alabama&apos;s impaired driving fatality share aligns with the national average, but concentrated in rural counties with limited law enforcement resources. Holiday weekends and local event calendars create predictable spikes &mdash; time-triggered digital campaigns (Memorial Day, Labor Day, July 4th, New Year&apos;s) can reach recent DUI accident victims when they&apos;re actively searching for legal representation.
-              </p>
-            </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <SignalCard
+              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+              tone="red"
+              title="Greene County: Highest Risk, Lowest Resources"
+              facts={[
+                "Fatality rate: 552.3 per 100K (2019–2024, highest in state)",
+                "Population: 7,424",
+              ]}
+              body="Greene County's extreme fatality rate reflects a pattern across Alabama's Black Belt counties — high poverty, limited infrastructure, low internet access. Radio and community outreach are the only viable advertising channels here."
+            />
+            <SignalCard
+              icon={<HardHat className="h-4 w-4 text-intelligence-teal" />}
+              tone="teal"
+              title="Construction Boom + High Road Fatalities"
+              facts={[
+                `Construction employment up ${BLS.constructionYoY}% YoY (${fmtNum(BLS.constructionWorkers)} workers)`,
+                `${BLS.constructionFatalities} construction fatalities in 2023`,
+                "High-carpool counties (Winston, DeKalb) overlap with construction workforce",
+              ]}
+              body="Growing construction activity creates both workplace injury cases and increased road exposure for commuters. Target construction accident AND MVA cases in these corridors simultaneously."
+            />
+            <SignalCard
+              icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
+              tone="emerald"
+              title="Huntsville-Madison: Tech Growth Creates New PI Market"
+              facts={[
+                "Madison County WFH rate: 13.6% (among highest)",
+                "Huntsville MSA population: 517K (fastest-growing metro)",
+              ]}
+              body="Rapid population growth + infrastructure lag = rising accident rates. Digital-first advertising strategy viable here given high internet penetration. Early mover advantage for plaintiff firms establishing market presence."
+            />
+            <SignalCard
+              icon={<CloudLightning className="h-4 w-4 text-amber-500" />}
+              tone="amber"
+              title="Tornado Alley Overlap with High-Fatality Counties"
+              facts={[
+                `Storm events: ${fmtNum(data.stormCount)} NOAA records`,
+                "Multiple high-fatality counties also in tornado-prone areas",
+              ]}
+              body="Property damage and injury from severe weather can compound with traffic incidents during evacuations and storm response. Consider weather-triggered advertising campaigns in storm season."
+            />
+            <SignalCard
+              icon={<Truck className="h-4 w-4 text-intelligence-teal" />}
+              tone="teal"
+              title="Interstate Corridors: Trucking + MVA Convergence"
+              facts={[
+                "I-65 (Birmingham to Mobile), I-20 (Birmingham to Atlanta), I-59 (Birmingham to Chattanooga)",
+                `${ALDOT.largeTruckFatalities} truck fatalities (2023), ${fmtNum(BLS.truckingWorkers)} trucking workers`,
+              ]}
+              body="Alabama's position as a Southeast logistics hub means heavy commercial truck traffic on interstates. Geo-fence digital ads along I-65/I-20/I-59 corridors targeting truck accident victims. Billboards at major truck stops reach CDL drivers for workplace injury cases."
+            />
+            <SignalCard
+              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+              tone="red"
+              title="Impaired Driving: 1 in 5 Alabama Traffic Deaths"
+              facts={[
+                `${ALDOT.impairedDrivingDeaths} impaired driving deaths in 2023 (ALDOT)`,
+                "20% of all traffic fatalities",
+                "DUI conviction rates vary significantly by county",
+              ]}
+              body="Alabama's impaired-driving fatality share aligns with the national average but concentrates in rural counties with limited enforcement. Holiday weekends create predictable spikes — time-triggered digital campaigns (Memorial Day, Labor Day, July 4th, New Year's) reach recent DUI accident victims while they're searching for representation."
+            />
           </div>
         </div>
       </div>
@@ -1135,56 +815,296 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
         pageContext={{
           pageName: "Alabama State Intelligence",
           pageDescription:
-            "State-level intelligence for plaintiff firm advertising and case acquisition in Alabama — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, cancer incidence, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
-          dataSummary: `State: Alabama. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'contributory')} (plaintiff barred if any fault). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 67. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-65, I-20, I-10, US-280.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+            "State-level intelligence for plaintiff firm advertising and case acquisition in Alabama — FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, and PI-firm competition by market across MVA, trucking, motorcycle, construction, and boating.",
+          dataSummary: `State: Alabama. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? "contributory")} (plaintiff barred if any fault). PI Viability: ${composite || "N/A"} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: ${data.judicialProfiles.length || 67}. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map((r) => r.county).join(", ")}. Judicial profile mix: ${judConservative} Conservative, ${judLiberal} Liberal, ${judModerate} Moderate. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-65, I-20, I-10, US-280.`,
         }}
       />
 
       {/* ============================================================ */}
-      {/* 12. SOURCES & METHODOLOGY                                    */}
+      {/* SECTION 5 — SOURCES & METHODOLOGY                            */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Sources &amp; Methodology
-          </h2>
+      <div id="sources" className="scroll-mt-20">
+        <SectionHeading n={5} title="Sources & Methodology" />
+        <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              "FARS (NHTSA) — Fatal crash data 2019–2024",
+              "ALDOT Crash Facts 2023",
+              "ACS 5-Year Estimates 2023 (Census Bureau)",
+              "BLS QCEW (Quarterly Census of Employment and Wages) 2023",
+              "BLS CFOI (Census of Fatal Occupational Injuries) 2021–2024",
+              "NOAA Storm Events Database",
+              "USCG Boating Accident Report Database",
+              "Google / Meta / YouTube ad observations (LMI pipelines)",
+              "Court records / judicial profile data",
+            ].map((source) => (
+              <div
+                key={source}
+                className="flex items-start gap-2 rounded-md bg-cloud/60 px-3 py-2"
+              >
+                <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intelligence-teal" />
+                <p className="text-xs text-midnight-navy/80">{source}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {[
-            "FARS (NHTSA) \u2014 Fatal crash data 2019\u20132024",
-            "ALDOT Crash Facts 2023",
-            "ACS 5-Year Estimates 2023 (Census Bureau)",
-            "BLS QCEW (Quarterly Census of Employment and Wages) 2023",
-            "BLS CFOI (Census of Fatal Occupational Injuries) 2021\u20132024",
-            "NOAA Storm Events Database",
-            "USCG Boating Accident Report Database",
-            "CDC/USCS Cancer Incidence Data",
-            "Court records / judicial profile data",
-          ].map((source) => (
-            <div
-              key={source}
-              className="flex items-start gap-2 rounded-md bg-cloud/60 px-3 py-2"
-            >
-              <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0 text-intelligence-teal" />
-              <p className="text-xs text-midnight-navy/80">{source}</p>
-            </div>
-          ))}
+
+        <div className="mt-4 rounded-lg border border-cloud bg-cloud/40 p-5">
+          <p className="text-xs leading-relaxed text-slate-gray">
+            This page is refreshed periodically. Content reflects research and
+            publicly available data as of the date shown. This page does not
+            constitute legal advice.
+          </p>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* -- Footer / Disclaimer --------------------------------------- */}
-      <div className="rounded-lg border border-cloud bg-cloud/40 p-5">
-        <p className="text-xs leading-relaxed text-slate-gray">
-          This page is refreshed periodically. Content reflects research and
-          publicly available data as of the date shown. This page does not
-          constitute legal advice.
-        </p>
-        <p className="mt-3 text-[11px] text-slate-gray/80">
-          Data sources: FARS (NHTSA), ALDOT Crash Facts 2023, ACS 5-Year
-          Estimates, BLS QCEW/CFOI, NOAA Storm Events, USCG Boating Accidents,
-          Judicial Profile Data.
-        </p>
+/* ------------------------------------------------------------------ */
+/*  Presentational subcomponents                                       */
+/* ------------------------------------------------------------------ */
+
+function SectionHeading({ n, title }: { n: number; title: string }) {
+  return (
+    <div className="mb-3.5 flex items-center gap-3">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
+        {n}
+      </span>
+      <h2 className="font-heading text-2xl font-bold text-midnight-navy">{title}</h2>
+    </div>
+  );
+}
+
+const CHIP_TONES: Record<string, string> = {
+  good: "bg-emerald-50 text-emerald-700",
+  mid: "bg-amber-50 text-amber-600",
+  bad: "bg-red-50 text-red-600",
+  info: "bg-blue-50 text-blue-700",
+};
+
+function VerdictCard({
+  top,
+  label,
+  value,
+  valueSuffix,
+  chip,
+  chipTone,
+  note,
+}: {
+  top: string;
+  label: string;
+  value: string;
+  valueSuffix?: string;
+  chip: string;
+  chipTone: "good" | "mid" | "bad" | "info";
+  note: string;
+}) {
+  return (
+    <div
+      className="rounded-xl border border-cloud bg-white px-4.5 py-4 shadow-sm"
+      style={{ borderTop: `3px solid ${top}` }}
+    >
+      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-gray/80">
+        {label}
+      </div>
+      <div className="mt-2 flex items-baseline gap-1.5">
+        <span
+          className={`font-bold text-midnight-navy ${value.length > 9 ? "text-[22px]" : "font-mono text-[32px]"}`}
+        >
+          {value}
+        </span>
+        {valueSuffix && (
+          <span className="font-mono text-[13px] text-slate-gray">{valueSuffix}</span>
+        )}
+      </div>
+      <span
+        className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${CHIP_TONES[chipTone]}`}
+      >
+        {chip}
+      </span>
+      <p className="mt-2.5 text-[11.5px] leading-snug text-slate-gray">{note}</p>
+    </div>
+  );
+}
+
+function SnapshotCard({
+  label,
+  value,
+  sub,
+  valueText,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  valueText?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-cloud bg-white p-5 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-gray/80">
+        {label}
+      </div>
+      <div
+        className={`mt-2 font-bold text-midnight-navy ${valueText ? "text-2xl" : "font-mono text-[28px]"}`}
+      >
+        {value}
+      </div>
+      <div className="mt-1 text-xs text-slate-gray/80">{sub}</div>
+    </div>
+  );
+}
+
+function ScoreChip({ band }: { band: { label: string; tone: "good" | "mid" | "bad" } }) {
+  return (
+    <span
+      className={`mt-3 inline-block self-start rounded-full px-3 py-1 text-xs font-bold ${CHIP_TONES[band.tone]}`}
+    >
+      {band.label}
+    </span>
+  );
+}
+
+function Fact({
+  label,
+  value,
+  note,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="bg-white p-4">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
+        {label}
+      </div>
+      <div className={`mt-1.5 text-[17px] font-bold ${valueClass ?? "text-midnight-navy"}`}>
+        {value}
+      </div>
+      <div className="mt-1 text-[11.5px] leading-snug text-slate-gray/80">{note}</div>
+    </div>
+  );
+}
+
+function JudRow({ color, label, count }: { color: string; label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="h-3 w-3 flex-none rounded"
+        style={{ background: color }}
+      />
+      <span className="text-[13px] font-medium text-midnight-navy">{label}</span>
+      <span className="ml-auto font-mono text-[12.5px] text-slate-gray">
+        {count} counties
+      </span>
+    </div>
+  );
+}
+
+const DEMAND_TONES: Record<string, string> = {
+  good: "bg-emerald-50 text-emerald-700",
+  mid: "bg-amber-50 text-amber-600",
+  info: "bg-blue-50 text-blue-700",
+};
+
+function CaseCard({
+  icon,
+  title,
+  demand,
+  demandTone,
+  stat,
+  statLabel,
+  counties,
+  audience,
+  media,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  demand: string;
+  demandTone: "good" | "mid" | "info";
+  stat: string;
+  statLabel: string;
+  counties: string;
+  audience: string;
+  media: string;
+}) {
+  return (
+    <div className="flex flex-col rounded-xl border border-cloud border-t-[3px] border-t-intelligence-teal bg-white p-4">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex items-center gap-1.5">
+          {icon}
+          <span className="text-[15px] font-bold text-midnight-navy">{title}</span>
+        </div>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-bold ${DEMAND_TONES[demandTone]}`}
+        >
+          {demand}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-baseline gap-2">
+        <span className="font-mono text-2xl font-semibold text-midnight-navy">{stat}</span>
+        <span className="text-[11.5px] text-slate-gray">{statLabel}</span>
+      </div>
+      {counties && (
+        <div className="mt-2 flex items-center gap-1.5 text-[11.5px] text-slate-gray">
+          <MapPin className="h-3 w-3 flex-none text-slate-gray/60" />
+          {counties}
+        </div>
+      )}
+      <div className="mt-3 rounded-lg border border-intelligence-teal/20 bg-intelligence-teal/5 p-3">
+        <div className="text-[9.5px] font-bold uppercase tracking-wider text-intelligence-teal">
+          Audience
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-midnight-navy/75">{audience}</p>
+      </div>
+      <div className="mt-2 rounded-lg border border-cloud bg-cloud/40 p-3">
+        <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-gray">
+          Media
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-midnight-navy/75">{media}</p>
+      </div>
+    </div>
+  );
+}
+
+const SIGNAL_TONES: Record<string, { border: string; chip: string }> = {
+  red: { border: "border-red-200", chip: "bg-red-50 border-red-100" },
+  teal: { border: "border-intelligence-teal/30", chip: "bg-intelligence-teal/5 border-intelligence-teal/20" },
+  emerald: { border: "border-emerald-200", chip: "bg-emerald-50 border-emerald-100" },
+  amber: { border: "border-amber-200", chip: "bg-amber-50 border-amber-100" },
+};
+
+function SignalCard({
+  icon,
+  tone,
+  title,
+  facts,
+  body,
+}: {
+  icon: React.ReactNode;
+  tone: "red" | "teal" | "emerald" | "amber";
+  title: string;
+  facts: string[];
+  body: string;
+}) {
+  const t = SIGNAL_TONES[tone];
+  return (
+    <div className={`rounded-xl border bg-white p-5 shadow-sm ${t.border}`}>
+      <div className="mb-3 flex items-center gap-2">
+        {icon}
+        <h4 className="text-sm font-bold text-midnight-navy">{title}</h4>
+      </div>
+      <div className="mb-3 space-y-1.5">
+        {facts.map((f, i) => (
+          <p key={i} className="text-xs text-midnight-navy/70">
+            {f}
+          </p>
+        ))}
+      </div>
+      <div className={`rounded-md border p-3 ${t.chip}`}>
+        <p className="text-[11px] leading-relaxed text-midnight-navy/70">{body}</p>
       </div>
     </div>
   );
