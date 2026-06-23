@@ -45,6 +45,7 @@ interface MetaCreative {
   is_active: boolean | null;
   start_date: string | null;
   end_date: string | null;
+  creative_image_url: string | null;
   snapshot: any;
 }
 
@@ -160,7 +161,7 @@ export function AdCreativeModal({
           const { data } = await sb
             .from("meta_ad_creatives")
             .select(
-              "ad_archive_id, page_name, case_type, is_active, start_date, end_date, snapshot",
+              "ad_archive_id, page_name, case_type, is_active, start_date, end_date, creative_image_url, snapshot",
             )
             .eq("page_id", target!.pageId)
             .order("updated_at", { ascending: false })
@@ -393,6 +394,7 @@ function MetaCreatives({
         const video = Array.isArray(snap?.videos) ? snap.videos[0] : null;
         const image = Array.isArray(snap?.images) ? snap.images[0] : null;
         const poster: string | undefined =
+          row.creative_image_url ?? // durable, captured to Supabase Storage
           video?.video_preview_image_url ??
           image?.original_image_url ??
           image?.resized_image_url;
