@@ -1,6 +1,6 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-06-22 (Competitive Analysis: Paid Search/SEO/YouTube live + Meta ingest (5a); TikTok removed; Meta tab (5b) + Traditional Media remain)
+Last updated: 2026-06-22 (Competitive Analysis: Paid Search/SEO/YouTube/Meta all live (5b); TikTok removed; Traditional Media is the last remaining channel)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
@@ -9,7 +9,8 @@ Keep it short and current — update weekly.
 
 ## 0. Recently shipped
 
-- **2026-06-22 — Competitive Analysis Phase 5a: Meta ingest + TikTok removed.** New `meta_ad_creatives` table + `meta_ads_daily` pipeline (SearchApi Meta Ad Library, 6 PI case-type keywords, US, daily 14:00 UTC). National + case-type-keyed (SEO model); page-led identity. Existing legacy meta data was unusable (99.9% NY, 40 mass-tort/lead-gen advertisers) so a fresh ingest. TikTok tab removed (no US ad library); Meta shown as "Soon" placeholder. **Phase 5b (next): the live Meta panel** (`get_meta_competitors` RPC + case-type dropdown + firm ranking + "view ads" link).
+- **2026-06-22 — Competitive Analysis Phase 5b: live Meta tab.** `get_meta_competitors` RPC (migration `20260622050000`) — page-level, national, case-type-filterable ranking of `meta_ad_creatives`; Meta panel in `competitive-analysis.tsx` with a case-type dropdown (defaults to "All"), active-ads ranking, case-type chips, and a per-row "view ads" link to each page's Meta Ad Library. RPC filters short-drama-app + news-outlet keyword noise (validated 268→261 pages, keeps "Postman Law"). `database.types.ts` regenerated. **Completes the channel program except Traditional Media** (TikTok permanently out). Browser-verify on prod once the migration applies on merge.
+- **2026-06-22 — Competitive Analysis Phase 5a: Meta ingest + TikTok removed.** New `meta_ad_creatives` table + `meta_ads_daily` pipeline (SearchApi Meta Ad Library, 6 PI case-type keywords, US, daily 14:00 UTC). National + case-type-keyed (SEO model); page-led identity. Existing legacy meta data was unusable (99.9% NY, 40 mass-tort/lead-gen advertisers) so a fresh ingest. TikTok tab removed (no US ad library); Meta shown as "Soon" placeholder.
 - **2026-06-22 — Competitive Analysis Phase 4b: YouTube tab live.** `get_youtube_competitors` RPC (firm-level, national, excludes google.com/youtube.com junk) + YouTube panel in `competitive-analysis.tsx`: ranked firms by active video creatives + longevity, no filter control, per-row "view ads" link to each firm's Google Ads Transparency page. Completes the channel program except Traditional Media (TikTok permanently out).
 - **2026-06-21 — Competitive Analysis Phase 4a: YouTube video-ad ingest (data layer).** New `youtube_ad_creatives` table + `youtube_ads_daily.py` pipeline (daily 13:00 UTC) pulling PI-firm video creatives from Google Ads Transparency via SearchApi (`ad_format=video`, US, 490 PI-firm domains from `pi_search_observations`). No UI this phase. **Phase 4b (next): the YouTube tab** — `get_youtube_competitors` RPC + wire `competitive-analysis.tsx`, firm-level ranking, built once data accrues. (TikTok stays permanently disabled; Traditional Media still pending.)
 - **2026-06-21 — Competitive Analysis Phase 2: SEO tab live.** `get_seo_competitors_by_tort` RPC (organic-only national, `serp_results_normalized`), motorcycle + boating added to the SERP pipeline, SEO tab in `competitive-analysis.tsx` with case-type dropdown (no DMA — SEO is national) + ranked domains + directory tagging. Follows Phase 1 (PR #428, Paid Search by DMA). Next channels: YouTube (Phase 4, scope TBD); Traditional Media (pending); TikTok permanently out (no US ad library).
@@ -83,8 +84,8 @@ Short-term definition of done:
 **Goal:** On each v2 State Intelligence page, show which firms a PI firm competes against, per advertising channel.
 
 Status:
-- **Shipped:** Phase 1 Paid Search by DMA (#428), Phase 2 SEO by case type (#429, national), Phase 4a/4b YouTube (ingest #430 + firm-level tab #432), Phase 5a Meta ingest (TikTok tab removed; Meta "Soon" placeholder).
-- **Next:** Phase 5b — the live Meta tab (`get_meta_competitors` RPC + case-type panel + "view ads" links), once `meta_ad_creatives` accrues from the daily pipeline. Then Traditional Media (last remaining channel; would lean on `broadcast_*`, not yet scoped).
+- **Shipped:** Phase 1 Paid Search by DMA (#428), Phase 2 SEO by case type (#429, national), Phase 4a/4b YouTube (ingest #430 + firm-level tab #432), Phase 5a Meta ingest (#434), Phase 5b live Meta tab (`get_meta_competitors` RPC + case-type panel + "view ads" links).
+- **Next:** Traditional Media — the last remaining channel; would lean on `broadcast_*`, not yet scoped.
 - **Out:** TikTok permanently (no US ad library).
 
 ---

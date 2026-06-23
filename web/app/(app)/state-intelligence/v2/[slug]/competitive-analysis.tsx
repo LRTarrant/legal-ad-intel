@@ -14,9 +14,9 @@ import { getSupabase } from "@/lib/supabase";
 /*  YouTube (Phase 4b): get_youtube_competitors over Google Ads       */
 /*  Transparency video creatives — firm-level, national (no DMA, no   */
 /*  case-type tag), with a link to each firm's Transparency page.     */
-/*  Meta (Phase 5b) replaces the prior social tab — the prior network  */
-/*  had no US ad library; Meta's Ad Library is national/US. Shown as  */
-/*  a "Soon" placeholder until 5b wires the panel.                    */
+/*  Meta (Phase 5b): get_meta_competitors over Meta Ad Library        */
+/*  creatives — page-level, national, filterable by PI case type      */
+/*  (or "all"), with a link to each page's Ad Library.                */
 /* ------------------------------------------------------------------ */
 
 type ChannelKey = "paid_search" | "seo" | "youtube" | "meta" | "traditional";
@@ -32,7 +32,7 @@ const CHANNEL_TABS: ChannelTab[] = [
   { key: "paid_search", label: "Paid Search" },
   { key: "seo", label: "SEO" },
   { key: "youtube", label: "YouTube" },
-  { key: "meta", label: "Meta", disabled: true, badge: "Soon" },
+  { key: "meta", label: "Meta" },
   { key: "traditional", label: "Traditional Media", disabled: true, badge: "Soon" },
 ];
 
@@ -44,6 +44,13 @@ const SEO_CASE_TYPES: { slug: string; label: string }[] = [
   { slug: "boating", label: "Boating" },
   { slug: "nursing_home", label: "Nursing Home" },
   { slug: "workers_comp", label: "Workers' Comp" },
+];
+
+// Meta Ad Library is keyed by the same 6 PI case-type keywords as the pipeline.
+// "all" is the default — a single Meta page often runs across several case types.
+const META_CASE_TYPES: { slug: string; label: string }[] = [
+  { slug: "all", label: "All case types" },
+  ...SEO_CASE_TYPES,
 ];
 
 // Known directory / aggregator domains — tagged so firm rows read at a glance.
@@ -101,6 +108,15 @@ interface YouTubeCompetitor {
   last_shown: string | null;
 }
 
+interface MetaCompetitor {
+  page_id: string;
+  page_name: string | null;
+  active_ads: number;
+  case_types_active: string[] | null;
+  first_seen: string | null;
+  last_seen: string | null;
+}
+
 const CASE_TYPE_LABELS: Record<string, string> = {
   general_pi: "General PI",
   motor_vehicle: "Motor Vehicle",
@@ -143,6 +159,12 @@ export function CompetitiveAnalysis({
   const [ytCompetitors, setYtCompetitors] = useState<YouTubeCompetitor[]>([]);
   const [ytLoading, setYtLoading] = useState(false);
   const [ytError, setYtError] = useState<string | null>(null);
+
+  // Meta state (Phase 5b)
+  const [selectedMetaCaseType, setSelectedMetaCaseType] = useState<string>("all");
+  const [metaCompetitors, setMetaCompetitors] = useState<MetaCompetitor[]>([]);
+  const [metaLoading, setMetaLoading] = useState(false);
+  const [metaError, setMetaError] = useState<string | null>(null);
 
   // DMA dropdown — Nielsen list for this state (full list; some have no data).
   useEffect(() => {
@@ -240,6 +262,33 @@ export function CompetitiveAnalysis({
     if (activeChannel === "youtube") void loadYouTube();
   }, [activeChannel, loadYouTube]);
 
+  // Meta competitor set — national, page-level, filtered by case type (or all).
+  const loadMeta = useCallback(async () => {
+    setMetaLoading(true);
+    setMetaError(null);
+    const sb = getSupabase() as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: MetaCompetitor[] | null; error: { message: string } | null }>;
+    };
+    const { data, error: rpcError } = await sb.rpc("get_meta_competitors", {
+      p_case_type: selectedMetaCaseType === "all" ? null : selectedMetaCaseType,
+      p_limit: 50,
+    });
+    if (rpcError) {
+      setMetaError("Couldn't load Meta data.");
+      setMetaCompetitors([]);
+    } else {
+      setMetaCompetitors(data ?? []);
+    }
+    setMetaLoading(false);
+  }, [selectedMetaCaseType]);
+
+  useEffect(() => {
+    if (activeChannel === "meta") void loadMeta();
+  }, [activeChannel, loadMeta]);
+
   const selectedDmaLabel =
     selectedDma === "all"
       ? "all markets"
@@ -249,12 +298,20 @@ export function CompetitiveAnalysis({
   const selectedCaseLabel =
     SEO_CASE_TYPES.find((c) => c.slug === selectedCaseType)?.label ?? "this case type";
 
+  const selectedMetaCaseLabel =
+    selectedMetaCaseType === "all"
+      ? "all case types"
+      : (META_CASE_TYPES.find((c) => c.slug === selectedMetaCaseType)?.label ??
+        "this case type");
+
   const subtitle =
     activeChannel === "seo"
       ? "Organic-search competition for PI case types (measured nationally)"
       : activeChannel === "youtube"
         ? "YouTube / video ad presence by PI firm (measured nationally)"
-        : `PI-firm advertising competition in ${stateName}, filtered by DMA market`;
+        : activeChannel === "meta"
+          ? "Meta (Facebook / Instagram) ad presence by PI firm (measured nationally)"
+          : `PI-firm advertising competition in ${stateName}, filtered by DMA market`;
 
   return (
     <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
@@ -298,6 +355,33 @@ export function CompetitiveAnalysis({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-gray/70">
             YouTube / video ad presence is measured nationally, not by DMA.
+          </span>
+        </div>
+      ) : activeChannel === "meta" ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <label
+            htmlFor="meta-case-type"
+            className="text-xs font-semibold uppercase tracking-wider text-slate-gray"
+          >
+            Case Type
+          </label>
+          <div className="relative">
+            <select
+              id="meta-case-type"
+              value={selectedMetaCaseType}
+              onChange={(e) => setSelectedMetaCaseType(e.target.value)}
+              className="appearance-none rounded-md border border-cloud bg-white py-1.5 pl-3 pr-8 text-sm text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal"
+            >
+              {META_CASE_TYPES.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-gray" />
+          </div>
+          <span className="text-xs text-slate-gray/70">
+            Meta Ad Library is national / US — not broken out by DMA.
           </span>
         </div>
       ) : (
@@ -376,6 +460,13 @@ export function CompetitiveAnalysis({
           loading={ytLoading}
           error={ytError}
           competitors={ytCompetitors}
+        />
+      ) : activeChannel === "meta" ? (
+        <MetaPanel
+          loading={metaLoading}
+          error={metaError}
+          competitors={metaCompetitors}
+          caseLabel={selectedMetaCaseLabel}
         />
       ) : (
         <ComingSoon
@@ -714,6 +805,122 @@ function YouTubePanel({
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MetaPanel({
+  loading,
+  error,
+  competitors,
+  caseLabel: caseLabelText,
+}: {
+  loading: boolean;
+  error: string | null;
+  competitors: MetaCompetitor[];
+  caseLabel: string;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-intelligence-teal/60" />
+        <p className="text-sm text-slate-gray">Loading Meta advertisers…</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">{error}</p>
+      </div>
+    );
+  }
+  if (competitors.length === 0) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/60">
+          No Meta ad data for {caseLabelText} yet.
+        </p>
+        <p className="mt-1 text-xs text-slate-gray">
+          The daily pipeline populates this from the Meta Ad Library; data fills
+          in over time.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <p className="mb-3 text-xs text-slate-gray">
+        Plaintiff firms running Meta (Facebook / Instagram) ads for {caseLabelText}{" "}
+        (Meta Ad Library, national), ranked by active ads. Firms are identified by
+        their Facebook page.
+      </p>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-cloud">
+            <th className="py-2 pr-2 text-xs font-semibold uppercase tracking-wider text-slate-gray w-8">
+              #
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Firm (page)
+            </th>
+            <th className="py-2 px-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Active ads
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray">
+              Case types
+            </th>
+            <th className="py-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-gray" />
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((c, i) => (
+            <tr key={c.page_id} className="border-b border-cloud/60">
+              <td className="py-2 pr-2 text-slate-gray">{i + 1}</td>
+              <td className="py-2 px-3">
+                <a
+                  href={`https://www.facebook.com/${c.page_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-midnight-navy hover:text-intelligence-teal"
+                >
+                  {c.page_name ?? c.page_id}
+                  <ExternalLink className="w-3 h-3 text-slate-gray/50" />
+                </a>
+              </td>
+              <td className="py-2 px-3 text-right font-mono text-midnight-navy">
+                {c.active_ads.toLocaleString()}
+              </td>
+              <td className="py-2 px-3">
+                <div className="flex flex-wrap gap-1">
+                  {(c.case_types_active ?? []).map((ct) => (
+                    <span
+                      key={ct}
+                      className="rounded-full bg-intelligence-teal/10 px-2 py-0.5 text-[10px] font-medium text-intelligence-teal"
+                    >
+                      {caseLabel(ct)}
+                    </span>
+                  ))}
+                </div>
+              </td>
+              <td className="py-2 px-3">
+                <a
+                  href={`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=US&view_all_page_id=${c.page_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-intelligence-teal hover:underline"
+                >
+                  view ads
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </td>
             </tr>
           ))}
