@@ -3911,6 +3911,63 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_ad_creatives: {
+        Row: {
+          ad_archive_id: string
+          case_type: string
+          collation_count: number | null
+          country: string
+          end_date: string | null
+          first_ingested_at: string
+          id: string
+          is_active: boolean | null
+          keyword: string | null
+          page_id: string | null
+          page_name: string | null
+          publisher_platforms: string[] | null
+          raw_json: Json | null
+          snapshot: Json | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_archive_id: string
+          case_type: string
+          collation_count?: number | null
+          country?: string
+          end_date?: string | null
+          first_ingested_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          publisher_platforms?: string[] | null
+          raw_json?: Json | null
+          snapshot?: Json | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_archive_id?: string
+          case_type?: string
+          collation_count?: number | null
+          country?: string
+          end_date?: string | null
+          first_ingested_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          publisher_platforms?: string[] | null
+          raw_json?: Json | null
+          snapshot?: Json | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       motor_vehicle_pois: {
         Row: {
           category: string
