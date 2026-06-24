@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import Link from "next/link";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
@@ -33,14 +33,7 @@ import {
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { californiaCompetitiveData } from "@/lib/data/competitive-landscape/california";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
@@ -242,9 +235,6 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
-
   useEffect(() => {
     trackStateViewed({ state_code: "CA", state_name: "California" });
   }, []);
@@ -991,19 +981,9 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 10. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* COMPETITIVE ANALYSIS                                         */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="CA" onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 11. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={californiaCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="CA" stateName="California" />
+      <CompetitiveAnalysis stateName="California" stateCode="CA" numbered={false} />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1214,7 +1194,7 @@ export function CaliforniaClient({ data }: { data: CaliforniaPageData }) {
           pageName: "California State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in California — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, cancer incidence, and market opportunity signals across MVA, trucking, motorcycle, construction, and pedestrian/bicycle cases.",
-          dataSummary: `State: California. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite (highest tracked). Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 58. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => `${r.county} (${r.total_deaths.toLocaleString()})`).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Drunk-driver crashes: ${totalDrunkDriverCrashes.toLocaleString()}. Pedestrian fatalities (2023): ${OTS.pedestrianFatalities.toLocaleString()}. Bicycle fatalities (2023): ${OTS.bicycleFatalities.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-5, I-10, I-15, US-101, CA-99.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: California. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite (highest tracked). Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 58. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => `${r.county} (${r.total_deaths.toLocaleString()})`).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Drunk-driver crashes: ${totalDrunkDriverCrashes.toLocaleString()}. Pedestrian fatalities (2023): ${OTS.pedestrianFatalities.toLocaleString()}. Bicycle fatalities (2023): ${OTS.bicycleFatalities.toLocaleString()}. Construction workers: ${BLS.constructionWorkers.toLocaleString()}. Key corridors: I-5, I-10, I-15, US-101, CA-99.`,
         }}
       />
 

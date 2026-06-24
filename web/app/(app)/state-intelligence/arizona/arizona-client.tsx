@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import Link from "next/link";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
@@ -31,14 +31,7 @@ import {
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { arizonaCompetitiveData } from "@/lib/data/competitive-landscape/arizona";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
@@ -228,9 +221,6 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function ArizonaClient({ data }: { data: ArizonaPageData }) {
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
-
   useEffect(() => {
     trackStateViewed({ state_code: "AZ", state_name: "Arizona" });
   }, []);
@@ -957,19 +947,9 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 10. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* COMPETITIVE ANALYSIS                                         */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="AZ" onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 11. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={arizonaCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="AZ" stateName="Arizona" />
+      <CompetitiveAnalysis stateName="Arizona" stateCode="AZ" numbered={false} />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1161,7 +1141,7 @@ export function ArizonaClient({ data }: { data: ArizonaPageData }) {
           pageName: "Arizona State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in Arizona — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, cancer incidence, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
-          dataSummary: `State: Arizona. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')} (plaintiff can recover even at 99% fault). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 15. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction). Key corridors: I-10, I-17, I-40. Hispanic population: 31.1%.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: Arizona. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'pure_comparative')} (plaintiff can recover even at 99% fault). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 15. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction). Key corridors: I-10, I-17, I-40. Hispanic population: 31.1%.`,
         }}
       />
 

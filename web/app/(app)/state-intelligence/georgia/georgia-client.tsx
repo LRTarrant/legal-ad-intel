@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
@@ -37,14 +37,7 @@ import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import type { FARSYearlyTrendRow, FARSTopCountyRow } from "./page";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { georgiaCompetitiveData } from "@/lib/data/competitive-landscape/georgia";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 import { gaInjuryData } from "@/lib/data/ga-injury-stats";
 import type { InjuryRow } from "@/components/state-intelligence/StateInjuryTable";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
@@ -230,8 +223,6 @@ function fmtCur(n: number | null | undefined): string {
 
 export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
   const [crashTab, setCrashTab] = useState(0);
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
 
   useEffect(() => {
     trackStateViewed({ state_code: "GA", state_name: "Georgia" });
@@ -1127,19 +1118,9 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 11. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* 11. COMPETITIVE ANALYSIS                                     */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="GA" onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 12. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={georgiaCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 12b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="GA" stateName="Georgia" />
+      <CompetitiveAnalysis stateName="Georgia" stateCode="GA" numbered={false} />
 
       {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1268,7 +1249,7 @@ export function GeorgiaClient({ data }: { data: GeorgiaPageData }) {
           pageName: "Georgia State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in Georgia — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, GDOT crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
-          dataSummary: `State: Georgia. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_50')} (50% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 159. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Key corridors: I-75, I-85, I-20, I-16, I-95.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: Georgia. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_50')} (50% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 159. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Key corridors: I-75, I-85, I-20, I-16, I-95.`,
         }}
       />
 

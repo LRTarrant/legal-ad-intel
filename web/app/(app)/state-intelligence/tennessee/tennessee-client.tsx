@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import Link from "next/link";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
@@ -31,14 +31,7 @@ import {
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { tennesseeCompetitiveData } from "@/lib/data/competitive-landscape/tennessee";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
@@ -252,9 +245,6 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function TennesseeClient({ data }: { data: TennesseePageData }) {
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
-
   useEffect(() => {
     trackStateViewed({ state_code: "TN", state_name: "Tennessee" });
   }, []);
@@ -985,19 +975,9 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 11. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* 11. COMPETITIVE ANALYSIS                                     */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="TN" onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 12. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={tennesseeCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 12b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="TN" stateName="Tennessee" />
+      <CompetitiveAnalysis stateName="Tennessee" stateCode="TN" numbered={false} />
 
       {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1110,7 +1090,7 @@ export function TennesseeClient({ data }: { data: TennesseePageData }) {
           pageName: "Tennessee State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in Tennessee — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, TN Safety crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.",
-          dataSummary: `State: Tennessee. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')} (49% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 95. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction). Key corridors: I-40, I-65, I-24, I-75.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: Tennessee. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_49')} (49% bar). PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 95. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Workplace fatalities: ${BLS.totalWorkplaceFatalities} (${BLS.constructionFatalities} construction). Key corridors: I-40, I-65, I-24, I-75.`,
         }}
       />
 
