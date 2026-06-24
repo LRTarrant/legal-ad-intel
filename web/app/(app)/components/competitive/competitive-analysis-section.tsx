@@ -184,10 +184,18 @@ export function CompetitiveAnalysis({
   const loadSeo = useCallback(async () => {
     setSeoLoading(true);
     setSeoError(null);
-    const { data, error } = await rpcClient().rpc("get_seo_competitors_by_tort", {
-      p_tort_slug: seoCaseType,
-      p_days: 90,
-    });
+    // "All markets" = national organic; a specific DMA = per-metro organic.
+    const { data, error } =
+      selectedDma === "all"
+        ? await rpcClient().rpc("get_seo_competitors_by_tort", {
+            p_tort_slug: seoCaseType,
+            p_days: 90,
+          })
+        : await rpcClient().rpc("get_seo_competitors_by_dma", {
+            p_tort_slug: seoCaseType,
+            p_dma_code: selectedDma,
+            p_days: 90,
+          });
     if (error) {
       setSeoError("Couldn't load SEO data.");
       setSeo([]);
@@ -195,7 +203,7 @@ export function CompetitiveAnalysis({
       setSeo((data as SeoCompetitor[] | null) ?? []);
     }
     setSeoLoading(false);
-  }, [seoCaseType]);
+  }, [seoCaseType, selectedDma]);
 
   useEffect(() => {
     if (activeChannel === "seo") void loadSeo();
@@ -261,6 +269,8 @@ export function CompetitiveAnalysis({
   const activeStatus =
     CHANNEL_TABS.find((t) => t.key === activeChannel)?.status ?? "live";
   const isNational = activeChannel !== "paid_search";
+  // Paid Search + SEO honor the DMA filter; Meta/YouTube are national-only.
+  const dmaCapable = activeChannel === "paid_search" || activeChannel === "seo";
 
   return (
     <div id="competition" className="scroll-mt-20 space-y-4">
@@ -287,10 +297,10 @@ export function CompetitiveAnalysis({
           <span className="font-semibold text-midnight-navy">
             Who you&apos;re competing against, by market.
           </span>{" "}
-          Paid Search is broken out by DMA — switch the market to see who buys
-          ads in each metro. SEO, Meta, and YouTube are measured nationally, so
-          they&apos;re scoped to the {stateName} firm roster (the firms already
-          advertising in-state). Click{" "}
+          Paid Search and SEO are broken out by DMA — switch the market to see
+          who competes in each metro. Meta and YouTube are measured nationally,
+          so they&apos;re scoped to the {stateName} firm roster (the firms
+          already advertising in-state). Click{" "}
           <span className="font-medium text-midnight-navy">View ads</span> on any
           row to see that firm&apos;s actual creative.
         </p>
@@ -314,7 +324,7 @@ export function CompetitiveAnalysis({
                   id="al-dma"
                   value={selectedDma}
                   onChange={(e) => setSelectedDma(e.target.value)}
-                  disabled={isNational}
+                  disabled={!dmaCapable}
                   className="appearance-none rounded-lg border border-cloud bg-white py-2 pl-9 pr-9 text-sm font-semibold text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal disabled:cursor-not-allowed disabled:bg-cloud/40 disabled:text-slate-gray/60"
                 >
                   <option value="all">All {stateName} markets</option>
