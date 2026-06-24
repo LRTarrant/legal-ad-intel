@@ -312,6 +312,7 @@ All schedules are UTC.
 | `faers-weekly.yml` | Mon 03:00 | `pipelines.faers_weekly` (openFDA `/drug/event.json`, `serious:1` only) |
 | `youtube-ads-daily.yml` | daily 13:00 | `pipelines.youtube_ads_daily` (PI-firm YouTube video ads via SearchApi Transparency) |
 | `meta-ads-daily.yml` | daily 14:00 | `pipelines.meta_ads_daily` (PI-firm Meta/FB+IG ads via SearchApi Meta Ad Library) |
+| `google-maps-local-weekly.yml` | Tue 06:00 | `pipelines.google_maps_local_daily` (per-metro Google Maps local-pack → `pi_local_businesses`; verified-address roster source for `get_state_firm_roster`) |
 | `supabase-migrations.yml` | on push to main (paths: `supabase/migrations/`) | `supabase db push` |
 | `repair-migration-history.yml` | manual only | one-shot `migration repair` for local-only versions |
 | `pr-typecheck.yml` | every PR to main | TS net-new error gate |
