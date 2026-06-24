@@ -10,16 +10,19 @@
  *      share vs the dataset-wide baseline (a litigation-activity signal).
  *   3. Trend - monthly qualifying-event counts per brand.
  *
- * Data access: two STABLE SECURITY INVOKER RPCs,
- * faers_drug_breakdown_by_reactions / faers_monthly_trend_by_reactions
- * (migration 20260521120000). PostgREST cannot GROUP BY across the FAERS
- * three-way join, so the aggregation runs in the database.
+ * Data access: two tiny SECURITY DEFINER read RPCs, faers_cached_breakdown /
+ * faers_cached_trend (migration 20260624120000), which do a keyed lookup against
+ * the faers_signal_*_mv materialized views. The heavy aggregation
+ * (faers_drug_breakdown_by_reactions / faers_monthly_trend_by_reactions) scans
+ * the 8M-row FAERS tables and is NO LONGER on the request path — it runs only at
+ * matview build + the weekly pg_cron refresh. This is what stopped the request-
+ * path scans from saturating the DB and 504-ing every page (prod incident
+ * 2026-06-24). The cache_key selects the tort's precomputed rows.
  *
- * Drug matching uses EXACT medicinalproduct strings, not substring ILIKE: a
- * full-table ILIKE scan over 8.16M drug rows exceeds the 8s statement timeout.
  * Per-tort brand maps and MedDRA preferred-term lists are facts about the data
  * shape (verified against the live dataset), hard-coded per tort in the
- * faers-<tort>.ts config files.
+ * faers-<tort>.ts config files and mirrored into faers_signal_configs (the seed
+ * the matviews are built from).
  *
  * This module holds the tort-agnostic parts: types, the pure shaping logic,
  * and the cached fetch entry point. Per-tort config (brand map, reaction PTs,
@@ -246,26 +249,19 @@ async function fetchFaersSignals(
 ): Promise<FaersSignals> {
   const sb = getSupabase() as unknown as RpcClient;
 
+  // Keyed lookups against the precomputed materialized views — sub-millisecond,
+  // never the 8M-row scan. cacheKey selects the tort's rows (see migration
+  // 20260624120000 / faers_signal_configs).
   const [breakdownRes, trendRes] = await Promise.all([
-    sb.rpc("faers_drug_breakdown_by_reactions", {
-      p_brand_map: config.brandMap,
-      p_reaction_pts: config.reactionPts,
-    }),
-    sb.rpc("faers_monthly_trend_by_reactions", {
-      p_brand_map: config.brandMap,
-      p_reaction_pts: config.reactionPts,
-    }),
+    sb.rpc("faers_cached_breakdown", { p_cache_key: config.cacheKey }),
+    sb.rpc("faers_cached_trend", { p_cache_key: config.cacheKey }),
   ]);
 
   if (breakdownRes.error) {
-    throw new Error(
-      `faers_drug_breakdown_by_reactions: ${breakdownRes.error.message}`,
-    );
+    throw new Error(`faers_cached_breakdown: ${breakdownRes.error.message}`);
   }
   if (trendRes.error) {
-    throw new Error(
-      `faers_monthly_trend_by_reactions: ${trendRes.error.message}`,
-    );
+    throw new Error(`faers_cached_trend: ${trendRes.error.message}`);
   }
 
   return shapeFaersSignals(
