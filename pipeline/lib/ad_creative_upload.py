@@ -79,6 +79,11 @@ def upload_creative_image(
             url,
             content=image_bytes,
             headers={
+                # Both headers are required: the project uses the new
+                # sb_secret_* key format (not a JWT), so Storage rejects a
+                # bare `Authorization: Bearer` with "Invalid Compact JWS".
+                # The apikey header is what authenticates the non-JWT key.
+                "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
                 "Content-Type": content_type,
                 # Refresh the stored copy if we re-capture the same id.
