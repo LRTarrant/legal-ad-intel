@@ -184,11 +184,13 @@ export function CompetitiveAnalysis({
   const loadSeo = useCallback(async () => {
     setSeoLoading(true);
     setSeoError(null);
-    // "All markets" = national organic; a specific DMA = per-metro organic.
+    // "All markets" = state-wide organic (all of the state's DMAs); a specific
+    // DMA = per-metro organic. Both stay in-state, so SEO needs no roster filter.
     const { data, error } =
       selectedDma === "all"
-        ? await rpcClient().rpc("get_seo_competitors_by_tort", {
+        ? await rpcClient().rpc("get_seo_competitors_by_state", {
             p_tort_slug: seoCaseType,
+            p_state: stateCode,
             p_days: 90,
           })
         : await rpcClient().rpc("get_seo_competitors_by_dma", {
@@ -203,7 +205,7 @@ export function CompetitiveAnalysis({
       setSeo((data as SeoCompetitor[] | null) ?? []);
     }
     setSeoLoading(false);
-  }, [seoCaseType, selectedDma]);
+  }, [seoCaseType, selectedDma, stateCode]);
 
   useEffect(() => {
     if (activeChannel === "seo") void loadSeo();
@@ -248,11 +250,10 @@ export function CompetitiveAnalysis({
     if (activeChannel === "meta") void loadMeta();
   }, [activeChannel, loadMeta]);
 
-  // Roster filtering for the national channels.
-  const seoRows =
-    rosterOnly && !roster.loading
-      ? seo.filter((c) => roster.matchesDomain(c.domain))
-      : seo;
+  // SEO is geo-scoped (per-DMA or state-wide), so every domain already competes
+  // in-state — no roster filter. Meta/YouTube are national feeds, so they honor
+  // the roster toggle to scope down to in-state firms.
+  const seoRows = seo;
   const ytRows =
     rosterOnly && !roster.loading
       ? yt.filter((c) => roster.matchesDomain(c.advertiser_domain))
@@ -262,14 +263,15 @@ export function CompetitiveAnalysis({
       ? meta.filter((c) => roster.matchesPageName(c.page_name ?? ""))
       : meta;
 
-  const seoHidden = seo.length - seoRows.length;
   const ytHidden = yt.length - ytRows.length;
   const metaHidden = meta.length - metaRows.length;
 
   const activeStatus =
     CHANNEL_TABS.find((t) => t.key === activeChannel)?.status ?? "live";
-  const isNational = activeChannel !== "paid_search";
-  // Paid Search + SEO honor the DMA filter; Meta/YouTube are national-only.
+  // Meta/YouTube are national feeds with no geo, so they expose the roster
+  // toggle to scope down to in-state firms. Paid Search + SEO are already
+  // geo-scoped and honor the DMA filter instead.
+  const rosterScoped = activeChannel === "meta" || activeChannel === "youtube";
   const dmaCapable = activeChannel === "paid_search" || activeChannel === "seo";
 
   return (
@@ -299,8 +301,8 @@ export function CompetitiveAnalysis({
           </span>{" "}
           Paid Search and SEO are broken out by DMA — switch the market to see
           who competes in each metro. Meta and YouTube are measured nationally,
-          so they&apos;re scoped to the {stateName} firm roster (the firms
-          already advertising in-state). Click{" "}
+          so they&apos;re scoped to the {stateName} firm roster (firms
+          we&apos;ve seen competing in-state via organic and paid search). Click{" "}
           <span className="font-medium text-midnight-navy">View ads</span> on any
           row to see that firm&apos;s actual creative.
         </p>
@@ -359,7 +361,7 @@ export function CompetitiveAnalysis({
 
           <div className="text-right">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
-              Advertisers tracked
+              Firms tracked
             </div>
             <div className="font-mono text-2xl font-semibold leading-none text-midnight-navy">
               {roster.loading ? "—" : roster.size}
@@ -400,20 +402,22 @@ export function CompetitiveAnalysis({
           })}
         </div>
 
-        {/* Roster scope toggle (national channels only) */}
-        {isNational && activeStatus === "live" && (
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-gray">
+        {/* Roster scope toggle — national channels (Meta / YouTube) only */}
+        {rosterScoped && activeStatus === "live" && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-midnight-navy">
               <input
                 type="checkbox"
                 checked={rosterOnly}
                 onChange={(e) => setRosterOnly(e.target.checked)}
                 className="h-3.5 w-3.5 rounded border-cloud text-intelligence-teal focus:ring-intelligence-teal"
               />
-              {stateName}-roster firms only
+              Show {stateName} firms only
             </label>
-            <span className="text-xs text-slate-gray/60">
-              Measured nationally; scoped to firms advertising in {stateName}.
+            <span className="text-xs text-slate-gray/70">
+              This ad data is national. Checked, the list shows only firms
+              we&apos;ve seen competing in {stateName} (organic + paid search);
+              unchecked shows the full national field.
             </span>
           </div>
         )}
@@ -436,10 +440,10 @@ export function CompetitiveAnalysis({
           ) : activeChannel === "seo" ? (
             <SeoPanel
               stateName={stateName}
-              loading={seoLoading || roster.loading}
+              loading={seoLoading}
               error={seoError}
               rows={seoRows}
-              hidden={rosterOnly ? seoHidden : 0}
+              hidden={0}
               onViewAds={(c) =>
                 setModalTarget({
                   channel: "seo",
@@ -597,7 +601,7 @@ function HiddenNote({
   if (hidden <= 0) return null;
   return (
     <p className="mb-3 text-xs text-slate-gray/70">
-      {hidden} non-{stateName} {noun} hidden. Uncheck &ldquo;{stateName}-roster
+      {hidden} non-{stateName} {noun} hidden. Uncheck &ldquo;Show {stateName}{" "}
       firms only&rdquo; to see the full national field.
     </p>
   );
@@ -707,7 +711,7 @@ function SeoPanel({
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyMsg={`No ${stateName}-roster firms rank organically for this case type yet.`}
+        emptyMsg={`No organic results tracked for this case type in ${stateName} yet. Per-metro SEO data accumulates daily.`}
       />
     );
   }
