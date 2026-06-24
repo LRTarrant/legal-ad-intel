@@ -61,6 +61,10 @@ def upload_snapshot(registered_domain: str, html: str) -> Optional[tuple[str, st
             url,
             content=body,
             headers={
+                # apikey is required for the new sb_secret_* key format —
+                # Storage rejects a bare Bearer (non-JWT) with "Invalid
+                # Compact JWS".
+                "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
                 "Content-Type": "text/html; charset=utf-8",
                 # x-upsert: same hash → same content → skip the write.
