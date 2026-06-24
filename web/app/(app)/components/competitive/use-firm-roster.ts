@@ -1,17 +1,20 @@
 "use client";
 
 /* ------------------------------------------------------------------ */
-/*  Alabama firm roster.                                               */
+/*  In-state PI-firm roster.                                           */
 /*                                                                    */
-/*  Paid Search is genuinely per-DMA, so the set of advertiser domains */
-/*  that appear in AL paid search IS the Alabama PI-firm roster. The   */
-/*  national channels (SEO / YouTube / Meta) are then firm-scoped to   */
-/*  that roster so a state page never shows out-of-state firms.        */
+/*  Sourced from firms OBSERVED competing in the state: organic SERP   */
+/*  (metro-scoped) UNION paid-search advertisers, minus directories —  */
+/*  see get_state_firm_roster(). The national channels (Meta /         */
+/*  YouTube) are firm-scoped to this roster so a state page never       */
+/*  shows out-of-state firms. (Earlier this roster came from paid       */
+/*  search alone, which was ~3.5x too small and hid organic-only        */
+/*  firms.)                                                            */
 /* ------------------------------------------------------------------ */
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import type { PiCompetitor, RpcClient } from "./types";
+import type { RpcClient } from "./types";
 
 /** Strip protocol, leading www., and path from a domain → registrable host. */
 function normDomain(raw: string): string {
@@ -70,17 +73,16 @@ export function useFirmRoster(stateCode: string): FirmRoster {
 
     async function load() {
       setLoading(true);
-      // Roster of advertiser domains from AL paid search (all DMAs).
-      const { data } = await sb.rpc("get_pi_competitors_by_dma", {
+      // Roster of firm domains observed competing in-state (organic ∪ paid).
+      const { data } = await sb.rpc("get_state_firm_roster", {
         p_state: stateCode,
-        p_dma_code: null,
       });
-      const rows = (data as PiCompetitor[] | null) ?? [];
+      const rows = (data as { domain: string }[] | null) ?? [];
       const domainSet = new Set<string>();
       const labelSet = new Set<string>();
       for (const r of rows) {
-        if (!r.advertiser_domain) continue;
-        const d = normDomain(r.advertiser_domain);
+        if (!r.domain) continue;
+        const d = normDomain(r.domain);
         domainSet.add(d);
         const label = domainLabel(d);
         // Labels < 4 chars are too generic to fuzzy-match page names safely.
