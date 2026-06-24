@@ -49,6 +49,11 @@ interface MetaCreative {
   snapshot: any;
 }
 
+interface YtCreative {
+  video_id: string;
+  creative_id: string | null;
+}
+
 function parseSnapshot(raw: unknown): any | null {
   if (!raw) return null;
   if (typeof raw === "string") {
@@ -83,6 +88,7 @@ export function AdCreativeModal({
   const [paid, setPaid] = useState<PaidCreative[]>([]);
   const [seo, setSeo] = useState<SeoCreative[]>([]);
   const [meta, setMeta] = useState<MetaCreative[]>([]);
+  const [yt, setYt] = useState<YtCreative[]>([]);
 
   // Escape to close + lock body scroll while open.
   useEffect(() => {
@@ -110,6 +116,7 @@ export function AdCreativeModal({
       setPaid([]);
       setSeo([]);
       setMeta([]);
+      setYt([]);
       try {
         if (target!.channel === "paid_search") {
           let q = sb
@@ -167,6 +174,19 @@ export function AdCreativeModal({
             .order("updated_at", { ascending: false })
             .limit(12);
           if (active) setMeta((data as MetaCreative[] | null) ?? []);
+        } else if (target!.channel === "youtube") {
+          let q = sb
+            .from("youtube_ad_creatives")
+            .select("video_id, creative_id")
+            .not("video_id", "is", null)
+            .order("last_shown", { ascending: false })
+            .limit(12);
+          // ar_id is the precise advertiser key; fall back to domain.
+          q = target!.arId
+            ? q.eq("advertiser_ar_id", target!.arId)
+            : q.eq("advertiser_domain", target!.domain);
+          const { data } = await q;
+          if (active) setYt((data as YtCreative[] | null) ?? []);
         }
       } finally {
         if (active) setLoading(false);
@@ -228,7 +248,8 @@ export function AdCreativeModal({
               <p className="text-sm text-slate-gray">Loading creative…</p>
             </div>
           ) : target.channel === "youtube" ? (
-            <YouTubeComingSoon
+            <YouTubeCreatives
+              videos={yt}
               label={target.label}
               arId={target.arId}
             />
@@ -528,32 +549,79 @@ function MetaCreatives({
 
 /* ------------------------------- YouTube ------------------------------ */
 
-function YouTubeComingSoon({
+function YouTubeCreatives({
+  videos,
   label,
   arId,
 }: {
+  videos: YtCreative[];
   label: string;
   arId: string | null;
 }) {
+  if (videos.length === 0) {
+    return (
+      <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+        <Play className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
+        <p className="text-sm font-medium text-midnight-navy/70">
+          No video creative resolved for {label} yet.
+        </p>
+        <p className="mx-auto mt-1 max-w-sm text-xs text-slate-gray">
+          The daily capture resolves each firm&apos;s YouTube ads to a playable
+          video; this firm&apos;s are still accruing.
+        </p>
+        {arId && (
+          <a
+            href={`https://adstransparency.google.com/advertiser/${arId}?region=US`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-intelligence-teal hover:underline"
+          >
+            View on Google Ads Transparency
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-      <Play className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
-      <p className="text-sm font-medium text-midnight-navy/70">
-        Video-creative preview for {label} is coming soon.
-      </p>
-      <p className="mx-auto mt-1 max-w-sm text-xs text-slate-gray">
-        We track this firm&apos;s active YouTube ads today; in-app playback of the
-        creative is being wired up.
-      </p>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {videos.map((v, i) => (
+          <a
+            key={v.video_id ?? i}
+            href={`https://www.youtube.com/watch?v=${v.video_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative block overflow-hidden rounded-lg border border-cloud bg-black"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`}
+              alt="YouTube ad creative"
+              className="aspect-video w-full object-cover transition-opacity group-hover:opacity-90"
+              loading="lazy"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+              }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white">
+                <Play className="h-5 w-5 translate-x-0.5" fill="currentColor" />
+              </span>
+            </span>
+          </a>
+        ))}
+      </div>
       {arId && (
         <a
           href={`https://adstransparency.google.com/advertiser/${arId}?region=US`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-intelligence-teal hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-medium text-slate-gray hover:text-intelligence-teal"
         >
-          View on Google Ads Transparency
-          <ExternalLink className="h-3.5 w-3.5" />
+          See all of this firm&apos;s ads on Google Ads Transparency
+          <ExternalLink className="h-3 w-3" />
         </a>
       )}
     </div>
