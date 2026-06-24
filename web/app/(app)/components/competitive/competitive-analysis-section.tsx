@@ -1,14 +1,15 @@
 "use client";
 
 /* ------------------------------------------------------------------ */
-/*  Alabama Competitive Analysis (Section 3).                          */
+/*  Competitive Analysis — shared, state-parameterized.               */
 /*                                                                    */
-/*  Forked from web/app/(app)/state-intelligence/v2/[slug]/           */
-/*  competitive-analysis.tsx and adapted for a STATE page:            */
+/*  Used by the bespoke Alabama page (numbered heading) and the v2    */
+/*  [slug] client (embedded — host renders its own group header).     */
 /*   - Market (DMA) filter drives Paid Search (genuinely per-DMA).    */
 /*   - SEO / YouTube / Meta are national in source, so they are       */
-/*     firm-scoped to the Alabama roster (domains/pages that appear   */
-/*     in AL paid search). A toggle exposes the full national field.  */
+/*     firm-scoped to the state roster (domains/pages that appear in  */
+/*     the state's paid search). A toggle exposes the full national   */
+/*     field.                                                         */
 /*   - "View ads" opens an in-app creative modal (AdCreativeModal),   */
 /*     not a link-out to the ad library.                              */
 /* ------------------------------------------------------------------ */
@@ -96,12 +97,17 @@ function rpcClient(): RpcClient {
   return getSupabase() as unknown as RpcClient;
 }
 
-export function AlabamaCompetitiveAnalysis({
+export function CompetitiveAnalysis({
   stateName,
   stateCode,
+  embedded = false,
 }: {
   stateName: string;
   stateCode: string;
+  /** When true (v2 shared client), skip the numbered section heading — the
+   *  host already renders its own group header. The bespoke Alabama page
+   *  leaves this false so it keeps the numbered "3" section header. */
+  embedded?: boolean;
 }) {
   const roster = useFirmRoster(stateCode);
 
@@ -252,18 +258,20 @@ export function AlabamaCompetitiveAnalysis({
 
   return (
     <div id="competition" className="scroll-mt-20 space-y-4">
-      {/* Section heading */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
-          3
-        </span>
-        <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-          {stateName} Competitive Analysis
-        </h2>
-        <span className="rounded-full bg-intelligence-teal/10 px-2.5 py-1 text-xs font-semibold text-intelligence-teal">
-          PI firms only
-        </span>
-      </div>
+      {/* Section heading — skipped when embedded (host renders its own) */}
+      {!embedded && (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
+            3
+          </span>
+          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+            {stateName} Competitive Analysis
+          </h2>
+          <span className="rounded-full bg-intelligence-teal/10 px-2.5 py-1 text-xs font-semibold text-intelligence-teal">
+            PI firms only
+          </span>
+        </div>
+      )}
 
       {/* How-to-read callout (honest framing, no fabricated counts) */}
       <div className="rounded-xl border border-cloud border-l-[3px] border-l-intelligence-teal bg-white p-5 shadow-sm">
@@ -272,9 +280,9 @@ export function AlabamaCompetitiveAnalysis({
             Who you&apos;re competing against, by market.
           </span>{" "}
           Paid Search is broken out by DMA — switch the market to see who buys
-          ads in Birmingham vs. Mobile. SEO, Meta, and YouTube are measured
-          nationally, so they&apos;re scoped to the Alabama firm roster (the
-          firms already advertising in-state). Click{" "}
+          ads in each metro. SEO, Meta, and YouTube are measured nationally, so
+          they&apos;re scoped to the {stateName} firm roster (the firms already
+          advertising in-state). Click{" "}
           <span className="font-medium text-midnight-navy">View ads</span> on any
           row to see that firm&apos;s actual creative.
         </p>
@@ -301,7 +309,7 @@ export function AlabamaCompetitiveAnalysis({
                   disabled={isNational}
                   className="appearance-none rounded-lg border border-cloud bg-white py-2 pl-9 pr-9 text-sm font-semibold text-midnight-navy shadow-sm focus:border-intelligence-teal focus:outline-none focus:ring-1 focus:ring-intelligence-teal disabled:cursor-not-allowed disabled:bg-cloud/40 disabled:text-slate-gray/60"
                 >
-                  <option value="all">All Alabama markets</option>
+                  <option value="all">All {stateName} markets</option>
                   {dmaOptions.map((d) => (
                     <option key={d.dma_code} value={d.dma_code}>
                       {d.display_name}
@@ -384,10 +392,10 @@ export function AlabamaCompetitiveAnalysis({
                 onChange={(e) => setRosterOnly(e.target.checked)}
                 className="h-3.5 w-3.5 rounded border-cloud text-intelligence-teal focus:ring-intelligence-teal"
               />
-              Alabama-roster firms only
+              {stateName}-roster firms only
             </label>
             <span className="text-xs text-slate-gray/60">
-              Measured nationally; scoped to firms advertising in Alabama.
+              Measured nationally; scoped to firms advertising in {stateName}.
             </span>
           </div>
         )}
@@ -409,6 +417,7 @@ export function AlabamaCompetitiveAnalysis({
             />
           ) : activeChannel === "seo" ? (
             <SeoPanel
+              stateName={stateName}
               loading={seoLoading || roster.loading}
               error={seoError}
               rows={seoRows}
@@ -423,6 +432,7 @@ export function AlabamaCompetitiveAnalysis({
             />
           ) : activeChannel === "meta" ? (
             <MetaPanel
+              stateName={stateName}
               loading={metaLoading || roster.loading}
               error={metaError}
               rows={metaRows}
@@ -437,6 +447,7 @@ export function AlabamaCompetitiveAnalysis({
             />
           ) : activeChannel === "youtube" ? (
             <YouTubePanel
+              stateName={stateName}
               loading={ytLoading || roster.loading}
               error={ytError}
               rows={ytRows}
@@ -556,12 +567,20 @@ function ViewAdsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function HiddenNote({ hidden, noun }: { hidden: number; noun: string }) {
+function HiddenNote({
+  hidden,
+  noun,
+  stateName,
+}: {
+  hidden: number;
+  noun: string;
+  stateName: string;
+}) {
   if (hidden <= 0) return null;
   return (
     <p className="mb-3 text-xs text-slate-gray/70">
-      {hidden} non-Alabama {noun} hidden. Uncheck &ldquo;Alabama-roster firms
-      only&rdquo; to see the full national field.
+      {hidden} non-{stateName} {noun} hidden. Uncheck &ldquo;{stateName}-roster
+      firms only&rdquo; to see the full national field.
     </p>
   );
 }
@@ -650,12 +669,14 @@ function PaidPanel({
 /* --------------------------------- SEO --------------------------------- */
 
 function SeoPanel({
+  stateName,
   loading,
   error,
   rows,
   hidden,
   onViewAds,
 }: {
+  stateName: string;
   loading: boolean;
   error: string | null;
   rows: SeoCompetitor[];
@@ -668,14 +689,14 @@ function SeoPanel({
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyMsg="No Alabama-roster firms rank organically for this case type yet."
+        emptyMsg={`No ${stateName}-roster firms rank organically for this case type yet.`}
       />
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <HiddenNote hidden={hidden} noun="domains" />
+      <HiddenNote hidden={hidden} noun="domains" stateName={stateName} />
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="border-b border-cloud">
@@ -727,12 +748,14 @@ function SeoPanel({
 /* --------------------------------- Meta -------------------------------- */
 
 function MetaPanel({
+  stateName,
   loading,
   error,
   rows,
   hidden,
   onViewAds,
 }: {
+  stateName: string;
   loading: boolean;
   error: string | null;
   rows: MetaCompetitor[];
@@ -745,14 +768,14 @@ function MetaPanel({
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyMsg="No Alabama-roster firms running Meta ads for this case type yet."
+        emptyMsg={`No ${stateName}-roster firms running Meta ads for this case type yet.`}
       />
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <HiddenNote hidden={hidden} noun="pages" />
+      <HiddenNote hidden={hidden} noun="pages" stateName={stateName} />
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="border-b border-cloud">
@@ -799,12 +822,14 @@ function MetaPanel({
 /* ------------------------------- YouTube ------------------------------- */
 
 function YouTubePanel({
+  stateName,
   loading,
   error,
   rows,
   hidden,
   onViewAds,
 }: {
+  stateName: string;
   loading: boolean;
   error: string | null;
   rows: YouTubeCompetitor[];
@@ -817,14 +842,14 @@ function YouTubePanel({
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyMsg="No Alabama-roster firms running YouTube video ads yet."
+        emptyMsg={`No ${stateName}-roster firms running YouTube video ads yet.`}
       />
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <HiddenNote hidden={hidden} noun="firms" />
+      <HiddenNote hidden={hidden} noun="firms" stateName={stateName} />
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="border-b border-cloud">

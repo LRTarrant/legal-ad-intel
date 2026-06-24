@@ -261,7 +261,7 @@ function EmptyCreative({ message }: { message: string }) {
 function PaidCreatives({ rows }: { rows: PaidCreative[] }) {
   if (rows.length === 0) {
     return (
-      <EmptyCreative message="No paid-search creative captured for this firm in Alabama yet." />
+      <EmptyCreative message="No paid-search creative captured for this firm yet." />
     );
   }
   return (

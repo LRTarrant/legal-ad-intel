@@ -30,7 +30,7 @@ import {
   COUNTY_GEOMETRY as AL_COUNTY_GEOMETRY,
   VIEWBOX as AL_VIEWBOX,
 } from "@/lib/data/state-geometry/alabama";
-import { AlabamaCompetitiveAnalysis } from "./competitive/competitive-analysis-section";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -722,7 +722,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       {/* ============================================================ */}
       {/* SECTION 3 — COMPETITIVE ANALYSIS                             */}
       {/* ============================================================ */}
-      <AlabamaCompetitiveAnalysis stateName="Alabama" stateCode="AL" />
+      <CompetitiveAnalysis stateName="Alabama" stateCode="AL" />
 
       {/* ============================================================ */}
       {/* SECTION 4 — PROPRIETARY SIGNALS                              */}
