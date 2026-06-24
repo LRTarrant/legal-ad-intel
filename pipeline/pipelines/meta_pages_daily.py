@@ -175,9 +175,11 @@ def step_fetch(step) -> int:
         return 0
 
     page_ids = _distinct_page_ids()[:MAX_PAGES_PER_RUN]
-    all_rows: list[dict] = []
     pages_done = 0
+    total_seen = 0
+    total_inserted = 0
     for pid in page_ids:
+        page_rows: list[dict] = []
         token = None
         for _ in range(MAX_PAGES_PER_PAGE_ID):
             data = _searchapi_page(pid, token)
@@ -186,29 +188,34 @@ def step_fetch(step) -> int:
             for ad in data.get("ads", []):
                 row = _ad_to_row(ad)
                 if row:
-                    all_rows.append(row)
+                    page_rows.append(row)
             token = (data.get("pagination") or {}).get("next_page_token")
             time.sleep(REQUEST_DELAY_SECONDS)
             if not token:
                 break
         pages_done += 1
+        # Flush per page_id so a mid-run timeout keeps the firms already crawled
+        # (the run iterates ~hundreds of pages; one end-of-run insert would lose
+        # everything on a cancel — the #414 per-metro-flush lesson). ignore-
+        # duplicates: only NEW ad_archive_ids insert; existing rows (and their
+        # keyword-crawl case_type) are untouched.
+        if page_rows:
+            rows = _dedup_rows(page_rows, ("ad_archive_id",))
+            total_seen += len(rows)
+            total_inserted += _bulk_insert("meta_ad_creatives", rows,
+                                           on_conflict="ad_archive_id",
+                                           resolution="ignore-duplicates")
 
-    rows = _dedup_rows(all_rows, ("ad_archive_id",))
-    # ignore-duplicates: only NEW ad_archive_ids are inserted; existing rows
-    # (and their keyword-crawl case_type) are left untouched.
-    inserted = _bulk_insert("meta_ad_creatives", rows,
-                            on_conflict="ad_archive_id",
-                            resolution="ignore-duplicates")
-    step.set_counts(rows_in=len(rows), rows_out=inserted)
+    step.set_counts(rows_in=total_seen, rows_out=total_inserted)
     step.set_metadata({
         "source": "searchapi_meta_ad_library_page_id",
         "pages_crawled": pages_done,
-        "ads_seen": len(rows),
-        "new_ads_inserted": inserted,
+        "ads_seen": total_seen,
+        "new_ads_inserted": total_inserted,
         "capped_at": MAX_PAGES_PER_RUN,
     })
-    print(f"\n  pages_crawled={pages_done} ads_seen={len(rows)} new_inserted={inserted}")
-    return inserted
+    print(f"\n  pages_crawled={pages_done} ads_seen={total_seen} new_inserted={total_inserted}")
+    return total_inserted
 
 
 def step_publish(step, inserted: int):
