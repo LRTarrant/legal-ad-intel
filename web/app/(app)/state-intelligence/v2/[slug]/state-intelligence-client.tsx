@@ -30,7 +30,7 @@ import {
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
-import { CompetitiveAnalysis } from "./competitive-analysis";
+import { CompetitiveAnalysis } from "../../../components/competitive/competitive-analysis-section";
 import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
 import type { StateConfig } from "@/lib/state-config";
@@ -974,7 +974,11 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* COMPETITIVE ANALYSIS (PI-firm competition, DMA-filtered)    */}
       {/* ============================================================ */}
-      <CompetitiveAnalysis stateName={config.stateName} stateCode={config.stateCode} />
+      <CompetitiveAnalysis
+        stateName={config.stateName}
+        stateCode={config.stateCode}
+        embedded
+      />
 
       {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
