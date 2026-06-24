@@ -50,15 +50,26 @@ MAX_RETRIES = 3
 COUNTRY = "US"
 MAX_PAGES_PER_KEYWORD = 5
 
-# PI case type (slug) -> Meta Ad Library search keyword(s). Same case-type set
-# as the SEO tab so the Phase 5b dropdown matches.
+# PI case type (slug) -> Meta Ad Library search keyword(s). The case-type slugs
+# match the competitive tab dropdown. Expanded (#3a-2) for broader firm
+# discovery: more synonyms per case type plus a "general_pi" bucket of broad PI
+# intent terms — keyword matches are real PI ads, so this surfaces firms the
+# original 6-keyword crawl missed with zero wrong-firm risk.
 META_SEARCH_TERMS = {
-    "motor_vehicle":  ["car accident lawyer"],
-    "truck_accident": ["truck accident lawyer"],
+    "motor_vehicle":  ["car accident lawyer", "auto accident attorney"],
+    "truck_accident": ["truck accident lawyer", "18 wheeler accident lawyer"],
     "motorcycle":     ["motorcycle accident lawyer"],
     "boating":        ["boat accident lawyer"],
     "nursing_home":   ["nursing home abuse lawyer"],
-    "workers_comp":   ["workers compensation lawyer"],
+    "workers_comp":   ["workers compensation lawyer", "workplace injury lawyer"],
+    "general_pi":     [
+        "personal injury lawyer",
+        "accident attorney",
+        "wrongful death lawyer",
+        "slip and fall lawyer",
+        "dog bite lawyer",
+        "premises liability lawyer",
+    ],
 }
 
 
