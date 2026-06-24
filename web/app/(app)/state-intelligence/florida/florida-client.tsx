@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import Link from "next/link";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
@@ -33,14 +33,6 @@ import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
 import {
-  PIAdvertisingSection,
-  buildPIAdSummary,
-  type PIAdvertisingData,
-} from "../../components/pi-advertising-section";
-import { CompetitiveLandscapeTable } from "../../components/competitive-landscape-table";
-import { StateAdvertisingSection } from "../../components/state-advertising-section";
-import { floridaCompetitiveData } from "@/lib/data/competitive-landscape/florida";
-import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
   BOATING_DATA_YEARS,
@@ -49,6 +41,7 @@ import {
   COUNTY_GEOMETRY as FL_COUNTY_GEOMETRY,
   VIEWBOX as FL_VIEWBOX,
 } from "@/lib/data/state-geometry/florida";
+import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -237,9 +230,6 @@ function fmtCur(n: number | null | undefined): string {
 /* ------------------------------------------------------------------ */
 
 export function FloridaClient({ data }: { data: FloridaPageData }) {
-  const [piAdData, setPiAdData] = useState<PIAdvertisingData | null>(null);
-  const handlePIAdDataLoaded = useCallback((d: PIAdvertisingData) => setPiAdData(d), []);
-
   useEffect(() => {
     trackStateViewed({ state_code: "FL", state_name: "Florida" });
   }, []);
@@ -932,19 +922,9 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* 10. SEARCH ADVERTISING LANDSCAPE                             */}
+      {/* 10. COMPETITIVE ANALYSIS                                     */}
       {/* ============================================================ */}
-      <PIAdvertisingSection stateAbbr="FL" onDataLoaded={handlePIAdDataLoaded} />
-
-      {/* ============================================================ */}
-      {/* 11. COMPETITIVE LANDSCAPE                                    */}
-      {/* ============================================================ */}
-      <CompetitiveLandscapeTable data={floridaCompetitiveData} />
-
-      {/* ============================================================ */}
-      {/* 11b. ADVERTISING INTELLIGENCE (Platform, Advertisers, etc.)  */}
-      {/* ============================================================ */}
-      <StateAdvertisingSection stateAbbr="FL" stateName="Florida" />
+      <CompetitiveAnalysis stateName="Florida" stateCode="FL" numbered={false} />
 
       {/* ============================================================ */}
       {/* 12. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1161,7 +1141,7 @@ export function FloridaClient({ data }: { data: FloridaPageData }) {
           pageName: "Florida State Intelligence",
           pageDescription:
             "State-level intelligence for plaintiff firm advertising and case acquisition in Florida — combining FARS accident data, census demographics, judicial profiles, PI viability scores, storm events, boating accidents, cancer incidence, and market opportunity signals.",
-          dataSummary: `State: Florida. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_51')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 67. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Construction workers: ${BLS_FL.constructionWorkers.toLocaleString()}. Key corridors: I-95, I-75, I-4, FL Turnpike.${piAdData ? ` ${buildPIAdSummary(piAdData)}` : ''}`,
+          dataSummary: `State: Florida. Negligence: ${formatNegligenceRule(piData?.negligence_rule ?? 'modified_51')}. PI Viability: ${piData?.composite_score ?? 'N/A'} composite. Fatal Crashes (FARS): ${totalFatalCrashes.toLocaleString()}. Total Deaths: ${totalDeaths.toLocaleString()}. Counties: 67. Top counties by deaths: ${[...data.accidentSummary].sort((a, b) => b.total_deaths - a.total_deaths).slice(0, 5).map(r => r.county).join(', ')}. Judicial profile mix: ${Object.entries(profileCounts).map(([p, c]) => `${c} ${p}`).join(', ')}. Storm events: ${data.stormCount.toLocaleString()}. Truck deaths: ${totalTruckDeaths.toLocaleString()}. Motorcycle deaths: ${totalMotoDeaths.toLocaleString()}. Boating accidents: ${totalBoatingAccidents.toLocaleString()}. Construction workers: ${BLS_FL.constructionWorkers.toLocaleString()}. Key corridors: I-95, I-75, I-4, FL Turnpike.`,
         }}
       />
 
