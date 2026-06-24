@@ -3917,6 +3917,9 @@ export type Database = {
           case_type: string
           collation_count: number | null
           country: string
+          creative_captured_at: string | null
+          creative_image_path: string | null
+          creative_image_url: string | null
           end_date: string | null
           first_ingested_at: string
           id: string
@@ -3935,6 +3938,9 @@ export type Database = {
           case_type: string
           collation_count?: number | null
           country?: string
+          creative_captured_at?: string | null
+          creative_image_path?: string | null
+          creative_image_url?: string | null
           end_date?: string | null
           first_ingested_at?: string
           id?: string
@@ -3953,6 +3959,9 @@ export type Database = {
           case_type?: string
           collation_count?: number | null
           country?: string
+          creative_captured_at?: string | null
+          creative_image_path?: string | null
+          creative_image_url?: string | null
           end_date?: string | null
           first_ingested_at?: string
           id?: string
@@ -5346,6 +5355,7 @@ export type Database = {
         Row: {
           advertiser_entity_id: string | null
           created_at: string
+          dma_code: string | null
           domain: string
           fetched_at: string
           id: string
@@ -5362,6 +5372,7 @@ export type Database = {
         Insert: {
           advertiser_entity_id?: string | null
           created_at?: string
+          dma_code?: string | null
           domain: string
           fetched_at: string
           id?: string
@@ -5378,6 +5389,7 @@ export type Database = {
         Update: {
           advertiser_entity_id?: string | null
           created_at?: string
+          dma_code?: string | null
           domain?: string
           fetched_at?: string
           id?: string
@@ -6955,6 +6967,7 @@ export type Database = {
           advertiser_domain: string
           advertiser_id: string | null
           advertiser_name: string | null
+          creative_captured_at: string | null
           creative_id: string
           details_link: string | null
           first_ingested_at: string
@@ -6966,6 +6979,7 @@ export type Database = {
           target_domain: string | null
           total_days_shown: number | null
           updated_at: string
+          video_id: string | null
         }
         Insert: {
           ad_format?: string
@@ -6973,6 +6987,7 @@ export type Database = {
           advertiser_domain: string
           advertiser_id?: string | null
           advertiser_name?: string | null
+          creative_captured_at?: string | null
           creative_id: string
           details_link?: string | null
           first_ingested_at?: string
@@ -6984,6 +6999,7 @@ export type Database = {
           target_domain?: string | null
           total_days_shown?: number | null
           updated_at?: string
+          video_id?: string | null
         }
         Update: {
           ad_format?: string
@@ -6991,6 +7007,7 @@ export type Database = {
           advertiser_domain?: string
           advertiser_id?: string | null
           advertiser_name?: string | null
+          creative_captured_at?: string | null
           creative_id?: string
           details_link?: string | null
           first_ingested_at?: string
@@ -7002,6 +7019,7 @@ export type Database = {
           target_domain?: string | null
           total_days_shown?: number | null
           updated_at?: string
+          video_id?: string | null
         }
         Relationships: [
           {
@@ -8104,6 +8122,17 @@ export type Database = {
           sample_parties: string[]
         }[]
       }
+      get_meta_competitors: {
+        Args: { p_case_type?: string; p_limit?: number }
+        Returns: {
+          active_ads: number
+          case_types_active: string[]
+          first_seen: string
+          last_seen: string
+          page_id: string
+          page_name: string
+        }[]
+      }
       get_mv_poi_categories: {
         Args: { p_state?: string }
         Returns: {
@@ -8312,6 +8341,21 @@ export type Database = {
           segment: string
           total_creatives: number
           total_spend: number
+        }[]
+      }
+      get_seo_competitors_by_dma: {
+        Args: { p_days?: number; p_dma_code: string; p_tort_slug: string }
+        Returns: {
+          advertiser_name: string
+          avg_position: number
+          best_position: number
+          domain: string
+          first_seen: string
+          keywords_tracked: number
+          last_seen: string
+          organic_appearances: number
+          top_10_count: number
+          top_3_count: number
         }[]
       }
       get_seo_competitors_by_tort: {
