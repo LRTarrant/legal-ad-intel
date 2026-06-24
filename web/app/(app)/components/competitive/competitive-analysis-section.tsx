@@ -54,8 +54,11 @@ const SEO_CASE_TYPES: { slug: string; label: string }[] = [
   { slug: "workers_comp", label: "Workers' Comp" },
 ];
 
+// Meta carries a broad "general_pi" bucket (from the expanded keyword crawl)
+// that SEO doesn't, so the Meta dropdown gets its own list with General PI.
 const META_CASE_TYPES: { slug: string; label: string }[] = [
   { slug: "all", label: "All case types" },
+  { slug: "general_pi", label: "General PI" },
   ...SEO_CASE_TYPES,
 ];
 
