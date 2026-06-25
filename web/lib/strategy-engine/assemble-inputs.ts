@@ -8,6 +8,17 @@
  * `available` flag, the engine still scores on what's present, and confidence
  * drops to "directional" rather than fabricating.
  *
+ * Data sources (chosen after verifying what's actually populated for AL):
+ *   - Advertiser landscape / the "Gorilla" → get_pi_competitors_by_dma(state):
+ *     real, state-PI-specific firm activity by observation count. (The
+ *     mass-tort get_top_advertisers_by_segment was the wrong table.)
+ *   - Named outlets → media_outlets (by DMA market name) + broadcast_stations.
+ *   - Local signal → get_state_accident_summary (FARS), rates only.
+ *   - Audience fit → media_profiles (generic consumption profiles; AL has no
+ *     per-DMA rows, so fit is directional by nature).
+ *   - Channel competition → channel_competition_scores (keyed by geo UUID;
+ *     no AL DMA rows today, so competition stays null = unknown, honestly).
+ *
  * State-parameterized. The only Alabama-specific asset is a small, hand-checked
  * county→DMA crosswalk: a wrong county→market guess destroys trust with a
  * sophisticated buyer (per the council), so we ship a correct AL table and
@@ -67,9 +78,9 @@ const COUNTY_DMA_BY_STATE: Record<string, Record<string, string>> = {
 
 const DMA_RANK_BY_NAME: Record<string, number> = {
   Birmingham: 44,
-  "Mobile": 60,
-  Huntsville: 79,
-  Montgomery: 118,
+  Mobile: 60,
+  Huntsville: 81,
+  Montgomery: 117,
 };
 
 /* ── Channel name normalization ─────────────────────────────────────────── */
@@ -100,14 +111,21 @@ function normalizeChannel(raw: string): ChannelKey | null {
   return CHANNEL_ALIASES[raw.trim().toLowerCase()] ?? null;
 }
 
-/** Map a broadcast/outlet media format to a channel key. */
-function formatToChannel(format: string, mediaType?: string): ChannelKey | null {
+/**
+ * Map an outlet's media format (media_outlets.media_format is "Audio"/"Video";
+ * broadcast_stations.service_type is "TV"/"FM"/"AM") to a channel key.
+ */
+function formatToChannel(format: string, callSign?: string): ChannelKey | null {
   const f = format.trim().toLowerCase();
-  if (f.includes("radio") || f === "am" || f === "fm") return "radio";
+  if (f === "audio" || f.includes("radio") || f === "am" || f === "fm") return "radio";
+  if (f === "video" || f.includes("tv") || f === "dt" || f === "tx") {
+    // An -FM/-AM call sign mislabeled "Video" is still radio.
+    if (callSign && /-(FM|AM)$/i.test(callSign)) return "radio";
+    return "tv_linear";
+  }
   if (f.includes("stream") || f.includes("ctv") || f.includes("ott")) return "ctv";
-  if (f.includes("tv") || f === "dt" || f === "tx") return "tv_linear";
   if (f.includes("podcast")) return "podcast";
-  if (f.includes("print") || f.includes("news")) return mediaType === "print" ? "print" : null;
+  if (f.includes("print")) return "print";
   return null;
 }
 
@@ -136,62 +154,48 @@ export async function assembleStrategyInputs(
   const errors: string[] = [];
 
   // Fetch every block independently; never let one failure sink the rest.
-  const [
-    advertisersRes,
-    summaryRes,
-    dmaRes,
-    accidentRes,
-    profilesRes,
-    outletsRes,
-  ] = await Promise.allSettled([
-    supabase.rpc("get_top_advertisers_by_segment", { p_tort_slug: tortSlug, p_limit: 8 }),
-    supabase.rpc("get_segment_summary", { p_tort_slug: tortSlug }),
-    supabase
-      .from("dma_markets")
-      .select("dma_code, display_name, full_name, rank, states_covered")
-      .contains("states_covered", [state])
-      .order("rank", { ascending: true }),
-    supabase.rpc("get_state_accident_summary", { p_state: state }),
-    supabase.from("media_profiles").select("*"),
-    supabase
-      .from("media_outlets")
-      .select("call_sign, media_company, media_format, media_type, format_genre, market"),
-  ]);
+  const [competitorsRes, dmaRes, accidentRes, profilesRes, outletsRes] =
+    await Promise.allSettled([
+      supabase.rpc("get_pi_competitors_by_dma", { p_state: state }),
+      supabase
+        .from("dma_markets")
+        .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
+        .contains("states_covered", [state])
+        .order("rank", { ascending: true }),
+      supabase.rpc("get_state_accident_summary", { p_state: state }),
+      supabase.from("media_profiles").select("*"),
+      supabase
+        .from("media_outlets")
+        .select("call_sign, media_company, media_format, media_type, format_genre, market"),
+    ]);
 
-  /* top advertisers + Gorilla share ---------------------------------------- */
+  /* advertiser landscape + Gorilla share (state-PI-specific) --------------- */
   let top_advertisers: AdvertiserShare[] = [];
-  if (advertisersRes.status === "fulfilled" && !advertisersRes.value.error) {
-    const rows = (advertisersRes.value.data as Array<Record<string, unknown>>) ?? [];
-    const withSpend = rows
-      .map((r) => ({ name: String(r.advertiser_name ?? "").trim(), spend: num(r.total_spend) }))
-      .filter((r) => r.name);
-    const totalSpend = withSpend.reduce((s, r) => s + r.spend, 0);
-    top_advertisers = withSpend
-      .map((r, i) => ({
-        name: r.name,
-        share: totalSpend > 0 ? r.spend / totalSpend : 0,
-        rank: i + 1,
-      }))
-      .sort((a, b) => b.share - a.share)
-      .map((r, i) => ({ ...r, rank: i + 1 }));
-  } else if (advertisersRes.status === "rejected") {
-    errors.push("top_advertisers fetch failed");
-  }
-
-  /* market crowding proxy (directional saturation) ------------------------- */
-  let saturation: number | null = null;
   let total_advertisers: number | null = null;
-  if (summaryRes.status === "fulfilled" && !summaryRes.value.error) {
-    const rows = (summaryRes.value.data as Array<Record<string, unknown>>) ?? [];
-    const row = rows[0];
-    if (row) {
-      total_advertisers = num(row.advertiser_count) || null;
-      // Directional crowding: more distinct advertisers → more saturated.
-      // Capped well below 1 so it nudges, never dominates, the score.
-      if (total_advertisers != null) saturation = clamp01(total_advertisers / 40);
+  let saturation: number | null = null;
+  if (competitorsRes.status === "fulfilled" && !competitorsRes.value.error) {
+    const rows = (competitorsRes.value.data as Array<Record<string, unknown>>) ?? [];
+    // Aggregate observation count by advertiser name (one firm can appear under
+    // multiple domains, e.g. its site + a google.com row — group them).
+    const byName = new Map<string, number>();
+    for (const r of rows) {
+      const name = String(r.advertiser_name ?? "").trim();
+      if (!name) continue;
+      byName.set(name, (byName.get(name) ?? 0) + num(r.total_observations));
     }
-  } else if (summaryRes.status === "rejected") {
-    errors.push("segment_summary fetch failed");
+    const totalObs = Array.from(byName.values()).reduce((s, n) => s + n, 0);
+    top_advertisers = Array.from(byName.entries())
+      .map(([name, obs]) => ({ name, share: totalObs > 0 ? obs / totalObs : 0, rank: 0 }))
+      .sort((a, b) => b.share - a.share)
+      .slice(0, 10)
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+    if (byName.size > 0) {
+      total_advertisers = byName.size;
+      // Directional crowding: more distinct PI advertisers → more saturated.
+      saturation = clamp01(byName.size / 20);
+    }
+  } else if (competitorsRes.status === "rejected") {
+    errors.push("pi_competitors fetch failed");
   }
 
   /* DMAs + county→DMA translation ------------------------------------------ */
@@ -200,47 +204,59 @@ export async function assembleStrategyInputs(
   const dmaNames: string[] = [];
   if (dmaRes.status === "fulfilled" && !dmaRes.value.error) {
     const rows = (dmaRes.value.data as Array<Record<string, unknown>>) ?? [];
-    for (const r of rows) {
+    // Prefer DMAs whose primary_state is this state (drops border markets like
+    // Columbus GA that merely touch the state).
+    const inState = rows.filter((r) => String(r.primary_state ?? "") === state);
+    const ordered = inState.length > 0 ? inState : rows;
+    for (const r of ordered) {
       const display = String(r.display_name ?? r.full_name ?? "").trim();
       if (display) dmaNames.push(display);
     }
-    if (rows[0]) {
-      topDmaName = String(rows[0].display_name ?? rows[0].full_name ?? "").trim() || null;
-      topDmaCode = String(rows[0].dma_code ?? "").trim() || null;
+    if (ordered[0]) {
+      topDmaName = String(ordered[0].display_name ?? ordered[0].full_name ?? "").trim() || null;
+      topDmaCode = String(ordered[0].dma_code ?? "").trim() || null;
     }
   } else if (dmaRes.status === "rejected") {
     errors.push("dma_markets fetch failed");
   }
 
   /* local signal (FARS) ---------------------------------------------------- */
+  // The narrative signal surfaces counties by death RATE (highlights rural
+  // media-desert hotspots); the county→DMA translation maps counties by total
+  // DEATHS (the populous metro counties our crosswalk covers) so the table is
+  // never empty. Both come from the same FARS pull.
   let local_signal: LocalSignal | null = null;
-  const farsCounties: string[] = [];
+  const farsForTranslation: string[] = [];
   if (accidentRes.status === "fulfilled" && !accidentRes.value.error) {
     const rows = (accidentRes.value.data as Array<Record<string, unknown>>) ?? [];
-    const counties = rows
+    const named = rows.filter((r) => String(r.county ?? "").trim());
+
+    const byRate = [...named]
       .filter((r) => r.deaths_per_100k != null)
       .sort((a, b) => num(b.deaths_per_100k) - num(a.deaths_per_100k))
       .slice(0, 6)
       .map((r) => ({
-        county_name: String(r.county ?? "").trim(),
+        county_name: String(r.county).trim(),
         deaths_per_100k: r.deaths_per_100k == null ? null : num(r.deaths_per_100k),
         rural_pct: r.rural_pct == null ? null : num(r.rural_pct),
-      }))
-      .filter((c) => c.county_name);
-    if (counties.length > 0) {
-      local_signal = { source: "FARS", top_counties: counties };
-      farsCounties.push(...counties.map((c) => c.county_name));
-    }
+      }));
+    if (byRate.length > 0) local_signal = { source: "FARS", top_counties: byRate };
+
+    const byDeaths = [...named]
+      .sort((a, b) => num(b.total_deaths) - num(a.total_deaths))
+      .slice(0, 10)
+      .map((r) => String(r.county).trim());
+    farsForTranslation.push(...byDeaths);
   } else if (accidentRes.status === "rejected") {
     errors.push("accident_summary fetch failed");
   }
 
-  // Build the county→DMA translation from the FARS counties we actually have,
-  // using the hand-checked crosswalk. Unknown counties are omitted (never guessed).
+  // county→DMA translation via the hand-checked crosswalk. Unknown counties are
+  // omitted (never guessed).
   const crosswalk = COUNTY_DMA_BY_STATE[state] ?? {};
   const seen = new Set<string>();
   const county_dma: CountyDmaLink[] = [];
-  for (const county of farsCounties) {
+  for (const county of farsForTranslation) {
     const dma = crosswalk[county];
     if (dma && !seen.has(county)) {
       seen.add(county);
@@ -252,11 +268,8 @@ export async function assembleStrategyInputs(
   const channelFit = new Map<ChannelKey, number>();
   if (profilesRes.status === "fulfilled" && !profilesRes.value.error) {
     const rows = (profilesRes.value.data as Array<Record<string, unknown>>) ?? [];
-    // Restrict to the top DMA's market when we can match it; else use all rows.
-    const scoped = topDmaCode
-      ? rows.filter((r) => String(r.market_id ?? "").includes(topDmaCode!))
-      : [];
-    const used = scoped.length > 0 ? scoped : rows;
+    // AL has no per-DMA media_profiles; these are generic consumption profiles,
+    // so fit is directional. Average each channel's index across all rows.
     const idxCols: Array<[string, ChannelKey]> = [
       ["tv_linear_index", "tv_linear"],
       ["ctv_streaming_index", "ctv"],
@@ -269,9 +282,8 @@ export async function assembleStrategyInputs(
       ["search_index", "search"],
       ["print_index", "print"],
     ];
-    // Average each channel's index across the (age-band) rows.
     const sums = new Map<ChannelKey, { sum: number; n: number }>();
-    for (const r of used) {
+    for (const r of rows) {
       for (const [col, ch] of idxCols) {
         const v = r[col];
         if (v != null) {
@@ -282,14 +294,13 @@ export async function assembleStrategyInputs(
         }
       }
     }
-    const avgs = new Map<ChannelKey, number>();
     let maxAvg = 0;
+    const avgs = new Map<ChannelKey, number>();
     for (const [ch, { sum, n }] of sums) {
       const a = n > 0 ? sum / n : 0;
       avgs.set(ch, a);
       if (a > maxAvg) maxAvg = a;
     }
-    // Scale-independent fit: normalize against the strongest channel in-market.
     for (const [ch, a] of avgs) {
       channelFit.set(ch, maxAvg > 0 ? clamp01(a / maxAvg) : 0);
     }
@@ -298,6 +309,8 @@ export async function assembleStrategyInputs(
   }
 
   /* channel competition (channel_competition_scores by DMA) ---------------- */
+  // Keyed by geo-target UUID today, not the DMA code, so AL rarely matches.
+  // When it doesn't, competition stays null (unknown) — honest, not zero.
   const channelComp = new Map<ChannelKey, number>();
   if (topDmaCode) {
     try {
@@ -316,8 +329,6 @@ export async function assembleStrategyInputs(
     }
   }
 
-  // Merge fit + competition into channel signals. A channel needs at least a
-  // fit signal to be worth planning; competition is optional (null = unknown).
   const channels: ChannelSignal[] = [];
   for (const [ch, fit] of channelFit) {
     channels.push({ channel: ch, fit, competition: channelComp.has(ch) ? channelComp.get(ch)! : null });
@@ -326,15 +337,14 @@ export async function assembleStrategyInputs(
   /* named outlets (media_outlets scoped to DMA + broadcast_stations) -------- */
   const outlets: NamedOutlet[] = [];
   const outletSeen = new Set<string>();
+  const dmaNameSet = new Set(dmaNames.map((d) => d.toLowerCase()));
   if (outletsRes.status === "fulfilled" && !outletsRes.value.error) {
     const rows = (outletsRes.value.data as Array<Record<string, unknown>>) ?? [];
     for (const r of rows) {
       const market = String(r.market ?? "").trim();
-      // Loosely scope to one of this state's DMA names.
-      const inState = dmaNames.some((d) => market && d.toLowerCase().includes(market.toLowerCase().split(" ")[0]));
-      if (dmaNames.length > 0 && market && !inState) continue;
-      const ch = formatToChannel(String(r.media_format ?? ""), String(r.media_type ?? ""));
+      if (dmaNameSet.size > 0 && market && !dmaNameSet.has(market.toLowerCase())) continue;
       const name = String(r.call_sign ?? r.media_company ?? "").trim();
+      const ch = formatToChannel(String(r.media_format ?? ""), name);
       if (!ch || !name || outletSeen.has(name)) continue;
       outletSeen.add(name);
       outlets.push({
@@ -343,7 +353,10 @@ export async function assembleStrategyInputs(
         format_genre: r.format_genre ? String(r.format_genre) : undefined,
         dma_name: market || topDmaName || undefined,
       });
+      if (outlets.length >= 16) break;
     }
+  } else if (outletsRes.status === "rejected") {
+    errors.push("media_outlets fetch failed");
   }
   // Backfill broadcast stations (TV/radio) for the state if outlets are thin.
   if (outlets.length < 6) {
@@ -356,8 +369,8 @@ export async function assembleStrategyInputs(
       if (!error && Array.isArray(data)) {
         for (const r of data as Array<Record<string, unknown>>) {
           if (r.active === false) continue;
-          const ch = formatToChannel(String(r.service_type ?? ""));
           const name = String(r.call_sign ?? "").trim();
+          const ch = formatToChannel(String(r.service_type ?? ""), name);
           if (!ch || !name || outletSeen.has(name)) continue;
           outletSeen.add(name);
           outlets.push({
