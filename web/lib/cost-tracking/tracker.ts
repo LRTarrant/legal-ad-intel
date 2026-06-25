@@ -30,6 +30,7 @@ export type GenerationPurpose =
   | "ad_creative"
   | "image_gen"
   | "strategic_brief"
+  | "strategy_engine"
   | "other";
 
 export interface TrackCallInput {

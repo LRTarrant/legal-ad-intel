@@ -35,6 +35,8 @@ import {
   VIEWBOX as AL_VIEWBOX,
 } from "@/lib/data/state-geometry/alabama";
 import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
+import { StrategyEngineSection } from "../components/strategy-engine/strategy-engine-section";
+import type { StrategyInputs } from "@/lib/strategy-engine/types";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -151,6 +153,7 @@ export interface AlabamaPageData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
+  strategyInputs: StrategyInputs | null;
   errors: AlabamaDataErrors;
 }
 
@@ -313,6 +316,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               ["#overview", "Overview"],
               ["#legal", "Legal"],
               ["#competition", "Competition"],
+              ["#strategy", "Strategy"],
               ["#signals", "Signals"],
               ["#sources", "Sources"],
             ].map(([href, label]) => (
@@ -763,10 +767,15 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       <CompetitiveAnalysis stateName="Alabama" stateCode="AL" />
 
       {/* ============================================================ */}
-      {/* SECTION 4 — PROPRIETARY SIGNALS                              */}
+      {/* SECTION 4 — STRATEGY ENGINE                                  */}
+      {/* ============================================================ */}
+      <StrategyEngineSection n={4} inputs={data.strategyInputs} />
+
+      {/* ============================================================ */}
+      {/* SECTION 5 — PROPRIETARY SIGNALS                              */}
       {/* ============================================================ */}
       <div id="signals" className="scroll-mt-20">
-        <SectionHeading n={4} title="Proprietary Signals" />
+        <SectionHeading n={5} title="Proprietary Signals" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
             Cross-signal insights
@@ -835,10 +844,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       />
 
       {/* ============================================================ */}
-      {/* SECTION 5 — SOURCES & METHODOLOGY                            */}
+      {/* SECTION 6 — SOURCES & METHODOLOGY                            */}
       {/* ============================================================ */}
       <div id="sources" className="scroll-mt-20">
-        <SectionHeading n={5} title="Sources & Methodology" />
+        <SectionHeading n={6} title="Sources & Methodology" />
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
           <div className="grid gap-2 sm:grid-cols-2">
             {[
