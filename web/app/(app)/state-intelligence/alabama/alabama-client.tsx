@@ -4,7 +4,6 @@ import { useMemo, useEffect } from "react";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
 import {
   AlertTriangle,
-  Scale,
   Car,
   Truck,
   Bike,
@@ -13,10 +12,8 @@ import {
   TrendingUp,
   FileText,
   MapPin,
-  Lightbulb,
   CloudLightning,
   Database,
-  Target,
 } from "lucide-react";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
@@ -490,12 +487,9 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
         <SectionHeading n={2} title="Legal Landscape & PI Viability" />
 
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-intelligence-teal" />
-            <h3 className="font-heading text-xl font-bold text-midnight-navy">
-              Should a firm bring PI cases in Alabama?
-            </h3>
-          </div>
+          <h3 className="font-heading text-xl font-bold text-midnight-navy">
+            Should a firm bring PI cases in Alabama?
+          </h3>
           <p className="mt-1.5 text-sm text-slate-gray">
             Negligence rule, statute, damage caps, judicial mix and case-type
             demand &mdash; one combined read on PI viability.
@@ -629,12 +623,11 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
 
               {/* case-type opportunities */}
               <div id="case-types" className="mt-7 scroll-mt-20">
-                <div className="mb-3.5 flex flex-wrap items-baseline gap-2.5">
-                  <Target className="h-4 w-4 text-intelligence-teal" />
+                <div className="mb-4 flex flex-wrap items-baseline gap-2.5">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
                     Case-type opportunities
                   </div>
-                  <div className="text-[12.5px] text-slate-gray/80">
+                  <div className="text-xs text-slate-gray/80">
                     Data-driven audience &amp; media recommendations by case type
                   </div>
                 </div>
@@ -730,12 +723,9 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       <div id="signals" className="scroll-mt-20">
         <SectionHeading n={4} title="Proprietary Signals" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
-          <div className="mb-1 flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-intelligence-teal" />
-            <h3 className="font-heading text-xl font-bold text-midnight-navy">
-              Cross-signal insights
-            </h3>
-          </div>
+          <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
+            Cross-signal insights
+          </h3>
           <p className="mb-6 text-sm text-slate-gray">
             Non-obvious opportunities surfaced by cross-referencing multiple data
             sources
@@ -867,9 +857,9 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
 
 function SectionHeading({ n, title }: { n: number; title: string }) {
   return (
-    <div className="mb-3.5 flex items-center gap-3">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
-        {n}
+    <div className="mb-4 flex items-baseline gap-2.5">
+      <span className="font-mono text-xs font-semibold tabular-nums text-intelligence-teal">
+        {String(n).padStart(2, "0")}
       </span>
       <h2 className="font-heading text-2xl font-bold text-midnight-navy">{title}</h2>
     </div>
@@ -905,17 +895,15 @@ function VerdictCard({
       className="rounded-xl border border-cloud bg-white px-4.5 py-4 shadow-sm"
       style={{ borderTop: `3px solid ${top}` }}
     >
-      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-gray/80">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray/80">
         {label}
       </div>
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span
-          className={`font-bold text-midnight-navy ${value.length > 9 ? "text-[22px]" : "font-mono text-[32px]"}`}
-        >
+        <span className="font-heading text-2xl font-bold leading-tight tracking-tight text-midnight-navy">
           {value}
         </span>
         {valueSuffix && (
-          <span className="font-mono text-[13px] text-slate-gray">{valueSuffix}</span>
+          <span className="font-mono text-xs text-slate-gray">{valueSuffix}</span>
         )}
       </div>
       <span
@@ -941,11 +929,11 @@ function SnapshotCard({
 }) {
   return (
     <div className="rounded-xl border border-cloud bg-white p-5 shadow-sm">
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-gray/80">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray/80">
         {label}
       </div>
       <div
-        className={`mt-2 font-bold text-midnight-navy ${valueText ? "text-2xl" : "font-mono text-[28px]"}`}
+        className={`mt-2 font-bold text-midnight-navy ${valueText ? "font-heading text-2xl" : "font-mono text-[28px]"}`}
       >
         {value}
       </div>
@@ -1054,13 +1042,13 @@ function CaseCard({
         </div>
       )}
       <div className="mt-3 rounded-lg border border-intelligence-teal/20 bg-intelligence-teal/5 p-3">
-        <div className="text-[9.5px] font-bold uppercase tracking-wider text-intelligence-teal">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-intelligence-teal">
           Audience
         </div>
         <p className="mt-1 text-xs leading-relaxed text-midnight-navy/75">{audience}</p>
       </div>
       <div className="mt-2 rounded-lg border border-cloud bg-cloud/40 p-3">
-        <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-gray">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
           Media
         </div>
         <p className="mt-1 text-xs leading-relaxed text-midnight-navy/75">{media}</p>
