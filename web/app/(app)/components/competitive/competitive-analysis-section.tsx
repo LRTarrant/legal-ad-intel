@@ -294,7 +294,7 @@ export function CompetitiveAnalysis({
       )}
 
       {/* How-to-read callout (honest framing, no fabricated counts) */}
-      <div className="rounded-xl border border-cloud border-l-[3px] border-l-intelligence-teal bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-cloud bg-cloud/30 p-5">
         <p className="text-sm leading-relaxed text-slate-gray">
           <span className="font-semibold text-midnight-navy">
             Who you&apos;re competing against, by market.

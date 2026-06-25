@@ -1,6 +1,6 @@
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
-import type { AlabamaPageData } from "./alabama-client";
+import type { AlabamaPageData, AlabamaDataErrors } from "./alabama-client";
 import { getJudicialProfiles, type JudicialProfileRow } from "@/lib/queries/judicial";
 
 const AlabamaClient = nextDynamic(() => import("./alabama-client").then((m) => m.AlabamaClient));
@@ -262,6 +262,18 @@ export default async function AlabamaStatePage() {
   if (results[8].status === "fulfilled") stormCount = results[8].value;
   else console.error("[Alabama] fetchStormCount failed:", results[8].reason);
 
+  const errors: AlabamaDataErrors = {
+    accidentSummary: results[0].status === "rejected",
+    ruralUrban: results[1].status === "rejected",
+    stormSummary: results[2].status === "rejected",
+    boatingSummary: results[3].status === "rejected",
+    piViability: results[4].status === "rejected",
+    censusDemographics: results[5].status === "rejected",
+    msaDemographics: results[6].status === "rejected",
+    judicialProfiles: results[7].status === "rejected",
+    stormCount: results[8].status === "rejected",
+  };
+
   const pageData: AlabamaPageData = {
     accidentSummary,
     ruralUrban,
@@ -272,6 +284,7 @@ export default async function AlabamaStatePage() {
     msaDemographics,
     judicialProfiles: judicialRows,
     stormCount,
+    errors,
   };
 
   return <AlabamaClient data={pageData} />;

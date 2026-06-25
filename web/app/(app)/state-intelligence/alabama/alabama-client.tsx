@@ -2,8 +2,15 @@
 
 import { useMemo, useEffect } from "react";
 import { BuildCampaignLink } from "../../components/build-campaign-link";
+import { SectionHeading } from "@/components/state-intelligence/SectionHeading";
+import { SnapshotCard } from "@/components/state-intelligence/SnapshotCard";
+import { VerdictCard, ScoreChip } from "@/components/state-intelligence/VerdictCard";
 import {
-  AlertTriangle,
+  DataHealthBanner,
+  RetryButton,
+} from "@/components/state-intelligence/DataHealthBanner";
+import { viabilityBand, scoreColor } from "@/components/state-intelligence/viability";
+import {
   Car,
   Truck,
   Bike,
@@ -120,6 +127,20 @@ interface MSADemographicsRow {
   pct_employed: number | null;
 }
 
+/** Per-dataset fetch-failure flags. `true` = that dataset's fetch rejected,
+ *  so the UI must show an explicit "unavailable" state instead of a misleading zero. */
+export interface AlabamaDataErrors {
+  accidentSummary: boolean;
+  ruralUrban: boolean;
+  stormSummary: boolean;
+  boatingSummary: boolean;
+  piViability: boolean;
+  censusDemographics: boolean;
+  msaDemographics: boolean;
+  judicialProfiles: boolean;
+  stormCount: boolean;
+}
+
 export interface AlabamaPageData {
   accidentSummary: AccidentSummaryRow[];
   ruralUrban: RuralUrbanRow[];
@@ -130,7 +151,20 @@ export interface AlabamaPageData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
+  errors: AlabamaDataErrors;
 }
+
+const DATASET_LABELS: Record<keyof AlabamaDataErrors, string> = {
+  accidentSummary: "Accident & crash data",
+  ruralUrban: "Rural/urban comparison",
+  stormSummary: "Storm events",
+  boatingSummary: "Boating accidents",
+  piViability: "PI viability scores",
+  censusDemographics: "Census demographics",
+  msaDemographics: "Metro demographics",
+  judicialProfiles: "Judicial profiles",
+  stormCount: "Storm count",
+};
 
 /* ------------------------------------------------------------------ */
 /*  Hardcoded Constants (ALDOT, BLS)                                   */
@@ -180,19 +214,6 @@ function fmtMillions(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
   return n.toLocaleString();
-}
-
-/** Viability band: green / amber / red. */
-function viabilityBand(score: number): { label: string; tone: "good" | "mid" | "bad" } {
-  if (score >= 75) return { label: "Favorable", tone: "good" };
-  if (score >= 50) return { label: "Challenging", tone: "mid" };
-  return { label: "Difficult", tone: "bad" };
-}
-
-function scoreColor(s: number): string {
-  if (s <= 25) return "#DC2626";
-  if (s <= 74) return "#E0A030";
-  return "#16A34A";
 }
 
 /* ------------------------------------------------------------------ */
@@ -262,8 +283,19 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       ]
     : [];
 
+  const failedDatasets = (Object.keys(data.errors) as (keyof AlabamaDataErrors)[])
+    .filter((k) => data.errors[k])
+    .map((k) => DATASET_LABELS[k]);
+
   return (
     <div className="space-y-6">
+      {/* ============================================================ */}
+      {/* DATA-HEALTH BANNER (only when a fetch actually failed)       */}
+      {/* ============================================================ */}
+      {failedDatasets.length > 0 && (
+        <DataHealthBanner stateName="Alabama" failed={failedDatasets} />
+      )}
+
       {/* ============================================================ */}
       {/* STICKY CONTEXT BAR                                           */}
       {/* ============================================================ */}
@@ -328,11 +360,11 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       {/* ============================================================ */}
       <div>
         <div className="mb-3 flex items-center gap-2.5">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-gray/70">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-gray">
             The verdict
           </span>
           <span className="h-px flex-1 bg-cloud" />
-          <span className="text-[11.5px] text-slate-gray/70">
+          <span className="text-[11.5px] text-slate-gray">
             Should a firm advertise here &mdash; and where?
           </span>
         </div>
@@ -363,7 +395,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             note={`${fmtNum(mvaDeaths)} MVA deaths · concentrated in the Birmingham DMA.`}
           />
           <VerdictCard
-            top="#2E5E8C"
+            top="#2E5077"
             label="Competition"
             value="Moderate"
             chip="Metros crowded"
@@ -380,7 +412,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-lg font-bold">What the data alone won&apos;t tell you</div>
           <a href="#signals" className="text-[13px] font-semibold text-white/80 hover:text-white">
-            All proprietary signals &rarr;
+            More proprietary signals &rarr;
           </a>
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -468,12 +500,19 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               }))}
             />
           ) : (
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-cloud bg-white p-6 shadow-sm">
               <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
                 <Database className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
-                <p className="text-sm font-medium text-midnight-navy/60">
-                  County intelligence data loading...
+                <p className="text-sm font-medium text-slate-gray">
+                  {data.errors.accidentSummary
+                    ? "County intelligence couldn't be loaded right now."
+                    : "No county intelligence is available for Alabama yet."}
                 </p>
+                {data.errors.accidentSummary && (
+                  <div className="mt-3 flex justify-center">
+                    <RetryButton />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -500,7 +539,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               {/* viability + facts */}
               <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
                 {/* composite panel */}
-                <div className="flex flex-col rounded-xl border border-cloud bg-cloud/30 p-5">
+                <div className="flex flex-col rounded-xl bg-cloud/40 p-5">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
                     Composite PI viability
                   </div>
@@ -531,7 +570,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                 </div>
 
                 {/* facts grid */}
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-cloud bg-cloud sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-cloud sm:grid-cols-3">
                   <Fact
                     label="Negligence rule"
                     value={formatNegligenceRule(piData.negligence_rule)}
@@ -604,19 +643,19 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                   </div>
                   <div className="flex h-2.5 overflow-hidden rounded-full border border-cloud">
                     <div
-                      style={{ width: `${(judConservative / judTotal) * 100}%`, background: "#DC616A" }}
+                      style={{ width: `${(judConservative / judTotal) * 100}%`, background: "#D64550" }}
                     />
                     <div
-                      style={{ width: `${(judLiberal / judTotal) * 100}%`, background: "#4E85F0" }}
+                      style={{ width: `${(judLiberal / judTotal) * 100}%`, background: "#2F6FED" }}
                     />
                     <div
-                      style={{ width: `${(judModerate / judTotal) * 100}%`, background: "#E5AE4F" }}
+                      style={{ width: `${(judModerate / judTotal) * 100}%`, background: "#E0A030" }}
                     />
                   </div>
                   <div className="mt-3.5 flex flex-col gap-2">
-                    <JudRow color="#DC616A" label="Conservative" count={judConservative} />
-                    <JudRow color="#4E85F0" label="Liberal" count={judLiberal} />
-                    <JudRow color="#E5AE4F" label="Moderate" count={judModerate} />
+                    <JudRow color="#D64550" label="Conservative" count={judConservative} />
+                    <JudRow color="#2F6FED" label="Liberal" count={judLiberal} />
+                    <JudRow color="#E0A030" label="Moderate" count={judModerate} />
                   </div>
                 </div>
               </div>
@@ -627,13 +666,13 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
                     Case-type opportunities
                   </div>
-                  <div className="text-xs text-slate-gray/80">
+                  <div className="text-xs text-slate-gray">
                     Data-driven audience &amp; media recommendations by case type
                   </div>
                 </div>
                 <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                   <CaseCard
-                    icon={<Car className="h-4 w-4 text-intelligence-teal" />}
+                    icon={<Car className="h-4 w-4 text-midnight-navy" />}
                     title="Motor Vehicle"
                     demand="High demand"
                     demandTone="good"
@@ -644,7 +683,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                     media="Radio + digital in rural markets; CTV in Birmingham, Huntsville & Mobile metros. Lean into holiday-weekend and DUI-enforcement windows."
                   />
                   <CaseCard
-                    icon={<Truck className="h-4 w-4 text-intelligence-teal" />}
+                    icon={<Truck className="h-4 w-4 text-midnight-navy" />}
                     title="Large Truck"
                     demand="High demand"
                     demandTone="good"
@@ -655,7 +694,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                     media="Billboard corridors plus digital geo-fencing along the major interstates where collisions concentrate."
                   />
                   <CaseCard
-                    icon={<Bike className="h-4 w-4 text-intelligence-teal" />}
+                    icon={<Bike className="h-4 w-4 text-midnight-navy" />}
                     title="Motorcycle"
                     demand="Moderate"
                     demandTone="mid"
@@ -666,7 +705,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                     media="Seasonal spring/summer flights — social plus streaming audio against motorcycle-enthusiast interests."
                   />
                   <CaseCard
-                    icon={<HardHat className="h-4 w-4 text-intelligence-teal" />}
+                    icon={<HardHat className="h-4 w-4 text-midnight-navy" />}
                     title="Construction"
                     demand="Moderate"
                     demandTone="mid"
@@ -677,7 +716,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                     media="Spanish-language media in Franklin/DeKalb (high Hispanic workforce); radio across rural construction corridors."
                   />
                   <CaseCard
-                    icon={<Anchor className="h-4 w-4 text-intelligence-teal" />}
+                    icon={<Anchor className="h-4 w-4 text-midnight-navy" />}
                     title="Boating"
                     demand="Seasonal"
                     demandTone="info"
@@ -691,22 +730,28 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               </div>
 
               {/* insight callout */}
-              <div className="mt-6 rounded-r-lg border-l-[3px] border-red-500 bg-red-50 px-4 py-3.5">
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3.5">
                 <p className="text-[13px] leading-relaxed text-midnight-navy/80">
-                  Alabama is one of only 4 states (plus D.C.) that follows{" "}
-                  <strong>pure contributory negligence</strong> &mdash; any
-                  plaintiff fault bars recovery entirely. This makes case
-                  selection and clear-liability evidence the deciding factor for
-                  advertising ROI. Target cases with unambiguous defendant fault.
+                  Because any plaintiff fault bars recovery here,{" "}
+                  <strong>case selection and clear-liability evidence</strong> are
+                  the deciding factor for advertising ROI. Target cases with
+                  unambiguous defendant fault.
                 </p>
               </div>
             </>
           ) : (
             <div className="mt-5 rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
               <Database className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
-              <p className="text-sm font-medium text-midnight-navy/60">
-                PI viability data loading...
+              <p className="text-sm font-medium text-slate-gray">
+                {data.errors.piViability
+                  ? "PI viability scores couldn't be loaded right now."
+                  : "PI viability scores are not available for Alabama yet."}
               </p>
+              {data.errors.piViability && (
+                <div className="mt-3 flex justify-center">
+                  <RetryButton />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -731,20 +776,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             sources
           </p>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <SignalCard
-              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
-              tone="red"
-              title="Greene County: Highest Risk, Lowest Resources"
-              facts={[
-                "Fatality rate: 552.3 per 100K (2019–2024, highest in state)",
-                "Population: 7,424",
-              ]}
-              body="Greene County's extreme fatality rate reflects a pattern across Alabama's Black Belt counties — high poverty, limited infrastructure, low internet access. Radio and community outreach are the only viable advertising channels here."
-            />
-            <SignalCard
-              icon={<HardHat className="h-4 w-4 text-intelligence-teal" />}
-              tone="teal"
+              icon={<HardHat className="h-4 w-4 text-steel-blue" />}
+              tone="steel"
               title="Construction Boom + High Road Fatalities"
               facts={[
                 `Construction employment up ${BLS.constructionYoY}% YoY (${fmtNum(BLS.constructionWorkers)} workers)`,
@@ -774,25 +809,14 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               body="Property damage and injury from severe weather can compound with traffic incidents during evacuations and storm response. Consider weather-triggered advertising campaigns in storm season."
             />
             <SignalCard
-              icon={<Truck className="h-4 w-4 text-intelligence-teal" />}
-              tone="teal"
+              icon={<Truck className="h-4 w-4 text-steel-blue" />}
+              tone="steel"
               title="Interstate Corridors: Trucking + MVA Convergence"
               facts={[
                 "I-65 (Birmingham to Mobile), I-20 (Birmingham to Atlanta), I-59 (Birmingham to Chattanooga)",
                 `${ALDOT.largeTruckFatalities} truck fatalities (2023), ${fmtNum(BLS.truckingWorkers)} trucking workers`,
               ]}
               body="Alabama's position as a Southeast logistics hub means heavy commercial truck traffic on interstates. Geo-fence digital ads along I-65/I-20/I-59 corridors targeting truck accident victims. Billboards at major truck stops reach CDL drivers for workplace injury cases."
-            />
-            <SignalCard
-              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
-              tone="red"
-              title="Impaired Driving: 1 in 5 Alabama Traffic Deaths"
-              facts={[
-                `${ALDOT.impairedDrivingDeaths} impaired driving deaths in 2023 (ALDOT)`,
-                "20% of all traffic fatalities",
-                "DUI conviction rates vary significantly by county",
-              ]}
-              body="Alabama's impaired-driving fatality share aligns with the national average but concentrates in rural counties with limited enforcement. Holiday weekends create predictable spikes — time-triggered digital campaigns (Memorial Day, Labor Day, July 4th, New Year's) reach recent DUI accident victims while they're searching for representation."
             />
           </div>
         </div>
@@ -832,7 +856,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
                 key={source}
                 className="flex items-start gap-2 rounded-md bg-cloud/60 px-3 py-2"
               >
-                <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intelligence-teal" />
+                <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-gray" />
                 <p className="text-xs text-midnight-navy/80">{source}</p>
               </div>
             ))}
@@ -855,103 +879,6 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
 /*  Presentational subcomponents                                       */
 /* ------------------------------------------------------------------ */
 
-function SectionHeading({ n, title }: { n: number; title: string }) {
-  return (
-    <div className="mb-4 flex items-baseline gap-2.5">
-      <span className="font-mono text-xs font-semibold tabular-nums text-intelligence-teal">
-        {String(n).padStart(2, "0")}
-      </span>
-      <h2 className="font-heading text-2xl font-bold text-midnight-navy">{title}</h2>
-    </div>
-  );
-}
-
-const CHIP_TONES: Record<string, string> = {
-  good: "bg-emerald-50 text-emerald-700",
-  mid: "bg-amber-50 text-amber-600",
-  bad: "bg-red-50 text-red-600",
-  info: "bg-blue-50 text-blue-700",
-};
-
-function VerdictCard({
-  top,
-  label,
-  value,
-  valueSuffix,
-  chip,
-  chipTone,
-  note,
-}: {
-  top: string;
-  label: string;
-  value: string;
-  valueSuffix?: string;
-  chip: string;
-  chipTone: "good" | "mid" | "bad" | "info";
-  note: string;
-}) {
-  return (
-    <div
-      className="rounded-xl border border-cloud bg-white px-4.5 py-4 shadow-sm"
-      style={{ borderTop: `3px solid ${top}` }}
-    >
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray/80">
-        {label}
-      </div>
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="font-heading text-2xl font-bold leading-tight tracking-tight text-midnight-navy">
-          {value}
-        </span>
-        {valueSuffix && (
-          <span className="font-mono text-xs text-slate-gray">{valueSuffix}</span>
-        )}
-      </div>
-      <span
-        className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${CHIP_TONES[chipTone]}`}
-      >
-        {chip}
-      </span>
-      <p className="mt-2.5 text-[11.5px] leading-snug text-slate-gray">{note}</p>
-    </div>
-  );
-}
-
-function SnapshotCard({
-  label,
-  value,
-  sub,
-  valueText,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  valueText?: boolean;
-}) {
-  return (
-    <div className="rounded-xl border border-cloud bg-white p-5 shadow-sm">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray/80">
-        {label}
-      </div>
-      <div
-        className={`mt-2 font-bold text-midnight-navy ${valueText ? "font-heading text-2xl" : "font-mono text-[28px]"}`}
-      >
-        {value}
-      </div>
-      <div className="mt-1 text-xs text-slate-gray/80">{sub}</div>
-    </div>
-  );
-}
-
-function ScoreChip({ band }: { band: { label: string; tone: "good" | "mid" | "bad" } }) {
-  return (
-    <span
-      className={`mt-3 inline-block self-start rounded-full px-3 py-1 text-xs font-bold ${CHIP_TONES[band.tone]}`}
-    >
-      {band.label}
-    </span>
-  );
-}
-
 function Fact({
   label,
   value,
@@ -971,7 +898,7 @@ function Fact({
       <div className={`mt-1.5 text-[17px] font-bold ${valueClass ?? "text-midnight-navy"}`}>
         {value}
       </div>
-      <div className="mt-1 text-[11.5px] leading-snug text-slate-gray/80">{note}</div>
+      <div className="mt-1 text-[11.5px] leading-snug text-slate-gray">{note}</div>
     </div>
   );
 }
@@ -1019,7 +946,7 @@ function CaseCard({
   media: string;
 }) {
   return (
-    <div className="flex flex-col rounded-xl border border-cloud border-t-[3px] border-t-intelligence-teal bg-white p-4">
+    <div className="flex flex-col rounded-xl border border-cloud border-t-[3px] border-t-midnight-navy bg-white p-4">
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex items-center gap-1.5">
           {icon}
@@ -1037,12 +964,12 @@ function CaseCard({
       </div>
       {counties && (
         <div className="mt-2 flex items-center gap-1.5 text-[11.5px] text-slate-gray">
-          <MapPin className="h-3 w-3 flex-none text-slate-gray/60" />
+          <MapPin className="h-3 w-3 flex-none text-slate-gray" />
           {counties}
         </div>
       )}
-      <div className="mt-3 rounded-lg border border-intelligence-teal/20 bg-intelligence-teal/5 p-3">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-intelligence-teal">
+      <div className="mt-3 rounded-lg border border-cloud bg-cloud/40 p-3">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-gray">
           Audience
         </div>
         <p className="mt-1 text-xs leading-relaxed text-midnight-navy/75">{audience}</p>
@@ -1059,7 +986,7 @@ function CaseCard({
 
 const SIGNAL_TONES: Record<string, { border: string; chip: string }> = {
   red: { border: "border-red-200", chip: "bg-red-50 border-red-100" },
-  teal: { border: "border-intelligence-teal/30", chip: "bg-intelligence-teal/5 border-intelligence-teal/20" },
+  steel: { border: "border-steel-blue/30", chip: "bg-steel-blue/5 border-steel-blue/20" },
   emerald: { border: "border-emerald-200", chip: "bg-emerald-50 border-emerald-100" },
   amber: { border: "border-amber-200", chip: "bg-amber-50 border-amber-100" },
 };
@@ -1072,7 +999,7 @@ function SignalCard({
   body,
 }: {
   icon: React.ReactNode;
-  tone: "red" | "teal" | "emerald" | "amber";
+  tone: "red" | "steel" | "emerald" | "amber";
   title: string;
   facts: string[];
   body: string;

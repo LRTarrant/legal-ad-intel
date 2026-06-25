@@ -196,13 +196,11 @@ const METRIC_META: Record<MetricKey, { label: string; dec: number; field: keyof 
   boating: { label: "Boating deaths", dec: 0, field: "boatDeaths" },
 };
 
-function tint(hex: string, amt: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const mix = (k: number) => Math.round(k + (255 - k) * amt);
-  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+/** Lighten a color toward white by `amt` (0 = color, 1 = white). Uses color-mix
+ *  so it accepts CSS custom properties (e.g. `var(--color-accent)`) as well as
+ *  hex — equivalent to the old per-channel sRGB mix toward white. */
+function tint(color: string, amt: number): string {
+  return `color-mix(in srgb, white ${Math.round(amt * 100)}%, ${color})`;
 }
 
 function ramp(t: number): string {
@@ -233,8 +231,9 @@ function commuteFmt(n: number | null | undefined): string {
   return n == null ? "—" : n.toFixed(1) + " min";
 }
 
-/** Accent used for the demographics layer (race bars, commute highlight). */
-const DEMO_ACCENT = "#1A8C96";
+/** Accent used for the demographics layer (race bars, commute highlight).
+ *  Follows the tenant brand accent, falling back to LMI teal. */
+const DEMO_ACCENT = "var(--color-accent, #1A8C96)";
 
 function profileOf(raw: string | null): string {
   if (!raw) return "Unknown";
@@ -281,6 +280,7 @@ export function CountyIntelligenceMap({
   const [metric, setMetric] = useState<MetricKey>("rate");
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filter, setFilter] = useState("");
@@ -598,7 +598,7 @@ export function CountyIntelligenceMap({
     border: "none",
     borderRadius: 7,
     cursor: "pointer",
-    background: on ? "#0B1D3A" : "transparent",
+    background: on ? "var(--color-primary, #0B1D3A)" : "transparent",
     color: on ? "#fff" : "#6B7280",
     transition: "background 120ms ease, color 120ms ease",
     whiteSpace: "nowrap",
@@ -697,7 +697,7 @@ export function CountyIntelligenceMap({
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A8C96" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "var(--color-accent, #1A8C96)" }}>
               <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
               <line x1="8" y1="2" x2="8" y2="18" />
               <line x1="16" y1="6" x2="16" y2="22" />
@@ -730,7 +730,7 @@ export function CountyIntelligenceMap({
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: "#1A8C96", display: "inline-block" }} />
+          <span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--color-accent, #1A8C96)", display: "inline-block" }} />
           Merges &ldquo;Accident Data&rdquo; + &ldquo;Judicial Profiles&rdquo;
         </span>
       </div>
@@ -849,6 +849,8 @@ export function CountyIntelligenceMap({
         >
           <svg
             viewBox={`0 0 ${viewBox.width} ${viewBox.height}`}
+            role="group"
+            aria-label={`Interactive map of ${stateName} counties. Tab between counties and press Enter to select; the same data is available in the table below.`}
             style={{ width: "100%", height: "auto", maxHeight: 600, display: "block", overflow: "visible" }}
           >
             {counties.map((c) => {
@@ -873,10 +875,16 @@ export function CountyIntelligenceMap({
                 stroke = "#0B1D3A";
                 sw = mode === "overlay" ? 3 : 1.8;
               }
+              const rateLabel =
+                c.rate != null ? `${c.rate.toFixed(1)} deaths per 100K` : "no fatality-rate data";
               return (
                 <path
                   key={c.key}
                   d={c.d}
+                  tabIndex={0}
+                  role="button"
+                  aria-pressed={c.key === selected}
+                  aria-label={`${c.name} County. Judicial profile: ${c.profile}. ${rateLabel}.`}
                   style={{
                     fill,
                     stroke,
@@ -884,10 +892,28 @@ export function CountyIntelligenceMap({
                     cursor: "pointer",
                     transition: "fill 140ms ease, stroke 140ms ease",
                     strokeLinejoin: "round",
+                    outline:
+                      c.key === focusedKey
+                        ? "2.5px solid var(--color-accent, #1A8C96)"
+                        : "none",
                   }}
                   onMouseEnter={() => setHovered(c.key)}
                   onMouseLeave={() => setHovered(null)}
+                  onFocus={() => {
+                    setHovered(c.key);
+                    setFocusedKey(c.key);
+                  }}
+                  onBlur={() => {
+                    setHovered(null);
+                    setFocusedKey(null);
+                  }}
                   onClick={() => setSelected((s) => (s === c.key ? null : c.key))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected((s) => (s === c.key ? null : c.key));
+                    }
+                  }}
                 />
               );
             })}
@@ -1016,7 +1042,7 @@ export function CountyIntelligenceMap({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={DEMO_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: DEMO_ACCENT }}>
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
                         </svg>
@@ -1047,7 +1073,6 @@ export function CountyIntelligenceMap({
                                   height: "100%",
                                   borderRadius: 999,
                                   background: DEMO_ACCENT,
-                                  transition: "width 220ms ease",
                                 }}
                               />
                             </div>
@@ -1144,7 +1169,7 @@ export function CountyIntelligenceMap({
                 {selected && selected === activeKey && (
                   <button
                     onClick={() => setSelected(null)}
-                    style={{ marginTop: 12, fontSize: 12, color: "#1A8C96", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
+                    style={{ marginTop: 12, fontSize: 12, color: "var(--color-accent, #1A8C96)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
                   >
                     Clear selection &times;
                   </button>
@@ -1213,9 +1238,9 @@ export function CountyIntelligenceMap({
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 transition: "background 120ms ease",
-                border: "1px solid #1A8C96",
+                border: "1px solid var(--color-accent, #1A8C96)",
                 background: "#fff",
-                color: "#1A8C96",
+                color: "var(--color-accent, #1A8C96)",
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, verticalAlign: -2 }}>
@@ -1249,7 +1274,6 @@ export function CountyIntelligenceMap({
                   fontFamily: "inherit",
                   color: "#0B1D3A",
                   width: 240,
-                  outline: "none",
                 }}
               />
               <span style={{ fontSize: 12, color: "#94A3B8", marginLeft: "auto" }}>
@@ -1264,6 +1288,20 @@ export function CountyIntelligenceMap({
                       <th
                         key={col.key}
                         onClick={() => setSort(col.key)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSort(col.key);
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-sort={
+                          sortKey === col.key
+                            ? sortDir === "desc"
+                              ? "descending"
+                              : "ascending"
+                            : "none"
+                        }
                         style={{
                           padding: "10px 8px",
                           fontSize: 10,
@@ -1295,7 +1333,7 @@ export function CountyIntelligenceMap({
                         onClick={() => setSelected((s) => (s === c.key ? null : c.key))}
                         style={{
                           borderBottom: "1px solid #F1F5F9",
-                          background: isActive ? "rgba(26,140,150,.10)" : "#fff",
+                          background: isActive ? "color-mix(in srgb, var(--color-accent, #1A8C96) 10%, white)" : "#fff",
                           cursor: "pointer",
                           transition: "background 120ms ease",
                         }}
@@ -1353,9 +1391,9 @@ export function CountyIntelligenceMap({
               gap: 7,
               fontSize: 13,
               fontWeight: 600,
-              color: "#1A8C96",
+              color: "var(--color-accent, #1A8C96)",
               textDecoration: "none",
-              border: "1px solid #1A8C96",
+              border: "1px solid var(--color-accent, #1A8C96)",
               borderRadius: 8,
               padding: "8px 13px",
             }}
@@ -1394,7 +1432,7 @@ export function CountyIntelligenceMap({
       </div>
 
       {/* insight callout */}
-      <div style={{ marginTop: 18, borderLeft: "3px solid #1A8C96", background: "#F0FAFB", borderRadius: "0 8px 8px 0", padding: "13px 16px" }}>
+      <div style={{ marginTop: 18, border: "1px solid #E2E8F0", background: "#F8FAFC", borderRadius: 8, padding: "13px 16px" }}>
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "#334155" }}>
           High-opportunity markets combine a high fatality rate with a plaintiff-friendly (Liberal) judicial profile. Switch to{" "}
           <strong>Overlay</strong> to read both signals at once &mdash; fill shows fatality intensity, the outline shows judicial leaning. Counties dark in fill with a blue outline are the strongest ROI for plaintiff-firm advertising.
