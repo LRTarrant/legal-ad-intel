@@ -112,7 +112,8 @@ export default function AdminUsersPage() {
           .single();
         setCurrentUserId(user.id);
         if (profile) setCurrentUserRole(profile.role);
-        if (profile?.role === "super_admin") setIsSuperAdmin(true);
+        // Set explicitly (not set-once) so the gate resets if the role changes.
+        setIsSuperAdmin(profile?.role === "super_admin");
       } catch {
         // ignore
       }
