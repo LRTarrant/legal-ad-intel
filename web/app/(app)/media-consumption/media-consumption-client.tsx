@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 
 /* ───────────────────────── types ───────────────────────── */
@@ -137,7 +138,16 @@ function buildBlocks(rows: BaselineRow[], axis: Axis): ChannelBlock[] {
         if (isCitedAsFact(r.source)) mg.cited = true;
       }
       const metricGroups = [...mgMap.values()]
-        .map((mg) => ({ ...mg, bars: mg.bars.sort((a, b) => b.value - a.value) }))
+        .map((mg) => {
+          // Dedupe to one bar per demographic group; when two sources report the
+          // same cell (e.g. TikTok Black news 2024 vs 2026), keep the latest year.
+          const byGroup = new Map<string, Bar>();
+          for (const b of mg.bars) {
+            const prev = byGroup.get(b.group);
+            if (!prev || (b.year ?? 0) > (prev.year ?? 0)) byGroup.set(b.group, b);
+          }
+          return { ...mg, bars: [...byGroup.values()].sort((a, b) => b.value - a.value) };
+        })
         .sort((a, b) => (a.scope === b.scope ? 0 : a.scope === "general" ? -1 : 1));
 
       // context stats grouped by metric; dedupe to one value per group (keep the
@@ -168,11 +178,65 @@ function buildBlocks(rows: BaselineRow[], axis: Axis): ChannelBlock[] {
 
 /* ───────────────────────── component ───────────────────────── */
 
+const isAxis = (v: string | null): v is Axis =>
+  v === "race" || v === "age" || v === "income";
+
 export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
-  const [axis, setAxis] = useState<Axis>("race");
+  // Axis is URL-addressable (?view=) so a view is shareable and survives refresh.
+  const searchParams = useSearchParams();
+  const urlAxis = searchParams.get("view");
+  const [axis, setAxis] = useState<Axis>(isAxis(urlAxis) ? urlAxis : "race");
+  const tabRefs = useRef<Record<Axis, HTMLButtonElement | null>>({
+    race: null,
+    age: null,
+    income: null,
+  });
 
   const blocks = useMemo(() => buildBlocks(rows, axis), [rows, axis]);
   const activeBlurb = AXES.find((a) => a.key === axis)!.blurb;
+
+  // Select an axis, sync the URL without a server round-trip (replaceState keeps
+  // the deep-link shareable but doesn't re-run the server component), and move
+  // focus to the chosen tab when the change came from the keyboard.
+  function selectAxis(next: Axis, focus = false) {
+    setAxis(next);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `${window.location.pathname}?view=${next}`);
+    }
+    if (focus) tabRefs.current[next]?.focus();
+  }
+
+  // WAI-ARIA tabs keyboard pattern: arrow keys move + activate, Home/End jump.
+  function onTabKeyDown(e: React.KeyboardEvent) {
+    const i = AXES.findIndex((a) => a.key === axis);
+    let next = i;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % AXES.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i - 1 + AXES.length) % AXES.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = AXES.length - 1;
+    else return;
+    e.preventDefault();
+    selectAxis(AXES[next].key, true);
+  }
+
+  const panelId = "mc-consumption-panel";
+
+  // Family filter (scan aid): default "all"; narrowing renders a short, focused
+  // view so a buyer can drop straight to the channels they care about. Only
+  // families with data for the current axis get a chip; if the chosen family
+  // isn't present after an axis switch, fall back to "all" (never an empty view).
+  const presentFamilies = FAMILIES.filter((f) =>
+    blocks.some((b) => f.channels.includes(b.channel)),
+  );
+  const [familyFilter, setFamilyFilter] = useState<string>("all");
+  const effectiveFilter =
+    familyFilter !== "all" && presentFamilies.some((f) => f.label === familyFilter)
+      ? familyFilter
+      : "all";
+  const shownFamilies =
+    effectiveFilter === "all"
+      ? presentFamilies
+      : presentFamilies.filter((f) => f.label === effectiveFilter);
 
   return (
     <section aria-label="Consumption by demographic">
@@ -181,6 +245,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
         <div
           role="tablist"
           aria-label="Demographic breakdown"
+          onKeyDown={onTabKeyDown}
           className="inline-flex w-full rounded-lg border border-slate-200 bg-white p-1 sm:w-auto"
         >
           {AXES.map((a) => {
@@ -188,9 +253,16 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
             return (
               <button
                 key={a.key}
+                id={`mc-tab-${a.key}`}
                 role="tab"
+                type="button"
                 aria-selected={active}
-                onClick={() => setAxis(a.key)}
+                aria-controls={panelId}
+                tabIndex={active ? 0 : -1}
+                ref={(el) => {
+                  tabRefs.current[a.key] = el;
+                }}
+                onClick={() => selectAxis(a.key)}
                 className={`flex-1 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-semibold transition-colors sm:flex-none ${
                   active
                     ? "bg-midnight-navy text-white"
@@ -205,9 +277,51 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
         <p className="text-sm text-slate-gray sm:max-w-sm sm:text-right">{activeBlurb}</p>
       </div>
 
+      {/* Channel-group filter: narrow the briefing to one group to scan fast. */}
+      {presentFamilies.length > 1 && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-gray">
+            Show
+          </span>
+          <div
+            role="group"
+            aria-label="Filter channel groups"
+            className="no-scrollbar flex gap-2 overflow-x-auto"
+          >
+            {[{ key: "all", label: "All channels" }, ...presentFamilies.map((f) => ({ key: f.label, label: f.label }))].map(
+              (chip) => {
+                const active = effectiveFilter === chip.key;
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setFamilyFilter(chip.key)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-midnight-navy bg-midnight-navy text-white"
+                        : "border-slate-200 text-slate-gray hover:border-slate-300 hover:text-midnight-navy"
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              },
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Families → channels → bars */}
-      <div key={axis} className="mt-8 space-y-12">
-        {FAMILIES.map((family) => {
+      <div
+        key={`${axis}-${effectiveFilter}`}
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={`mc-tab-${axis}`}
+        tabIndex={0}
+        className="mt-8 space-y-12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-intelligence-teal"
+      >
+        {shownFamilies.map((family) => {
           const familyBlocks = blocks.filter((b) =>
             family.channels.includes(b.channel)
           );
@@ -225,6 +339,9 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
             </div>
           );
         })}
+        {blocks.length === 0 && (
+          <p className="text-sm text-slate-gray">No consumption data for this view yet.</p>
+        )}
       </div>
     </section>
   );
@@ -288,9 +405,12 @@ function ChannelRow({ block }: { block: ChannelBlock }) {
 
 function BarLine({ bar, baseline }: { bar: Bar; baseline: number | null }) {
   const pct = Math.max(0, Math.min(100, bar.value));
-  const overBaseline = baseline != null && bar.value > baseline + 0.5;
+  // Over-index = points above/below the all-adults average. The sign carries the
+  // meaning (so it never depends on color); teal/slate only reinforce it.
+  const delta = baseline != null ? Math.round(bar.value - baseline) : null;
+  const deltaLabel = delta == null ? null : delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "±0";
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       <span className="w-20 shrink-0 text-right text-xs text-slate-gray sm:w-24">
         {groupLabel(bar.group)}
       </span>
@@ -301,19 +421,27 @@ function BarLine({ bar, baseline }: { bar: Bar; baseline: number | null }) {
         />
         {baseline != null && (
           <span
-            className="absolute top-0 bottom-0 w-px bg-midnight-navy/35"
-            style={{ left: `${Math.min(100, baseline)}%` }}
+            className="absolute top-0 bottom-0 w-0.5 bg-midnight-navy/45"
+            style={{ left: `calc(${Math.min(100, baseline)}% - 1px)` }}
             aria-hidden
-            title={`All adults: ${baseline}%`}
+            title={`All-adults average: ${baseline}%`}
           />
         )}
       </div>
-      <span
-        className={`w-10 shrink-0 text-right text-sm font-semibold tabular-nums ${
-          overBaseline ? "text-intelligence-teal" : "text-midnight-navy"
-        }`}
-      >
+      <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-midnight-navy">
         {bar.value}%
+      </span>
+      <span
+        className={`w-11 shrink-0 text-left text-xs tabular-nums ${
+          delta == null
+            ? ""
+            : delta > 0
+              ? "font-semibold text-intelligence-teal"
+              : "text-slate-gray"
+        }`}
+        title={delta == null ? undefined : `${deltaLabel} points vs the all-adults average`}
+      >
+        {deltaLabel ?? ""}
       </span>
     </div>
   );
