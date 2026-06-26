@@ -333,7 +333,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
               </h3>
               <div className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
                 {familyBlocks.map((block) => (
-                  <ChannelRow key={block.channel} block={block} />
+                  <ChannelRow key={block.channel} block={block} axisNoun={axis} />
                 ))}
               </div>
             </div>
@@ -349,7 +349,11 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
 
 /* ───────────────────────── channel row ───────────────────────── */
 
-function ChannelRow({ block }: { block: ChannelBlock }) {
+function ChannelRow({ block, axisNoun }: { block: ChannelBlock; axisNoun: string }) {
+  // A lone bar (e.g. Facebook by race = just "Black") reads as broken. Flag it as
+  // a deliberate data limit, not a bug.
+  const barCount = block.metricGroups.reduce((n, mg) => n + mg.bars.length, 0);
+  const sparse = barCount === 1;
   return (
     <div className="grid gap-5 py-6 md:grid-cols-[180px_1fr] md:gap-8">
       <div className="md:pt-0.5">
@@ -377,6 +381,12 @@ function ChannelRow({ block }: { block: ChannelBlock }) {
             </div>
           </div>
         ))}
+
+        {sparse && (
+          <p className="text-xs text-slate-gray">
+            Only this cut is published for {channelLabel(block.channel)} by {axisNoun}.
+          </p>
+        )}
 
         {block.context.length > 0 && (
           <dl className="space-y-1.5">
