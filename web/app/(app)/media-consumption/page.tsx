@@ -101,8 +101,12 @@ export default async function MediaConsumptionPage() {
               Share of that group who use / reach the channel
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-block h-3.5 w-px bg-midnight-navy/35" aria-hidden />
-              All-adults average (bars past it over-index)
+              <span className="inline-block h-3.5 w-0.5 bg-midnight-navy/45" aria-hidden />
+              All-adults average (the vertical mark)
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="font-semibold text-intelligence-teal">+12</span>
+              <span className="text-slate-gray">/ −8 = points above / below that average</span>
             </li>
             <li>
               <span className="rounded-full bg-cloud px-2 py-0.5 font-semibold text-steel-blue">

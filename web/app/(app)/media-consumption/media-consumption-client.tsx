@@ -137,7 +137,16 @@ function buildBlocks(rows: BaselineRow[], axis: Axis): ChannelBlock[] {
         if (isCitedAsFact(r.source)) mg.cited = true;
       }
       const metricGroups = [...mgMap.values()]
-        .map((mg) => ({ ...mg, bars: mg.bars.sort((a, b) => b.value - a.value) }))
+        .map((mg) => {
+          // Dedupe to one bar per demographic group; when two sources report the
+          // same cell (e.g. TikTok Black news 2024 vs 2026), keep the latest year.
+          const byGroup = new Map<string, Bar>();
+          for (const b of mg.bars) {
+            const prev = byGroup.get(b.group);
+            if (!prev || (b.year ?? 0) > (prev.year ?? 0)) byGroup.set(b.group, b);
+          }
+          return { ...mg, bars: [...byGroup.values()].sort((a, b) => b.value - a.value) };
+        })
         .sort((a, b) => (a.scope === b.scope ? 0 : a.scope === "general" ? -1 : 1));
 
       // context stats grouped by metric; dedupe to one value per group (keep the
@@ -288,9 +297,12 @@ function ChannelRow({ block }: { block: ChannelBlock }) {
 
 function BarLine({ bar, baseline }: { bar: Bar; baseline: number | null }) {
   const pct = Math.max(0, Math.min(100, bar.value));
-  const overBaseline = baseline != null && bar.value > baseline + 0.5;
+  // Over-index = points above/below the all-adults average. The sign carries the
+  // meaning (so it never depends on color); teal/slate only reinforce it.
+  const delta = baseline != null ? Math.round(bar.value - baseline) : null;
+  const deltaLabel = delta == null ? null : delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "±0";
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       <span className="w-20 shrink-0 text-right text-xs text-slate-gray sm:w-24">
         {groupLabel(bar.group)}
       </span>
@@ -301,19 +313,27 @@ function BarLine({ bar, baseline }: { bar: Bar; baseline: number | null }) {
         />
         {baseline != null && (
           <span
-            className="absolute top-0 bottom-0 w-px bg-midnight-navy/35"
-            style={{ left: `${Math.min(100, baseline)}%` }}
+            className="absolute top-0 bottom-0 w-0.5 bg-midnight-navy/45"
+            style={{ left: `calc(${Math.min(100, baseline)}% - 1px)` }}
             aria-hidden
-            title={`All adults: ${baseline}%`}
+            title={`All-adults average: ${baseline}%`}
           />
         )}
       </div>
-      <span
-        className={`w-10 shrink-0 text-right text-sm font-semibold tabular-nums ${
-          overBaseline ? "text-intelligence-teal" : "text-midnight-navy"
-        }`}
-      >
+      <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-midnight-navy">
         {bar.value}%
+      </span>
+      <span
+        className={`w-11 shrink-0 text-left text-xs tabular-nums ${
+          delta == null
+            ? ""
+            : delta > 0
+              ? "font-semibold text-intelligence-teal"
+              : "text-slate-gray"
+        }`}
+        title={delta == null ? undefined : `${deltaLabel} points vs the all-adults average`}
+      >
+        {deltaLabel ?? ""}
       </span>
     </div>
   );
