@@ -263,7 +263,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
                   tabRefs.current[a.key] = el;
                 }}
                 onClick={() => selectAxis(a.key)}
-                className={`flex-1 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-semibold transition-colors sm:flex-none ${
+                className={`flex-1 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-intelligence-teal sm:flex-none ${
                   active
                     ? "bg-midnight-navy text-white"
                     : "text-slate-gray hover:bg-cloud hover:text-midnight-navy"
@@ -297,7 +297,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
                     type="button"
                     aria-pressed={active}
                     onClick={() => setFamilyFilter(chip.key)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                    className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-intelligence-teal ${
                       active
                         ? "border-midnight-navy bg-midnight-navy text-white"
                         : "border-slate-200 text-slate-gray hover:border-slate-300 hover:text-midnight-navy"
@@ -319,7 +319,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
         role="tabpanel"
         aria-labelledby={`mc-tab-${axis}`}
         tabIndex={0}
-        className="mt-8 space-y-12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-intelligence-teal"
+        className="mt-8 space-y-12 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-intelligence-teal"
       >
         {shownFamilies.map((family) => {
           const familyBlocks = blocks.filter((b) =>
@@ -475,7 +475,7 @@ function SourceTag({ source, url, cited }: { source: string | null; url: string 
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center gap-1 ${cls} underline decoration-slate-300 underline-offset-2 transition-colors hover:text-intelligence-teal hover:decoration-intelligence-teal`}
+        className={`inline-flex items-center gap-1 ${cls} rounded-sm underline decoration-slate-300 underline-offset-2 transition-colors hover:text-intelligence-teal hover:decoration-intelligence-teal focus-visible:ring-2 focus-visible:ring-intelligence-teal`}
       >
         {label}
         <ExternalLink className="h-3 w-3" aria-hidden />
