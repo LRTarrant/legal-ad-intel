@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 
 /* ───────────────────────── types ───────────────────────── */
@@ -177,11 +178,48 @@ function buildBlocks(rows: BaselineRow[], axis: Axis): ChannelBlock[] {
 
 /* ───────────────────────── component ───────────────────────── */
 
+const isAxis = (v: string | null): v is Axis =>
+  v === "race" || v === "age" || v === "income";
+
 export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
-  const [axis, setAxis] = useState<Axis>("race");
+  // Axis is URL-addressable (?view=) so a view is shareable and survives refresh.
+  const searchParams = useSearchParams();
+  const urlAxis = searchParams.get("view");
+  const [axis, setAxis] = useState<Axis>(isAxis(urlAxis) ? urlAxis : "race");
+  const tabRefs = useRef<Record<Axis, HTMLButtonElement | null>>({
+    race: null,
+    age: null,
+    income: null,
+  });
 
   const blocks = useMemo(() => buildBlocks(rows, axis), [rows, axis]);
   const activeBlurb = AXES.find((a) => a.key === axis)!.blurb;
+
+  // Select an axis, sync the URL without a server round-trip (replaceState keeps
+  // the deep-link shareable but doesn't re-run the server component), and move
+  // focus to the chosen tab when the change came from the keyboard.
+  function selectAxis(next: Axis, focus = false) {
+    setAxis(next);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `${window.location.pathname}?view=${next}`);
+    }
+    if (focus) tabRefs.current[next]?.focus();
+  }
+
+  // WAI-ARIA tabs keyboard pattern: arrow keys move + activate, Home/End jump.
+  function onTabKeyDown(e: React.KeyboardEvent) {
+    const i = AXES.findIndex((a) => a.key === axis);
+    let next = i;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % AXES.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i - 1 + AXES.length) % AXES.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = AXES.length - 1;
+    else return;
+    e.preventDefault();
+    selectAxis(AXES[next].key, true);
+  }
+
+  const panelId = "mc-consumption-panel";
 
   return (
     <section aria-label="Consumption by demographic">
@@ -190,6 +228,7 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
         <div
           role="tablist"
           aria-label="Demographic breakdown"
+          onKeyDown={onTabKeyDown}
           className="inline-flex w-full rounded-lg border border-slate-200 bg-white p-1 sm:w-auto"
         >
           {AXES.map((a) => {
@@ -197,9 +236,16 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
             return (
               <button
                 key={a.key}
+                id={`mc-tab-${a.key}`}
                 role="tab"
+                type="button"
                 aria-selected={active}
-                onClick={() => setAxis(a.key)}
+                aria-controls={panelId}
+                tabIndex={active ? 0 : -1}
+                ref={(el) => {
+                  tabRefs.current[a.key] = el;
+                }}
+                onClick={() => selectAxis(a.key)}
                 className={`flex-1 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-semibold transition-colors sm:flex-none ${
                   active
                     ? "bg-midnight-navy text-white"
@@ -215,7 +261,14 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
       </div>
 
       {/* Families → channels → bars */}
-      <div key={axis} className="mt-8 space-y-12">
+      <div
+        key={axis}
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={`mc-tab-${axis}`}
+        tabIndex={0}
+        className="mt-8 space-y-12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-intelligence-teal"
+      >
         {FAMILIES.map((family) => {
           const familyBlocks = blocks.filter((b) =>
             family.channels.includes(b.channel)
@@ -234,6 +287,9 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
             </div>
           );
         })}
+        {blocks.length === 0 && (
+          <p className="text-sm text-slate-gray">No consumption data for this view yet.</p>
+        )}
       </div>
     </section>
   );

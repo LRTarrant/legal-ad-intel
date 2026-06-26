@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Radio } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import {
@@ -117,7 +118,9 @@ export default async function MediaConsumptionPage() {
             <li>&ldquo;cited as fact&rdquo; = industry stat, linked, not a reproduced table</li>
           </ul>
 
-          <MediaConsumptionExplorer rows={rows} />
+          <Suspense fallback={null}>
+            <MediaConsumptionExplorer rows={rows} />
+          </Suspense>
 
           {/* Attribution */}
           <footer className="border-t border-slate-200 pt-5 text-xs leading-relaxed text-slate-gray">
