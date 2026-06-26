@@ -25,10 +25,11 @@ import type { ChannelKey } from "./types";
 export interface BaselineRow {
   demographic_type: string; // all | race | age | income | education
   demographic_group: string; // all_adults | black | white | hispanic | asian | 18_29 | 25_54 | 50_plus | 65_plus
-  channel: string; // baseline channel (tv_linear, radio, radio_urban, social, digital, …)
+  channel: string; // baseline channel (tv_linear, radio, radio_urban, social, digital, ooh, …)
   metric: string;
   scope: string; // news | general
   value: number;
+  unit: string; // gate the math by unit — only reach/adoption percentages are comparable
   source: string; // Pew Research Center | Nielsen (cited as fact) | BLS American Time Use Survey
 }
 
@@ -73,6 +74,7 @@ const BASELINE_CHANNEL_TO_KEY: Record<string, ChannelKey | null> = {
   social: null,
   digital: null,
   all_media: null,
+  ooh: null, // out-of-home/billboard — not an engine ChannelKey; skip gracefully
   reddit: null,
   snapchat: null,
   whatsapp: null,
@@ -81,21 +83,47 @@ const BASELINE_CHANNEL_TO_KEY: Record<string, ChannelKey | null> = {
 
 /**
  * Metrics that count as a numeric reach/adoption base. Everything else is
- * narration context and is NEVER scored: news_prefer (a preference, not reach),
- * news_consume_skew + fast_overindex (directional flags, value=1), format_share
- * + ad_audio_share (within-channel splits, not reach), time_spent_weekly (an
- * hours context stat). Keeping radio's format_share/ad_audio_share out of the
- * base is deliberate — radio fit must rest on reach, not on a format split.
+ * narration context and is NEVER scored:
+ *   - news_prefer (a preference, not reach), news_consume_skew (directional flag)
+ *   - format_share + ad_audio_share (within-channel/audio splits, not reach)
+ *   - linear_share_of_tv_time + watch_time_skew (shares of time, not reach)
+ *   - listener_share (audience composition, not reach), netflix_use (sub-platform)
+ *   - heavy_viewer_index (an index), time_spent_daily/weekly (hours), ad_notice (OOH)
+ * Radio's ad_audio_share/format_share stay OUT so radio fit rests on reach.
+ * A second `REACH_PCT_UNITS` gate (below) is belt-and-suspenders: even an
+ * allow-listed metric only counts if its unit is a population-percentage, so a
+ * non-percentage row (hours, index, share-of-time) can never enter the math.
  */
 const GENERAL_BASE_METRICS = new Set([
   "platform_use",
   "reach_monthly",
   "reach_weekly",
-  "listen",
-  "streaming_share_of_tv",
-  "penetration",
+  "streaming_use", // ctv adoption (Pew streaming-use, replaced the old streaming_share_of_tv)
+  "cable_subscribe", // tv_linear access proxy (Pew cable/satellite subscription)
+  "listen", // legacy podcast metric (kept for back-compat; no rows in the current seed)
+  "streaming_share_of_tv", // legacy (kept for back-compat)
+  "penetration", // legacy (kept for back-compat)
 ]);
-const NEWS_BASE_METRICS = new Set(["news_consume", "news_regular"]);
+const NEWS_BASE_METRICS = new Set([
+  "news_consume",
+  "news_regular",
+  "local_news", // radio's republishable Pew local-news anchor (news proxy)
+]);
+
+/**
+ * Units that represent a share-of-population reach/adoption (0–100), the only
+ * unit family the weighted average can mix. Anything else (hours_per_day,
+ * index_vs_avg, direction_over_index, pct_of_tv_time, pct_of_listeners,
+ * pct_of_ad_supported_audio, …) is rejected before the math.
+ */
+const REACH_PCT_UNITS = new Set([
+  "pct_ever_use",
+  "pct_reach",
+  "pct_monthly",
+  "pct_subscribe",
+  "pct_at_least_sometimes",
+  "pct_regularly",
+]);
 
 /**
  * Weight given to an `all_adults` (whole-population) base row. It anchors a
@@ -136,7 +164,12 @@ export function computeAudienceFit(
   >();
   for (const row of baselineRows) {
     const key = BASELINE_CHANNEL_TO_KEY[row.channel];
-    if (!key) continue;
+    if (!key) continue; // unknown / non-buyable channel (ooh, digital, social, …)
+    // Ignore the income axis for now — the mix has no income shares yet, so an
+    // income row would weight to 0 anyway; skip it so it never reaches the
+    // unweighted fallback either. (Don't crash on it.)
+    if (row.demographic_type === "income") continue;
+    if (!REACH_PCT_UNITS.has(row.unit)) continue; // not a reach %, can't be averaged
     const isGeneral = row.scope === "general" && GENERAL_BASE_METRICS.has(row.metric);
     const isNews = row.scope === "news" && NEWS_BASE_METRICS.has(row.metric);
     if (!isGeneral && !isNews) continue; // context/directional row — skip

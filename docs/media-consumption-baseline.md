@@ -25,20 +25,22 @@ One row per (geography × demographic × channel × metric). Designed so Scarbor
 | `id` | uuid pk | |
 | `geography_level` | text | `national` now; `dma` / `msa` later (Scarborough). CHECK in (`national`,`dma`,`msa`,`state`). |
 | `geo_code` | text | `US` for national; DMA code/name later. |
-| `demographic_type` | text | `all` \| `race` \| `age` \| `income` \| `education`. CHECK. |
-| `demographic_group` | text | `all_adults`, `black`, `white`, `hispanic`, `asian`, `18_29`, `50_plus`, `65_plus`, etc. |
-| `channel` | text | normalize to Strategy Engine `ChannelKey` where possible: `tv_linear`, `ctv`, `radio`, `radio_urban`, `social`, `youtube`, `facebook`, `instagram`, `tiktok`, `whatsapp`, `snapchat`, `reddit`, `x_twitter`, `search`, `podcast`, `print`, `digital`, `all_media`. Note `ctv` ≠ `digital` (see Known gaps). |
-| `metric` | text | `news_consume`, `news_prefer`, `news_regular`, `platform_use`, `reach_monthly`, `reach_weekly`, `ad_audio_share`, `format_share`, `listen`, `time_spent_weekly`, `news_consume_skew`. |
+| `demographic_type` | text | `all` \| `race` \| `age` \| `income` \| `education`. CHECK. **`income` is now in use** (groups `lower` / `upper`); the engine ignores income rows for now (see §"How `assemble-inputs.ts` should use it"). |
+| `demographic_group` | text | `all_adults`; race `black`/`white`/`hispanic`/`asian`; age `18_29`, `30_49`, `50_64`, `65_plus`, plus source-native bands `12_34`, `18_34`, `18_49`, `35_49`, `35_54`, `35_plus`, `50_plus`, `55_plus`; income `lower`/`upper`. |
+| `channel` | text | free-text (no CHECK). Normalize to Strategy Engine `ChannelKey` where possible: `tv_linear`, `ctv`, `radio`, `radio_urban`, `social`, `youtube`, `facebook`, `instagram`, `tiktok`, `whatsapp`, `snapchat`, `reddit`, `x_twitter`, `search`, `podcast`, `print`, `digital`, `all_media`, **`ooh`** (out-of-home/billboard — new). Note `ctv` ≠ `digital` (see Known gaps). |
+| `metric` | text | free-text (no CHECK). Current vocabulary: `news_consume`, `news_prefer`, `news_regular`, `platform_use`, `reach_monthly`, `reach_weekly`, `ad_audio_share`, `format_share`, `time_spent_weekly`, `time_spent_daily`, `news_consume_skew`, `streaming_use`, `cable_subscribe`, `local_news`, `netflix_use`, `listener_share`, `heavy_viewer_index`, `linear_share_of_tv_time`, `watch_time_skew`, `ad_notice`. |
 | `scope` | text | **`news` or `general`. CRITICAL — see "News vs general scope" below.** `news` = the figure measures getting NEWS from the channel (a reach proxy). `general` = total/any consumption or adoption of the channel (direct reach). |
 | `value` | numeric | the figure. |
-| `unit` | text | `pct_at_least_sometimes`, `pct_often`, `pct_prefer`, `pct_regularly`, `pct_use`, `pct_reach`, `hours_per_week`, `direction_over_index`, etc. |
-| `source` | text | `Pew Research Center`, `BLS American Time Use Survey`, `Nielsen (cited as fact)`. |
+| `unit` | text | free-text (do NOT CHECK-constrain). Reach/adoption percentages (the only units the engine averages): `pct_at_least_sometimes`, `pct_prefer`, `pct_regularly`, `pct_ever_use`, `pct_reach`, `pct_monthly`, `pct_subscribe`. Non-comparable units the engine excludes from the math: `hours_per_day`, `hours_per_week`, `index_vs_avg`, `direction_over_index`, `pct_of_tv_time`, `pct_of_us_youtube_watch_time`, `pct_of_listeners`, `pct_of_ad_supported_audio`, `pct_of_black_radio_listening`, `pct_radio_plus_podcast_of_ad_audio`, `pct_notice_enroute_retail`. |
+| `source` | text | e.g. `Pew Research Center`, `BLS American Time Use Survey`, `OAAA/Harris Poll …`, `Edison Research (Podcast Consumer 2026)`, and cite-as-fact vendors (`Nielsen …`, `Edison Share of Ear …`, `eMarketer/Pixability …`, `Adwave/Nielsen/Ipsos …`). |
 | `source_url` | text | exact page. |
 | `source_year` | int | for staleness/refresh. |
 | `notes` | text | caveats, comparison context. |
 | `created_at` / `updated_at` | timestamptz | |
 
-Seed data: `docs/media_consumption_baseline_seed.csv` (34 rows). Load it into a migration as INSERTs (Claude Code converts CSV → SQL, or hand-writes; it's small).
+Natural key: a row is unique on `(geography_level, geo_code, demographic_type, demographic_group, channel, metric, scope, source, source_year)` — `source` + `source_year` are part of the key because the seed legitimately carries two measurements of the same cell from different publishers/years (Black TikTok news-regular: 2024 Pew vs 2026 Pew; Black radio ad-audio-share: Nielsen vs Edison).
+
+Seed data: `docs/media_consumption_baseline_seed.csv` (**112 rows** as of the 2026-06-26 research expansion). Loaded via a delete-and-reload migration so the table == the seed exactly.
 
 RLS: follow the repo convention. This is non-sensitive reference data — readable by authenticated users like other reference tables. No service-role-only restriction needed.
 
@@ -46,7 +48,7 @@ RLS: follow the repo convention. This is non-sensitive reference data — readab
 
 Most republishable Pew data measures getting **news** from a channel ("76% of Black adults get news on TV"), NOT total consumption. A PI firm running an awareness campaign cares whether the audience is *reached at all*, not whether they get *news* there. So news-consumption is a **directional proxy for reach, not a direct measure.** Every row carries a `scope`:
 
-- **`scope='general'`** = direct reach/adoption. Trust it as-is for channel fit. Sources: Pew Social Media Fact Sheet (platform ever-use by race), Pew podcast listening (any), and the Nielsen radio/TV reach rows (cite-only).
+- **`scope='general'`** = direct reach/adoption. Trust it as-is for channel fit. Sources: Pew Social Media Fact Sheet (platform ever-use by race/age/income), Pew streaming-use (`streaming_use` → CTV) and cable/satellite subscription (`cable_subscribe` → linear-TV access), Edison podcast monthly reach, and the Nielsen radio reach rows (cite-only).
 - **`scope='news'`** = news-getting on that channel. Use as a RANKING proxy (relative over-index by demographic), not as an absolute reach number. Known distortions to respect:
   - **Radio**: news-radio (Pew 11% often) massively understates *general* radio reach. For radio, prefer the `general` Nielsen reach rows (Black 92% monthly, Hispanic 98% weekly, Urban formats 50.2% of Black listening). Do NOT let the Pew radio-news number drive radio down — it's measuring the wrong thing.
   - **Podcast**: news-podcast overstates general podcast reach (news-seekers skew). The seed's podcast rows are now `general` listening (67% of 18-29), use those.
@@ -63,6 +65,8 @@ Today the audience-fit block (~line 267) builds a `Map<ChannelKey, fitScore>` fr
 3. Compute a per-channel fit score = weighted blend of each demographic group's consumption metric for that channel, weighted by the county's share of that group. **Apply the scope rule (see "News vs general scope"): prefer `scope='general'` rows; fall back to `scope='news'` as a relative proxy. For radio, use the `general` Nielsen reach rows, NOT the Pew radio-news row.** E.g. radio fit for an 80%-Black county leans on the Black general radio rows (reach 92%, urban format 50.2%), not the 11% radio-news figure.
 4. Keep it RELATIVE (the engine's existing rule: opportunity = fit × (1 − competition), no absolute reach claims). The baseline informs *relative* fit ranking, not impressions.
 5. Set `audience_fit: true` only when baseline rows were found; otherwise keep the honest `directional`/empty path. Confidence tier stays driven by data presence.
+6. **Only average comparable units.** The fit math runs on reach/adoption percentages only (`pct_ever_use`, `pct_reach`, `pct_monthly`, `pct_subscribe`, `pct_at_least_sometimes`, `pct_regularly`). Rows in any other unit are excluded from the numeric base: hours (`time_spent_daily`/`time_spent_weekly`), indices (`heavy_viewer_index`), directional flags (`news_consume_skew`), and share-of-something stats (`linear_share_of_tv_time`, `watch_time_skew`, `listener_share`, `ad_audio_share`, `format_share`, `ad_notice`). They remain in the table for the UI / narration, but mixing e.g. 2.9 hours with 84% would be nonsense. The guard lives in `audience-fit.ts` (`REACH_PCT_UNITS`).
+7. **`income` is ignored for now** (the demographic mix has no income shares yet) and **`ooh` is skipped** (no engine `ChannelKey`). Both degrade silently — they never crash the assembler. New buyable metrics that DO feed fit: `streaming_use` → `ctv`, `cable_subscribe` → `tv_linear`, `local_news` → `radio` (news anchor).
 
 Keep the math deterministic and out of the LLM (matches `channel-plan.ts` — "the AI never sees this math; it only narrates the result"). The LLM should receive the resulting fit scores + the source citations, and narrate "radio over-indexes for this market per Pew/Nielsen," never invent the percentages.
 
@@ -85,13 +89,19 @@ This ships in two passes — see `docs/CLAUDE-CODE-PROMPT-media-baseline.md`:
 
 When Scarborough/MRI is licensed, add `geography_level='dma'` rows keyed by DMA. The `assemble-inputs.ts` query should prefer `dma` rows for the market when present and fall back to `national`. That's a query-precedence change, not a schema change. Note: Scarborough is NOT republishable either — same display rules as Nielsen (drives the engine's internal scoring; show only derived/cited, not raw tables).
 
+## New channel: OOH (out-of-home / billboard)
+
+`ooh` is now a channel, sourced from the **OAAA/Harris Poll 2024 Value of OOH Guide** (free public PDF, republishable WITH attribution): % who notice OOH ads en route to retail, by race (Black 78 / Hispanic 76 / Asian 73 vs 68 all-adults — minorities over-index). The engine does NOT yet plan `ooh` (no `ChannelKey`), so these rows feed the Media Consumption page only; the assembler skips them gracefully.
+
 ## Known gaps (flagged, not blockers)
 
-These are holes in the republishable baseline. None block v1; each is a known soft spot to fill when Scarborough/Nielsen licensing arrives.
+These are the remaining holes in the republishable baseline. None block the engine. Updated 2026-06-26 after the research expansion.
 
-1. **General broadcast-TV reach by race is missing.** Pew gives TV *news* by race (Black 76% / White 62% / Hisp 62% / Asian 52%), used as a reach proxy. There are NO general-TV-reach-by-race rows. Acceptable because TV-news tracks general TV reach reasonably well (unlike radio, where news badly understates reach). To harden: add Nielsen/Scarborough general-TV-reach-by-race rows later (cite-only display rules).
-2. **CTV (Connected TV) is thin and Nielsen-cited, not Pew.** CTV is its OWN channel (streaming to the TV screen: Roku/Hulu/Tubi/YouTube TV), NOT the seed's `digital` row (which is just Pew's "gets news on a phone/computer" device bucket — nearly a throwaway). The engine's `channel-plan.ts` already lists `ctv` (awareness stage), so without baseline rows it was planning CTV blind. Seed now has 4 cite-as-fact CTV rows (Nielsen Gauge streaming 44.8% of TV time May 2025; Hispanic 55.8% over-index; Black ~1/3 of FAST viewing; 25-54 penetration 80%+, skews younger than linear). These are `scope='general'` but **Nielsen-cited (display as cited stat, never a reproduced table)**. Pew does not measure CTV-by-demographic cleanly — the good data is Nielsen Gauge + Comscore (walled). To harden: license Nielsen/Comscore CTV-by-DMA later.
-3. **`digital` vs `ctv` are different — don't conflate.** `digital` = device-level news access (Pew, 86%). `ctv` = a buyable streaming channel. Keep them separate in any UI grouping and in the engine's channel map.
+1. **CTV is now Pew-sourced and REPUBLISHABLE** (was the old 4 Nielsen-cited rows). The seed's CTV rows are Pew streaming-use by age + income (`streaming_use`: 83% of adults, ~90% under-50, 65% of 65+, upper-income 91 / lower 77) plus Netflix/top-platform context, all from the Pew "83% use streaming services" short-read — display with Pew attribution, no longer cite-only. The old Nielsen Gauge rows were replaced. (Linear-TV access is covered separately by Pew `cable_subscribe`, which skews old: 64% of 65+ vs 16% of 18-29.)
+2. **General broadcast-TV reach %-by-race is confirmed Nielsen-paid-only.** There is no free/public source for "% of Black/Hispanic/etc. adults who watch TV." The seed fills this with **BLS American Time Use Survey time-spent-by-race** (public domain: Black 2.9 h/day, White 2.61, Hispanic 2.09, Asian 1.71) as the republishable proxy. Note it's `hours_per_day`, so the engine excludes it from the numeric fit (different unit) — it's a UI/narration signal. Pew TV-*news*-by-race remains as the news-scoped reach proxy. To harden: license Nielsen/Scarborough general-TV-reach-by-race (cite-only).
+3. **Radio now has a republishable anchor.** Pew-Knight Local News gives radio = 52% local-news reach (`local_news`, the most resilient traditional local-news source) — a free/public radio row that doesn't depend on the cite-as-fact Nielsen reach numbers. The Nielsen/Edison radio reach + share-of-ear rows stay as cite-as-fact reinforcement.
+4. **Radio (and most channels) by INCOME is unfillable without Nielsen/Scarborough.** Income is covered for streaming/linear-TV/social (Pew) but NOT for radio or podcast reach by income tier — confirmed paid-only. The engine ignores the income axis for now regardless.
+5. **`digital` vs `ctv` are different — don't conflate.** `digital` = device-level news access (Pew, 86%). `ctv` = a buyable streaming channel. Keep them separate in any UI grouping and in the engine's channel map.
 
 ## Honest limitation (put in the output)
 

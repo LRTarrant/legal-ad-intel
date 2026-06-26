@@ -291,38 +291,48 @@ test("validateStrategyProse requires the core fields", () => {
 const PEW = "Pew Research Center";
 const NIELSEN = "Nielsen (cited as fact)";
 
-/** A realistic slice of the national baseline seed (verbatim values). */
+/** A realistic slice of the expanded 112-row seed (verbatim values + units). */
 function baselineFixture(): BaselineRow[] {
   return [
     // radio: GENERAL Nielsen reach rows (the ones radio fit MUST use)…
-    { demographic_type: "race", demographic_group: "black", channel: "radio", metric: "reach_monthly", scope: "general", value: 92, source: NIELSEN },
-    { demographic_type: "race", demographic_group: "hispanic", channel: "radio", metric: "reach_weekly", scope: "general", value: 98, source: NIELSEN },
-    // …and the Pew radio-NEWS row that must NOT be allowed to tank radio.
-    { demographic_type: "all", demographic_group: "all_adults", channel: "radio", metric: "news_consume", scope: "news", value: 44, source: PEW },
-    // radio_urban format_share — excluded from the numeric base (not reach).
-    { demographic_type: "race", demographic_group: "black", channel: "radio_urban", metric: "format_share", scope: "general", value: 50.2, source: NIELSEN },
-    // tv_linear: NEWS only → news-consumption proxy.
-    { demographic_type: "all", demographic_group: "all_adults", channel: "tv_linear", metric: "news_consume", scope: "news", value: 64, source: PEW },
-    { demographic_type: "race", demographic_group: "black", channel: "tv_linear", metric: "news_consume", scope: "news", value: 76, source: PEW },
-    { demographic_type: "race", demographic_group: "white", channel: "tv_linear", metric: "news_consume", scope: "news", value: 62, source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "radio", metric: "reach_monthly", scope: "general", value: 92, unit: "pct_reach", source: NIELSEN },
+    { demographic_type: "race", demographic_group: "hispanic", channel: "radio", metric: "reach_weekly", scope: "general", value: 98, unit: "pct_reach", source: NIELSEN },
+    // …Pew radio-NEWS rows that must NOT tank radio (news base, but general wins).
+    { demographic_type: "all", demographic_group: "all_adults", channel: "radio", metric: "news_consume", scope: "news", value: 44, unit: "pct_at_least_sometimes", source: PEW },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "radio", metric: "local_news", scope: "news", value: 52, unit: "pct_at_least_sometimes", source: PEW },
+    // radio ad_audio_share / radio_urban format_share — excluded by the unit guard.
+    { demographic_type: "race", demographic_group: "black", channel: "radio", metric: "ad_audio_share", scope: "general", value: 73, unit: "pct_of_ad_supported_audio", source: NIELSEN },
+    { demographic_type: "race", demographic_group: "black", channel: "radio_urban", metric: "format_share", scope: "general", value: 50.2, unit: "pct_of_black_radio_listening", source: NIELSEN },
+    // tv_linear: GENERAL via cable_subscribe (linear access); news rows dropped because general exists.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "tv_linear", metric: "cable_subscribe", scope: "general", value: 36, unit: "pct_subscribe", source: PEW },
+    { demographic_type: "age", demographic_group: "65_plus", channel: "tv_linear", metric: "cable_subscribe", scope: "general", value: 64, unit: "pct_subscribe", source: PEW },
+    { demographic_type: "age", demographic_group: "18_29", channel: "tv_linear", metric: "cable_subscribe", scope: "general", value: 16, unit: "pct_subscribe", source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "tv_linear", metric: "news_consume", scope: "news", value: 76, unit: "pct_at_least_sometimes", source: PEW },
+    // tv_linear NON-percentage rows that must be excluded from the math (hours / index / share-of-time):
+    { demographic_type: "race", demographic_group: "black", channel: "tv_linear", metric: "time_spent_daily", scope: "general", value: 2.9, unit: "hours_per_day", source: "BLS American Time Use Survey 2024" },
+    { demographic_type: "age", demographic_group: "65_plus", channel: "tv_linear", metric: "linear_share_of_tv_time", scope: "general", value: 74.7, unit: "pct_of_tv_time", source: "Nielsen (cited as fact)" },
+    { demographic_type: "income", demographic_group: "lower", channel: "tv_linear", metric: "heavy_viewer_index", scope: "general", value: 133, unit: "index_vs_avg", source: "Adwave (cited as fact)" },
     // print + search: NEWS only → news-consumption proxy.
-    { demographic_type: "all", demographic_group: "all_adults", channel: "print", metric: "news_consume", scope: "news", value: 25, source: PEW },
-    { demographic_type: "all", demographic_group: "all_adults", channel: "search", metric: "news_consume", scope: "news", value: 63, source: PEW },
-    // ctv: GENERAL (was previously planned blind — no baseline rows existed).
-    { demographic_type: "all", demographic_group: "all_adults", channel: "ctv", metric: "streaming_share_of_tv", scope: "general", value: 44.8, source: NIELSEN },
-    { demographic_type: "race", demographic_group: "hispanic", channel: "ctv", metric: "streaming_share_of_tv", scope: "general", value: 55.8, source: NIELSEN },
-    { demographic_type: "age", demographic_group: "25_54", channel: "ctv", metric: "penetration", scope: "general", value: 80, source: NIELSEN },
-    { demographic_type: "race", demographic_group: "black", channel: "ctv", metric: "fast_overindex", scope: "general", value: 1, source: NIELSEN }, // directional → excluded
-    // facebook: a GENERAL adoption row + a NEWS row (general must win).
-    { demographic_type: "all", demographic_group: "all_adults", channel: "facebook", metric: "platform_use", scope: "general", value: 71, source: PEW },
-    { demographic_type: "race", demographic_group: "black", channel: "facebook", metric: "news_regular", scope: "news", value: 36, source: PEW },
-    // youtube: GENERAL adoption.
-    { demographic_type: "all", demographic_group: "all_adults", channel: "youtube", metric: "platform_use", scope: "general", value: 84, source: PEW },
-    { demographic_type: "race", demographic_group: "asian", channel: "youtube", metric: "platform_use", scope: "general", value: 92, source: PEW },
-    { demographic_type: "race", demographic_group: "hispanic", channel: "youtube", metric: "platform_use", scope: "general", value: 88, source: PEW },
-    // a non-engine channel + a context stat that must never produce fit.
-    { demographic_type: "all", demographic_group: "all_adults", channel: "digital", metric: "news_consume", scope: "news", value: 86, source: PEW },
-    { demographic_type: "race", demographic_group: "black", channel: "all_media", metric: "time_spent_weekly", scope: "general", value: 81, source: NIELSEN },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "print", metric: "news_consume", scope: "news", value: 25, unit: "pct_at_least_sometimes", source: PEW },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "search", metric: "news_consume", scope: "news", value: 63, unit: "pct_at_least_sometimes", source: PEW },
+    // ctv: GENERAL via streaming_use (Pew). netflix_use excluded (sub-platform); income skipped.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "ctv", metric: "streaming_use", scope: "general", value: 83, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "age", demographic_group: "18_29", channel: "ctv", metric: "streaming_use", scope: "general", value: 90, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "age", demographic_group: "65_plus", channel: "ctv", metric: "streaming_use", scope: "general", value: 65, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "income", demographic_group: "upper", channel: "ctv", metric: "streaming_use", scope: "general", value: 91, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "ctv", metric: "netflix_use", scope: "general", value: 72, unit: "pct_ever_use", source: PEW },
+    // facebook: GENERAL adoption + a NEWS row (general must win).
+    { demographic_type: "all", demographic_group: "all_adults", channel: "facebook", metric: "platform_use", scope: "general", value: 71, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "facebook", metric: "news_regular", scope: "news", value: 36, unit: "pct_regularly", source: PEW },
+    // youtube: GENERAL adoption + a watch-time-skew context row that must be excluded.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "youtube", metric: "platform_use", scope: "general", value: 84, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "race", demographic_group: "asian", channel: "youtube", metric: "platform_use", scope: "general", value: 92, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "race", demographic_group: "hispanic", channel: "youtube", metric: "platform_use", scope: "general", value: 88, unit: "pct_ever_use", source: PEW },
+    { demographic_type: "age", demographic_group: "55_plus", channel: "youtube", metric: "watch_time_skew", scope: "general", value: 20, unit: "pct_of_us_youtube_watch_time", source: "eMarketer (cited as fact)" },
+    // non-engine channels + context stats that must never produce fit.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "digital", metric: "news_consume", scope: "news", value: 86, unit: "pct_at_least_sometimes", source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "all_media", metric: "time_spent_weekly", scope: "general", value: 81, unit: "hours_per_week", source: NIELSEN },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "ooh", metric: "ad_notice", scope: "general", value: 68, unit: "pct_notice_enroute_retail", source: "OAAA/Harris Poll 2024" },
   ];
 }
 
@@ -344,9 +354,10 @@ test("radio fit for a high-Black-share market uses the GENERAL reach row, not th
   for (const [ch, f] of fit) {
     if (ch !== "radio") assert.ok(radio!.fit >= f.fit, `radio should outrank ${ch}`);
   }
-  // And it must beat tv_linear, whose fit is only a news-consumption proxy.
+  // And it must beat tv_linear (now GENERAL via cable_subscribe) and the print news-proxy.
   const tv = fit.get("tv_linear");
-  assert.ok(tv && tv.scope === "news_proxy" && radio!.fit > tv.fit);
+  assert.ok(tv && tv.scope === "general" && radio!.fit > tv.fit);
+  assert.ok(radio!.fit > fit.get("print")!.fit && fit.get("print")!.scope === "news_proxy");
 });
 
 test("dropping the general radio rows flips radio to a news proxy and tanks its fit", () => {
@@ -390,6 +401,41 @@ test("non-engine channels and context metrics never produce a fit", () => {
 
 test("empty baseline yields an empty map (caller degrades to media_profiles)", () => {
   assert.equal(computeAudienceFit([], HIGH_BLACK_MIX).size, 0);
+});
+
+test("non-percentage metrics (hours, index, share-of-time) never enter the fit math", () => {
+  const base = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX).get("tv_linear")!;
+  // tv_linear rests on cable_subscribe (Pew, general) — NOT the BLS hours, Adwave
+  // index, or Nielsen linear-share-of-time rows (all excluded by the unit guard).
+  assert.equal(base.scope, "general");
+  assert.deepEqual(base.sources, [PEW]);
+  // Spiking an excluded non-% row to an absurd value must not move the fit.
+  const spiked = baselineFixture().map((r) =>
+    r.channel === "tv_linear" && r.unit === "hours_per_day" ? { ...r, value: 999 } : r,
+  );
+  assert.equal(computeAudienceFit(spiked, HIGH_BLACK_MIX).get("tv_linear")!.fit, base.fit);
+});
+
+test("income rows are ignored (engine has no income axis yet) and don't distort fit", () => {
+  const withIncome = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX).get("ctv")!;
+  const noIncome = computeAudienceFit(
+    baselineFixture().filter((r) => r.demographic_type !== "income"),
+    HIGH_BLACK_MIX,
+  ).get("ctv")!;
+  // The ctv income row (upper, streaming_use 91) changes nothing.
+  assert.equal(withIncome.fit, noIncome.fit);
+});
+
+test("the ooh channel (no engine ChannelKey) is skipped without crashing", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  assert.equal(fit.has("ooh" as never), false);
+});
+
+test("new general metrics feed fit: ctv via streaming_use, tv_linear via cable_subscribe", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  assert.equal(fit.get("ctv")!.scope, "general");
+  assert.ok(fit.get("ctv")!.fit > 0);
+  assert.equal(fit.get("tv_linear")!.scope, "general");
 });
 
 /* ── buildDemographicMix (census_demographics → population-weighted mix) ──── */

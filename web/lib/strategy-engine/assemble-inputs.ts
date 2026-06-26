@@ -183,7 +183,7 @@ export async function assembleStrategyInputs(
     // National demographic consumption baseline (Pew + BLS ATUS + Nielsen-cited).
     supabase
       .from("media_consumption_baseline")
-      .select("demographic_type, demographic_group, channel, metric, scope, value, source")
+      .select("demographic_type, demographic_group, channel, metric, scope, value, unit, source")
       .eq("geography_level", "national"),
     // County demographics for this state → population-weighted demographic mix.
     supabase
