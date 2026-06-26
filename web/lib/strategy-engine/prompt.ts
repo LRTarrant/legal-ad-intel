@@ -99,6 +99,7 @@ CRITICAL RULES:
 4. Match the requested VOICE exactly.
 5. Plain text only inside JSON string fields — no markdown.
 6. Be direct and decision-oriented. No hedging ("you may want to consider"), no hype.
+7. A channel's fit_basis tells you what the fit rests on. When it is "news-consumption proxy", describe that channel's audience fit as a news-consumption proxy (not a measured reach). When you cite a consumption pattern, attribute it to the channel's fit_sources (e.g. "per Pew", "per Nielsen") and never invent a percentage — fit_index is a relative index, not a reach figure.
 
 Return ONLY the JSON object. No markdown fences. No commentary.`;
 
@@ -113,6 +114,8 @@ export function buildStrategyDigest(plan: StrategyPlan) {
     plan.channel_plan.stages[s].map((c) => ({
       channel: CHANNEL_LABELS[c.channel],
       fit_index: Math.round(c.fit * 100),
+      fit_basis: c.fit_scope === "news_proxy" ? "news-consumption proxy" : "general reach",
+      fit_sources: c.fit_sources ?? [],
       competition: c.competition == null ? "unknown" : c.competition <= 0.35 ? "light" : c.competition >= 0.65 ? "heavy" : "moderate",
       outlets: c.outlets.map((o) => ({
         name: o.name,

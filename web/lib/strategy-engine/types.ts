@@ -99,10 +99,19 @@ export interface AdvertiserShare {
 /** Per-channel audience-fit + competitive-density signal. */
 export interface ChannelSignal {
   channel: ChannelKey;
-  /** Audience fit normalized to [0,1] (from media_profiles indices). */
+  /** Audience fit normalized to [0,1] (media_consumption_baseline, or the
+   *  legacy media_profiles indices as a fallback). */
   fit: number;
   /** Competitive density in [0,1] (channel_competition_scores). null = unknown. */
   competition: number | null;
+  /**
+   * Basis of the fit score, for honest narration (the AI says "news-consumption
+   * proxy" when only a news row backs the channel). Omitted on the legacy
+   * media_profiles path. See audience-fit.ts.
+   */
+  fit_scope?: "general" | "news_proxy";
+  /** Attribution sources behind the fit (e.g. Pew, Nielsen). */
+  fit_sources?: string[];
 }
 
 /** A named local outlet the plan can recommend by name. */
@@ -215,6 +224,10 @@ export interface PlannedChannel {
   outlets: NamedOutlet[];
   /** Data-traced rationale (deterministic). */
   rationale: string;
+  /** Fit basis carried through for the AI digest. See ChannelSignal. */
+  fit_scope?: "general" | "news_proxy";
+  /** Attribution sources behind the fit (e.g. Pew, Nielsen). */
+  fit_sources?: string[];
 }
 
 export interface ChannelPlan {
