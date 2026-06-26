@@ -10,7 +10,12 @@ import {
   roleLabel,
   type Role,
 } from "@/lib/roles";
-import { UserPlus, X, Trash2 } from "lucide-react";
+import { UserPlus, X, Trash2, KeyRound } from "lucide-react";
+import {
+  EntitlementEditor,
+  entitlementSummary,
+  type Entitlement,
+} from "./entitlement-editor";
 
 interface UserRow {
   id: string;
@@ -19,6 +24,7 @@ interface UserRow {
   role: string;
   last_sign_in_at: string | null;
   created_at: string;
+  entitlements: Entitlement | null;
 }
 
 interface InvitationRow {
@@ -59,6 +65,7 @@ export default function AdminUsersPage() {
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [removeTarget, setRemoveTarget] = useState<UserRow | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [entitlementTarget, setEntitlementTarget] = useState<UserRow | null>(null);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -277,6 +284,9 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Role</th>
+                {isSuperAdmin && (
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Access</th>
+                )}
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Last Seen</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Joined</th>
                 <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Actions</th>
@@ -285,7 +295,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-slate-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">
+                  <td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-8 text-center text-sm text-slate-400">
                     No users found
                   </td>
                 </tr>
@@ -329,6 +339,20 @@ export default function AdminUsersPage() {
                         </span>
                       )}
                     </td>
+                    {isSuperAdmin && (
+                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        <button
+                          onClick={() => setEntitlementTarget(u)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                          title="Manage access"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          <span className={u.entitlements ? "text-slate-700" : "text-slate-400"}>
+                            {entitlementSummary(u.entitlements)}
+                          </span>
+                        </button>
+                      </td>
+                    )}
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
                       {formatDate(u.last_sign_in_at)}
                     </td>
@@ -558,6 +582,21 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {entitlementTarget && (
+        <EntitlementEditor
+          userId={entitlementTarget.id}
+          userLabel={entitlementTarget.full_name || entitlementTarget.email}
+          current={entitlementTarget.entitlements}
+          accentColor={accentColor}
+          onClose={() => setEntitlementTarget(null)}
+          onSaved={(message) => {
+            setEntitlementTarget(null);
+            showToast("success", message);
+            fetchData();
+          }}
+        />
       )}
     </div>
   );

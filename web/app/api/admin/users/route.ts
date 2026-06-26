@@ -66,6 +66,36 @@ export async function GET() {
       }
     });
 
+    // Entitlement summary per user (campaign-builder access). Drives the
+    // super-admin "Access" column. One subscription row per user_id.
+    type Entitlement = {
+      campaign_builder_pi: boolean;
+      campaign_builder_mass_tort: boolean;
+      geo_scope_unlimited: boolean;
+      geo_scope_states: string[] | null;
+      status: string;
+      campaign_builder_monthly_cap: number | null;
+    };
+    const entMap = new Map<string, Entitlement>();
+    if (userIds.length > 0) {
+      const { data: subs } = await serviceClient
+        .from("subscriptions")
+        .select(
+          "user_id, campaign_builder_pi, campaign_builder_mass_tort, geo_scope_unlimited, geo_scope_states, status, campaign_builder_monthly_cap",
+        )
+        .in("user_id", userIds);
+      for (const s of (subs ?? []) as Array<Entitlement & { user_id: string }>) {
+        entMap.set(s.user_id, {
+          campaign_builder_pi: s.campaign_builder_pi,
+          campaign_builder_mass_tort: s.campaign_builder_mass_tort,
+          geo_scope_unlimited: s.geo_scope_unlimited,
+          geo_scope_states: s.geo_scope_states,
+          status: s.status,
+          campaign_builder_monthly_cap: s.campaign_builder_monthly_cap,
+        });
+      }
+    }
+
     const users = (profiles ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name,
@@ -73,6 +103,7 @@ export async function GET() {
       role: p.role,
       last_sign_in_at: authMap.get(p.id)?.last_sign_in_at ?? null,
       created_at: p.created_at,
+      entitlements: entMap.get(p.id) ?? null,
     }));
 
     return NextResponse.json({ users });
