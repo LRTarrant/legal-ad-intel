@@ -2,8 +2,8 @@ name: SERP Metro Daily Pipeline
 
 on:
   schedule:
-    # Daily at 12:30 UTC
-    - cron: '30 12 * * *'
+    # Weekly on Tuesdays at 12:30 UTC (throttled from daily to cut SearchApi cost; ~1,240 searches/run)
+    - cron: '30 12 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:

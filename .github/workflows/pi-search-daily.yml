@@ -2,8 +2,8 @@ name: PI Search Daily Pipeline
 
 on:
   schedule:
-    # Daily at 12:00 UTC
-    - cron: '0 12 * * *'
+    # Weekly on Mondays at 12:00 UTC (throttled from daily to cut SearchApi cost; ~2,480 searches/run)
+    - cron: '0 12 * * 1'
   workflow_dispatch:
     inputs:
       dry_run:

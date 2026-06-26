@@ -2,8 +2,8 @@ name: Meta Pages Daily Pipeline
 
 on:
   schedule:
-    # Daily at 15:00 UTC — after meta-ads-daily (14:00) discovers firm pages
-    - cron: '0 15 * * *'
+    # Weekly on Wednesdays at 15:00 UTC (throttled from daily to cut SearchApi cost; up to ~2,000 searches/run)
+    - cron: '0 15 * * 3'
   workflow_dispatch:
     inputs:
       dry_run:

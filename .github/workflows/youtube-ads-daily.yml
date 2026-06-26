@@ -2,8 +2,8 @@ name: YouTube Ads Daily Pipeline
 
 on:
   schedule:
-    # Daily at 13:00 UTC (free slot; after serp/pi-search at 12:00)
-    - cron: '0 13 * * *'
+    # Weekly on Thursdays at 13:00 UTC (throttled from daily to cut SearchApi cost; ~524 searches/run, one per known PI domain)
+    - cron: '0 13 * * 4'
   workflow_dispatch:
     inputs:
       dry_run:
