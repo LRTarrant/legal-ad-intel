@@ -78,7 +78,8 @@ const channelLabel = (c: string) => CHANNEL_LABEL[c] ?? c;
 const metricLabel = (m: string) => METRIC_LABEL[m] ?? m;
 
 // A source is "cited as fact" (not republishable as a table) when it names a paid
-// vendor or says so explicitly. These get an inline cited-as-fact marker.
+// vendor or says so explicitly. Channels with any such source get one
+// cited-as-fact marker under the channel name.
 const isCitedAsFact = (s: string | null) =>
   !!s && /cited as fact|nielsen|emarketer|adwave|share of ear|pixability|ipsos/i.test(s);
 
@@ -354,12 +355,25 @@ function ChannelRow({ block, axisNoun }: { block: ChannelBlock; axisNoun: string
   // a deliberate data limit, not a bug.
   const barCount = block.metricGroups.reduce((n, mg) => n + mg.bars.length, 0);
   const sparse = barCount === 1;
+  // "cited as fact" is a channel-level property (its figures come from paid
+  // vendors), so it shows once under the channel name instead of repeating on
+  // every metric row. The legend defines the term.
+  const channelCited =
+    block.metricGroups.some((mg) => mg.cited) || block.context.some((cs) => cs.cited);
   return (
     <div className="grid gap-5 py-6 md:grid-cols-[180px_1fr] md:gap-8">
       <div className="md:pt-0.5">
         <h4 className="font-heading text-base font-semibold text-midnight-navy">
           {channelLabel(block.channel)}
         </h4>
+        {channelCited && (
+          <p
+            className="mt-1 text-xs text-slate-gray"
+            title="Industry stat, linked to its public source, not a reproduced table."
+          >
+            cited as fact
+          </p>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -372,7 +386,7 @@ function ChannelRow({ block, axisNoun }: { block: ChannelBlock; axisNoun: string
                   news-consumption proxy
                 </span>
               )}
-              <SourceTag source={mg.source} url={mg.url} cited={mg.cited} />
+              <SourceTag source={mg.source} url={mg.url} />
             </div>
             <div className="space-y-2">
               {mg.bars.map((bar) => (
@@ -400,7 +414,6 @@ function ChannelRow({ block, axisNoun }: { block: ChannelBlock; axisNoun: string
                       <span className="font-semibold tabular-nums">{formatContext(cs.unit, p.value)}</span>
                     </span>
                   ))}
-                  {cs.cited && <span className="text-[11px] text-slate-gray">· cited as fact</span>}
                 </dd>
               </div>
             ))}
@@ -459,16 +472,16 @@ function BarLine({ bar, baseline }: { bar: Bar; baseline: number | null }) {
 
 /* ───────────────────────── source tag ───────────────────────── */
 
-function SourceTag({ source, url, cited }: { source: string | null; url: string | null; cited: boolean }) {
+function SourceTag({ source, url }: { source: string | null; url: string | null }) {
   if (!source) return null;
-  // Compact the source to a short label for the inline tag.
-  const short = source
+  // Compact the source to a short label for the inline tag. The "cited as fact"
+  // qualifier now lives once per channel, so the tag carries only the vendor.
+  const label = source
     .replace(/\s*\(.*?\)\s*/g, " ")
     .replace(/cited as fact/i, "")
     .replace(/\s+/g, " ")
     .trim();
-  const label = cited ? `${short} · cited as fact` : short;
-  const cls = "text-[11px] text-slate-gray";
+  const cls = "text-xs text-slate-gray";
   if (url) {
     return (
       <a
