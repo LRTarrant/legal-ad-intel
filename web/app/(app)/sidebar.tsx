@@ -114,6 +114,7 @@ const dataModules: NavGroup[] = [
     heading: "Audiences & Media Research",
     items: [
       { label: "Market Demographics", href: "/market-demographics", Icon: Users },
+      { label: "Media Consumption", href: "/media-consumption", Icon: Radio },
     ],
   },
   {

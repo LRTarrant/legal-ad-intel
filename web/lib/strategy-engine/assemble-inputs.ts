@@ -34,6 +34,12 @@ import type {
   NamedOutlet,
   StrategyInputs,
 } from "./types";
+import {
+  buildDemographicMix,
+  computeAudienceFit,
+  type BaselineRow,
+  type CensusRow,
+} from "./audience-fit";
 
 /** Loose Supabase surface — the repo casts to `any` for these dynamic calls. */
 type SupabaseLike = {
@@ -154,20 +160,39 @@ export async function assembleStrategyInputs(
   const errors: string[] = [];
 
   // Fetch every block independently; never let one failure sink the rest.
-  const [competitorsRes, dmaRes, accidentRes, profilesRes, outletsRes] =
-    await Promise.allSettled([
-      supabase.rpc("get_pi_competitors_by_dma", { p_state: state }),
-      supabase
-        .from("dma_markets")
-        .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
-        .contains("states_covered", [state])
-        .order("rank", { ascending: true }),
-      supabase.rpc("get_state_accident_summary", { p_state: state }),
-      supabase.from("media_profiles").select("*"),
-      supabase
-        .from("media_outlets")
-        .select("call_sign, media_company, media_format, media_type, format_genre, market"),
-    ]);
+  const [
+    competitorsRes,
+    dmaRes,
+    accidentRes,
+    profilesRes,
+    outletsRes,
+    baselineRes,
+    censusRes,
+  ] = await Promise.allSettled([
+    supabase.rpc("get_pi_competitors_by_dma", { p_state: state }),
+    supabase
+      .from("dma_markets")
+      .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
+      .contains("states_covered", [state])
+      .order("rank", { ascending: true }),
+    supabase.rpc("get_state_accident_summary", { p_state: state }),
+    supabase.from("media_profiles").select("*"),
+    supabase
+      .from("media_outlets")
+      .select("call_sign, media_company, media_format, media_type, format_genre, market"),
+    // National demographic consumption baseline (Pew + BLS ATUS + Nielsen-cited).
+    supabase
+      .from("media_consumption_baseline")
+      .select("demographic_type, demographic_group, channel, metric, scope, value, source")
+      .eq("geography_level", "national"),
+    // County demographics for this state → population-weighted demographic mix.
+    supabase
+      .from("census_demographics")
+      .select(
+        "total_population, pct_black, pct_white, pct_hispanic, pct_asian, pop_18_to_24, pop_25_to_34, pop_35_to_44, pop_45_to_54, pop_55_to_64, pop_65_to_74, pop_75_plus",
+      )
+      .eq("state_abbr", state),
+  ]);
 
   /* advertiser landscape + Gorilla share (state-PI-specific) --------------- */
   let top_advertisers: AdvertiserShare[] = [];
@@ -264,48 +289,84 @@ export async function assembleStrategyInputs(
     }
   }
 
-  /* channel audience fit (media_profiles, scale-independent) ---------------- */
-  const channelFit = new Map<ChannelKey, number>();
-  if (profilesRes.status === "fulfilled" && !profilesRes.value.error) {
-    const rows = (profilesRes.value.data as Array<Record<string, unknown>>) ?? [];
-    // AL has no per-DMA media_profiles; these are generic consumption profiles,
-    // so fit is directional. Average each channel's index across all rows.
-    const idxCols: Array<[string, ChannelKey]> = [
-      ["tv_linear_index", "tv_linear"],
-      ["ctv_streaming_index", "ctv"],
-      ["radio_index", "radio"],
-      ["podcast_index", "podcast"],
-      ["facebook_index", "facebook"],
-      ["instagram_index", "instagram"],
-      ["tiktok_index", "tiktok"],
-      ["youtube_index", "youtube"],
-      ["search_index", "search"],
-      ["print_index", "print"],
-    ];
-    const sums = new Map<ChannelKey, { sum: number; n: number }>();
-    for (const r of rows) {
-      for (const [col, ch] of idxCols) {
-        const v = r[col];
-        if (v != null) {
-          const cur = sums.get(ch) ?? { sum: 0, n: 0 };
-          cur.sum += num(v);
-          cur.n += 1;
-          sums.set(ch, cur);
+  /* channel audience fit ---------------------------------------------------- */
+  // Primary: the national media_consumption_baseline (Pew + ATUS + Nielsen-cited)
+  // weighted by THIS state's population demographic mix → a relative per-channel
+  // fit. The scope rule lives in audience-fit.ts (prefer general reach; news only
+  // as a ranking proxy — radio leans on the Nielsen general reach rows, never the
+  // Pew radio-news row). The math is deterministic and never reaches the LLM.
+  // Fallback: the legacy generic media_profiles indices. Honest degrade:
+  // audience_fit stays false when neither source yields a row.
+  const channelFit = new Map<
+    ChannelKey,
+    { fit: number; scope?: "general" | "news_proxy"; sources?: string[] }
+  >();
+
+  let baselineRows: BaselineRow[] = [];
+  if (baselineRes.status === "fulfilled" && !baselineRes.value.error) {
+    baselineRows = (baselineRes.value.data as BaselineRow[]) ?? [];
+  } else if (baselineRes.status === "rejected") {
+    errors.push("media_consumption_baseline fetch failed");
+  }
+
+  let censusRows: CensusRow[] = [];
+  if (censusRes.status === "fulfilled" && !censusRes.value.error) {
+    censusRows = (censusRes.value.data as CensusRow[]) ?? [];
+  } else if (censusRes.status === "rejected") {
+    errors.push("census_demographics fetch failed");
+  }
+
+  if (baselineRows.length > 0) {
+    const mix = buildDemographicMix(censusRows);
+    for (const [ch, f] of computeAudienceFit(baselineRows, mix)) {
+      channelFit.set(ch, { fit: f.fit, scope: f.scope, sources: f.sources });
+    }
+  }
+
+  // Fallback to the legacy generic media_profiles indices only if the baseline
+  // produced nothing (e.g. the table is empty before the seed migration applies).
+  if (channelFit.size === 0) {
+    if (profilesRes.status === "fulfilled" && !profilesRes.value.error) {
+      const rows = (profilesRes.value.data as Array<Record<string, unknown>>) ?? [];
+      // Generic consumption profiles, no demographic weighting — fit is directional.
+      // Average each channel's index across all rows.
+      const idxCols: Array<[string, ChannelKey]> = [
+        ["tv_linear_index", "tv_linear"],
+        ["ctv_streaming_index", "ctv"],
+        ["radio_index", "radio"],
+        ["podcast_index", "podcast"],
+        ["facebook_index", "facebook"],
+        ["instagram_index", "instagram"],
+        ["tiktok_index", "tiktok"],
+        ["youtube_index", "youtube"],
+        ["search_index", "search"],
+        ["print_index", "print"],
+      ];
+      const sums = new Map<ChannelKey, { sum: number; n: number }>();
+      for (const r of rows) {
+        for (const [col, ch] of idxCols) {
+          const v = r[col];
+          if (v != null) {
+            const cur = sums.get(ch) ?? { sum: 0, n: 0 };
+            cur.sum += num(v);
+            cur.n += 1;
+            sums.set(ch, cur);
+          }
         }
       }
+      let maxAvg = 0;
+      const avgs = new Map<ChannelKey, number>();
+      for (const [ch, { sum, n }] of sums) {
+        const a = n > 0 ? sum / n : 0;
+        avgs.set(ch, a);
+        if (a > maxAvg) maxAvg = a;
+      }
+      for (const [ch, a] of avgs) {
+        channelFit.set(ch, { fit: maxAvg > 0 ? clamp01(a / maxAvg) : 0 });
+      }
+    } else if (profilesRes.status === "rejected") {
+      errors.push("media_profiles fetch failed");
     }
-    let maxAvg = 0;
-    const avgs = new Map<ChannelKey, number>();
-    for (const [ch, { sum, n }] of sums) {
-      const a = n > 0 ? sum / n : 0;
-      avgs.set(ch, a);
-      if (a > maxAvg) maxAvg = a;
-    }
-    for (const [ch, a] of avgs) {
-      channelFit.set(ch, maxAvg > 0 ? clamp01(a / maxAvg) : 0);
-    }
-  } else if (profilesRes.status === "rejected") {
-    errors.push("media_profiles fetch failed");
   }
 
   /* channel competition (channel_competition_scores by DMA) ---------------- */
@@ -330,8 +391,14 @@ export async function assembleStrategyInputs(
   }
 
   const channels: ChannelSignal[] = [];
-  for (const [ch, fit] of channelFit) {
-    channels.push({ channel: ch, fit, competition: channelComp.has(ch) ? channelComp.get(ch)! : null });
+  for (const [ch, f] of channelFit) {
+    channels.push({
+      channel: ch,
+      fit: f.fit,
+      competition: channelComp.has(ch) ? channelComp.get(ch)! : null,
+      fit_scope: f.scope,
+      fit_sources: f.sources,
+    });
   }
 
   /* named outlets (media_outlets scoped to DMA + broadcast_stations) -------- */

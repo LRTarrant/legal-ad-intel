@@ -162,6 +162,8 @@ export function buildChannelPlan(
       opportunity: opp,
       outlets,
       rationale: rationaleFor(c, outlets, gorilla),
+      fit_scope: c.fit_scope,
+      fit_sources: c.fit_sources,
     };
     return { planned, weighted: opp * weight };
   });

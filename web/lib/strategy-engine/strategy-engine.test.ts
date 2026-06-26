@@ -36,6 +36,13 @@ import type {
   NamedOutlet,
   StrategyInputs,
 } from "./types";
+import {
+  buildDemographicMix,
+  computeAudienceFit,
+  type BaselineRow,
+  type CensusRow,
+  type DemographicMix,
+} from "./audience-fit";
 
 /* ── Fixtures ───────────────────────────────────────────────────────────── */
 
@@ -277,4 +284,133 @@ test("validateStrategyProse rejects prose with a banned reach figure", () => {
 test("validateStrategyProse requires the core fields", () => {
   const res = validateStrategyProse({ market_read: "" });
   assert.equal(res.ok, false);
+});
+
+/* ── computeAudienceFit (media_consumption_baseline) ────────────────────── */
+
+const PEW = "Pew Research Center";
+const NIELSEN = "Nielsen (cited as fact)";
+
+/** A realistic slice of the national baseline seed (verbatim values). */
+function baselineFixture(): BaselineRow[] {
+  return [
+    // radio: GENERAL Nielsen reach rows (the ones radio fit MUST use)…
+    { demographic_type: "race", demographic_group: "black", channel: "radio", metric: "reach_monthly", scope: "general", value: 92, source: NIELSEN },
+    { demographic_type: "race", demographic_group: "hispanic", channel: "radio", metric: "reach_weekly", scope: "general", value: 98, source: NIELSEN },
+    // …and the Pew radio-NEWS row that must NOT be allowed to tank radio.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "radio", metric: "news_consume", scope: "news", value: 44, source: PEW },
+    // radio_urban format_share — excluded from the numeric base (not reach).
+    { demographic_type: "race", demographic_group: "black", channel: "radio_urban", metric: "format_share", scope: "general", value: 50.2, source: NIELSEN },
+    // tv_linear: NEWS only → news-consumption proxy.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "tv_linear", metric: "news_consume", scope: "news", value: 64, source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "tv_linear", metric: "news_consume", scope: "news", value: 76, source: PEW },
+    { demographic_type: "race", demographic_group: "white", channel: "tv_linear", metric: "news_consume", scope: "news", value: 62, source: PEW },
+    // print + search: NEWS only → news-consumption proxy.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "print", metric: "news_consume", scope: "news", value: 25, source: PEW },
+    { demographic_type: "all", demographic_group: "all_adults", channel: "search", metric: "news_consume", scope: "news", value: 63, source: PEW },
+    // ctv: GENERAL (was previously planned blind — no baseline rows existed).
+    { demographic_type: "all", demographic_group: "all_adults", channel: "ctv", metric: "streaming_share_of_tv", scope: "general", value: 44.8, source: NIELSEN },
+    { demographic_type: "race", demographic_group: "hispanic", channel: "ctv", metric: "streaming_share_of_tv", scope: "general", value: 55.8, source: NIELSEN },
+    { demographic_type: "age", demographic_group: "25_54", channel: "ctv", metric: "penetration", scope: "general", value: 80, source: NIELSEN },
+    { demographic_type: "race", demographic_group: "black", channel: "ctv", metric: "fast_overindex", scope: "general", value: 1, source: NIELSEN }, // directional → excluded
+    // facebook: a GENERAL adoption row + a NEWS row (general must win).
+    { demographic_type: "all", demographic_group: "all_adults", channel: "facebook", metric: "platform_use", scope: "general", value: 71, source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "facebook", metric: "news_regular", scope: "news", value: 36, source: PEW },
+    // youtube: GENERAL adoption.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "youtube", metric: "platform_use", scope: "general", value: 84, source: PEW },
+    { demographic_type: "race", demographic_group: "asian", channel: "youtube", metric: "platform_use", scope: "general", value: 92, source: PEW },
+    { demographic_type: "race", demographic_group: "hispanic", channel: "youtube", metric: "platform_use", scope: "general", value: 88, source: PEW },
+    // a non-engine channel + a context stat that must never produce fit.
+    { demographic_type: "all", demographic_group: "all_adults", channel: "digital", metric: "news_consume", scope: "news", value: 86, source: PEW },
+    { demographic_type: "race", demographic_group: "black", channel: "all_media", metric: "time_spent_weekly", scope: "general", value: 81, source: NIELSEN },
+  ];
+}
+
+const HIGH_BLACK_MIX: DemographicMix = {
+  race: { black: 0.8, white: 0.15, hispanic: 0.04, asian: 0.01 },
+  age: { "18_29": 0.18, "25_54": 0.4, "50_plus": 0.32, "65_plus": 0.16 },
+};
+
+test("radio fit for a high-Black-share market uses the GENERAL reach row, not the Pew news row", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  const radio = fit.get("radio");
+  assert.ok(radio, "radio should have a fit");
+  // The credibility line: radio rests on general reach, never the news proxy.
+  assert.equal(radio!.scope, "general");
+  assert.ok(radio!.sources.includes(NIELSEN));
+  // Radio (Black 92 / Hispanic 98 reach) is the strongest channel here and far
+  // above where the 44%-news row would put it (44/92 ≈ 0.48).
+  assert.ok(radio!.fit > 0.9, `radio fit ${radio!.fit} should rest on the ~92 reach`);
+  for (const [ch, f] of fit) {
+    if (ch !== "radio") assert.ok(radio!.fit >= f.fit, `radio should outrank ${ch}`);
+  }
+  // And it must beat tv_linear, whose fit is only a news-consumption proxy.
+  const tv = fit.get("tv_linear");
+  assert.ok(tv && tv.scope === "news_proxy" && radio!.fit > tv.fit);
+});
+
+test("dropping the general radio rows flips radio to a news proxy and tanks its fit", () => {
+  const withGeneral = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX).get("radio")!;
+  const newsOnly = baselineFixture().filter(
+    (r) => !(r.channel === "radio" && r.scope === "general"),
+  );
+  const withoutGeneral = computeAudienceFit(newsOnly, HIGH_BLACK_MIX).get("radio")!;
+  assert.equal(withoutGeneral.scope, "news_proxy");
+  assert.ok(
+    withoutGeneral.fit < withGeneral.fit,
+    "removing the general reach rows should lower radio fit (proves general drove it)",
+  );
+});
+
+test("channels backed only by news rows are flagged news_proxy; general channels are not", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  assert.equal(fit.get("print")!.scope, "news_proxy");
+  assert.equal(fit.get("search")!.scope, "news_proxy");
+  // facebook has both a general and a news row — the general row wins.
+  assert.equal(fit.get("facebook")!.scope, "general");
+});
+
+test("ctv now gets a fit (it was planned blind before the baseline existed)", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  const ctv = fit.get("ctv");
+  assert.ok(ctv && ctv.fit > 0 && ctv.scope === "general");
+});
+
+test("non-engine channels and context metrics never produce a fit", () => {
+  const fit = computeAudienceFit(baselineFixture(), HIGH_BLACK_MIX);
+  // digital (device bucket), all_media (context), social/reddit/etc. → no key.
+  assert.equal(fit.has("ctv" as never) && !fit.has("digital" as never), true);
+  for (const ch of fit.keys()) {
+    assert.ok(
+      ["tv_linear", "ctv", "radio", "podcast", "facebook", "instagram", "tiktok", "youtube", "search", "print"].includes(ch),
+      `${ch} is not a buyable engine channel`,
+    );
+  }
+});
+
+test("empty baseline yields an empty map (caller degrades to media_profiles)", () => {
+  assert.equal(computeAudienceFit([], HIGH_BLACK_MIX).size, 0);
+});
+
+/* ── buildDemographicMix (census_demographics → population-weighted mix) ──── */
+
+test("buildDemographicMix population-weights county pct_* into 0..1 shares", () => {
+  const rows: CensusRow[] = [
+    // A big majority-Black county and a small majority-White one.
+    { total_population: 900, pct_black: 80, pct_white: 15, pct_hispanic: 4, pct_asian: 1, pop_18_to_24: 90, pop_25_to_34: 120, pop_35_to_44: 120, pop_45_to_54: 110, pop_55_to_64: 100, pop_65_to_74: 80, pop_75_plus: 40 },
+    { total_population: 100, pct_black: 10, pct_white: 80, pct_hispanic: 8, pct_asian: 2, pop_18_to_24: 10, pop_25_to_34: 12, pop_35_to_44: 12, pop_45_to_54: 11, pop_55_to_64: 10, pop_65_to_74: 8, pop_75_plus: 4 },
+  ];
+  const mix = buildDemographicMix(rows);
+  // Weighted Black share = (900*80 + 100*10)/1000 = 73% → 0.73.
+  assert.ok(Math.abs(mix.race.black - 0.73) < 1e-6);
+  assert.ok(mix.race.black > mix.race.white);
+  // Shares are fractions in [0,1].
+  for (const v of Object.values(mix.race)) assert.ok(v >= 0 && v <= 1);
+  assert.ok(mix.age["25_54"] > 0 && mix.age["65_plus"] > 0);
+});
+
+test("buildDemographicMix returns zero shares for no rows", () => {
+  const mix = buildDemographicMix([]);
+  assert.equal(mix.race.black, 0);
+  assert.equal(mix.age["18_29"], 0);
 });
