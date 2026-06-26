@@ -221,6 +221,23 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
 
   const panelId = "mc-consumption-panel";
 
+  // Family filter (scan aid): default "all"; narrowing renders a short, focused
+  // view so a buyer can drop straight to the channels they care about. Only
+  // families with data for the current axis get a chip; if the chosen family
+  // isn't present after an axis switch, fall back to "all" (never an empty view).
+  const presentFamilies = FAMILIES.filter((f) =>
+    blocks.some((b) => f.channels.includes(b.channel)),
+  );
+  const [familyFilter, setFamilyFilter] = useState<string>("all");
+  const effectiveFilter =
+    familyFilter !== "all" && presentFamilies.some((f) => f.label === familyFilter)
+      ? familyFilter
+      : "all";
+  const shownFamilies =
+    effectiveFilter === "all"
+      ? presentFamilies
+      : presentFamilies.filter((f) => f.label === effectiveFilter);
+
   return (
     <section aria-label="Consumption by demographic">
       {/* Axis control */}
@@ -260,16 +277,51 @@ export function MediaConsumptionExplorer({ rows }: { rows: BaselineRow[] }) {
         <p className="text-sm text-slate-gray sm:max-w-sm sm:text-right">{activeBlurb}</p>
       </div>
 
+      {/* Channel-group filter: narrow the briefing to one group to scan fast. */}
+      {presentFamilies.length > 1 && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-gray">
+            Show
+          </span>
+          <div
+            role="group"
+            aria-label="Filter channel groups"
+            className="no-scrollbar flex gap-2 overflow-x-auto"
+          >
+            {[{ key: "all", label: "All channels" }, ...presentFamilies.map((f) => ({ key: f.label, label: f.label }))].map(
+              (chip) => {
+                const active = effectiveFilter === chip.key;
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setFamilyFilter(chip.key)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-midnight-navy bg-midnight-navy text-white"
+                        : "border-slate-200 text-slate-gray hover:border-slate-300 hover:text-midnight-navy"
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              },
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Families → channels → bars */}
       <div
-        key={axis}
+        key={`${axis}-${effectiveFilter}`}
         id={panelId}
         role="tabpanel"
         aria-labelledby={`mc-tab-${axis}`}
         tabIndex={0}
         className="mt-8 space-y-12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-intelligence-teal"
       >
-        {FAMILIES.map((family) => {
+        {shownFamilies.map((family) => {
           const familyBlocks = blocks.filter((b) =>
             family.channels.includes(b.channel)
           );
