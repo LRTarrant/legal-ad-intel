@@ -71,3 +71,17 @@ html {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Media Consumption: bars grow in on mount / axis change (replays via React key).
+   Transform-based (GPU-friendly), not a width animation. */
+@keyframes mc-bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.mc-bar-fill {
+  transform-origin: left center;
+  animation: mc-bar-fill 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-bar-fill { animation: none; }
+}
