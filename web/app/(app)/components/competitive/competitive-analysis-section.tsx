@@ -284,8 +284,8 @@ export function CompetitiveAnalysis({
       {!embedded && (
         <div className="flex flex-wrap items-center gap-3">
           {numbered && (
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
-              {sectionNumber}
+            <span className="font-mono text-xs font-semibold tabular-nums text-slate-gray">
+              {String(sectionNumber).padStart(2, "0")}
             </span>
           )}
           <h2 className="font-heading text-2xl font-bold text-midnight-navy">
