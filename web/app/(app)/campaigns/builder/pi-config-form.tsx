@@ -99,6 +99,8 @@ interface PIConfigFormProps {
    */
   initialState?: string;
   initialCategory?: string;
+  /** Deep-link default DMA code (Strategy Engine handoff). */
+  initialDmaCode?: string;
   /**
    * Called when the server returns a 403/429 entitlement denial. The
    * parent uses this to open the buyer-type-specific upgrade modal
@@ -117,6 +119,7 @@ export function PIConfigForm({
   accentColor,
   initialState,
   initialCategory,
+  initialDmaCode,
   onEntitlementError,
 }: PIConfigFormProps) {
   const [category, setCategory] = useState<PICategory | "">(
@@ -288,6 +291,7 @@ export function PIConfigForm({
           value={dma}
           onChange={setDma}
           accentColor={accentColor}
+          initialDmaCode={initialDmaCode}
         />
         <SeverityModifierCheckboxes
           value={severity}

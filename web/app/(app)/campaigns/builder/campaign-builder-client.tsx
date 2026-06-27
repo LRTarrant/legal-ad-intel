@@ -287,6 +287,7 @@ export function CampaignBuilderClient() {
     tortName?: string;
     piCategory?: string;
     state?: string;
+    marketDmaCode?: string;
   }>({});
   // True when the practice_area was set from a URL param (vs. user click /
   // localStorage). Used to auto-open the upgrade modal if the deep-linked
@@ -321,7 +322,9 @@ export function CampaignBuilderClient() {
       }
     }
 
-    const next: { tortName?: string; piCategory?: string; state?: string } = {};
+    const marketDmaParam = url.searchParams.get("market_dma_code");
+
+    const next: { tortName?: string; piCategory?: string; state?: string; marketDmaCode?: string } = {};
     if (tortNameParam) {
       next.tortName = tortNameParam;
       url.searchParams.delete("tort_name");
@@ -337,7 +340,12 @@ export function CampaignBuilderClient() {
       url.searchParams.delete("state");
       dirty = true;
     }
-    if (next.tortName || next.piCategory || next.state) {
+    if (marketDmaParam) {
+      next.marketDmaCode = marketDmaParam;
+      url.searchParams.delete("market_dma_code");
+      dirty = true;
+    }
+    if (next.tortName || next.piCategory || next.state || next.marketDmaCode) {
       setDeepLink(next);
     }
     if (dirty) {
@@ -1188,6 +1196,7 @@ export function CampaignBuilderClient() {
             accentColor={accentColor}
             initialState={deepLink.state}
             initialCategory={deepLink.piCategory}
+            initialDmaCode={deepLink.marketDmaCode}
             onEntitlementError={({ reason, meta }) =>
               setUpgradeModal({ open: true, reason, meta })
             }
