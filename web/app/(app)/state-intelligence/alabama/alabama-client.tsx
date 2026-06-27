@@ -220,6 +220,17 @@ function fmtMillions(n: number): string {
   return n.toLocaleString();
 }
 
+/* Section anchors, shared by the desktop nav and the mobile jump menu. */
+const SECTION_NAV: [string, string][] = [
+  ["#overview", "Overview"],
+  ["#activity", "Activity"],
+  ["#legal", "Legal"],
+  ["#competition", "Competition"],
+  ["#strategy", "Strategy"],
+  ["#signals", "Signals"],
+  ["#sources", "Sources"],
+];
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -313,15 +324,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             Viability {composite || "—"}
           </span>
           <nav className="ml-auto hidden items-center gap-4 md:flex">
-            {[
-              ["#overview", "Overview"],
-              ["#activity", "Activity"],
-              ["#legal", "Legal"],
-              ["#competition", "Competition"],
-              ["#strategy", "Strategy"],
-              ["#signals", "Signals"],
-              ["#sources", "Sources"],
-            ].map(([href, label]) => (
+            {SECTION_NAV.map(([href, label]) => (
               <a
                 key={href}
                 href={href}
@@ -331,6 +334,28 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               </a>
             ))}
           </nav>
+
+          {/* Mobile: the desktop anchor bar is hidden, so give a compact jump
+              menu (the page is 7 long sections). */}
+          <select
+            aria-label="Jump to section"
+            defaultValue=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (id) document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+              e.target.selectedIndex = 0;
+            }}
+            className="ml-auto rounded-lg border border-cloud bg-white px-2.5 py-1 text-[13px] font-semibold text-slate-gray md:hidden"
+          >
+            <option value="" disabled>
+              Jump to&hellip;
+            </option>
+            {SECTION_NAV.map(([href, label]) => (
+              <option key={href} value={href.slice(1)}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
