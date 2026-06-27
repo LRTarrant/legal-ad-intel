@@ -35,6 +35,7 @@ import {
   VIEWBOX as AL_VIEWBOX,
 } from "@/lib/data/state-geometry/alabama";
 import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
+import { LegalNewsSection } from "../../components/legal-news/legal-news-section";
 import { StrategyEngineSection } from "../components/strategy-engine/strategy-engine-section";
 import type { StrategyInputs } from "@/lib/strategy-engine/types";
 
@@ -314,6 +315,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
           <nav className="ml-auto hidden items-center gap-4 md:flex">
             {[
               ["#overview", "Overview"],
+              ["#activity", "Activity"],
               ["#legal", "Legal"],
               ["#competition", "Competition"],
               ["#strategy", "Strategy"],
@@ -524,10 +526,15 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* SECTION 2 — LEGAL LANDSCAPE & PI VIABILITY                   */}
+      {/* SECTION 2 — RECENT LEGAL ACTIVITY (state legal news)         */}
+      {/* ============================================================ */}
+      <LegalNewsSection stateName="Alabama" stateCode="AL" numbered sectionNumber={2} />
+
+      {/* ============================================================ */}
+      {/* SECTION 3 — LEGAL LANDSCAPE & PI VIABILITY                   */}
       {/* ============================================================ */}
       <div id="legal" className="scroll-mt-20">
-        <SectionHeading n={2} title="Legal Landscape & PI Viability" />
+        <SectionHeading n={3} title="Legal Landscape & PI Viability" />
 
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
           <h3 className="font-heading text-xl font-bold text-midnight-navy">
@@ -762,20 +769,20 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* SECTION 3 — COMPETITIVE ANALYSIS                             */}
+      {/* SECTION 4 — COMPETITIVE ANALYSIS                             */}
       {/* ============================================================ */}
-      <CompetitiveAnalysis stateName="Alabama" stateCode="AL" />
+      <CompetitiveAnalysis stateName="Alabama" stateCode="AL" sectionNumber={4} />
 
       {/* ============================================================ */}
-      {/* SECTION 4 — STRATEGY ENGINE                                  */}
+      {/* SECTION 5 — STRATEGY ENGINE                                  */}
       {/* ============================================================ */}
-      <StrategyEngineSection n={4} inputs={data.strategyInputs} />
+      <StrategyEngineSection n={5} inputs={data.strategyInputs} />
 
       {/* ============================================================ */}
-      {/* SECTION 5 — PROPRIETARY SIGNALS                              */}
+      {/* SECTION 6 — PROPRIETARY SIGNALS                              */}
       {/* ============================================================ */}
       <div id="signals" className="scroll-mt-20">
-        <SectionHeading n={5} title="Proprietary Signals" />
+        <SectionHeading n={6} title="Proprietary Signals" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
             Cross-signal insights
@@ -844,10 +851,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       />
 
       {/* ============================================================ */}
-      {/* SECTION 6 — SOURCES & METHODOLOGY                            */}
+      {/* SECTION 7 — SOURCES & METHODOLOGY                            */}
       {/* ============================================================ */}
       <div id="sources" className="scroll-mt-20">
-        <SectionHeading n={6} title="Sources & Methodology" />
+        <SectionHeading n={7} title="Sources & Methodology" />
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
           <div className="grid gap-2 sm:grid-cols-2">
             {[
@@ -859,6 +866,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               "NOAA Storm Events Database",
               "USCG Boating Accident Report Database",
               "Google / Meta / YouTube ad observations (LMI pipelines)",
+              "Google News / OSHA / CourtListener — single-incident legal news feed",
               "Court records / judicial profile data",
             ].map((source) => (
               <div

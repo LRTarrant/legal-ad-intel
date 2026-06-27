@@ -5783,6 +5783,63 @@ export type Database = {
           },
         ]
       }
+      state_legal_news: {
+        Row: {
+          amount_usd: number | null
+          category: string | null
+          created_at: string
+          id: string
+          location: string | null
+          practice_area: string | null
+          published_at: string | null
+          query_bucket: string | null
+          query_term: string | null
+          raw: Json | null
+          source_name: string | null
+          source_url: string
+          state_abbr: string
+          stream: string
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          amount_usd?: number | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          practice_area?: string | null
+          published_at?: string | null
+          query_bucket?: string | null
+          query_term?: string | null
+          raw?: Json | null
+          source_name?: string | null
+          source_url: string
+          state_abbr: string
+          stream?: string
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          amount_usd?: number | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          practice_area?: string | null
+          published_at?: string | null
+          query_bucket?: string | null
+          query_term?: string | null
+          raw?: Json | null
+          source_name?: string | null
+          source_url?: string
+          state_abbr?: string
+          stream?: string
+          summary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       state_rollout: {
         Row: {
           blockers: string | null

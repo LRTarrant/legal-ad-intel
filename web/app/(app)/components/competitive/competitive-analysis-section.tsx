@@ -105,15 +105,19 @@ export function CompetitiveAnalysis({
   stateCode,
   embedded = false,
   numbered = true,
+  sectionNumber = 3,
 }: {
   stateName: string;
   stateCode: string;
   /** When true (v2 shared client), skip the section heading entirely — the
    *  host already renders its own group header. */
   embedded?: boolean;
-  /** Show the numbered "3" badge in the heading. True for the bespoke Alabama
-   *  3-section page; false for the legacy pages (which don't number sections). */
+  /** Show the numbered badge in the heading. True for the bespoke Alabama
+   *  page; false for the legacy pages (which don't number sections). */
   numbered?: boolean;
+  /** Number shown in the badge. Defaults to 3; the Alabama page passes 4 once
+   *  the Recent Legal Activity section takes slot 2. */
+  sectionNumber?: number;
 }) {
   const roster = useFirmRoster(stateCode);
 
@@ -281,7 +285,7 @@ export function CompetitiveAnalysis({
         <div className="flex flex-wrap items-center gap-3">
           {numbered && (
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-midnight-navy text-sm font-bold text-white">
-              3
+              {sectionNumber}
             </span>
           )}
           <h2 className="font-heading text-2xl font-bold text-midnight-navy">
