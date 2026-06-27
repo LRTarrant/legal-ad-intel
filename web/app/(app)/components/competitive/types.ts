@@ -30,6 +30,11 @@ export interface PiCompetitor {
   case_types_active: string[] | null;
   first_seen: string | null;
   last_seen: string | null;
+  // Recent-presence normalization (rolling 90d) — added by the
+  // presence-score-overranking fix. Optional so older callers still type-check.
+  active_days?: number | null;
+  observations_per_active_day?: number | null;
+  low_confidence?: boolean | null;
 }
 
 export interface SeoCompetitor {
