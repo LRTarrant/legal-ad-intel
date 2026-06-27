@@ -645,7 +645,7 @@ function PaidPanel({
           <tr className="border-b border-cloud">
             <th className={`${TH} w-8`}>#</th>
             <th className={TH}>Firm (domain)</th>
-            <th className={`${TH} text-right`}>Ad appearances</th>
+            <th className={`${TH} text-right`}>Recent presence (90d)</th>
             <th className={`${TH} text-right`}>Avg position</th>
             <th className={TH}>Case types</th>
             <th className={`${TH} text-right`}>Creative</th>
@@ -656,15 +656,31 @@ function PaidPanel({
             <tr key={c.advertiser_domain} className="border-b border-cloud/60">
               <td className="px-3 py-2.5 text-slate-gray">{i + 1}</td>
               <td className="px-3 py-2.5">
-                <div className="font-medium text-midnight-navy">
-                  {c.advertiser_name ?? c.advertiser_domain}
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-midnight-navy">
+                    {c.advertiser_name ?? c.advertiser_domain}
+                  </span>
+                  {c.low_confidence ? (
+                    <span
+                      title="New or thin sample: first seen in the last 21 days, or fewer than 14 active days. Not yet an established presence."
+                      className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700"
+                    >
+                      New
+                    </span>
+                  ) : null}
                 </div>
                 <div className="text-[11px] text-slate-gray/70">
                   {c.advertiser_domain}
+                  {c.first_seen ? ` · since ${c.first_seen}` : ""}
                 </div>
               </td>
               <td className="px-3 py-2.5 text-right font-mono text-midnight-navy">
                 {c.total_observations.toLocaleString()}
+                {c.observations_per_active_day != null ? (
+                  <div className="text-[11px] font-sans text-slate-gray/70">
+                    {c.observations_per_active_day.toFixed(1)}/active day
+                  </div>
+                ) : null}
               </td>
               <td className="px-3 py-2.5 text-right text-midnight-navy">
                 {c.avg_ad_position != null ? c.avg_ad_position.toFixed(1) : "—"}
@@ -688,6 +704,12 @@ function PaidPanel({
           ))}
         </tbody>
       </table>
+      <p className="mt-3 px-3 text-[11px] leading-relaxed text-slate-gray/70">
+        Ranked by sustained presence over the last 90 days — statewide market
+        breadth first, then per-active-day density — not all-time ad volume.
+        &ldquo;New&rdquo; flags firms first seen in the last 21 days or with
+        fewer than 14 active days.
+      </p>
     </div>
   );
 }

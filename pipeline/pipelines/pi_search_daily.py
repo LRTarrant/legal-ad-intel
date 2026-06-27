@@ -26,7 +26,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import httpx
@@ -298,6 +298,15 @@ def step_fetch_raw(step) -> list[dict]:
     return total_inserted
 
 
+# Consumer / aggregator domains that are not PI firms. An ad whose final URL
+# resolves to one of these surfaces as a bogus "firm" (e.g. google.com). Mirrors
+# the denylist the YouTube/Meta competitor RPCs already apply.
+CONSUMER_DOMAINS = frozenset({
+    "google.com", "youtube.com", "facebook.com", "instagram.com",
+    "maps.google.com", "g.co", "bing.com",
+})
+
+
 def step_build_profiles(step) -> int:
     """Aggregate observations into competitor profiles by state."""
     metros = supabase_query("pi_metros", {"select": "id,state_abbr,metro_name"})
@@ -329,27 +338,37 @@ def step_build_profiles(step) -> int:
             logger.info("  No observations for state %s, skipping profiles", state)
             continue
 
-        # Group by advertiser_domain
+        # Group by advertiser_domain, skipping consumer/aggregator domains
+        # (mirrors the denylist the YouTube/Meta competitor RPCs apply — these
+        # are not PI firms, e.g. an ad whose final URL resolved to google.com).
         by_domain: dict[str, list[dict]] = {}
         for obs in all_obs:
             domain = obs["advertiser_domain"]
+            if domain in CONSUMER_DOMAINS:
+                continue
             by_domain.setdefault(domain, []).append(obs)
 
-        # Find max observations for presence_score normalization
-        max_obs = max(len(obs_list) for obs_list in by_domain.values()) if by_domain else 1
         total_state_metros = total_metros_by_state.get(state, 1)
         total_case_types = 6  # fixed number of case type clusters
 
-        profiles = []
+        # presence_score rewards SUSTAINED, STATEWIDE presence — not raw volume.
+        # A recent dense burst in a couple of metros must not outrank long-run
+        # statewide saturation (see docs/issues/presence-score-overranking.md).
+        # We score on a per-active-day rate over a rolling 90-day window, weight
+        # metro breadth, and sink low-confidence (new / thin-sample) entrants.
+        now = datetime.now(timezone.utc)
+        window_cutoff = (now - timedelta(days=90)).date().isoformat()
+        recency_cutoff = (now - timedelta(days=21)).date().isoformat()
+
+        # Pass 1: per-domain metrics (incl. the rolling-90d rate).
+        metrics: list[dict] = []
         for domain, obs_list in by_domain.items():
-            # Most common advertiser_name
             name_counts: dict[str, int] = {}
             for obs in obs_list:
                 name = obs.get("advertiser_name") or domain
                 name_counts[name] = name_counts.get(name, 0) + 1
             advertiser_name = max(name_counts, key=name_counts.get)
 
-            # Distinct metros and case types
             metro_ids_active = set(obs["metro_id"] for obs in obs_list)
             metros_active = sorted(set(
                 metro_by_id[mid]["metro_name"]
@@ -358,7 +377,6 @@ def step_build_profiles(step) -> int:
             ))
             case_types_active = sorted(set(obs["case_type"] for obs in obs_list))
 
-            # Aggregates
             total_observations = len(obs_list)
             positions = [obs["ad_position"] for obs in obs_list if obs.get("ad_position")]
             avg_position = round(sum(positions) / len(positions), 1) if positions else None
@@ -373,23 +391,52 @@ def step_build_profiles(step) -> int:
             first_seen = min(dates) if dates else None
             last_seen = max(dates) if dates else None
 
-            # Presence score: obs weight 40 + metro coverage 30 + case breadth 30
-            obs_score = (total_observations / max_obs) * 40 if max_obs else 0
-            metro_score = (len(metros_active) / total_state_metros) * 30 if total_state_metros else 0
-            case_score = (len(case_types_active) / total_case_types) * 30
-            presence_score = round(obs_score + metro_score + case_score, 1)
+            # Rolling-90d window: rate = observations per active (distinct) day.
+            window_dates = [d for d in dates if d >= window_cutoff]
+            active_days = len(set(window_dates))
+            obs_per_active_day = len(window_dates) / active_days if active_days else 0.0
+            low_confidence = active_days < 14 or (first_seen is not None and first_seen > recency_cutoff)
 
-            profiles.append({
-                "state_abbr": state,
-                "advertiser_domain": domain,
+            metrics.append({
+                "domain": domain,
                 "advertiser_name": advertiser_name,
-                "website": f"https://{domain}",
                 "metros_active": metros_active,
                 "case_types_active": case_types_active,
                 "total_observations": total_observations,
-                "avg_ad_position": avg_position,
+                "avg_position": avg_position,
                 "first_seen": first_seen,
                 "last_seen": last_seen,
+                "obs_per_active_day": obs_per_active_day,
+                "low_confidence": low_confidence,
+            })
+
+        # Normalize the rate against the strongest sustained advertiser.
+        max_rate = max((m["obs_per_active_day"] for m in metrics), default=0.0)
+
+        # Pass 2: compose presence_score and build profile rows.
+        profiles = []
+        for m in metrics:
+            rate_score = (m["obs_per_active_day"] / max_rate) * 40 if max_rate else 0
+            metro_score = (len(m["metros_active"]) / total_state_metros) * 30 if total_state_metros else 0
+            case_score = (len(m["case_types_active"]) / total_case_types) * 30
+            presence_score = rate_score + metro_score + case_score
+            # New / thin-sample firms are demoted below confident ones so the
+            # presence_score-ordered state RPCs never call them "dominant".
+            if m["low_confidence"]:
+                presence_score *= 0.4
+            presence_score = round(presence_score, 1)
+
+            profiles.append({
+                "state_abbr": state,
+                "advertiser_domain": m["domain"],
+                "advertiser_name": m["advertiser_name"],
+                "website": f"https://{m['domain']}",
+                "metros_active": m["metros_active"],
+                "case_types_active": m["case_types_active"],
+                "total_observations": m["total_observations"],
+                "avg_ad_position": m["avg_position"],
+                "first_seen": m["first_seen"],
+                "last_seen": m["last_seen"],
                 "presence_score": presence_score,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             })
