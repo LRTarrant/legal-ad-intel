@@ -141,7 +141,7 @@ function NewsCard({ item }: { item: LegalNewsItem }) {
       href={item.source_url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex w-[280px] flex-none snap-start flex-col rounded-xl border border-cloud bg-white p-4 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal sm:w-[320px]"
+      className="group flex w-[280px] flex-none snap-start flex-col rounded-xl border border-cloud bg-white p-4 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal sm:w-[320px]"
       style={{ borderTop: `3px solid ${s.accent}` }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -471,6 +471,11 @@ export function LegalNewsSection({
               Recent verdicts, settlements, and injury reports — the live
               case-acquisition and timing signal behind your ad spend.
             </p>
+            {items && items.length > 0 && (
+              <p className="mt-2 text-[11px] font-medium text-slate-gray">
+                Last 30 days · {items.length} {items.length === 1 ? "item" : "items"}
+              </p>
+            )}
           </div>
 
           {/* All / Verdicts / Incidents */}
