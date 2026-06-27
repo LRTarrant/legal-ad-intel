@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import StrategyDeck from "./strategy-deck";
 
 type Voice = "firm" | "agency" | "seller";
 
@@ -184,7 +185,7 @@ export default function StrategyClient() {
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
 
-      {result ? <Result data={result} /> : null}
+      {result ? <StrategyDeck data={result} /> : null}
     </div>
   );
 }
@@ -193,133 +194,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div>
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-gray">{label}</div>
-      {children}
-    </div>
-  );
-}
-
-function depthBadge(depth: string) {
-  const map: Record<string, string> = {
-    strong: "bg-green-100 text-green-700",
-    moderate: "bg-amber-100 text-amber-700",
-    thin: "bg-slate-200 text-slate-600",
-  };
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase ${map[depth] ?? ""}`}>{depth}</span>;
-}
-
-function Result({ data }: { data: any }) {
-  const buildUrl = `/campaigns/builder?practice_area=personal_injury&state=${data.market.state}`;
-  return (
-    <div className="mt-8 space-y-6">
-      <div className="rounded-xl border border-cloud bg-white p-5">
-        <div className="text-xs font-semibold uppercase tracking-wide text-intelligence-teal">Market</div>
-        <h2 className="text-xl font-bold text-midnight-navy">{data.market.label} — {pretty(data.case_types.join(", "))}</h2>
-        <p className="mt-1 text-sm text-slate-gray">{data.prose?.market_read}</p>
-        <div className="mt-2 text-xs text-slate-gray">Confidence: {data.confidence} · Archetype-driven · est. cost {data.cost_cents != null ? `$${(data.cost_cents / 100).toFixed(2)}` : "—"}</div>
-      </div>
-
-      {/* Opportunity */}
-      <Section title="Where to play (Opportunity)" tag={`FARS ${data.opportunity.fars_year_min}–${data.opportunity.fars_year_max} · Census`}>
-        <table className="w-full text-left text-sm">
-          <thead><tr className="border-b border-cloud text-xs uppercase text-slate-gray">
-            <th className="py-1.5">County</th><th>MSA</th><th className="text-right">Total fatal</th><th className="text-right">Truck</th><th className="text-right">Moto</th><th className="text-right">Pop</th><th className="text-right">Internet</th><th className="text-right">/100k</th>
-          </tr></thead>
-          <tbody>
-            {data.opportunity.counties.slice(0, 10).map((c: any) => (
-              <tr key={c.county_name} className="border-b border-cloud/50">
-                <td className="py-1.5 font-medium text-midnight-navy">{c.county_name}</td>
-                <td className="text-slate-gray">{c.cbsa_title ?? "—"}</td>
-                <td className="text-right">{c.total_fatalities}</td>
-                <td className="text-right font-semibold text-intelligence-teal">{c.truck_fatalities}</td>
-                <td className="text-right">{c.motorcycle_fatalities}</td>
-                <td className="text-right">{c.total_population?.toLocaleString() ?? "—"}</td>
-                <td className="text-right">{c.pct_with_internet != null ? `${c.pct_with_internet}%` : "—"}</td>
-                <td className="text-right">{c.deaths_per_100k ?? "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
-
-      {/* Competitive */}
-      <Section title="The competitive field" tag="pi_search · ad library">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <div className="mb-1 text-xs font-semibold uppercase text-slate-gray">Top advertisers (by presence share)</div>
-            <ul className="space-y-1 text-sm">
-              {data.competitive.advertisers.slice(0, 6).map((a: any) => (
-                <li key={a.name} className="flex justify-between"><span>{a.rank}. {a.name}</span><span className="text-slate-gray">{Math.round(a.share * 100)}%</span></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="mb-1 text-xs font-semibold uppercase text-slate-gray">Channel white space</div>
-            <ul className="space-y-1 text-sm">
-              {data.competitive.channels.map((c: any) => (
-                <li key={c.channel} className="flex justify-between">
-                  <span>{c.label}{!c.measured ? " (modeled)" : ""}</span>
-                  <span className={c.status === "open" ? "font-semibold text-intelligence-teal" : "text-slate-gray"}>{c.status} · {c.active_firms}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </Section>
-
-      {/* Recommendations */}
-      <Section title={`The recommendations (${data.recommendations.length})`} tag="3-link because">
-        <div className="space-y-4">
-          {data.recommendations.map((r: any, i: number) => (
-            <div key={i} className="rounded-lg border border-cloud p-4">
-              <div className="flex items-center justify-between">
-                <div className="font-semibold text-midnight-navy">{i + 1}. {r.headline}</div>
-                {depthBadge(r.data_depth)}
-              </div>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {(["opportunity", "white_space", "fit"] as const).map((k) => (
-                  <div key={k} className="rounded border border-cloud/70 bg-cloud/10 p-3">
-                    <div className="text-[11px] font-semibold uppercase text-intelligence-teal">{k.replace("_", " ")}</div>
-                    <div className="text-lg font-bold text-midnight-navy">{r[k].value}</div>
-                    <div className="text-xs text-slate-gray">{r[k].text}</div>
-                    <div className="mt-1 inline-block rounded bg-cloud px-1.5 py-0.5 text-[10px] uppercase text-slate-gray">{r[k].source}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-2 text-xs text-slate-gray">
-                Buy: {r.buy.kind === "outlets" ? r.buy.outlets.map((o: any) => o.name).join(", ") : r.buy.target}
-              </div>
-            </div>
-          ))}
-          {data.watch_list.length > 0 ? (
-            <div className="text-xs text-slate-gray">
-              Watch / emerging: {data.watch_list.map((w: any) => `${w.channel} (${w.reason})`).join(" · ")}
-            </div>
-          ) : null}
-        </div>
-      </Section>
-
-      {/* Integrated plan + handoff */}
-      <Section title="Integrated plan" tag={`${data.integrated_plan.cadence} · ${data.integrated_plan.funnel_emphasis}`}>
-        <ul className="space-y-1 text-sm">
-          {data.integrated_plan.allocation.map((a: any) => (
-            <li key={a.channel} className="flex justify-between"><span>{a.label} <span className="text-slate-gray">({a.stage})</span></span><span className="font-semibold">{a.pct}%</span></li>
-          ))}
-        </ul>
-        <a href={buildUrl} className="mt-4 inline-block rounded-lg bg-midnight-navy px-4 py-2 text-sm font-semibold text-white">
-          Continue in Campaign Builder →
-        </a>
-      </Section>
-    </div>
-  );
-}
-
-function Section({ title, tag, children }: { title: string; tag: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-cloud bg-white p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-bold text-midnight-navy">{title}</h3>
-        <span className="rounded bg-cloud px-2 py-0.5 text-[11px] uppercase text-slate-gray">{tag}</span>
-      </div>
       {children}
     </div>
   );
