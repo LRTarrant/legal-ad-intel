@@ -51,10 +51,36 @@ const LLM_TIMEOUT_MS = 30_000;
 
 const DEFAULT_BRAND = {
   company_name: "Legal Marketing Intelligence",
-  logo_url: null,
+  logo_url: null as string | null,
   primary_color: "#1A8C96",
   accent_color: "#3FBEC8",
 };
+
+/** White-label: the caller's tenant brand, for the deck (agency-facing). */
+async function resolveBrand(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<typeof DEFAULT_BRAND> {
+  try {
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", userId).maybeSingle();
+    const tenantId = (profile as { tenant_id?: string } | null)?.tenant_id;
+    if (!tenantId) return DEFAULT_BRAND;
+    const { data: b } = await supabase
+      .from("tenant_branding")
+      .select("company_name, logo_url, primary_color, accent_color")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (!b) return DEFAULT_BRAND;
+    return {
+      company_name: b.company_name ?? DEFAULT_BRAND.company_name,
+      logo_url: b.logo_url ?? null,
+      primary_color: b.primary_color ?? DEFAULT_BRAND.primary_color,
+      accent_color: b.accent_color ?? DEFAULT_BRAND.accent_color,
+    };
+  } catch {
+    return DEFAULT_BRAND;
+  }
+}
 
 /** strategy_whitespace_channels returns 'paid_search'/'seo'; map the buyable one. */
 function toChannelKey(channel: string): ChannelKey | null {
@@ -265,7 +291,7 @@ export async function POST(req: NextRequest) {
   }
 
   const payload: Strategy = {
-    brand: DEFAULT_BRAND, // full white-label from tenant_branding lands in PR 3b
+    brand: await resolveBrand(supabase, user.id),
     audience: body.audience,
     market: { state, label: marketLabel, dma_code: body.dma_code ?? null },
     case_types: body.case_types,
