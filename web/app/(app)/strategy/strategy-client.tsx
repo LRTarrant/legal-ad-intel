@@ -44,11 +44,23 @@ function pretty(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+interface StrategyClientProps {
+  /** Pre-selected state (2-letter code), e.g. from a state-page CTA. Validated against US_STATES. */
+  initialState?: string;
+  /** Pre-selected case types, validated against CASE_TYPES. */
+  initialCaseTypes?: string[];
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export default function StrategyClient() {
+export default function StrategyClient({ initialState, initialCaseTypes }: StrategyClientProps = {}) {
+  const seededState = initialState && US_STATES.includes(initialState) ? initialState : "AL";
+  const seededCaseTypes = (initialCaseTypes ?? []).filter((c) => CASE_TYPES.includes(c));
+
   const [audience, setAudience] = useState<Voice>("agency");
-  const [caseTypes, setCaseTypes] = useState<string[]>(["trucking"]);
-  const [stateCode, setStateCode] = useState("AL");
+  const [caseTypes, setCaseTypes] = useState<string[]>(
+    seededCaseTypes.length > 0 ? seededCaseTypes : ["trucking"],
+  );
+  const [stateCode, setStateCode] = useState(seededState);
   const [dmaCode, setDmaCode] = useState<string>("");
   const [dmaOptions, setDmaOptions] = useState<DmaOption[]>([]);
   const [budgetTier, setBudgetTier] = useState("75k_plus");
