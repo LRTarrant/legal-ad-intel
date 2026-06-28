@@ -10,7 +10,8 @@
  * the 3-dot data-depth badge, and the modeled/"est." caveats are preserved.
  */
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
+import { Download, Loader2 } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -84,6 +85,10 @@ export default function StrategyDeck({ data }: { data: any }) {
 
   return (
     <div style={rootStyle} className="mt-8 space-y-5">
+      <div className="flex justify-end">
+        <DownloadDeckButton data={data} />
+      </div>
+
       {/* 1. COVER */}
       <section className="rounded-2xl p-10 text-white" style={{ background: NAVY }}>
         <div className="flex items-center justify-between">
@@ -256,6 +261,48 @@ export default function StrategyDeck({ data }: { data: any }) {
         </a>
       </section>
     </div>
+  );
+}
+
+function DownloadDeckButton({ data }: { data: any }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(false);
+  async function download() {
+    setBusy(true);
+    setErr(false);
+    try {
+      const res = await fetch("/api/strategy/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("export failed");
+      const blob = await res.blob();
+      const cd = res.headers.get("Content-Disposition") || "";
+      const name = /filename="?([^"]+)"?/.exec(cd)?.[1] || "strategy-deck.pptx";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setErr(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={download}
+      disabled={busy}
+      className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+      style={{ borderColor: "var(--lmi-accent)", color: "var(--lmi-accent)" }}
+    >
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+      {busy ? "Building deck…" : err ? "Retry download" : "Download deck (PPTX)"}
+    </button>
   );
 }
 
