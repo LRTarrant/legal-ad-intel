@@ -357,6 +357,19 @@ Other tools in the routing today:
 
 If the user pastes a task plan from anywhere, follow it and keep scope to that plan.
 
+### 9.1 Flag when a multi-agent Workflow is the better path
+
+Lance doesn't always know when to reach for a multi-agent Workflow vs. doing a task inline. **Proactively flag it.** When a request lands, if it has **two or more** of these traits, say so up front and offer to run it as a Workflow before grinding through it inline:
+
+- **Fan-out:** many similar independent units (per-state, per-tort, per-file, per-PR, per-metro) — the `state-batch` shape.
+- **Broad search/audit:** answering means reading across many files/dirs where you'd otherwise dump a lot into context.
+- **Independent verification adds confidence:** the work benefits from adversarial review or multiple lenses before committing (migrations, RLS/auth, risky refactors).
+- **Scale beyond one context:** repo-wide sweeps, migrations across many call sites, large refactors.
+
+When you flag it: name the **workflow shape** (existing: `state-batch`, `issue-to-pr`; or a one-off you'd author), give a **rough cost/scale** ("~N agents"), and let Lance opt in — Workflows need explicit opt-in and spend real tokens, so never auto-launch one. Don't flag for single-file edits, quick lookups, or conversational turns; those stay inline.
+
+Existing reusable workflows live in `.claude/workflows/`: **`state-batch`** (build batches of v2 state pages) and **`issue-to-pr`** (drive one issue/task → scoped → implemented → verified → reviewed → open PR; stops at the PR, prod-verify is the post-merge `/verify` step).
+
 ---
 
 ## 10. UX & content style
