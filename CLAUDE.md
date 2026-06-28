@@ -20,6 +20,30 @@ Acknowledge briefly (one line, e.g. "Loaded CLAUDE.md, memory.md, CURRENT_PRIORI
 
 ---
 
+## Deployment Workflow
+
+After implementing features, always: (1) run build and lint, (2) verify changes via Playwright/browser when UI-related, (3) open a PR, and (4) update memory.md and CURRENT_PRIORITIES docs.
+
+---
+
+## Database Migrations
+
+When writing migrations, always order operations safely: drop/alter CHECK constraints BEFORE running UPDATE statements, and confirm migrations against CI before merging.
+
+---
+
+## Memory Files
+
+Treat memory.md and status/priority files on disk as the source of truth; do not assume they are auto-updated by external tooling—flag staleness and update them explicitly at the end of each session.
+
+---
+
+## Environment Notes
+
+Avoid spaces in project folder paths (breaks Next.js dev/build) and verify the target model/API is available online before scaffolding notebooks or pipelines.
+
+---
+
 ## 1. Project overview
 
 - LMI is a legal advertising intelligence SaaS for U.S. plaintiff firms and their agencies.
