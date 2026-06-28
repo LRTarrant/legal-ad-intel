@@ -113,6 +113,19 @@ export interface CompetitiveChannel {
   measured: boolean;
 }
 
+/** One real competitor creative for the "Inside their ads" slide
+ *  (strategy_market_creatives): roster-scoped YouTube + market paid search. */
+export interface MarketCreative {
+  channel: "youtube" | "paid_search";
+  format_label: string;
+  advertiser: string | null;
+  advertiser_domain: string | null;
+  headline: string | null;
+  body: string | null;
+  image_url: string | null;
+  link: string | null;
+}
+
 export interface IntegratedAllocation {
   channel: ChannelKey;
   label: string;
@@ -137,7 +150,7 @@ export interface Strategy {
   competitive: {
     advertisers: Array<{ name: string; share: number; rank: number }>;
     channels: CompetitiveChannel[];
-    creative: unknown[]; // wired in PR 3b (existing in-app creative capture)
+    creative: MarketCreative[];
   };
   recommendations: Recommendation[];
   watch_list: WatchItem[];

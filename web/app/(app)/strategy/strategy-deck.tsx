@@ -174,6 +174,40 @@ export default function StrategyDeck({ data }: { data: any }) {
         <p className="mt-3 text-[11px]" style={{ color: MUTED }}>Presence share weights sustained market presence — geographic breadth first, then recent activity — the same ranking as the Competitive Analysis tab, so a dense burst in one or two metros doesn&rsquo;t read as market dominance. No estimated dollar spend is shown: per-firm spend isn&rsquo;t reliably sourceable for local PI.</p>
       </Slide>
 
+      {/* 5. INSIDE THEIR ADS */}
+      {(data.competitive?.creative ?? []).length > 0 ? (
+        <Slide eyebrow="Ad intelligence" title="Inside their ads" sub="A sample of real creative from tracked competitors" tags={["pi_search", "youtube"]}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(data.competitive.creative as any[]).slice(0, 6).map((c, i) => (
+              <a
+                key={i}
+                href={c.link || undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col overflow-hidden rounded-xl border bg-white"
+                style={{ borderColor: BORDER }}
+              >
+                <div className="relative flex h-28 items-center justify-center" style={{ background: NAVY }}>
+                  {c.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.image_url} alt={c.advertiser ?? "ad creative"} className="h-full w-full object-cover" />
+                  ) : (
+                    <span style={{ fontFamily: mono, color: "#7D90AC" }} className="text-[11px] uppercase tracking-widest">Search ad</span>
+                  )}
+                  <span className="absolute right-2 top-2 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: "var(--lmi-accent)", fontFamily: mono }}>{c.format_label}</span>
+                </div>
+                <div className="flex flex-1 flex-col gap-1 p-4">
+                  <div className="text-sm font-semibold" style={{ color: NAVY }}>{c.advertiser ?? c.advertiser_domain}</div>
+                  {c.headline ? <div className="text-[13px]" style={{ color: "#3A4D67" }}>{c.headline}</div> : null}
+                  {c.advertiser_domain ? <div className="mt-auto text-[11px]" style={{ color: MUTED }}>{c.advertiser_domain}</div> : null}
+                </div>
+              </a>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px]" style={{ color: MUTED }}>Real captured creative — YouTube video ads from in-state firms (durable thumbnails) and live paid-search headlines. Click a card to view the source.</p>
+        </Slide>
+      ) : null}
+
       {/* 6. WHITE SPACE */}
       <Slide eyebrow="Competitive landscape" title="Where the white space is" tags={["ad library"]}>
         <div className="space-y-2">

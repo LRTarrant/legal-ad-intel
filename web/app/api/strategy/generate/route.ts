@@ -40,6 +40,7 @@ import {
   leadMetricFor,
   primaryTort,
   validateInterview,
+  type MarketCreative,
   type Strategy,
   type StrategyInterviewRequest,
 } from "@/lib/strategy-engine/standalone";
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
 
   // ── Assemble inputs + the two new layer summaries (server-side) ──────────
   const sb = supabase as unknown as Parameters<typeof assembleStrategyInputs>[0];
-  const [{ inputs, errors: dataErrors }, oppRes, wsRes, dmaRes] = await Promise.all([
+  const [{ inputs, errors: dataErrors }, oppRes, wsRes, dmaRes, creativesRes] = await Promise.all([
     assembleStrategyInputs(sb, state, { tortSlug, tortLabel }),
     sb.rpc("strategy_opportunity_counties", {
       p_state: state,
@@ -149,6 +150,11 @@ export async function POST(req: NextRequest) {
       .select("dma_code, display_name")
       .contains("states_covered", [state])
       .order("rank", { ascending: true }),
+    sb.rpc("strategy_market_creatives", {
+      p_state: state,
+      p_dma_code: body.dma_code ?? null,
+      p_limit_per: 3,
+    }),
   ]);
 
   if (inputs.channels.length === 0 && !inputs.local_signal) {
@@ -301,7 +307,16 @@ export async function POST(req: NextRequest) {
     competitive: {
       advertisers: inputs.top_advertisers.map((a) => ({ name: a.name, share: a.share, rank: a.rank })),
       channels: competitiveChannels,
-      creative: [],
+      creative: ((creativesRes.data as MarketCreative[] | null) ?? []).map((c) => ({
+        channel: c.channel,
+        format_label: c.format_label,
+        advertiser: c.advertiser,
+        advertiser_domain: c.advertiser_domain,
+        headline: c.headline,
+        body: c.body,
+        image_url: c.image_url,
+        link: c.link,
+      })),
     },
     recommendations,
     watch_list,
