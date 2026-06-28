@@ -2,8 +2,6 @@ import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { AlabamaPageData, AlabamaDataErrors } from "./alabama-client";
 import { getJudicialProfiles, type JudicialProfileRow } from "@/lib/queries/judicial";
-import { assembleStrategyInputs } from "@/lib/strategy-engine/assemble-inputs";
-import type { StrategyInputs } from "@/lib/strategy-engine/types";
 
 const AlabamaClient = nextDynamic(() => import("./alabama-client").then((m) => m.AlabamaClient));
 
@@ -210,18 +208,6 @@ async function fetchStormCount(): Promise<number> {
   return count ?? 0;
 }
 
-async function fetchStrategyInputs(): Promise<StrategyInputs> {
-  const supabase = getSupabase();
-  const { inputs, errors } = await assembleStrategyInputs(
-    supabase as unknown as Parameters<typeof assembleStrategyInputs>[0],
-    "AL",
-  );
-  if (errors.length > 0) {
-    console.warn("[Alabama] strategy inputs partial:", errors);
-  }
-  return inputs;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Page Component                                                      */
 /* ------------------------------------------------------------------ */
@@ -236,7 +222,6 @@ export default async function AlabamaStatePage() {
   let msaDemographics: MSADemographicsRow[] = [];
   let judicialRows: JudicialProfileRow[] = [];
   let stormCount = 0;
-  let strategyInputs: StrategyInputs | null = null;
 
   const results = await Promise.allSettled([
     fetchAccidentSummary(),
@@ -248,7 +233,6 @@ export default async function AlabamaStatePage() {
     fetchMSADemographics(),
     getJudicialProfiles("AL"),
     fetchStormCount(),
-    fetchStrategyInputs(),
   ]);
 
   if (results[0].status === "fulfilled") accidentSummary = results[0].value;
@@ -278,9 +262,6 @@ export default async function AlabamaStatePage() {
   if (results[8].status === "fulfilled") stormCount = results[8].value;
   else console.error("[Alabama] fetchStormCount failed:", results[8].reason);
 
-  if (results[9].status === "fulfilled") strategyInputs = results[9].value;
-  else console.error("[Alabama] fetchStrategyInputs failed:", results[9].reason);
-
   const errors: AlabamaDataErrors = {
     accidentSummary: results[0].status === "rejected",
     ruralUrban: results[1].status === "rejected",
@@ -303,7 +284,6 @@ export default async function AlabamaStatePage() {
     msaDemographics,
     judicialProfiles: judicialRows,
     stormCount,
-    strategyInputs,
     errors,
   };
 

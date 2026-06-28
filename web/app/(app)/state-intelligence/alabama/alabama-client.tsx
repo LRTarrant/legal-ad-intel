@@ -21,7 +21,10 @@ import {
   MapPin,
   CloudLightning,
   Database,
+  Compass,
+  ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
@@ -36,8 +39,6 @@ import {
 } from "@/lib/data/state-geometry/alabama";
 import { CompetitiveAnalysis } from "../../components/competitive/competitive-analysis-section";
 import { LegalNewsSection } from "../../components/legal-news/legal-news-section";
-import { StrategyEngineSection } from "../components/strategy-engine/strategy-engine-section";
-import type { StrategyInputs } from "@/lib/strategy-engine/types";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -154,7 +155,6 @@ export interface AlabamaPageData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
-  strategyInputs: StrategyInputs | null;
   errors: AlabamaDataErrors;
 }
 
@@ -799,9 +799,37 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       <CompetitiveAnalysis stateName="Alabama" stateCode="AL" sectionNumber={4} />
 
       {/* ============================================================ */}
-      {/* SECTION 5 — STRATEGY ENGINE                                  */}
+      {/* SECTION 5 — STRATEGY ENGINE (CTA → standalone Strategy Engine) */}
       {/* ============================================================ */}
-      <StrategyEngineSection n={5} inputs={data.strategyInputs} />
+      <div id="strategy" className="scroll-mt-20">
+        <SectionHeading n={5} title="Build a Media Strategy" />
+        <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-intelligence-teal/10">
+                <Compass className="h-5 w-5 text-intelligence-teal" />
+              </span>
+              <div>
+                <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
+                  Turn this intelligence into a media strategy
+                </h3>
+                <p className="max-w-2xl text-sm text-slate-gray">
+                  Generate a defensible, data-traced strategy for Alabama — every number
+                  carries its source — then hand it straight to the Campaign Builder to
+                  produce the actual ads.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/strategy?state=AL"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
+            >
+              Build Alabama strategy
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* ============================================================ */}
       {/* SECTION 6 — PROPRIETARY SIGNALS                              */}

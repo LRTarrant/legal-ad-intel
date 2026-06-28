@@ -12,6 +12,16 @@ export const metadata = {
   title: "Strategy Engine | Legal Marketing Intelligence",
 };
 
-export default function StrategyPage() {
-  return <StrategyClient />;
+// Next 16: searchParams is async. Read an optional ?state= / ?case_type= pre-fill
+// (e.g. from a state-page CTA like /strategy?state=AL) and seed the interview.
+export default async function StrategyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ state?: string; case_type?: string }>;
+}) {
+  const { state, case_type } = await searchParams;
+  const initialState = state ? state.toUpperCase() : undefined;
+  const initialCaseTypes = case_type ? [case_type] : undefined;
+
+  return <StrategyClient initialState={initialState} initialCaseTypes={initialCaseTypes} />;
 }
