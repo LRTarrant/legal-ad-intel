@@ -154,7 +154,7 @@ export default function StrategyDeck({ data }: { data: any }) {
       </Slide>
 
       {/* 4. COMPETITIVE FIELD */}
-      <Slide eyebrow="Competitive landscape" title="The competitive field" sub="Who's advertising in the market, ranked by observed presence share" tags={["pi_search", "ad library"]}>
+      <Slide eyebrow="Competitive landscape" title="The competitive field" sub="Who's advertising in the market, ranked by sustained presence (market breadth + recent activity)" tags={["pi_search", "ad library"]}>
         <table className="w-full text-left text-sm">
           <thead><tr className="border-b-2 text-xs uppercase" style={{ borderColor: "#C9D4E0", color: LABEL, fontFamily: mono }}>
             <th className="py-2">Firm</th><th className="text-right">Presence share</th>
@@ -171,7 +171,7 @@ export default function StrategyDeck({ data }: { data: any }) {
             ))}
           </tbody>
         </table>
-        <p className="mt-3 text-[11px]" style={{ color: MUTED }}>Presence share = share of observed ad activity. No estimated dollar spend is shown — per-firm spend isn&rsquo;t reliably sourceable for local PI, so the field is ranked by observed presence rather than modeled cost.</p>
+        <p className="mt-3 text-[11px]" style={{ color: MUTED }}>Presence share weights sustained market presence — geographic breadth first, then recent activity — the same ranking as the Competitive Analysis tab, so a dense burst in one or two metros doesn&rsquo;t read as market dominance. No estimated dollar spend is shown: per-firm spend isn&rsquo;t reliably sourceable for local PI.</p>
       </Slide>
 
       {/* 6. WHITE SPACE */}
