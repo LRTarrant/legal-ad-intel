@@ -27,6 +27,15 @@ function pretty(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Strategy tort slug → Campaign Builder pi_category enum (different vocab).
+ *  Unmapped slugs (nursing_home, workers_comp) have no builder category. */
+const TORT_TO_PI_CATEGORY: Record<string, string> = {
+  truck_accident: "truck_accident",
+  motor_vehicle: "car_accident",
+  motorcycle: "motorcycle_accident",
+  boating: "boating_accident",
+};
+
 function SourceChip({ children }: { children: React.ReactNode }) {
   return (
     <span
@@ -70,7 +79,8 @@ export default function StrategyDeck({ data }: { data: any }) {
   const counties = data.opportunity?.counties ?? [];
   const maxTruck = Math.max(1, ...counties.map((c: any) => c.truck_fatalities || 0));
   const recs = data.recommendations ?? [];
-  const buildUrl = `/campaigns/builder?practice_area=personal_injury&state=${data.market.state}${data.handoff?.case_type ? `&pi_category=${data.handoff.case_type}` : ""}`;
+  const piCategory = TORT_TO_PI_CATEGORY[data.handoff?.case_type ?? ""];
+  const buildUrl = `/campaigns/builder?practice_area=personal_injury&state=${data.market.state}${piCategory ? `&pi_category=${piCategory}` : ""}${data.market?.dma_code ? `&market_dma_code=${data.market.dma_code}` : ""}`;
 
   return (
     <div style={rootStyle} className="mt-8 space-y-5">

@@ -34,6 +34,9 @@ interface DMASelectorProps {
   value: SelectedDMA | null;
   onChange: (next: SelectedDMA | null) => void;
   accentColor: string;
+  /** Deep-link default DMA code (e.g. Strategy Engine handoff). Auto-selected
+   *  once the state's markets load, only if nothing is selected yet. */
+  initialDmaCode?: string;
 }
 
 export function DMASelector({
@@ -41,6 +44,7 @@ export function DMASelector({
   value,
   onChange,
   accentColor,
+  initialDmaCode,
 }: DMASelectorProps) {
   const [markets, setMarkets] = useState<DMAMarket[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,6 +81,17 @@ export function DMASelector({
           !data.markets.some((m) => m.dma_code === value.dma_code)
         ) {
           onChange(null);
+        } else if (!value && initialDmaCode) {
+          // Pre-select a deep-linked DMA (Strategy Engine handoff), using the
+          // fetched market row so full_name is correct.
+          const match = (data.markets ?? []).find((m) => m.dma_code === initialDmaCode);
+          if (match) {
+            onChange({
+              dma_code: match.dma_code,
+              display_name: match.display_name,
+              full_name: match.full_name,
+            });
+          }
         }
       })
       .catch((err: Error) => {
