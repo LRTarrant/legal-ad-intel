@@ -69,12 +69,12 @@ export function standaloneStrategyToSlides(s: Strategy): SlideSpec[] {
   slides.push({
     kicker: "Competitive landscape",
     heading: "The competitive field",
-    subheading: "Who's advertising in the market, ranked by observed presence share",
+    subheading: "Who's advertising in the market, ranked by sustained presence (market breadth + recent activity)",
     table: {
       columns: ["Firm", "Presence share"],
       rows: (s.competitive.advertisers ?? []).slice(0, 6).map((a) => [`${a.rank}. ${a.name}`, `${Math.round(a.share * 100)}%`]),
     },
-    footnote: "Presence share = share of observed ad activity. No estimated dollar spend — per-firm spend isn't reliably sourceable for local PI.",
+    footnote: "Presence share weights sustained presence (geographic breadth, then recent activity) — the same ranking as the Competitive Analysis tab. No estimated dollar spend — per-firm spend isn't reliably sourceable for local PI.",
   });
 
   // 5. Where the white space is

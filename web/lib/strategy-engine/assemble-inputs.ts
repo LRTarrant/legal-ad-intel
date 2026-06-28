@@ -200,17 +200,45 @@ export async function assembleStrategyInputs(
   let saturation: number | null = null;
   if (competitorsRes.status === "fulfilled" && !competitorsRes.value.error) {
     const rows = (competitorsRes.value.data as Array<Record<string, unknown>>) ?? [];
-    // Aggregate observation count by advertiser name (one firm can appear under
-    // multiple domains, e.g. its site + a google.com row — group them).
-    const byName = new Map<string, number>();
+    // Rank advertisers by SUSTAINED PRESENCE — the same lens the Competitive
+    // Analysis tab uses (get_pi_competitors_by_dma ORDER: breadth → density,
+    // low-confidence sunk). Raw observation volume is a scraping artifact: a
+    // dense 2-metro burst (e.g. Cunningham Bounds) must NOT read as the market
+    // gorilla when statewide-saturation firms (4 metros) actually lead. This
+    // reconciles the deck's "top advertisers" + the Gorilla rule with the tab,
+    // so the same firm never sits #1 here and #6 there. See PR-0 issue.
+    //
+    // presence = metro breadth (integer-dominant) + a per-active-day-rate
+    // tiebreaker in [0,0.99), × 0.4 if low-confidence (new / thin sample).
+    // One firm can appear under multiple domains — group by name, keep its best.
+    const byName = new Map<string, { metros: number; rate: number; lowConf: boolean }>();
     for (const r of rows) {
       const name = String(r.advertiser_name ?? "").trim();
       if (!name) continue;
-      byName.set(name, (byName.get(name) ?? 0) + num(r.total_observations));
+      const metros = Array.isArray(r.metros_active) ? r.metros_active.length : 0;
+      const rate = num(r.observations_per_active_day);
+      const lowConf = Boolean(r.low_confidence);
+      const prev = byName.get(name);
+      if (!prev) {
+        byName.set(name, { metros, rate, lowConf });
+      } else {
+        byName.set(name, {
+          metros: Math.max(prev.metros, metros),
+          rate: Math.max(prev.rate, rate),
+          lowConf: prev.lowConf && lowConf, // confident if any domain is confident
+        });
+      }
     }
-    const totalObs = Array.from(byName.values()).reduce((s, n) => s + n, 0);
-    top_advertisers = Array.from(byName.entries())
-      .map(([name, obs]) => ({ name, share: totalObs > 0 ? obs / totalObs : 0, rank: 0 }))
+    const maxRate = Math.max(0, ...Array.from(byName.values(), (v) => v.rate));
+    const presence = (v: { metros: number; rate: number; lowConf: boolean }): number => {
+      const rateNorm = maxRate > 0 ? Math.min(v.rate / maxRate, 1) * 0.99 : 0;
+      const base = v.metros + rateNorm;
+      return v.lowConf ? base * 0.4 : base;
+    };
+    const scored = Array.from(byName.entries()).map(([name, v]) => ({ name, score: presence(v) }));
+    const totalScore = scored.reduce((s, x) => s + x.score, 0);
+    top_advertisers = scored
+      .map(({ name, score }) => ({ name, share: totalScore > 0 ? score / totalScore : 0, rank: 0 }))
       .sort((a, b) => b.share - a.share)
       .slice(0, 10)
       .map((r, i) => ({ ...r, rank: i + 1 }));
