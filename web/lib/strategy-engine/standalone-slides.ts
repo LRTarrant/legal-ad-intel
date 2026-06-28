@@ -77,6 +77,25 @@ export function standaloneStrategyToSlides(s: Strategy): SlideSpec[] {
     footnote: "Presence share weights sustained presence (geographic breadth, then recent activity) — the same ranking as the Competitive Analysis tab. No estimated dollar spend — per-firm spend isn't reliably sourceable for local PI.",
   });
 
+  // 4b. Inside their ads (real competitor creative) — only if we have samples.
+  const creatives = s.competitive.creative ?? [];
+  if (creatives.length > 0) {
+    slides.push({
+      kicker: "Ad intelligence",
+      heading: "Inside their ads",
+      subheading: "A sample of real creative from tracked competitors",
+      table: {
+        columns: ["Firm", "Channel", "Headline"],
+        rows: creatives.slice(0, 8).map((c) => [
+          c.advertiser ?? c.advertiser_domain ?? "—",
+          c.format_label,
+          c.headline ?? (c.channel === "youtube" ? "Video ad (thumbnail in the live deck)" : "—"),
+        ]),
+      },
+      footnote: "Real captured creative — roster-scoped YouTube video ads + live paid-search headlines.",
+    });
+  }
+
   // 5. Where the white space is
   slides.push({
     kicker: "Competitive landscape",
