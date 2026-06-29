@@ -28,6 +28,8 @@ import {
   leadMetricFor,
   primaryTort,
   validateInterview,
+  readinessToFoundation,
+  buildGoalText,
   type MarketCreative,
   type Strategy,
   type StrategyInterviewRequest,
@@ -207,6 +209,7 @@ export async function POST(req: NextRequest) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   const llmStartedAt = Date.now();
+  let usage = { input_tokens: 0, output_tokens: 0 };
   let strategistOut;
   try {
     strategistOut = await buildStrategistOutput({
@@ -215,17 +218,21 @@ export async function POST(req: NextRequest) {
         market_label: marketLabel,
         tort_label: tortLabel,
         voice: body.audience,
-        goal_text: body.goal,
+        goal_text: buildGoalText(body),
         recommended_tactic_count: menu.recommended_tactic_count,
         outlets: inputs.outlets,
         advertisers: inputs.top_advertisers,
-        demographic_note: undefined, // 4b populates from richer interview/demographic mix
+        demographic_note: inputs.demographic_note ?? undefined,
       },
       groundingFacts: { outletNames: new Set(inputs.outlets.map((o) => o.name.toLowerCase())) },
       outlets: inputs.outlets,
-      foundation: {}, // 4b populates from the readiness interview answers
+      foundation: readinessToFoundation(body.readiness),
       confidence: menu.market_opportunity_intensity != null ? "moderate" : "directional",
-      callModel: createOpenAICallModel({ apiKey, signal: controller.signal }),
+      callModel: createOpenAICallModel({
+        apiKey,
+        signal: controller.signal,
+        onUsage: (u) => { usage = u; },
+      }),
     });
   } catch (err) {
     clearTimeout(timeout);
@@ -263,7 +270,7 @@ export async function POST(req: NextRequest) {
     provider: "openai",
     model: resolveStrategistModel(),
     called_from: "api/strategy/generate",
-    usage: { input_tokens: 0, output_tokens: 0 }, // token usage not surfaced by the adapter in 4a
+    usage,
     latency_ms,
     meta: { state, tort: tortSlug, audience: body.audience, tactics: strategistOut.briefs.length, confidence: strategistOut.confidence },
   });

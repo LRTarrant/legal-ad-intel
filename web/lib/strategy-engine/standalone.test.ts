@@ -13,6 +13,9 @@ import {
   leadMetricFor,
   primaryTort,
   validateInterview,
+  readinessToFoundation,
+  buildGoalText,
+  READINESS_QUESTIONS,
 } from "./standalone";
 import type { StrategyInterviewRequest } from "./standalone";
 import { CHANNEL_LABELS } from "./types";
@@ -50,8 +53,8 @@ test("leadMetricFor prefers truck, then motorcycle, else total", () => {
 });
 
 test("validateInterview catches missing state / audience / case types", () => {
-  assert.deepEqual(validateInterview({ state: "AL", audience: "agency", case_types: ["trucking"] } as StrategyInterviewRequest), []);
-  const errs = validateInterview({ state: "alabama", audience: "x", case_types: [] } as unknown as StrategyInterviewRequest);
+  assert.deepEqual(validateInterview({ state: "AL", audience: "agency", case_types: ["trucking"], intake_capacity: "scale", goal_context: "Win cases" } as StrategyInterviewRequest), []);
+  const errs = validateInterview({ state: "alabama", audience: "x", case_types: [], intake_capacity: "scale", goal_context: "Win cases" } as unknown as StrategyInterviewRequest);
   assert.equal(errs.length, 3);
 });
 
@@ -87,4 +90,56 @@ test("buildCompetitiveChannels marks measured vs modeled", () => {
   assert.equal(search?.active_firms, 22);
   assert.equal(ctv?.measured, false);
   assert.equal(ctv?.status, "open");
+});
+
+/* ── Task 1 (4b): readiness/goal mappers ────────────────────────────────── */
+
+function base(): StrategyInterviewRequest {
+  return {
+    audience: "agency",
+    case_types: ["trucking"],
+    state: "AL",
+    dma_code: "691",
+    county_fips: null,
+    budget_tier: "25k_75k",
+    goal: "More qualified signups",
+    existing_channels: ["paid_search"],
+    intake_capacity: "scale",
+    goal_context: "Win more truck cases in 90 days; no billboards.",
+    readiness: { landing_pages: "yes", tracking: "no", intake: "unsure", web_presence: "yes" },
+  };
+}
+
+test("validateInterview requires the new framing fields", () => {
+  assert.deepEqual(validateInterview(base()), []);
+  const noIntake = { ...base(), intake_capacity: "" };
+  assert.ok(validateInterview(noIntake).some((e) => /intake/i.test(e)));
+  const noContext = { ...base(), goal_context: "   " };
+  assert.ok(validateInterview(noContext).some((e) => /winning|goal_context|what/i.test(e)));
+});
+
+test("readinessToFoundation maps yes/no/unsure to prerequisite booleans", () => {
+  const f = readinessToFoundation(base().readiness);
+  assert.equal(f.landing_page, true); // landing_pages: yes
+  assert.equal(f.conversion_tracking, false); // tracking: no
+  assert.equal(f.call_tracking, false);
+  assert.equal(f.fast_intake, undefined); // intake: unsure → omitted
+  assert.equal(f.site_health, true); // web_presence: yes
+});
+
+test("readinessToFoundation tolerates a missing readiness object", () => {
+  assert.deepEqual(readinessToFoundation(undefined), {});
+});
+
+test("buildGoalText folds the framing into one string the prompt can use", () => {
+  const t = buildGoalText(base());
+  assert.ok(t.includes("More qualified signups"));
+  assert.ok(/truck cases/.test(t)); // the free-text context
+  assert.ok(/intake/i.test(t)); // intake capacity surfaced
+});
+
+test("every readiness question maps to at least one real prerequisite", () => {
+  for (const q of READINESS_QUESTIONS) {
+    assert.ok(q.prerequisites.length > 0, `${q.key} has no prerequisites`);
+  }
 });

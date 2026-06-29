@@ -304,3 +304,25 @@ export function buildDemographicMix(rows: CensusRow[]): DemographicMix {
     },
   };
 }
+
+/**
+ * A short, deterministic media-relevant note about the market's demographic
+ * mix — the steer the AI uses for format/language choices (e.g. a
+ * Hispanic-heavy metro → Spanish-language radio/TV). Thresholds are directional
+ * (a population share well above the U.S. average). null when nothing
+ * over-indexes enough to change a format call.
+ */
+export function deriveDemographicNote(mix: DemographicMix): string | null {
+  const notes: string[] = [];
+  if (mix.race.hispanic >= 0.25) {
+    notes.push(
+      `Hispanic population is significant (~${Math.round(mix.race.hispanic * 100)}%); Spanish-language radio/TV and regional formats over-index here.`,
+    );
+  }
+  if (mix.race.black >= 0.3) {
+    notes.push(
+      `Black population is significant (~${Math.round(mix.race.black * 100)}%); Urban/Urban-AC radio and culturally targeted creative over-index here.`,
+    );
+  }
+  return notes.length ? notes.join(" ") : null;
+}

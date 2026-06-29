@@ -38,6 +38,7 @@ import type {
 import {
   buildDemographicMix,
   computeAudienceFit,
+  deriveDemographicNote,
   type BaselineRow,
   type CensusRow,
 } from "./audience-fit";
@@ -357,9 +358,9 @@ export async function assembleStrategyInputs(
     errors.push("census_demographics fetch failed");
   }
 
+  const demographicMix = buildDemographicMix(censusRows);
   if (baselineRows.length > 0) {
-    const mix = buildDemographicMix(censusRows);
-    for (const [ch, f] of computeAudienceFit(baselineRows, mix)) {
+    for (const [ch, f] of computeAudienceFit(baselineRows, demographicMix)) {
       channelFit.set(ch, { fit: f.fit, scope: f.scope, sources: f.sources });
     }
   }
@@ -523,6 +524,7 @@ export async function assembleStrategyInputs(
     county_dma,
     top_dma_name: topDmaName,
     local_signal,
+    demographic_note: deriveDemographicNote(demographicMix),
     available: {
       saturation: saturation != null,
       competition: channelComp.size > 0,
