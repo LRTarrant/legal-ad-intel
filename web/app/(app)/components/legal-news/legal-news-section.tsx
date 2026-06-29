@@ -8,9 +8,14 @@
 /*  state. Outcome cards lead with a big dollar figure; incident      */
 /*  cards lead with the headline. Newest first, both streams mixed.   */
 /*                                                                    */
-/*  Used by the bespoke Alabama page (numbered SectionHeading) and    */
-/*  the v2 [slug] client + legacy state pages (embedded — host        */
-/*  renders its own group header), mirroring components/competitive/. */
+/*  Three presentations, all sharing one fetch/carousel/filter core:  */
+/*   - numbered  → bespoke Alabama page, numbered SectionHeading.      */
+/*   - embedded  → v2 [slug] client + legacy states (host renders its */
+/*                 own group header), mirroring components/competitive.*/
+/*   - hero      → Alabama Design D: a dark midnight-navy "live feed"  */
+/*                 block at the top of the page (LIVE eyebrow, cards   */
+/*                 sit directly on navy, money lands first). Opt-in;   */
+/*                 leaves numbered/embedded untouched.                 */
 /*                                                                    */
 /*  Motion is the one place on the state page auto-motion is allowed: */
 /*  slow 6s dwell, pause on hover/focus, and a full reduced-motion    */
@@ -102,6 +107,11 @@ function styleFor(category: string | null): CategoryStyle {
   return CATEGORY_STYLES[category ?? "general"] ?? CATEGORY_STYLES.general;
 }
 
+/* Neutral rule for non-money cards in hero mode, so verdicts & settlements
+   (the "outcome" stream) carry the only saturated accents and the money
+   lands first against the dark block. */
+const HERO_NEUTRAL_ACCENT = "#CBD5E1";
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -132,9 +142,12 @@ const AUTO_ADVANCE_MS = 6000;
 /*  News card                                                         */
 /* ------------------------------------------------------------------ */
 
-function NewsCard({ item }: { item: LegalNewsItem }) {
+function NewsCard({ item, hero = false }: { item: LegalNewsItem; hero?: boolean }) {
   const s = styleFor(item.category);
   const hasAmount = item.amount_usd != null && item.amount_usd > 0;
+  // In hero mode only the money (outcome stream: verdicts + settlements) keeps
+  // its saturated top rule; incidents & filings drop to a neutral rule.
+  const accent = hero && item.stream !== "outcome" ? HERO_NEUTRAL_ACCENT : s.accent;
 
   return (
     <a
@@ -142,7 +155,7 @@ function NewsCard({ item }: { item: LegalNewsItem }) {
       target="_blank"
       rel="noopener noreferrer"
       className="group flex w-[280px] flex-none snap-start flex-col rounded-xl border border-cloud bg-white p-4 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal sm:w-[320px]"
-      style={{ borderTop: `3px solid ${s.accent}` }}
+      style={{ borderTop: `3px solid ${accent}` }}
     >
       <div className="flex items-center justify-between gap-2">
         <span
@@ -201,9 +214,11 @@ function NewsCard({ item }: { item: LegalNewsItem }) {
 function Carousel({
   items,
   stateName,
+  hero = false,
 }: {
   items: LegalNewsItem[];
   stateName: string;
+  hero?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef(0);
@@ -292,13 +307,23 @@ function Carousel({
 
   const showDots = items.length >= 2 && items.length <= 8;
 
+  /* hero controls sit on the dark block, so they read light instead of
+     the default white-card-on-white treatment. */
+  const navBtn = hero
+    ? "rounded-lg border border-white/15 bg-white/5 p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal"
+    : "rounded-lg border border-cloud bg-white p-1.5 text-slate-gray transition-colors hover:bg-intelligence-teal/5 hover:text-midnight-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal";
+
   return (
     <div>
       {/* control row */}
       {hasOverflow && (
         <div className="mb-3 flex items-center justify-end gap-2">
           {!showDots && (
-            <span className="mr-1 font-mono text-[11px] tabular-nums text-slate-gray">
+            <span
+              className={`mr-1 font-mono text-[11px] tabular-nums ${
+                hero ? "text-white/60" : "text-slate-gray"
+              }`}
+            >
               {current + 1} / {items.length}
             </span>
           )}
@@ -306,7 +331,7 @@ function Carousel({
             type="button"
             onClick={() => goTo(current - 1)}
             aria-label="Previous"
-            className="rounded-lg border border-cloud bg-white p-1.5 text-slate-gray transition-colors hover:bg-intelligence-teal/5 hover:text-midnight-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal"
+            className={navBtn}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -314,7 +339,7 @@ function Carousel({
             type="button"
             onClick={() => goTo(current + 1)}
             aria-label="Next"
-            className="rounded-lg border border-cloud bg-white p-1.5 text-slate-gray transition-colors hover:bg-intelligence-teal/5 hover:text-midnight-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal"
+            className={navBtn}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -339,7 +364,7 @@ function Carousel({
         }`}
       >
         {items.map((item) => (
-          <NewsCard key={item.id} item={item} />
+          <NewsCard key={item.id} item={item} hero={hero} />
         ))}
       </div>
 
@@ -356,7 +381,9 @@ function Carousel({
               className={`h-1.5 rounded-full transition-all ${
                 i === current
                   ? "w-5 bg-intelligence-teal"
-                  : "w-1.5 bg-cloud hover:bg-slate-gray/40"
+                  : hero
+                    ? "w-1.5 bg-white/20 hover:bg-white/40"
+                    : "w-1.5 bg-cloud hover:bg-slate-gray/40"
               }`}
             />
           ))}
@@ -382,6 +409,7 @@ export function LegalNewsSection({
   embedded = false,
   numbered = true,
   sectionNumber = 2,
+  hero = false,
 }: {
   stateName: string;
   stateCode: string;
@@ -391,6 +419,8 @@ export function LegalNewsSection({
   numbered?: boolean;
   /** Section number for the numbered heading. */
   sectionNumber?: number;
+  /** Dark "live feed" hero block (Alabama Design D). Overrides numbered/embedded. */
+  hero?: boolean;
 }) {
   const [items, setItems] = useState<LegalNewsItem[] | null>(null);
   const [error, setError] = useState(false);
@@ -441,6 +471,125 @@ export function LegalNewsSection({
     [items],
   );
 
+  /* -- shared body: loading / error / empty / carousel -- */
+  const body =
+    items === null ? (
+      <LoadingSkeleton />
+    ) : error ? (
+      <div
+        className={`rounded-lg p-8 text-center ${
+          hero ? "border border-white/10 bg-white/[0.04]" : "border border-cloud bg-cloud/40"
+        }`}
+      >
+        <Database
+          className={`mx-auto mb-3 h-8 w-8 ${hero ? "text-white/30" : "text-slate-gray/40"}`}
+        />
+        <p className={`text-sm font-medium ${hero ? "text-white/80" : "text-slate-gray"}`}>
+          Recent legal activity couldn&apos;t be loaded right now.
+        </p>
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className={
+              hero
+                ? "rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                : "rounded-lg border border-cloud bg-white px-3 py-1.5 text-xs font-semibold text-intelligence-teal hover:bg-intelligence-teal/5"
+            }
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    ) : filtered.length === 0 ? (
+      <EmptyState stateName={stateName} filtered={items.length > 0} hero={hero} />
+    ) : (
+      <Carousel items={filtered} stateName={stateName} hero={hero} />
+    );
+
+  /* -- All / Verdicts / Incidents filter -- */
+  const filterGroup = items && items.length > 0 && (
+    <div
+      className={`flex flex-none items-center gap-0.5 rounded-lg p-0.5 ${
+        hero ? "border border-white/10 bg-white/[0.06]" : "border border-cloud bg-cloud/40"
+      }`}
+      role="group"
+      aria-label="Filter legal activity"
+    >
+      {FILTERS.map((f) => {
+        const disabled =
+          (f.key === "outcome" && !hasOutcomes) ||
+          (f.key === "incident" && !hasIncidents);
+        const isActive = filter === f.key;
+        return (
+          <button
+            key={f.key}
+            type="button"
+            disabled={disabled}
+            onClick={() => setFilter(f.key)}
+            aria-pressed={isActive}
+            className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              hero
+                ? isActive
+                  ? "bg-white text-midnight-navy shadow-sm"
+                  : "text-white/70 hover:text-white"
+                : isActive
+                  ? "bg-white text-midnight-navy shadow-sm"
+                  : "text-slate-gray hover:text-midnight-navy"
+            }`}
+          >
+            {f.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  /* ---- Hero presentation (Alabama Design D) ---- */
+  if (hero) {
+    return (
+      <section id="activity" className="scroll-mt-20">
+        <div className="rounded-2xl bg-midnight-navy p-6 text-white shadow-sm sm:p-7">
+          {/* eyebrow */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2" aria-hidden>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/90">
+                  Live · The signal behind your ad spend
+                </span>
+              </div>
+              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/65">
+                Verdicts, settlements &amp; incidents moving the {stateName} market — the
+                live case-acquisition and timing signal behind your campaigns.
+              </p>
+              {items && items.length > 0 && (
+                <p className="mt-2 text-[11px] font-medium text-white/45">
+                  Last 30 days · {items.length} {items.length === 1 ? "item" : "items"}
+                </p>
+              )}
+            </div>
+            {filterGroup}
+          </div>
+
+          <div className="mt-5">{body}</div>
+
+          {items && items.length > 0 && (
+            <p className="mt-4 text-[11px] leading-relaxed text-white/40">
+              Single-incident PI only (no mass torts). Headlines aggregated from public
+              news and government sources; click any card to read the original. Not legal
+              advice.
+            </p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  /* ---- Default presentation (numbered / embedded) ---- */
   const heading = !embedded && (
     <div className="flex flex-wrap items-center gap-3">
       {numbered ? (
@@ -479,61 +628,11 @@ export function LegalNewsSection({
           </div>
 
           {/* All / Verdicts / Incidents */}
-          {items && items.length > 0 && (
-            <div
-              className="flex flex-none items-center gap-0.5 rounded-lg border border-cloud bg-cloud/40 p-0.5"
-              role="group"
-              aria-label="Filter legal activity"
-            >
-              {FILTERS.map((f) => {
-                const disabled =
-                  (f.key === "outcome" && !hasOutcomes) ||
-                  (f.key === "incident" && !hasIncidents);
-                return (
-                  <button
-                    key={f.key}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => setFilter(f.key)}
-                    aria-pressed={filter === f.key}
-                    className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                      filter === f.key
-                        ? "bg-white text-midnight-navy shadow-sm"
-                        : "text-slate-gray hover:text-midnight-navy"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {filterGroup}
         </div>
 
         {/* body */}
-        {items === null ? (
-          <LoadingSkeleton />
-        ) : error ? (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
-            <p className="text-sm font-medium text-slate-gray">
-              Recent legal activity couldn&apos;t be loaded right now.
-            </p>
-            <div className="mt-3 flex justify-center">
-              <button
-                type="button"
-                onClick={() => setReloadKey((k) => k + 1)}
-                className="rounded-lg border border-cloud bg-white px-3 py-1.5 text-xs font-semibold text-intelligence-teal hover:bg-intelligence-teal/5"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        ) : filtered.length === 0 ? (
-          <EmptyState stateName={stateName} filtered={items.length > 0} />
-        ) : (
-          <Carousel items={filtered} stateName={stateName} />
-        )}
+        {body}
 
         {/* footnote */}
         {items && items.length > 0 && (
@@ -577,19 +676,31 @@ function LoadingSkeleton() {
 function EmptyState({
   stateName,
   filtered,
+  hero = false,
 }: {
   stateName: string;
   filtered: boolean;
+  hero?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-      <Newspaper className="mx-auto mb-3 h-8 w-8 text-slate-gray/40" />
-      <p className="text-sm font-medium text-midnight-navy">
+    <div
+      className={`rounded-lg p-8 text-center ${
+        hero ? "border border-white/10 bg-white/[0.04]" : "border border-cloud bg-cloud/40"
+      }`}
+    >
+      <Newspaper
+        className={`mx-auto mb-3 h-8 w-8 ${hero ? "text-white/30" : "text-slate-gray/40"}`}
+      />
+      <p className={`text-sm font-medium ${hero ? "text-white" : "text-midnight-navy"}`}>
         {filtered
           ? "No items match this filter right now."
           : `No recent single-incident PI activity tracked for ${stateName}.`}
       </p>
-      <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-slate-gray">
+      <p
+        className={`mx-auto mt-1.5 max-w-sm text-xs leading-relaxed ${
+          hero ? "text-white/55" : "text-slate-gray"
+        }`}
+      >
         {filtered
           ? "Switch back to All to see the full feed."
           : "We surface verdicts, settlements, crashes, and OSHA reports as they appear in public news. Check back soon."}

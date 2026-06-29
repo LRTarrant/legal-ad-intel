@@ -23,6 +23,8 @@ import {
   Database,
   Compass,
   ArrowRight,
+  Check,
+  CalendarClock,
 } from "lucide-react";
 import Link from "next/link";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
@@ -220,10 +222,12 @@ function fmtMillions(n: number): string {
   return n.toLocaleString();
 }
 
-/* Section anchors, shared by the desktop nav and the mobile jump menu. */
+/* Section anchors, shared by the desktop nav and the mobile jump menu.
+   Activity (the lifted live carousel) now sits at the top of the page,
+   above Overview, so it leads the nav. */
 const SECTION_NAV: [string, string][] = [
-  ["#overview", "Overview"],
   ["#activity", "Activity"],
+  ["#overview", "Overview"],
   ["#legal", "Legal"],
   ["#competition", "Competition"],
   ["#strategy", "Strategy"],
@@ -360,34 +364,86 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* PAGE HEADER                                                  */}
+      {/* HERO (Design D — A's structure + B's copy)                  */}
       {/* ============================================================ */}
-      <div>
-        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-intelligence-teal">
-          State Intelligence
-        </div>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-heading text-3xl font-bold text-midnight-navy">Alabama</h1>
-              <span className="rounded-full border border-red-300 bg-red-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600">
-                Contributory Negligence State
-              </span>
-            </div>
-            <p className="mt-2 max-w-2xl text-base text-slate-gray">
-              Cross-signal intelligence for plaintiff-firm advertising and case
-              acquisition &mdash; accident exposure, judicial posture, and PI
-              competition by market.
-            </p>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-intelligence-teal">
+              Alabama · State Intelligence
+            </span>
+            <span className="rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-red-600">
+              Contributory Negligence
+            </span>
           </div>
-          <BuildCampaignLink
-            variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
-          />
+          <h1 className="mt-3 font-heading text-3xl font-bold leading-[1.15] text-midnight-navy sm:text-[2.1rem]">
+            We turn{" "}
+            <span className="text-intelligence-teal">where accidents actually happen</span>{" "}
+            into a strategy built for your budget &mdash; and a campaign you can launch.
+          </h1>
+          <p className="mt-3.5 max-w-2xl text-base leading-relaxed text-slate-gray">
+            Real accident, boating &amp; construction data, matched to local demographics
+            and live competition. No guesswork &mdash; every number carries its source.
+          </p>
+        </div>
+
+        {/* CTAs anchored right; caption underneath. */}
+        <div className="flex flex-none flex-col gap-2.5 lg:items-end">
+          <div className="flex flex-col gap-2.5 sm:flex-row lg:justify-end">
+            <Link
+              href="/strategy?state=AL"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
+            >
+              <Compass className="h-4 w-4" />
+              Build Media Strategy
+            </Link>
+            <BuildCampaignLink
+              variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
+            />
+          </div>
+          <p className="text-[11.5px] text-slate-gray lg:text-right">
+            Strategy first &mdash; the campaign builds from it.
+          </p>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* VERDICT BAR                                                  */}
+      {/* LIVE CAROUSEL — lifted to the top as a dark "live feed"      */}
+      {/* hero block (id="activity" lives inside the component).       */}
+      {/* ============================================================ */}
+      <LegalNewsSection stateName="Alabama" stateCode="AL" hero />
+
+      {/* ============================================================ */}
+      {/* PIPELINE STRIP — Read → Build strategy → Launch campaign     */}
+      {/* ============================================================ */}
+      <div className="rounded-2xl border border-cloud bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
+            <PipelineStep n={1} label="Read the data" state="done" />
+            <PipelineArrow />
+            <PipelineStep n={2} label="Build strategy" state="active" />
+            <PipelineArrow />
+            <PipelineStep n={3} label="Launch campaign" state="todo" />
+          </ol>
+
+          <div className="flex flex-none flex-col gap-2.5 sm:flex-row sm:items-center">
+            <Link
+              href="/strategy?state=AL"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-intelligence-teal px-4 py-2 text-xs font-semibold text-white transition hover:bg-intelligence-teal/90"
+            >
+              Build strategy
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <BuildCampaignLink
+              variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
+              size="sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* THE VERDICT                                                  */}
       {/* ============================================================ */}
       <div>
         <div className="mb-3 flex items-center gap-2.5">
@@ -433,42 +489,6 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             chipTone="info"
             note="Shunnarah & Morgan dominate; the metros are crowded."
           />
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* MOAT TEASER BAND                                             */}
-      {/* ============================================================ */}
-      <div className="rounded-2xl bg-midnight-navy p-6 text-white">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-lg font-bold">What the data alone won&apos;t tell you</div>
-          <a href="#signals" className="text-[13px] font-semibold text-white/80 hover:text-white">
-            More proprietary signals &rarr;
-          </a>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="flex gap-3">
-            <span className="w-[6px] flex-none rounded-full bg-intelligence-teal" />
-            <div>
-              <div className="text-sm font-bold">Greene County is a media desert</div>
-              <div className="mt-1 text-[12.5px] leading-relaxed text-white/75">
-                Highest fatality rate in the state (552/100K) &mdash; but high
-                poverty and low internet make radio &amp; community outreach the
-                only channels that reach it.
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <span className="w-[6px] flex-none rounded-full bg-intelligence-teal" />
-            <div>
-              <div className="text-sm font-bold">DUI deaths spike on a calendar</div>
-              <div className="mt-1 text-[12.5px] leading-relaxed text-white/75">
-                1 in 5 Alabama traffic deaths are impaired &mdash; clustered on
-                holiday weekends. Time-triggered campaigns catch victims while
-                they&apos;re searching.
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -551,15 +571,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* SECTION 2 — RECENT LEGAL ACTIVITY (state legal news)         */}
-      {/* ============================================================ */}
-      <LegalNewsSection stateName="Alabama" stateCode="AL" numbered sectionNumber={2} />
-
-      {/* ============================================================ */}
-      {/* SECTION 3 — LEGAL LANDSCAPE & PI VIABILITY                   */}
+      {/* SECTION 2 — LEGAL LANDSCAPE & PI VIABILITY                   */}
       {/* ============================================================ */}
       <div id="legal" className="scroll-mt-20">
-        <SectionHeading n={3} title="Legal Landscape & PI Viability" />
+        <SectionHeading n={2} title="Legal Landscape & PI Viability" />
 
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
           <h3 className="font-heading text-xl font-bold text-midnight-navy">
@@ -794,15 +809,15 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* SECTION 4 — COMPETITIVE ANALYSIS                             */}
+      {/* SECTION 3 — COMPETITIVE ANALYSIS                             */}
       {/* ============================================================ */}
-      <CompetitiveAnalysis stateName="Alabama" stateCode="AL" sectionNumber={4} />
+      <CompetitiveAnalysis stateName="Alabama" stateCode="AL" sectionNumber={3} />
 
       {/* ============================================================ */}
-      {/* SECTION 5 — STRATEGY ENGINE (CTA → standalone Strategy Engine) */}
+      {/* SECTION 4 — STRATEGY ENGINE (CTA → standalone Strategy Engine) */}
       {/* ============================================================ */}
       <div id="strategy" className="scroll-mt-20">
-        <SectionHeading n={5} title="Build a Media Strategy" />
+        <SectionHeading n={4} title="Build a Media Strategy" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -832,20 +847,40 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       </div>
 
       {/* ============================================================ */}
-      {/* SECTION 6 — PROPRIETARY SIGNALS                              */}
+      {/* SECTION 5 — PROPRIETARY SIGNALS                              */}
       {/* ============================================================ */}
       <div id="signals" className="scroll-mt-20">
-        <SectionHeading n={6} title="Proprietary Signals" />
+        <SectionHeading n={5} title="Proprietary Signals" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
             Cross-signal insights
           </h3>
           <p className="mb-6 text-sm text-slate-gray">
             Non-obvious opportunities surfaced by cross-referencing multiple data
-            sources
+            sources — what the raw numbers alone won&apos;t tell you.
           </p>
 
           <div className="grid gap-4 md:grid-cols-2">
+            <SignalCard
+              icon={<MapPin className="h-4 w-4 text-amber-500" />}
+              tone="amber"
+              title="Greene County is a media desert"
+              facts={[
+                "Highest fatality rate in the state — 552 per 100K",
+                "High poverty and low home-internet penetration",
+              ]}
+              body="Radio and community outreach are the only channels that reliably reach this high-fatality county. A digital-first plan misses it entirely."
+            />
+            <SignalCard
+              icon={<CalendarClock className="h-4 w-4 text-red-500" />}
+              tone="red"
+              title="DUI deaths spike on a calendar"
+              facts={[
+                `~1 in 5 Alabama traffic deaths are impaired (≈${fmtNum(ALDOT.impairedDrivingDeaths)}/yr)`,
+                "Clustered on holiday weekends",
+              ]}
+              body="Time-triggered campaigns around holiday-weekend and DUI-enforcement windows catch victims while they're actively searching."
+            />
             <SignalCard
               icon={<HardHat className="h-4 w-4 text-steel-blue" />}
               tone="steel"
@@ -904,10 +939,10 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       />
 
       {/* ============================================================ */}
-      {/* SECTION 7 — SOURCES & METHODOLOGY                            */}
+      {/* SECTION 6 — SOURCES & METHODOLOGY                            */}
       {/* ============================================================ */}
       <div id="sources" className="scroll-mt-20">
-        <SectionHeading n={7} title="Sources & Methodology" />
+        <SectionHeading n={6} title="Sources & Methodology" />
         <div className="rounded-xl border border-cloud bg-white p-6 shadow-sm">
           <div className="grid gap-2 sm:grid-cols-2">
             {[
@@ -948,6 +983,44 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
 /* ------------------------------------------------------------------ */
 /*  Presentational subcomponents                                       */
 /* ------------------------------------------------------------------ */
+
+/* Pipeline strip — Read the data → Build strategy → Launch campaign. */
+function PipelineStep({
+  n,
+  label,
+  state,
+}: {
+  n: number;
+  label: string;
+  state: "done" | "active" | "todo";
+}) {
+  const dot =
+    state === "done"
+      ? "bg-intelligence-teal text-white"
+      : state === "active"
+        ? "bg-intelligence-teal text-white ring-2 ring-intelligence-teal/25 ring-offset-2"
+        : "bg-cloud text-slate-gray";
+  const text =
+    state === "todo"
+      ? "text-slate-gray"
+      : state === "active"
+        ? "font-bold text-midnight-navy"
+        : "font-semibold text-midnight-navy";
+  return (
+    <li className="flex items-center gap-2">
+      <span
+        className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${dot}`}
+      >
+        {state === "done" ? <Check className="h-3.5 w-3.5" /> : n}
+      </span>
+      <span className={`text-[13px] ${text}`}>{label}</span>
+    </li>
+  );
+}
+
+function PipelineArrow() {
+  return <ArrowRight className="h-4 w-4 flex-none text-slate-gray/35" aria-hidden />;
+}
 
 function Fact({
   label,
