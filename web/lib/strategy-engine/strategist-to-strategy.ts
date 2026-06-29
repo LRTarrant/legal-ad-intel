@@ -11,8 +11,9 @@
 import type { MediaBrief, StrategistOutput } from "./strategist";
 import type { TacticMenu, ScoredTactic } from "./tactic-scoring";
 import type { Recommendation, RecommendationLink, ProofPoint, DataDepth } from "./recommendations";
-import type { IntegratedAllocation, ReadinessItem, StrategyProse } from "./standalone";
+import type { IntegratedAllocation, ReadinessItem } from "./standalone";
 import type { Prerequisite } from "./tactics";
+import type { StrategyProse } from "./types";
 
 export interface StrategistMapFacts {
   market_label: string;
