@@ -389,16 +389,19 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
 
         {/* CTAs anchored right; caption underneath. */}
         <div className="flex flex-none flex-col gap-2.5 lg:items-end">
+          {/* Strategy is the primary path (filled); campaign is the quieter
+              secondary — matching the "strategy first" caption below. */}
           <div className="flex flex-col gap-2.5 sm:flex-row lg:justify-end">
             <Link
               href="/strategy?state=AL"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
             >
               <Compass className="h-4 w-4" />
               Build Media Strategy
             </Link>
             <BuildCampaignLink
               variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
+              tone="ghost"
             />
           </div>
           <p className="text-[11.5px] text-slate-gray lg:text-right">
@@ -414,32 +417,16 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       <LegalNewsSection stateName="Alabama" stateCode="AL" hero />
 
       {/* ============================================================ */}
-      {/* PIPELINE STRIP — Read → Build strategy → Launch campaign     */}
+      {/* PIPELINE STRIP — process map only (CTAs live in the hero)    */}
       {/* ============================================================ */}
-      <div className="rounded-2xl border border-cloud bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
-            <PipelineStep n={1} label="Read the data" state="done" />
-            <PipelineArrow />
-            <PipelineStep n={2} label="Build strategy" state="active" />
-            <PipelineArrow />
-            <PipelineStep n={3} label="Launch campaign" state="todo" />
-          </ol>
-
-          <div className="flex flex-none flex-col gap-2.5 sm:flex-row sm:items-center">
-            <Link
-              href="/strategy?state=AL"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-intelligence-teal px-4 py-2 text-xs font-semibold text-white transition hover:bg-intelligence-teal/90"
-            >
-              Build strategy
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <BuildCampaignLink
-              variant={{ kind: "personal_injury", stateCode: "AL", stateName: "Alabama" }}
-              size="sm"
-            />
-          </div>
-        </div>
+      <div className="rounded-2xl border border-cloud bg-white px-5 py-4 shadow-sm">
+        <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+          <PipelineStep n={1} label="Read the data" state="done" />
+          <PipelineArrow />
+          <PipelineStep n={2} label="Build strategy" state="active" />
+          <PipelineArrow />
+          <PipelineStep n={3} label="Launch campaign" state="todo" />
+        </ol>
       </div>
 
       {/* ============================================================ */}
@@ -817,7 +804,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
       {/* SECTION 4 — STRATEGY ENGINE (CTA → standalone Strategy Engine) */}
       {/* ============================================================ */}
       <div id="strategy" className="scroll-mt-20">
-        <SectionHeading n={4} title="Build a Media Strategy" />
+        <SectionHeading n={4} title="Put It Into Action" />
         <div className="rounded-xl border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -826,12 +813,13 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               </span>
               <div>
                 <h3 className="mb-1 font-heading text-xl font-bold text-midnight-navy">
-                  Turn this intelligence into a media strategy
+                  Ready to act on this?
                 </h3>
                 <p className="max-w-2xl text-sm text-slate-gray">
-                  Generate a defensible, data-traced strategy for Alabama — every number
-                  carries its source — then hand it straight to the Campaign Builder to
-                  produce the actual ads.
+                  You&apos;ve seen the exposure, the legal landscape, and who you&apos;re up
+                  against. Turn it into a defensible, data-traced strategy &mdash; every number
+                  carries its source &mdash; then hand it to the Campaign Builder to produce
+                  the ads.
                 </p>
               </div>
             </div>
@@ -839,7 +827,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
               href="/strategy?state=AL"
               className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
             >
-              Build Alabama strategy
+              Build the Alabama strategy
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
