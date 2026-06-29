@@ -38,6 +38,24 @@ export interface TrafficStatsBlock {
    * block). Falls back to reportYear when absent.
    */
   fatalitiesReportYear?: number;
+
+  /* --- Optional bespoke metrics (Phase 3 legacy-migration fidelity) --- */
+  /** Registered motorcycles (AZ, CA moto cards). */
+  registeredMotorcycles?: number;
+  /** Traffic fatality rate per 100M VMT (CA, FL snapshot rate tile). */
+  fatalityRatePerVmt?: number;
+  /** National traffic fatality rate per 100M VMT, for the comparison sublabel. */
+  nationalFatalityRatePerVmt?: number;
+  /** Pedestrian fatalities (CA, FL). */
+  pedestrianFatalities?: number;
+  /** Bicycle fatalities (CA, FL). */
+  bicycleFatalities?: number;
+  /** Hit-and-run fatal crashes (CA). */
+  hitAndRunFatalCrashes?: number;
+  /** Motorcycle helmet-use rate, % (CA). */
+  helmetUsePct?: number;
+  /** Motorcycle fatality rate per 100K registered motorcycles (CA). */
+  motorcycleFatalityRatePer100k?: number;
 }
 
 export interface WorkplaceStatsBlock {
@@ -52,6 +70,26 @@ export interface WorkplaceStatsBlock {
   fallsSlipsTrips: number;
   transportationIncidents: number;
   reportYear: number;
+
+  /* --- Optional bespoke metrics (Phase 3 legacy-migration fidelity) --- */
+  /** Construction-sector employment (CA, FL construction cards). */
+  constructionWorkers?: number;
+  /** Construction employment YoY % change (FL). */
+  constructionEmploymentYoYPct?: number;
+  /** Trucking-sector employment (CA, FL truck cards). */
+  truckingWorkers?: number;
+  /** Average annual trucking pay, USD (CA). */
+  truckingAvgPay?: number;
+  /** Workplace fatality rate per 100K FTE (CA, FL snapshot rate tile). */
+  workplaceFatalityRatePer100k?: number;
+  /** National workplace fatality rate per 100K FTE, for the comparison sublabel. */
+  nationalWorkplaceFatalityRatePer100k?: number;
+  /** Hispanic-worker fatality count (AZ). */
+  hispanicWorkerFatalities?: number;
+  /** Hispanic share of workplace fatalities, % (AZ, CA, FL). */
+  hispanicWorkerFatalitySharePct?: number;
+  /** Falls/slips/trips share of construction fatalities, % (FL). */
+  constructionFallsSharePct?: number;
 }
 
 export interface CommuteStatsBlock {
@@ -81,6 +119,29 @@ export interface StateInjuryData {
   sourceName: string;
   /** URL to the source's public page (for "Source: ..." link) */
   sourceUrl: string;
+  /**
+   * Per-year display label for partial/incomplete years, e.g.
+   * `{ 2022: "(through Nov 2022)" }` or `{ 2025: "(Jan–Sept)" }`. The v2 shell
+   * reads this; when absent it falls back to `{ 2025: "(Jan–Sept)" }`.
+   */
+  partialYearLabels?: Record<number, string>;
+}
+
+/**
+ * A bespoke cross-signal insight card. When `StateContent.customInsights` is
+ * set, the v2 shell renders these in place of its 5 fixed title+tip cards —
+ * holding legacy stat-lines + custom topics (heat/Navajo, cancer, hurricane,
+ * pedestrian, lane-splitting, …) losslessly.
+ */
+export interface CustomInsight {
+  /** lucide icon name or emoji; falls back to a default marker. */
+  icon?: string;
+  title: string;
+  tone?: "teal" | "emerald" | "red" | "amber" | "steel";
+  /** Per-card stat-lines, e.g. { label: "Diagnoses", value: "182,000+" }. */
+  stats?: { label: string; value: string }[];
+  /** The "so what" paragraph. */
+  body: string;
 }
 
 export interface CrashEmbed {
@@ -178,6 +239,13 @@ export interface StateContent {
 
   /** Bullet list of 3-5 key takeaways. Optional. */
   keyTakeaways?: string[];
+
+  /**
+   * Bespoke cross-signal insight cards. When set, the v2 shell renders these
+   * instead of its 5 fixed Cross-Signal Insight cards (used to port the legacy
+   * pages' stat-line + custom-topic insights losslessly).
+   */
+  customInsights?: CustomInsight[];
 }
 
 export interface StateFeatureFlags {
