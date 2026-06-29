@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
   // ── Assemble inputs + the two new layer summaries (server-side) ──────────
   const sb = supabase as unknown as Parameters<typeof assembleStrategyInputs>[0];
   const [{ inputs, errors: dataErrors }, oppRes, wsRes, dmaRes, creativesRes] = await Promise.all([
-    assembleStrategyInputs(sb, state, { tortSlug, tortLabel }),
+    assembleStrategyInputs(sb, state, { tortSlug, tortLabel, dmaCode: body.dma_code ?? null }),
     sb.rpc("strategy_opportunity_counties", {
       p_state: state,
       p_fips_full: body.county_fips ?? null,

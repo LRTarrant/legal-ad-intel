@@ -4,7 +4,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assembleStrategyInputs } from "./assemble-inputs.ts";
+import { assembleStrategyInputs } from "./assemble-inputs";
 
 /** Minimal chainable Supabase mock. Each table/rpc returns canned rows. */
 function mockSupabase(tables: Record<string, unknown[]>, rpcs: Record<string, unknown[]> = {}) {
