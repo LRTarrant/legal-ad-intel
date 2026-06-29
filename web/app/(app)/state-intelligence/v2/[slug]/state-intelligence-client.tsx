@@ -16,15 +16,6 @@ import {
   Database,
   Target,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
@@ -54,6 +45,7 @@ import {
   negligenceMeta,
 } from "@/components/state-intelligence/state-verdict";
 import { viabilityBand } from "@/components/state-intelligence/viability";
+import { StateLegalViability } from "@/components/state-intelligence/state-legal-viability";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -193,13 +185,6 @@ function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
-function fmtCur(n: number | null | undefined): string {
-  if (n == null) return "\u2014";
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
-  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -316,9 +301,6 @@ export function StateIntelligenceClient({
     }
     return counts;
   }, [data.judicialProfiles]);
-
-  /* -- Top storm chart data -- */
-  const topStorms = data.stormSummary.slice(0, 10);
 
   /* -- PI viability bar chart data -- */
   const piData = data.piViability;
@@ -592,163 +574,18 @@ export function StateIntelligenceClient({
       </div>
 
       {/* ============================================================ */}
-      {/* 4. LEGAL LANDSCAPE                                           */}
+      {/* 4. LEGAL LANDSCAPE & PI VIABILITY (shared Design-D card)    */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            Legal Landscape
-          </h2>
-        </div>
-
-        {piData ? (
-          <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Negligence Rule
-                </p>
-                <p className="text-sm font-bold text-amber-600">
-                  {formatNegligenceRule(piData.negligence_rule)}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Statute of Limitations
-                </p>
-                <p className="text-sm font-semibold text-midnight-navy">
-                  {piData.statute_of_limitations}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Non-Economic Damage Caps
-                </p>
-                <p className="text-sm text-midnight-navy">
-                  {piData.non_economic_cap ?? "None"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Punitive Damage Caps
-                </p>
-                <p className="text-sm text-midnight-navy">
-                  {piData.punitive_cap ?? "None"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Average Jury Verdict
-                </p>
-                <p className="text-sm font-semibold text-midnight-navy">
-                  {piData.avg_jury_verdict != null
-                    ? typeof piData.avg_jury_verdict === "string" &&
-                      /^[a-zA-Z]/.test(piData.avg_jury_verdict)
-                      ? piData.avg_jury_verdict
-                      : fmtCur(Number(piData.avg_jury_verdict))
-                    : "\u2014"}
-                </p>
-              </div>
-              <div className="rounded-md bg-cloud/60 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray mb-1">
-                  Composite Score
-                </p>
-                <p className="text-sm font-bold text-intelligence-teal">
-                  {piData.composite_score}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-md border-l-4 border-amber-500 bg-amber-50 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                {content.legalLandscape ??
-                  `${config.stateName}'s negligence rule, damages caps, and statute of limitations define the boundaries of recoverable claims and the urgency of case intake. Comparative-fault rules, non-economic caps, and punitive exposure vary significantly by state and drive both case-selection criteria and advertising positioning.`}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              PI viability data loading...
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* 10. PI VIABILITY DEEP DIVE                                   */}
-      {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale className="w-4.5 h-4.5 text-intelligence-teal" />
-          <h2 className="font-heading text-2xl font-bold text-midnight-navy">
-            PI Viability Deep Dive
-          </h2>
-        </div>
-
-        {piData ? (
-          <>
-            <div className="rounded-lg bg-white p-4 mb-4">
-              <p className="mb-3 text-xs font-semibold text-midnight-navy">
-                Component Scores
-              </p>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart
-                  data={[
-                    { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                    { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                  ]}
-                  layout="vertical"
-                  margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
-                >
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11, fill: "#1B2A4A" }}
-                  />
-                  <Tooltip contentStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                    {[
-                      { name: "Negligence", score: piData.negligence_score ?? 0, fill: (piData.negligence_score ?? 0) <= 25 ? "#EF4444" : (piData.negligence_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Non-Economic Caps", score: piData.non_economic_score ?? 0, fill: (piData.non_economic_score ?? 0) <= 25 ? "#EF4444" : (piData.non_economic_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Punitive Caps", score: piData.punitive_score ?? 0, fill: (piData.punitive_score ?? 0) <= 25 ? "#EF4444" : (piData.punitive_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Med-Mal Caps", score: piData.med_mal_score ?? 0, fill: (piData.med_mal_score ?? 0) <= 25 ? "#EF4444" : (piData.med_mal_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Statute of Limitations", score: piData.sol_score ?? 0, fill: (piData.sol_score ?? 0) <= 25 ? "#EF4444" : (piData.sol_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Jury Verdicts", score: piData.verdict_score ?? 0, fill: (piData.verdict_score ?? 0) <= 25 ? "#EF4444" : (piData.verdict_score ?? 0) <= 74 ? "#F59E0B" : "#22C55E" },
-                      { name: "Composite", score: parseFloat(String(piData.composite_score)) || 0, fill: "#14B8A6" },
-                    ].map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="rounded-md border-l-4 border-intelligence-teal bg-intelligence-teal/5 px-4 py-3">
-              <p className="text-sm text-midnight-navy/80">
-                {content.legalLandscape ??
-                  `${config.stateName}'s negligence and damages-cap regime sets the boundaries of recoverable claims. Statute-of-limitations and comparative-fault rules drive both case-selection criteria and the urgency of intake. Firms with aggressive, fast intake pipelines have an edge in higher-urgency states.`}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
-            <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
-            <p className="text-sm font-medium text-midnight-navy/60">
-              PI viability data loading...
-            </p>
-          </div>
-        )}
-      </div>
+      <StateLegalViability
+        stateName={config.stateName}
+        piData={piData}
+        judicial={{
+          conservative: profileCounts["Conservative"] ?? 0,
+          liberal: profileCounts["Liberal"] ?? 0,
+          moderate: profileCounts["Moderate"] ?? 0,
+        }}
+        legalNote={content.legalLandscape}
+      />
 
       {/* ============================================================ */}
       {/* 5. CASE TYPE OPPORTUNITIES                                   */}
