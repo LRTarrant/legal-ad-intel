@@ -15,7 +15,22 @@ import {
   CloudLightning,
   Database,
   Target,
+  Activity,
+  Footprints,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import type { JudicialProfileRow } from "@/lib/queries/judicial";
 import { AskAIPanel } from "../../../components/ask-ai-panel";
 import { trackStateViewed } from "@/lib/analytics";
@@ -138,6 +153,20 @@ interface MSADemographicsRow {
   pct_employed: number | null;
 }
 
+interface FARSYearlyTrendRow {
+  year: number;
+  fatal_crashes: number;
+  total_fatalities: number;
+  motorcycle_fatalities: number;
+  truck_fatalities: number;
+  dui_fatalities: number;
+}
+
+interface FARSTopCountyRow {
+  county_name: string;
+  fatalities: number;
+}
+
 export interface StateIntelligenceData {
   accidentSummary: AccidentSummaryRow[];
   ruralUrban: RuralUrbanRow[];
@@ -149,6 +178,9 @@ export interface StateIntelligenceData {
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
   competition: { count: number };
+  /** Native FARS charts — only rendered when features.showCrashIntelligence. */
+  farsYearlyTrend?: FARSYearlyTrendRow[];
+  farsTopCounties?: FARSTopCountyRow[];
 }
 
 /* Section anchors, shared by the sticky desktop nav and the mobile jump menu.
@@ -219,6 +251,9 @@ export function StateIntelligenceClient({
     });
   }, [config.stateCode, config.stateName]);
 
+  /* -- Crash Intelligence tab (GA, behind showCrashIntelligence) -- */
+  const [crashTab, setCrashTab] = useState(0);
+
   /* -- Lazy-load this state's county geometry (code-split per state) -- */
   const [geo, setGeo] = useState<{ slug: string; mod: GeometryModule } | null>(
     null
@@ -271,6 +306,16 @@ export function StateIntelligenceClient({
     0
   );
   const mvaDeaths = totalDeaths - totalTruckDeaths - totalMotoDeaths;
+
+  /* -- Pedestrian/Bicycle case card (CA, behind showPedBikeCard) -- */
+  const pedBikeCombined =
+    TDOSHS.pedestrianFatalities != null || TDOSHS.bicycleFatalities != null
+      ? (TDOSHS.pedestrianFatalities ?? 0) + (TDOSHS.bicycleFatalities ?? 0)
+      : null;
+  const pedBikeSharePct =
+    pedBikeCombined != null && TDOSHS.totalFatalities > 0
+      ? Math.round((pedBikeCombined / TDOSHS.totalFatalities) * 100)
+      : null;
 
   /* -- Top 5 counties for each case type -- */
   const top5MVA = [...data.accidentSummary]
@@ -425,6 +470,26 @@ export function StateIntelligenceClient({
           </p>
         </div>
 
+        {/* Rate-framed fatality tile (CA/FL) — only when the rate is supplied */}
+        {TDOSHS.fatalityRatePerVmt != null && (
+          <div className="rounded-lg bg-white p-4 shadow-sm border">
+            <div className="flex items-center gap-1.5 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                Fatality Rate / 100M VMT
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-midnight-navy">
+              {TDOSHS.fatalityRatePerVmt}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-gray">
+              {TDOSHS.nationalFatalityRatePerVmt != null
+                ? `vs ${TDOSHS.nationalFatalityRatePerVmt} national`
+                : "per 100M VMT"}
+            </p>
+          </div>
+        )}
+
         <div className="rounded-lg bg-white p-4 shadow-sm border">
           <div className="flex items-center gap-1.5 mb-2">
             <MapPin className="w-3.5 h-3.5 text-intelligence-teal" />
@@ -476,6 +541,28 @@ export function StateIntelligenceClient({
           </div>
         )}
 
+        {/* Rate-framed workplace tile (CA/FL) — only when the rate is supplied */}
+        {features.showWorkplaceSection !== false &&
+          BLS.workplaceFatalityRatePer100k != null && (
+            <div className="rounded-lg bg-white p-4 shadow-sm border">
+              <div className="flex items-center gap-1.5 mb-2">
+                <HardHat className="w-3.5 h-3.5 text-intelligence-teal" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-gray">
+                  Workplace Fatality Rate
+                </p>
+              </div>
+              <p className="text-3xl font-bold text-midnight-navy">
+                {BLS.workplaceFatalityRatePer100k}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-gray">
+                per 100K FTE
+                {BLS.nationalWorkplaceFatalityRatePer100k != null
+                  ? ` · vs ${BLS.nationalWorkplaceFatalityRatePer100k} national`
+                  : ""}
+              </p>
+            </div>
+          )}
+
         <div className="rounded-lg bg-white p-4 shadow-sm border">
           <div className="flex items-center gap-1.5 mb-2">
             <CloudLightning className="w-3.5 h-3.5 text-intelligence-teal" />
@@ -491,6 +578,209 @@ export function StateIntelligenceClient({
           </p>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* 2a. NATIVE FARS CRASH INTELLIGENCE (GA — behind flag)        */}
+      {/* ============================================================ */}
+      {features.showCrashIntelligence && (
+        <div className="rounded-lg border-2 border-intelligence-teal/30 bg-gradient-to-br from-intelligence-teal/[0.06] to-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="w-4.5 h-4.5 text-intelligence-teal" />
+            <h2 className="font-heading text-2xl font-bold text-midnight-navy">
+              {config.stateName} Crash Intelligence
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-slate-gray max-w-3xl">
+            Fatal crash trends and breakdowns from NHTSA FARS data, 2019&ndash;2024.
+          </p>
+
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              "Statewide Fatality Trend",
+              "Top 10 Counties",
+              "Fatalities by Crash Type",
+            ].map((label, i) => (
+              <button
+                key={label}
+                onClick={() => setCrashTab(i)}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  crashTab === i
+                    ? "bg-intelligence-teal text-white shadow-sm"
+                    : "bg-white text-midnight-navy/70 border border-cloud hover:bg-cloud/60"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab 1: Statewide Fatality Trend */}
+          {crashTab === 0 && (
+            <div>
+              <p className="mb-3 text-xs text-midnight-navy/60">
+                Annual fatal crashes and fatalities in {config.stateName},
+                2019&ndash;2024. Source: NHTSA FARS.
+              </p>
+              {(data.farsYearlyTrend?.length ?? 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={360}>
+                  <LineChart
+                    data={data.farsYearlyTrend}
+                    margin={{ top: 5, right: 30, bottom: 5, left: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="total_fatalities"
+                      name="Fatalities"
+                      stroke="#14B8A6"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="fatal_crashes"
+                      name="Fatal Crashes"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                  <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                  <p className="text-sm font-medium text-midnight-navy/60">
+                    FARS trend data unavailable
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 2: Top 10 Counties */}
+          {crashTab === 1 && (
+            <div>
+              <p className="mb-3 text-xs text-midnight-navy/60">
+                Top 10 {config.stateName} counties by cumulative fatalities,
+                2020&ndash;2024. Source: NHTSA FARS.
+              </p>
+              {(data.farsTopCounties?.length ?? 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={data.farsTopCounties}
+                    layout="vertical"
+                    margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                      stroke="#E2E8F0"
+                    />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "#1B2A4A" }} />
+                    <YAxis
+                      type="category"
+                      dataKey="county_name"
+                      width={120}
+                      tick={{ fontSize: 11, fill: "#1B2A4A" }}
+                    />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="fatalities" name="Fatalities" radius={[0, 4, 4, 0]}>
+                      {(data.farsTopCounties ?? []).map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={
+                            index === 0
+                              ? "#14B8A6"
+                              : index < 3
+                                ? "#2DD4BF"
+                                : "#5EEAD4"
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                  <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                  <p className="text-sm font-medium text-midnight-navy/60">
+                    County fatality data unavailable
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 3: Fatalities by Crash Type */}
+          {crashTab === 2 && (
+            <div>
+              <p className="mb-3 text-xs text-midnight-navy/60">
+                Annual fatalities by crash type &mdash; motorcycle, large truck,
+                and DUI-involved crashes, 2019&ndash;2024. Source: NHTSA FARS.
+              </p>
+              {(data.farsYearlyTrend?.length ?? 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={360}>
+                  <BarChart
+                    data={data.farsYearlyTrend}
+                    margin={{ top: 5, right: 30, bottom: 5, left: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "#1B2A4A" }} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar
+                      dataKey="motorcycle_fatalities"
+                      name="Motorcycle"
+                      fill="#F59E0B"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="truck_fatalities"
+                      name="Large Truck"
+                      fill="#EF4444"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="dui_fatalities"
+                      name="DUI-Involved"
+                      fill="#8B5CF6"
+                      radius={[2, 2, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="rounded-lg border border-cloud bg-cloud/40 p-8 text-center">
+                  <Database className="w-8 h-8 mx-auto mb-3 text-slate-gray/40" />
+                  <p className="text-sm font-medium text-midnight-navy/60">
+                    Crash type data unavailable
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Source citation */}
+          <p className="mt-4 text-[11px] text-slate-gray">
+            Source:{" "}
+            <a
+              href="https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-intelligence-teal"
+            >
+              NHTSA Fatality Analysis Reporting System (FARS)
+            </a>
+          </p>
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* 2b. COUNTY-LEVEL INJURY RANKINGS (reusable component)        */}
@@ -810,7 +1100,77 @@ export function StateIntelligenceClient({
           </div>
           )}
 
-          {/* Boating Card */}
+          {/* Pedestrian/Bicycle Card (CA — replaces Boating when flagged) */}
+          {features.showPedBikeCard && (
+          <div className="rounded-lg border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Footprints className="w-5 h-5 text-intelligence-teal" />
+              <h3 className="text-sm font-bold text-midnight-navy">
+                Pedestrian &amp; Bicycle Accidents
+              </h3>
+            </div>
+            <div className="space-y-2 mb-3">
+              {TDOSHS.pedestrianFatalities != null && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">
+                    Pedestrian Fatalities ({TDOSHS.reportYear})
+                  </span>
+                  <span className="font-semibold text-midnight-navy">
+                    {fmtNum(TDOSHS.pedestrianFatalities)}
+                  </span>
+                </div>
+              )}
+              {TDOSHS.bicycleFatalities != null && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">
+                    Bicycle Fatalities ({TDOSHS.reportYear})
+                  </span>
+                  <span className="font-semibold text-midnight-navy">
+                    {fmtNum(TDOSHS.bicycleFatalities)}
+                  </span>
+                </div>
+              )}
+              {pedBikeCombined != null && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">
+                    Combined{pedBikeSharePct != null ? " (% of Traffic Deaths)" : ""}
+                  </span>
+                  <span className="font-bold text-red-600">
+                    {fmtNum(pedBikeCombined)}
+                    {pedBikeSharePct != null ? ` (${pedBikeSharePct}%)` : ""}
+                  </span>
+                </div>
+              )}
+              {TDOSHS.hitAndRunFatalCrashes != null && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-gray">Hit-and-Run Fatal Crashes</span>
+                  <span className="font-semibold text-midnight-navy">
+                    {fmtNum(TDOSHS.hitAndRunFatalCrashes)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="rounded-md bg-intelligence-teal/5 border border-intelligence-teal/20 p-3 mb-2">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">
+                  Audience:
+                </span>{" "}
+                {content.pedBikeAudience ??
+                  `${config.stateName}'s urban cores concentrate pedestrian and bicycle fatalities. Target dense metros with high walking and transit commute shares, plus hit-and-run victims who often need help identifying liable drivers.`}
+              </p>
+            </div>
+            <div className="rounded-md bg-cloud/60 p-3">
+              <p className="text-[11px] text-midnight-navy/70">
+                <span className="font-semibold text-midnight-navy">Media:</span>{" "}
+                {content.pedBikeMedia ??
+                  `Digital geo-targeting in downtown cores. Transit-adjacent OOH advertising. Community safety organization partnerships. Bicycle advocacy group channels.`}
+              </p>
+            </div>
+          </div>
+          )}
+
+          {/* Boating Card (suppressed when the Ped/Bike card takes its slot) */}
+          {!features.showPedBikeCard && (
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Anchor className="w-5 h-5 text-intelligence-teal" />
@@ -858,6 +1218,7 @@ export function StateIntelligenceClient({
               </p>
             </div>
           </div>
+          )}
         </div>
       </div>
 
