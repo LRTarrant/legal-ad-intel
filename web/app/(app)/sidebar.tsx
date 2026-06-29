@@ -215,7 +215,7 @@ const STATE_PROFILES: NavItem[] = [
   { label: "Rhode Island", href: "/state-intelligence/v2/rhode-island", Icon: MapPin },
   { label: "South Carolina", href: "/state-intelligence/v2/south-carolina", Icon: MapPin },
   { label: "South Dakota", href: "/state-intelligence/v2/south-dakota", Icon: MapPin },
-  { label: "Tennessee", href: "/state-intelligence/tennessee", Icon: MapPin },
+  { label: "Tennessee", href: "/state-intelligence/v2/tennessee", Icon: MapPin },
   { label: "Texas", href: "/state-intelligence/v2/texas", Icon: MapPin },
   { label: "Utah", href: "/state-intelligence/v2/utah", Icon: MapPin },
   { label: "Vermont", href: "/state-intelligence/v2/vermont", Icon: MapPin },

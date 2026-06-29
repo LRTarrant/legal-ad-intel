@@ -62,6 +62,11 @@ export const tennesseeConfig: StateConfig = {
     legalLandscape:
       "Tennessee follows modified comparative negligence with a 49% bar — plaintiffs who are 50% or more at fault are barred from recovery. Tennessee caps non-economic damages in most PI cases and has specific caps on punitive damages. The 1-year statute of limitations is among the shortest in the nation and requires aggressive, timely case acquisition.",
 
+    // Verdict-card one-liner (the legacy "PI Viability Deep Dive" paragraph's
+    // fuller story lives in `legalLandscape` + the SOL cross-signal card).
+    viabilityNote:
+      "Strong damage caps, tempered by the 49% bar and a 1-year statute of limitations.",
+
     autoAudience:
       "Nashville metro (Davidson, Williamson, Rutherford) dominates volume. Memphis (Shelby County) is the second largest market. I-40 corridor across the state and I-24 (Nashville-Chattanooga) are high-fatality routes. Tennessee’s 79.8% drive-alone commute rate exceeds the national average, generating high exposure.",
     autoMedia:
@@ -125,6 +130,7 @@ export const tennesseeConfig: StateConfig = {
     latestYear: TN_INJURY_DATA_LATEST_YEAR,
     sourceName: "Tennessee Department of Safety & Homeland Security — TITAN",
     sourceUrl: "https://data.tn.gov/",
+    partialYearLabels: { 2025: "(Jan–Sept)" },
   },
 
   crashEmbeds: [
