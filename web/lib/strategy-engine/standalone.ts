@@ -15,6 +15,7 @@
 
 import { CHANNEL_LABELS } from "./types";
 import type { ChannelKey, ChannelPlan, Confidence, StrategyProse, Voice } from "./types";
+import type { Prerequisite } from "./tactics";
 import type {
   LeadMetric,
   MeasuredChannel,
@@ -24,6 +25,8 @@ import type {
 } from "./recommendations";
 
 /* ── Interview request ──────────────────────────────────────────────────── */
+
+export type ReadinessAnswer = "yes" | "no" | "unsure";
 
 export interface StrategyInterviewRequest {
   /** Reader framing — maps to the engine Voice. */
@@ -39,6 +42,14 @@ export interface StrategyInterviewRequest {
   budget_tier: string; // e.g. "under_25k" | "25k_75k" | "75k_plus"
   goal: string; // free-text or a controlled goal
   existing_channels: string[]; // channels the firm already runs
+  /** Intake capacity: "steady" | "scale" | "high". */
+  intake_capacity: string;
+  /** Free-text: what winning looks like in 90 days + anything off-limits. */
+  goal_context: string;
+  /** Optional free-text: what's currently working / not working. */
+  current_advertising_notes?: string;
+  /** Foundation-readiness answers, keyed by READINESS_QUESTIONS[].key. */
+  readiness?: Record<string, ReadinessAnswer>;
 }
 
 /** Interview case type → the tort/serp slug the data layers key on. */
@@ -68,7 +79,60 @@ export function validateInterview(body: StrategyInterviewRequest): string[] {
   if (!Array.isArray(body.case_types) || body.case_types.length === 0) {
     errors.push("at least one case type is required");
   }
+  if (!body.intake_capacity || body.intake_capacity.trim() === "") {
+    errors.push("intake capacity is required");
+  }
+  if (!body.goal_context || body.goal_context.trim() === "") {
+    errors.push("a note on what winning looks like is required");
+  }
   return errors;
+}
+
+/**
+ * The foundation-readiness questions. Each maps to one or more Plan 3
+ * Prerequisites; a "yes" marks them satisfied, a "no" marks them missing, and
+ * "unsure" leaves them to surface as a "confirm" in the readiness gate.
+ */
+export const READINESS_QUESTIONS: ReadonlyArray<{
+  key: string;
+  label: string;
+  prerequisites: Prerequisite[];
+}> = [
+  { key: "landing_pages", label: "Dedicated landing pages for paid traffic?", prerequisites: ["landing_page"] },
+  { key: "tracking", label: "Call + conversion tracking in place?", prerequisites: ["conversion_tracking", "call_tracking", "pixel"] },
+  { key: "intake", label: "Does intake call leads back within minutes?", prerequisites: ["fast_intake"] },
+  { key: "web_presence", label: "A site + claimed Google Business Profile to send traffic to?", prerequisites: ["site_health", "gbp_claimed", "credible_brand"] },
+];
+
+export function readinessToFoundation(
+  readiness: Record<string, ReadinessAnswer> | undefined,
+): Partial<Record<Prerequisite, boolean>> {
+  const out: Partial<Record<Prerequisite, boolean>> = {};
+  if (!readiness) return out;
+  for (const q of READINESS_QUESTIONS) {
+    const ans = readiness[q.key];
+    if (ans === "yes") for (const p of q.prerequisites) out[p] = true;
+    else if (ans === "no") for (const p of q.prerequisites) out[p] = false;
+    // "unsure" or missing → leave undefined (the gate shows "confirm")
+  }
+  return out;
+}
+
+const INTAKE_LABEL: Record<string, string> = {
+  steady: "needs a steady, manageable flow of leads",
+  scale: "can scale up intake to handle a volume increase",
+  high: "has high intake capacity and wants maximum volume",
+};
+
+export function buildGoalText(
+  body: Pick<StrategyInterviewRequest, "goal" | "goal_context" | "intake_capacity" | "current_advertising_notes">,
+): string {
+  const parts = [`Primary objective: ${body.goal}.`];
+  if (body.goal_context?.trim()) parts.push(`What winning looks like / constraints: ${body.goal_context.trim()}`);
+  const intake = INTAKE_LABEL[body.intake_capacity];
+  if (intake) parts.push(`Intake: the firm ${intake}.`);
+  if (body.current_advertising_notes?.trim()) parts.push(`Currently running: ${body.current_advertising_notes.trim()}`);
+  return parts.join(" ");
 }
 
 /** Primary tort slug for the data layers (first recognized case type). */
