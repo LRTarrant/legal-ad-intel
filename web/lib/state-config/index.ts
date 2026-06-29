@@ -1,4 +1,5 @@
 import { alaskaConfig } from "./alaska";
+import { arizonaConfig } from "./arizona";
 import { arkansasConfig } from "./arkansas";
 import { coloradoConfig } from "./colorado";
 import { connecticutConfig } from "./connecticut";
@@ -55,6 +56,7 @@ import type { StateConfig } from "./_types";
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
   alaska: alaskaConfig,
+  arizona: arizonaConfig,
   arkansas: arkansasConfig,
   colorado: coloradoConfig,
   connecticut: connecticutConfig,
