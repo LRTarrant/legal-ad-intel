@@ -11,9 +11,8 @@
 import type { MediaBrief, StrategistOutput } from "./strategist";
 import type { TacticMenu, ScoredTactic } from "./tactic-scoring";
 import type { Recommendation, RecommendationLink, ProofPoint, DataDepth } from "./recommendations";
-import { CHANNEL_LABELS } from "./recommendations";
-import type { IntegratedAllocation } from "./standalone";
-import type { StrategyProse } from "./types";
+import type { IntegratedAllocation, ReadinessItem, StrategyProse } from "./standalone";
+import type { Prerequisite } from "./tactics";
 
 export interface StrategistMapFacts {
   market_label: string;
@@ -81,7 +80,7 @@ export function strategistToRecommendations(
 export function strategistToAllocation(out: StrategistOutput): IntegratedAllocation[] {
   return out.briefs.map((b) => ({
     channel: b.tactic.channel,
-    label: CHANNEL_LABELS[b.tactic.channel],
+    label: b.tactic.label, // per-tactic, so two same-channel tactics don't collide
     stage: b.tactic.funnel_stage,
     pct: b.allocation_pct,
   }));
@@ -98,4 +97,29 @@ export function strategistToProse(out: StrategistOutput, facts: StrategistMapFac
     approach_rationale: approach,
     channel_narrative: out.narrative && out.narrative.trim() ? out.narrative : approach,
   };
+}
+
+const PREREQUISITE_LABELS: Record<Prerequisite, string> = {
+  landing_page: "Dedicated landing pages for paid traffic",
+  conversion_tracking: "Conversion tracking",
+  call_tracking: "Call tracking",
+  fast_intake: "Fast intake — leads called back within minutes",
+  pixel: "Retargeting pixel installed",
+  gbp_claimed: "Claimed Google Business Profile",
+  site_health: "A healthy website to send traffic to",
+  brand_creative: "Brand creative ready to run",
+  video_creative: "Video creative ready to run",
+  audio_creative: "Audio creative / scripts ready",
+  credible_brand: "A credible brand presence",
+};
+
+export function strategistToReadiness(out: StrategistOutput, menu: TacticMenu): ReadinessItem[] {
+  const labelByKey = new Map(menu.tactics.map((s) => [s.tactic.key, s.tactic.label]));
+  return out.readiness
+    .map((g) => ({
+      label: PREREQUISITE_LABELS[g.prerequisite] ?? g.prerequisite,
+      status: g.status,
+      tactics: g.tactics.map((k) => labelByKey.get(k) ?? k),
+    }))
+    .sort((a, b) => (a.status === "missing" ? 0 : 1) - (b.status === "missing" ? 0 : 1));
 }

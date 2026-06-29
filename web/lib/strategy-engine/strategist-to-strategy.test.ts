@@ -1,7 +1,7 @@
 /** Run with: npx tsx --test lib/strategy-engine/strategist-to-strategy.test.ts */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { strategistToRecommendations, strategistToAllocation, strategistToProse } from "./strategist-to-strategy";
+import { strategistToRecommendations, strategistToAllocation, strategistToProse, strategistToReadiness } from "./strategist-to-strategy";
 import { buildTacticMenu } from "./tactic-scoring";
 import { containsAbsoluteReach } from "./prompt";
 import type { StrategyInputs, ChannelSignal, NamedOutlet } from "./types";
@@ -70,4 +70,29 @@ test("a brief with no example outlets maps to a channel_target buy", () => {
   const recs = strategistToRecommendations(out(), menu(), facts);
   const search = recs.find((r) => r.channel === "search")!;
   assert.equal(search.buy.kind, "channel_target");
+});
+
+test("allocation labels each tactic distinctly, even when two share a channel", () => {
+  const o = out(); // has google_search (search) + radio; extend with a 2nd search tactic
+  o.briefs.push({
+    tactic: menu().tactics.find((s) => s.tactic.key === "seo_gbp")!.tactic,
+    rationale: "Local organic.", format_call: [], example_outlets: [], reach_target: null, allocation_pct: 0, affordable: true,
+  });
+  const alloc = strategistToAllocation(o);
+  const searchLabels = alloc.filter((a) => a.channel === "search").map((a) => a.label);
+  assert.equal(new Set(searchLabels).size, searchLabels.length, "two search tactics must have distinct labels");
+  assert.ok(searchLabels.includes("Google Search (injury keywords)"));
+  assert.ok(searchLabels.includes("SEO + Google Business Profile"));
+});
+
+test("strategistToReadiness maps prerequisites to labels, keys to tactic labels, and sorts missing first", () => {
+  const o = out();
+  o.readiness = [
+    { prerequisite: "landing_page", status: "confirm", tactics: ["google_search"] },
+    { prerequisite: "fast_intake", status: "missing", tactics: ["google_search"] },
+  ];
+  const items = strategistToReadiness(o, menu());
+  assert.equal(items[0].status, "missing", "missing items sort first");
+  assert.ok(items[0].label.length > 5 && !/_/.test(items[0].label), "prerequisite rendered as a human label");
+  assert.ok(items.some((i) => i.tactics.includes("Google Search (injury keywords)")), "tactic key resolved to its label");
 });
