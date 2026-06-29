@@ -274,8 +274,8 @@ export default function StrategyDeck({ data }: { data: any }) {
       {/* 11. INTEGRATED PLAN */}
       <Slide eyebrow="Integrated plan" title="The budget, by channel and funnel stage" tags={[pretty(data.integrated_plan?.cadence ?? ""), pretty(data.integrated_plan?.funnel_emphasis ?? "")]}>
         <div className="space-y-3">
-          {(data.integrated_plan?.allocation ?? []).map((a: any) => (
-            <div key={a.channel} className="flex items-center gap-4">
+          {(data.integrated_plan?.allocation ?? []).map((a: any, i: number) => (
+            <div key={i} className="flex items-center gap-4">
               <div className="w-52 text-sm font-semibold" style={{ color: NAVY }}>{a.label} <span style={{ color: MUTED }} className="font-normal">({a.stage})</span></div>
               <div className="h-6 flex-1 rounded" style={{ background: "#E4EBF2" }}><div className="h-full rounded" style={{ width: `${a.pct}%`, background: "var(--lmi-accent)" }} /></div>
               <div className="w-12 text-right font-bold" style={{ color: NAVY }}>{a.pct}%</div>
@@ -284,6 +284,33 @@ export default function StrategyDeck({ data }: { data: any }) {
         </div>
         <p className="mt-3 text-sm" style={{ color: MUTED }}>{data.prose?.channel_narrative}</p>
       </Slide>
+
+      {/* 11b. BEFORE YOU SPEND A DOLLAR */}
+      {(data.readiness ?? []).length > 0 ? (
+        <Slide eyebrow="Before you spend a dollar" title="Foundation check" sub="A media plan is only as strong as the funnel it points at.">
+          <div className="space-y-2.5">
+            {(data.readiness ?? []).map((r: any, i: number) => {
+              const missing = r.status === "missing";
+              return (
+                <div key={i} className="flex items-start gap-3">
+                  <span
+                    className="mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-bold"
+                    style={missing ? { background: "#FEE2E2", color: "#B91C1C" } : { background: "#FEF3C7", color: "#92400E" }}
+                  >
+                    {missing ? "FIX FIRST" : "CONFIRM"}
+                  </span>
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: NAVY }}>{r.label}</div>
+                    {(r.tactics ?? []).length > 0 ? (
+                      <div className="text-xs" style={{ color: MUTED }}>Needed for: {r.tactics.join(", ")}</div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Slide>
+      ) : null}
 
       {/* 12. HANDOFF */}
       <section className="rounded-2xl p-10 text-white" style={{ background: NAVY }}>
