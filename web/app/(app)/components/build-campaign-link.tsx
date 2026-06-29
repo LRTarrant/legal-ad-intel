@@ -30,9 +30,18 @@ interface BuildCampaignLinkProps {
   variant: BuildCampaignLinkVariant;
   /** Visual size — `sm` for inline header chips, `md` for cross-link rows. */
   size?: "sm" | "md";
+  /**
+   * Visual emphasis.
+   * - `outline` (default): the prominent teal-outline CTA used on tort/state
+   *   page headers, where Build Campaign is the page's main cross-link action.
+   * - `ghost`: a quieter neutral secondary, for when it sits beside a filled
+   *   primary that should win the eye (e.g. the Alabama hero, where the
+   *   strategy CTA is primary — "strategy first, the campaign builds from it").
+   */
+  tone?: "outline" | "ghost";
 }
 
-export function BuildCampaignLink({ variant, size = "md" }: BuildCampaignLinkProps) {
+export function BuildCampaignLink({ variant, size = "md", tone = "outline" }: BuildCampaignLinkProps) {
   const href = buildHref(variant);
   const label = buildLabel(variant);
 
@@ -41,10 +50,17 @@ export function BuildCampaignLink({ variant, size = "md" }: BuildCampaignLinkPro
       ? "px-3 py-1.5 text-xs gap-1.5"
       : "px-5 py-2.5 text-sm gap-2";
 
+  // Both tones carry a 1px border so the button height lines up with an
+  // adjacent borderless filled primary that uses `border border-transparent`.
+  const toneClasses =
+    tone === "ghost"
+      ? "border border-cloud text-midnight-navy/70 hover:border-intelligence-teal hover:text-intelligence-teal"
+      : "border-2 border-intelligence-teal text-intelligence-teal hover:bg-intelligence-teal hover:text-white";
+
   return (
     <Link
       href={href}
-      className={`inline-flex items-center rounded-lg border-2 border-intelligence-teal font-semibold text-intelligence-teal transition hover:bg-intelligence-teal hover:text-white ${sizeClasses}`}
+      className={`inline-flex items-center rounded-lg font-semibold transition ${toneClasses} ${sizeClasses}`}
     >
       <Megaphone className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
       {label} →
