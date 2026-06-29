@@ -1,10 +1,13 @@
 import type { ChipTone, ViabilityBand } from "./viability";
 
-/** Semantic tone → chip classes, shared by VerdictCard and ScoreChip. */
+/** Semantic tone → chip classes, shared by VerdictCard and ScoreChip.
+ *  Text shades are pinned to clear WCAG AA on their own 50-tint background
+ *  (amber-700 ≈ 4.8:1, red-700 ≈ 5.9:1; amber-600/red-600 fell below 4.5:1 on
+ *  the small bold chip text). */
 export const CHIP_TONES: Record<ChipTone, string> = {
   good: "bg-emerald-50 text-emerald-700",
-  mid: "bg-amber-50 text-amber-600",
-  bad: "bg-red-50 text-red-600",
+  mid: "bg-amber-50 text-amber-700",
+  bad: "bg-red-50 text-red-700",
   info: "bg-blue-50 text-blue-700",
 };
 

@@ -394,7 +394,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
           <div className="flex flex-col gap-2.5 sm:flex-row lg:justify-end">
             <Link
               href="/strategy?state=AL"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal focus-visible:ring-offset-2"
             >
               <Compass className="h-4 w-4" />
               Build Media Strategy
@@ -825,7 +825,7 @@ export function AlabamaClient({ data }: { data: AlabamaPageData }) {
             </div>
             <Link
               href="/strategy?state=AL"
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-intelligence-teal/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal focus-visible:ring-offset-2"
             >
               Build the Alabama strategy
               <ArrowRight className="h-4 w-4" />
@@ -995,13 +995,16 @@ function PipelineStep({
         ? "font-bold text-midnight-navy"
         : "font-semibold text-midnight-navy";
   return (
-    <li className="flex items-center gap-2">
+    <li className="flex items-center gap-2" aria-current={state === "active" ? "step" : undefined}>
       <span
         className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-bold ${dot}`}
       >
-        {state === "done" ? <Check className="h-3.5 w-3.5" /> : n}
+        {state === "done" ? <Check className="h-3.5 w-3.5" aria-hidden /> : n}
       </span>
-      <span className={`text-[13px] ${text}`}>{label}</span>
+      <span className={`text-[13px] ${text}`}>
+        {state === "done" && <span className="sr-only">Completed: </span>}
+        {label}
+      </span>
     </li>
   );
 }
