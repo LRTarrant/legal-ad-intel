@@ -68,3 +68,12 @@ test("opportunity intensity is directional and null-safe", () => {
   assert.ok(hi !== null && lo !== null && hi > lo);
   assert.ok(hi! <= 1 && lo! >= 0);
 });
+
+test("exposed audience_fit is clamped to [0,1] even if upstream over-ranges", () => {
+  const inputs = makeInputs({ channels: [{ channel: "search", fit: 1.5, competition: 1.4 }] });
+  const menu = buildTacticMenu(inputs, { goal: "max_volume", budgetMonthlyUsd: 50000 });
+  const search = menu.tactics.find((s) => s.tactic.key === "google_search")!;
+  assert.equal(search.audience_fit, 1);
+  assert.equal(search.competition, 1);
+  assert.equal(search.whitespace, 0);
+});

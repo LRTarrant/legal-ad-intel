@@ -77,8 +77,10 @@ export function buildTacticMenu(
   const tactics: ScoredTactic[] = TACTIC_LIBRARY.map((tactic) => {
     const sig = signalFor(inputs.channels, tactic);
     const funnel_fit = weights[tactic.funnel_stage];
-    const audience_fit = sig ? sig.fit : null;
-    const competition = sig && sig.competition != null ? sig.competition : null;
+    // Clamp the passthrough so audience_fit is provably in [0,1] regardless of
+    // upstream quality (null stays null — clamping never fabricates a number).
+    const audience_fit = sig ? clamp01(sig.fit) : null;
+    const competition = sig && sig.competition != null ? clamp01(sig.competition) : null;
     const whitespace = competition == null ? null : clamp01(1 - competition);
     const affordable = isAffordable(tactic, opts.budgetMonthlyUsd);
 
