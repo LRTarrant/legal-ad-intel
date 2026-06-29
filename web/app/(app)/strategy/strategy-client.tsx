@@ -27,12 +27,25 @@ const AUDIENCES: { key: Voice; label: string }[] = [
 ];
 const CASE_TYPES = ["trucking", "auto", "motorcycle", "nursing_home", "workers_comp", "boating"];
 const BUDGET_TIERS = [
-  { key: "under_25k", label: "Under $25K/mo" },
+  { key: "under_10k", label: "Under $10K/mo" },
+  { key: "10k_25k", label: "$10K–$25K/mo" },
   { key: "25k_75k", label: "$25K–$75K/mo" },
   { key: "75k_plus", label: "$75K+/mo" },
 ];
-const GOALS = ["More qualified signups", "Brand awareness", "Enter a new market", "Defend share"];
+const GOALS = ["More qualified signups", "Lower cost per case", "Brand awareness", "Enter a new market", "Defend share"];
 const CHANNELS = ["paid_search", "broadcast_tv", "billboards", "radio", "social", "ctv"];
+const INTAKE_OPTIONS = [
+  { key: "steady", label: "Steady flow" },
+  { key: "scale", label: "Can scale up" },
+  { key: "high", label: "High capacity" },
+];
+const READINESS = [
+  { key: "landing_pages", label: "Dedicated landing pages for paid traffic?" },
+  { key: "tracking", label: "Call + conversion tracking in place?" },
+  { key: "intake", label: "Intake calls leads back within minutes?" },
+  { key: "web_presence", label: "Site + claimed Google Business Profile?" },
+];
+const READINESS_ANSWERS = ["yes", "no", "unsure"] as const;
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
@@ -63,9 +76,13 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const [stateCode, setStateCode] = useState(seededState);
   const [dmaCode, setDmaCode] = useState<string>("");
   const [dmaOptions, setDmaOptions] = useState<DmaOption[]>([]);
-  const [budgetTier, setBudgetTier] = useState("75k_plus");
+  const [budgetTier, setBudgetTier] = useState("25k_75k");
   const [goal, setGoal] = useState(GOALS[0]);
   const [existingChannels, setExistingChannels] = useState<string[]>(["paid_search", "billboards"]);
+  const [intakeCapacity, setIntakeCapacity] = useState("scale");
+  const [goalContext, setGoalContext] = useState("");
+  const [currentAdNotes, setCurrentAdNotes] = useState("");
+  const [readiness, setReadiness] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +121,10 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
           budget_tier: budgetTier,
           goal,
           existing_channels: existingChannels,
+          intake_capacity: intakeCapacity,
+          goal_context: goalContext,
+          current_advertising_notes: currentAdNotes || undefined,
+          readiness,
         }),
       });
       const data = await res.json();
@@ -117,7 +138,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
     } finally {
       setLoading(false);
     }
-  }, [audience, caseTypes, stateCode, dmaCode, budgetTier, goal, existingChannels]);
+  }, [audience, caseTypes, stateCode, dmaCode, budgetTier, goal, existingChannels, intakeCapacity, goalContext, currentAdNotes, readiness]);
 
   const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
@@ -186,9 +207,46 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
             ))}
           </div>
         </Field>
+        <Field label="Intake capacity">
+          <div className="flex flex-wrap gap-2">
+            {INTAKE_OPTIONS.map((o) => (
+              <Pill key={o.key} active={intakeCapacity === o.key} onClick={() => setIntakeCapacity(o.key)}>{o.label}</Pill>
+            ))}
+          </div>
+        </Field>
+        <Field label="What does winning look like in 90 days? Anything off-limits?">
+          <textarea
+            value={goalContext}
+            onChange={(e) => setGoalContext(e.target.value)}
+            rows={3}
+            placeholder="e.g. 25 signed truck cases a quarter; we don't do billboards or daytime TV."
+            className="w-full rounded-lg border border-cloud px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="What are you running now, and what's working? (optional)">
+          <textarea
+            value={currentAdNotes}
+            onChange={(e) => setCurrentAdNotes(e.target.value)}
+            rows={2}
+            placeholder="e.g. Search converts well, TV didn't pay back."
+            className="w-full rounded-lg border border-cloud px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="Foundation check">
+          <div className="space-y-2">
+            {READINESS.map((q) => (
+              <div key={q.key} className="flex flex-wrap items-center gap-2">
+                <span className="min-w-[16rem] text-sm text-slate-gray">{q.label}</span>
+                {READINESS_ANSWERS.map((a) => (
+                  <Pill key={a} active={readiness[q.key] === a} onClick={() => setReadiness({ ...readiness, [q.key]: a })}>{pretty(a)}</Pill>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Field>
         <button
           onClick={generate}
-          disabled={loading || caseTypes.length === 0}
+          disabled={loading || caseTypes.length === 0 || !intakeCapacity || goalContext.trim() === ""}
           className="inline-flex items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
