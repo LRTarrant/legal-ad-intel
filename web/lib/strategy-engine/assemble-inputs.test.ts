@@ -103,3 +103,31 @@ test("unmatched dmaCode returns zero outlets, never the #1 DMA", async () => {
   assert.equal(inputs.outlets.length, 0, "unmatched dmaCode must yield zero outlets");
   assert.notEqual(inputs.top_dma_name, "Birmingham", "must not fall back to #1 DMA label");
 });
+
+test("forwards the selected DMA to the competitor RPC so the competitive field is market-scoped", async () => {
+  const rpcCalls: Array<{ fn: string; params?: Record<string, unknown> }> = [];
+  const builder = (rows: unknown[]) => {
+    const b: Record<string, unknown> = {};
+    for (const m of ["select", "contains", "order", "eq", "limit"]) b[m] = () => b;
+    (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
+    return b;
+  };
+  const sb = {
+    from: () => builder([]),
+    rpc: async (fn: string, params?: Record<string, unknown>) => {
+      rpcCalls.push({ fn, params });
+      return { data: [], error: null };
+    },
+  };
+
+  await assembleStrategyInputs(sb, "AL", { dmaCode: "691" });
+  const competitorCall = rpcCalls.find((c) => c.fn === "get_pi_competitors_by_dma");
+  assert.ok(competitorCall, "competitor RPC must be called");
+  assert.equal(competitorCall!.params?.p_dma_code, "691", "selected DMA must be forwarded");
+
+  // No DMA selected → statewide (NULL p_dma_code), not undefined.
+  rpcCalls.length = 0;
+  await assembleStrategyInputs(sb, "AL", {});
+  const statewideCall = rpcCalls.find((c) => c.fn === "get_pi_competitors_by_dma");
+  assert.equal(statewideCall!.params?.p_dma_code, null, "no DMA → null (statewide), not undefined");
+});

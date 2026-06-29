@@ -9,8 +9,9 @@
  * drops to "directional" rather than fabricating.
  *
  * Data sources (chosen after verifying what's actually populated for AL):
- *   - Advertiser landscape / the "Gorilla" → get_pi_competitors_by_dma(state):
- *     real, state-PI-specific firm activity by observation count. (The
+ *   - Advertiser landscape / the "Gorilla" → get_pi_competitors_by_dma(state,
+ *     dmaCode): real PI-firm activity, scoped to the selected DMA when one is
+ *     chosen (NULL dmaCode = statewide all-markets view). (The
  *     mass-tort get_top_advertisers_by_segment was the wrong table.)
  *   - Named outlets → media_outlets (by DMA market name) + broadcast_stations.
  *   - Local signal → get_state_accident_summary (FARS), rates only.
@@ -172,7 +173,11 @@ export async function assembleStrategyInputs(
     baselineRes,
     censusRes,
   ] = await Promise.allSettled([
-    supabase.rpc("get_pi_competitors_by_dma", { p_state: state }),
+    // Scope the competitive field to the selected market when one is chosen
+    // (NULL p_dma_code = all-markets/statewide view). Without this, picking a
+    // DMA still returned statewide competitors while white space + creatives
+    // were already market-scoped — an inconsistency.
+    supabase.rpc("get_pi_competitors_by_dma", { p_state: state, p_dma_code: opts.dmaCode ?? null }),
     supabase
       .from("dma_markets")
       .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
