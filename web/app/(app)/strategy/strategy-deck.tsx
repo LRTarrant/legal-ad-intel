@@ -21,6 +21,11 @@ const BORDER = "#DCE4ED";
 const MUTED = "#5C6E86";
 const LABEL = "#8696AC";
 const CHIP = "#E9EFF5";
+// Readiness "fix first" warning state (new): a restrained amber tint in the
+// DESIGN.md warning hue, kept quiet for a briefing surface. WARN_INK on
+// WARN_TINT clears WCAG AA (~7:1).
+const WARN_TINT = "#FBE9CC";
+const WARN_INK = "#8A5A00";
 
 const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
@@ -69,6 +74,18 @@ function statusPill(status: string) {
   }
   const cls = status === "defended" ? "bg-[#E7EDF3] text-[#44566E]" : "border border-[#C9D4E0] text-[#6B7C92]";
   return <span className={`rounded px-3 py-1 text-xs font-semibold capitalize ${cls}`}>{status}</span>;
+}
+
+/* Readiness gate: "fix first" carries a restrained warning tint (the firm said
+ * they lack it); "confirm" is a quiet neutral (unverified). Tinted-bg + darker-
+ * hue text mirrors statusPill; no loud alert red — quiet authority. */
+function readinessPill(missing: boolean) {
+  return missing ? (
+    // Warning tint (new semantic state; DESIGN.md warning hue, restrained for a briefing surface).
+    <span className="rounded px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide" style={{ background: WARN_TINT, color: WARN_INK }}>Fix first</span>
+  ) : (
+    <span className="rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide" style={{ background: CHIP, color: MUTED }}>Confirm</span>
+  );
 }
 
 export default function StrategyDeck({ data }: { data: any }) {
@@ -288,26 +305,24 @@ export default function StrategyDeck({ data }: { data: any }) {
       {/* 11b. BEFORE YOU SPEND A DOLLAR */}
       {(data.readiness ?? []).length > 0 ? (
         <Slide eyebrow="Before you spend a dollar" title="Foundation check" sub="A media plan is only as strong as the funnel it points at.">
-          <div className="space-y-2.5">
+          <div className="space-y-1">
             {(data.readiness ?? []).map((r: any, i: number) => {
               const missing = r.status === "missing";
               return (
-                <div key={i} className="flex items-start gap-3">
-                  <span
-                    className="mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-bold"
-                    style={missing ? { background: "#FEE2E2", color: "#B91C1C" } : { background: "#FEF3C7", color: "#92400E" }}
-                  >
-                    {missing ? "FIX FIRST" : "CONFIRM"}
-                  </span>
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: NAVY }}>{r.label}</div>
+                <div key={i} className="flex items-center gap-4 rounded-lg border-b px-3 py-3" style={{ borderColor: "#E0E7EF" }}>
+                  <div className="w-20 shrink-0">{readinessPill(missing)}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-base font-semibold" style={{ color: NAVY }}>{r.label}</div>
                     {(r.tactics ?? []).length > 0 ? (
-                      <div className="text-xs" style={{ color: MUTED }}>Needed for: {r.tactics.join(", ")}</div>
+                      <div className="mt-0.5 text-sm" style={{ color: MUTED }}>Needed for {r.tactics.join(", ")}</div>
                     ) : null}
                   </div>
                 </div>
               );
             })}
+          </div>
+          <div className="mt-3">
+            <span style={{ fontFamily: mono, color: LABEL }} className="text-[11px]">Close the “fix first” items before scaling spend; confirm the rest.</span>
           </div>
         </Slide>
       ) : null}
