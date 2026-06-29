@@ -79,6 +79,13 @@ function parseSelection(raw: string): RawSelection {
   return JSON.parse(stripJSONWrapper(raw)) as RawSelection;
 }
 
+/**
+ * Builds the full enriched strategist output from a tactic menu + model call.
+ *
+ * Invariant: the lowercased names in `groundingFacts.outletNames` must match
+ * the lowercased `.name` values in `outlets` — a name validated but absent
+ * from `outlets` is silently dropped at resolution.
+ */
 export async function buildStrategistOutput(args: {
   menu: TacticMenu;
   promptFacts: StrategistPromptFacts;

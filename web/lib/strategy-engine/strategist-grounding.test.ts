@@ -75,3 +75,32 @@ test("soft-strips an unknown format genre with a warning, still passes", () => {
     assert.ok(r.value.warnings.some((w) => /polka/.test(w)));
   }
 });
+
+test("rejects absolute reach in a tactic rationale", () => {
+  const raw = goodRaw();
+  raw.tactics[0].rationale = "Reaches 312,000 people per month.";
+  const r = validateSelection(raw, menu(), facts);
+  assert.equal(r.ok, false);
+});
+
+test("rejects an empty tactics array", () => {
+  const raw = goodRaw();
+  raw.tactics = [];
+  const r = validateSelection(raw, menu(), facts);
+  assert.equal(r.ok, false);
+});
+
+test("rejects a duplicate tactic key", () => {
+  const raw = goodRaw();
+  raw.tactics.push({ key: "google_search", rationale: "Duplicate entry." });
+  const r = validateSelection(raw, menu(), facts);
+  assert.equal(r.ok, false);
+});
+
+test("rejects a non-array format_call", () => {
+  const raw = goodRaw();
+  // Simulate a model returning a string instead of an array.
+  (raw.tactics[1] as unknown as Record<string, unknown>).format_call = "urban";
+  const r = validateSelection(raw, menu(), facts);
+  assert.equal(r.ok, false);
+});

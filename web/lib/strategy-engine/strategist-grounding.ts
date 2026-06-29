@@ -45,8 +45,14 @@ export function validateSelection(
     return { ok: false, errors: ["no tactics selected"] };
   }
 
+  const seenKeys = new Set<string>();
   const cleaned: RawSelectedTactic[] = [];
   for (const t of raw.tactics) {
+    if (seenKeys.has(t.key)) {
+      errors.push(`duplicate tactic key: ${t.key}`);
+      continue;
+    }
+    seenKeys.add(t.key);
     const scored = byKey.get(t.key);
     if (!scored) {
       errors.push(`unknown tactic key: ${t.key}`);
@@ -63,13 +69,17 @@ export function validateSelection(
         errors.push(`fabricated outlet: ${name}`);
       }
     }
-    // Soft-strip unknown format genres (low-risk).
-    let format_call = t.format_call;
-    if (format_call) {
-      const dims = new Set(scored.tactic.format_dimensions ?? []);
-      const bad = format_call.filter((f) => !dims.has(f));
-      if (bad.length) warnings.push(`dropped unknown formats for ${t.key}: ${bad.join(", ")}`);
-      format_call = format_call.filter((f) => dims.has(f));
+    // Soft-strip unknown format genres (low-risk); reject non-array format_call (hard error).
+    let format_call: string[] | undefined = undefined;
+    if (t.format_call !== undefined) {
+      if (!Array.isArray(t.format_call)) {
+        errors.push(`format_call must be an array for ${t.key}`);
+      } else {
+        const dims = new Set(scored.tactic.format_dimensions ?? []);
+        const bad = t.format_call.filter((f) => !dims.has(f));
+        if (bad.length) warnings.push(`dropped unknown formats for ${t.key}: ${bad.join(", ")}`);
+        format_call = t.format_call.filter((f) => dims.has(f));
+      }
     }
     cleaned.push({ ...t, format_call });
   }
