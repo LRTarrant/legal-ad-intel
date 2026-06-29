@@ -74,3 +74,29 @@ test("classifyGoal maps free text and defaults to max_volume", () => {
   assert.equal(classifyGoal("defend our market share"), "defend");
   assert.equal(classifyGoal("something unclassifiable"), "max_volume");
 });
+
+import { budgetTierToMonthlyUsd, isAffordable, recommendedTacticCount, TACTIC_LIBRARY as LIB } from "./tactics";
+
+test("a $2k budget funds search/SEO but not radio or TV", () => {
+  const search = LIB.find((t) => t.key === "google_search")!;
+  const radio = LIB.find((t) => t.key === "radio")!;
+  const tv = LIB.find((t) => t.key === "linear_tv")!;
+  assert.equal(isAffordable(search, 2000), true);
+  assert.equal(isAffordable(radio, 2000), false);
+  assert.equal(isAffordable(tv, 2000), false);
+});
+
+test("concentration rule keeps low budgets focused", () => {
+  assert.equal(recommendedTacticCount(2000), 1);
+  assert.equal(recommendedTacticCount(8000), 2);
+  assert.equal(recommendedTacticCount(50000), 6); // capped
+  assert.ok(recommendedTacticCount(500) >= 1);    // floor
+});
+
+test("budget tiers map to representative monthly USD", () => {
+  assert.ok(budgetTierToMonthlyUsd("under_10k") < budgetTierToMonthlyUsd("10k_25k"));
+  assert.ok(budgetTierToMonthlyUsd("25k_75k") < budgetTierToMonthlyUsd("75k_plus"));
+  // legacy tiers still resolve (used by the current interview until Plan 4)
+  assert.ok(budgetTierToMonthlyUsd("under_25k") > 0);
+  assert.ok(budgetTierToMonthlyUsd("unknown_tier") > 0); // safe default, never 0
+});
