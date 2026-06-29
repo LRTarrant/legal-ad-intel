@@ -281,9 +281,9 @@ export interface StateFeatureFlags {
    */
   showPedBikeCard?: boolean;
   /**
-   * Use the larger numbered section headings ("01  Overview", text-2xl) instead
-   * of the small uppercase eyebrow dividers. Defaults to off (eyebrow). Set true
-   * to opt in (Alabama; slated to become the default for all states).
+   * Use the larger numbered section headings ("01  Overview", text-2xl). This is
+   * the DEFAULT for all states; set false to fall back to the small uppercase
+   * eyebrow dividers.
    */
   numberedSectionHeadings?: boolean;
 }

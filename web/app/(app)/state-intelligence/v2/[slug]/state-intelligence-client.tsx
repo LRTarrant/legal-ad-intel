@@ -282,9 +282,9 @@ export function StateIntelligenceClient({
   const showCrashEmbeds =
     features.showCrashEmbeds ??
     (config.crashEmbeds != null && config.crashEmbeds.length > 0);
-  // Large numbered section headings vs the small eyebrow dividers. Opt-in today
-  // (Alabama); slated to become the default for all states.
-  const numberedHeadings = features.numberedSectionHeadings === true;
+  // Large numbered section headings (01–06) are the default for all states;
+  // set numberedSectionHeadings:false to fall back to the small eyebrow dividers.
+  const numberedHeadings = features.numberedSectionHeadings !== false;
   const failedDatasets = data.failedDatasets ?? [];
 
   useEffect(() => {
