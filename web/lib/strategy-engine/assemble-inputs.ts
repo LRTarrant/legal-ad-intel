@@ -151,7 +151,7 @@ export interface AssembleResult {
 export async function assembleStrategyInputs(
   supabase: SupabaseLike,
   stateAbbr: string,
-  opts: { tortSlug?: string; tortLabel?: string } = {},
+  opts: { tortSlug?: string; tortLabel?: string; dmaCode?: string | null } = {},
 ): Promise<AssembleResult> {
   const state = stateAbbr.toUpperCase();
   const stateName = STATE_NAMES[state] ?? state;
@@ -261,13 +261,17 @@ export async function assembleStrategyInputs(
     // Columbus GA that merely touch the state).
     const inState = rows.filter((r) => String(r.primary_state ?? "") === state);
     const ordered = inState.length > 0 ? inState : rows;
+    const selected = opts.dmaCode
+      ? ordered.find((r) => String(r.dma_code ?? "").trim() === opts.dmaCode)
+      : undefined;
     for (const r of ordered) {
       const display = String(r.display_name ?? r.full_name ?? "").trim();
       if (display) dmaNames.push(display);
     }
-    if (ordered[0]) {
-      topDmaName = String(ordered[0].display_name ?? ordered[0].full_name ?? "").trim() || null;
-      topDmaCode = String(ordered[0].dma_code ?? "").trim() || null;
+    const labelRow = selected ?? ordered[0];
+    if (labelRow) {
+      topDmaName = String(labelRow.display_name ?? labelRow.full_name ?? "").trim() || null;
+      topDmaCode = String(labelRow.dma_code ?? "").trim() || null;
     }
   } else if (dmaRes.status === "rejected") {
     errors.push("dma_markets fetch failed");
@@ -432,7 +436,9 @@ export async function assembleStrategyInputs(
   /* named outlets (media_outlets scoped to DMA + broadcast_stations) -------- */
   const outlets: NamedOutlet[] = [];
   const outletSeen = new Set<string>();
-  const dmaNameSet = new Set(dmaNames.map((d) => d.toLowerCase()));
+  // When a market is selected, scope strictly to it; else allow all state DMAs.
+  const scopedDmaNames = topDmaName && opts.dmaCode ? [topDmaName] : dmaNames;
+  const dmaNameSet = new Set(scopedDmaNames.map((d) => d.toLowerCase()));
   if (outletsRes.status === "fulfilled" && !outletsRes.value.error) {
     const rows = (outletsRes.value.data as Array<Record<string, unknown>>) ?? [];
     for (const r of rows) {
@@ -464,6 +470,10 @@ export async function assembleStrategyInputs(
       if (!error && Array.isArray(data)) {
         for (const r of data as Array<Record<string, unknown>>) {
           if (r.active === false) continue;
+          if (opts.dmaCode && topDmaName) {
+            const stationDma = String(r.nielsen_dma ?? "").trim().toLowerCase();
+            if (stationDma !== topDmaName.toLowerCase()) continue; // strict in-market
+          }
           const name = String(r.call_sign ?? "").trim();
           const ch = formatToChannel(String(r.service_type ?? ""), name);
           if (!ch || !name || outletSeen.has(name)) continue;

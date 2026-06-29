@@ -1,0 +1,76 @@
+/**
+ * Unit tests for assembleStrategyInputs market scoping.
+ * Run with: npx tsx --test lib/strategy-engine/assemble-inputs.test.ts
+ */
+import test from "node:test";
+import assert from "node:assert/strict";
+import { assembleStrategyInputs } from "./assemble-inputs.ts";
+
+/** Minimal chainable Supabase mock. Each table/rpc returns canned rows. */
+function mockSupabase(tables: Record<string, unknown[]>, rpcs: Record<string, unknown[]> = {}) {
+  const builder = (rows: unknown[]) => {
+    const b: Record<string, unknown> = {};
+    for (const m of ["select", "contains", "order", "eq", "limit"]) {
+      b[m] = () => b;
+    }
+    // Awaiting the builder resolves to { data, error }.
+    (b as { then: unknown }).then = (resolve: (v: unknown) => void) =>
+      resolve({ data: rows, error: null });
+    return b;
+  };
+  return {
+    from: (table: string) => builder(tables[table] ?? []),
+    rpc: async (fn: string) => ({ data: rpcs[fn] ?? [], error: null }),
+  };
+}
+
+test("scopes media_outlets to the selected DMA, not the whole state", async () => {
+  const sb = mockSupabase(
+    {
+      dma_markets: [
+        { dma_code: "630", display_name: "Birmingham", full_name: "Birmingham AL", rank: 44, states_covered: ["AL"], primary_state: "AL" },
+        { dma_code: "691", display_name: "Huntsville", full_name: "Huntsville AL", rank: 81, states_covered: ["AL"], primary_state: "AL" },
+      ],
+      media_outlets: [
+        { call_sign: "WBHM", media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Birmingham" },
+        { call_sign: "WLOR", media_company: "y", media_format: "Audio", media_type: "", format_genre: "Urban", market: "Huntsville" },
+      ],
+      media_consumption_baseline: [],
+      media_profiles: [],
+      census_demographics: [],
+    },
+    { get_pi_competitors_by_dma: [], get_state_accident_summary: [] },
+  );
+
+  const { inputs } = await assembleStrategyInputs(sb, "AL", { dmaCode: "691" });
+
+  const markets = inputs.outlets.map((o) => o.name);
+  assert.ok(markets.includes("WLOR"), "Huntsville outlet present");
+  assert.ok(!markets.includes("WBHM"), "Birmingham outlet must NOT appear for a Huntsville selection");
+  assert.equal(inputs.top_dma_name, "Huntsville");
+});
+
+test("broadcast_stations backfill stays in the selected DMA", async () => {
+  const sb = mockSupabase(
+    {
+      dma_markets: [
+        { dma_code: "630", display_name: "Birmingham", full_name: "Birmingham AL", rank: 44, states_covered: ["AL"], primary_state: "AL" },
+        { dma_code: "691", display_name: "Huntsville", full_name: "Huntsville AL", rank: 81, states_covered: ["AL"], primary_state: "AL" },
+      ],
+      media_outlets: [], // force the broadcast backfill (outlets.length < 6)
+      broadcast_stations: [
+        { call_sign: "WVTM", service_type: "TV", community_city: "Birmingham", network_affil: "NBC", nielsen_dma: "Birmingham", active: true },
+        { call_sign: "WAFF", service_type: "TV", community_city: "Huntsville", network_affil: "NBC", nielsen_dma: "Huntsville", active: true },
+      ],
+      media_consumption_baseline: [],
+      media_profiles: [],
+      census_demographics: [],
+    },
+    { get_pi_competitors_by_dma: [], get_state_accident_summary: [] },
+  );
+
+  const { inputs } = await assembleStrategyInputs(sb, "AL", { dmaCode: "691" });
+  const names = inputs.outlets.map((o) => o.name);
+  assert.ok(names.includes("WAFF"), "Huntsville station present");
+  assert.ok(!names.includes("WVTM"), "Birmingham station must NOT backfill for a Huntsville selection");
+});
