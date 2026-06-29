@@ -1,10 +1,13 @@
 import { alaskaConfig } from "./alaska";
 import { arizonaConfig } from "./arizona";
 import { arkansasConfig } from "./arkansas";
+import { californiaConfig } from "./california";
 import { coloradoConfig } from "./colorado";
 import { connecticutConfig } from "./connecticut";
 import { delawareConfig } from "./delaware";
 import { districtOfColumbiaConfig } from "./district-of-columbia";
+import { floridaConfig } from "./florida";
+import { georgiaConfig } from "./georgia";
 import { hawaiiConfig } from "./hawaii";
 import { idahoConfig } from "./idaho";
 import { illinoisConfig } from "./illinois";
@@ -58,10 +61,13 @@ export const STATE_CONFIGS: Record<string, StateConfig> = {
   alaska: alaskaConfig,
   arizona: arizonaConfig,
   arkansas: arkansasConfig,
+  california: californiaConfig,
   colorado: coloradoConfig,
   connecticut: connecticutConfig,
   delaware: delawareConfig,
   "district-of-columbia": districtOfColumbiaConfig,
+  florida: floridaConfig,
+  georgia: georgiaConfig,
   hawaii: hawaiiConfig,
   idaho: idahoConfig,
   illinois: illinoisConfig,

@@ -205,6 +205,11 @@ export interface StateContent {
   /** Boating card: recommended media mix. */
   boatingMedia?: string;
 
+  /** Pedestrian/Bicycle card: audience description (CA — replaces Boating). */
+  pedBikeAudience?: string;
+  /** Pedestrian/Bicycle card: recommended media mix (CA — replaces Boating). */
+  pedBikeMedia?: string;
+
   /** Section: Rural/urban divide. Why rural fatalities matter. */
   ruralUrbanContext?: string;
 
@@ -261,6 +266,20 @@ export interface StateFeatureFlags {
   showInjuryTable?: boolean;
   /** Defaults to (crashEmbeds != null) */
   showCrashEmbeds?: boolean;
+  /**
+   * Render the native FARS "Crash Intelligence" charts section (yearly
+   * fatality trend, top-10 counties, fatalities-by-crash-type). Defaults to
+   * off; set true to opt in (GA). Requires the page to fetch farsYearlyTrend
+   * / farsTopCounties — null-safe when the data is absent.
+   */
+  showCrashIntelligence?: boolean;
+  /**
+   * Render the Pedestrian/Bicycle case-type card in place of the Boating card
+   * (CA). Defaults to off. When true, the Boating card is suppressed for this
+   * state and the Ped/Bike card is driven by trafficStats.pedestrianFatalities
+   * / bicycleFatalities / hitAndRunFatalCrashes + content.pedBikeAudience/Media.
+   */
+  showPedBikeCard?: boolean;
 }
 
 export interface StateConfig {
