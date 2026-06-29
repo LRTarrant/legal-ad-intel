@@ -60,7 +60,7 @@ export function BuildCampaignLink({ variant, size = "md", tone = "outline" }: Bu
   return (
     <Link
       href={href}
-      className={`inline-flex items-center rounded-lg font-semibold transition ${toneClasses} ${sizeClasses}`}
+      className={`inline-flex items-center rounded-lg font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-intelligence-teal focus-visible:ring-offset-2 ${toneClasses} ${sizeClasses}`}
     >
       <Megaphone className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
       {label} →

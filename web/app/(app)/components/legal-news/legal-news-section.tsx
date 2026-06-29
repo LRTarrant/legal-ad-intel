@@ -382,7 +382,7 @@ function Carousel({
                 i === current
                   ? "w-5 bg-intelligence-teal"
                   : hero
-                    ? "w-1.5 bg-white/20 hover:bg-white/40"
+                    ? "w-1.5 bg-white/30 hover:bg-white/50"
                     : "w-1.5 bg-cloud hover:bg-slate-gray/40"
               }`}
             />
@@ -545,6 +545,11 @@ export function LegalNewsSection({
     </div>
   );
 
+  /* Only claim "Live" when there's actually live data on the block. Across the
+     ~40 states this template serves, many start with an empty or still-filling
+     feed; a pulsing green LIVE dot over an empty box would be dishonest. */
+  const live = !!(items && items.length > 0);
+
   /* ---- Hero presentation (Alabama Design D) ---- */
   if (hero) {
     return (
@@ -555,11 +560,17 @@ export function LegalNewsSection({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2" aria-hidden>
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                  {live && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
+                  )}
+                  <span
+                    className={`relative inline-flex h-2 w-2 rounded-full ${
+                      live ? "bg-emerald-400" : "bg-white/40"
+                    }`}
+                  />
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/90">
-                  Live · The signal behind your ad spend
+                  {live ? "Live · The signal behind your ad spend" : "Recent legal activity"}
                 </span>
               </div>
               <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/65">
@@ -567,7 +578,7 @@ export function LegalNewsSection({
                 live case-acquisition and timing signal behind your campaigns.
               </p>
               {items && items.length > 0 && (
-                <p className="mt-2 text-[11px] font-medium text-white/45">
+                <p className="mt-2 text-[11px] font-medium text-white/65">
                   Last 30 days · {items.length} {items.length === 1 ? "item" : "items"}
                 </p>
               )}
@@ -578,7 +589,7 @@ export function LegalNewsSection({
           <div className="mt-5">{body}</div>
 
           {items && items.length > 0 && (
-            <p className="mt-4 text-[11px] leading-relaxed text-white/40">
+            <p className="mt-4 text-[11px] leading-relaxed text-white/60">
               Single-incident PI only (no mass torts). Headlines aggregated from public
               news and government sources; click any card to read the original. Not legal
               advice.
