@@ -74,3 +74,32 @@ test("broadcast_stations backfill stays in the selected DMA", async () => {
   assert.ok(names.includes("WAFF"), "Huntsville station present");
   assert.ok(!names.includes("WVTM"), "Birmingham station must NOT backfill for a Huntsville selection");
 });
+
+test("unmatched dmaCode returns zero outlets, never the #1 DMA", async () => {
+  const sb = mockSupabase(
+    {
+      dma_markets: [
+        { dma_code: "630", display_name: "Birmingham", full_name: "Birmingham AL", rank: 44, states_covered: ["AL"], primary_state: "AL" },
+        { dma_code: "691", display_name: "Huntsville", full_name: "Huntsville AL", rank: 81, states_covered: ["AL"], primary_state: "AL" },
+      ],
+      media_outlets: [
+        { call_sign: "WBHM", media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Birmingham" },
+        { call_sign: "WLOR", media_company: "y", media_format: "Audio", media_type: "", format_genre: "Urban", market: "Huntsville" },
+      ],
+      broadcast_stations: [
+        { call_sign: "WVTM", service_type: "TV", community_city: "Birmingham", network_affil: "NBC", nielsen_dma: "Birmingham", active: true },
+        { call_sign: "WAFF", service_type: "TV", community_city: "Huntsville", network_affil: "NBC", nielsen_dma: "Huntsville", active: true },
+      ],
+      media_consumption_baseline: [],
+      media_profiles: [],
+      census_demographics: [],
+    },
+    { get_pi_competitors_by_dma: [], get_state_accident_summary: [] },
+  );
+
+  // dmaCode "999" does not exist in dma_markets
+  const { inputs } = await assembleStrategyInputs(sb, "AL", { dmaCode: "999" });
+
+  assert.equal(inputs.outlets.length, 0, "unmatched dmaCode must yield zero outlets");
+  assert.notEqual(inputs.top_dma_name, "Birmingham", "must not fall back to #1 DMA label");
+});
