@@ -22,7 +22,7 @@ import { trackStateViewed } from "@/lib/analytics";
 import { CompetitiveAnalysis } from "../../../components/competitive/competitive-analysis-section";
 import { StateCrashEmbed } from "@/components/state-intelligence/StateCrashEmbed";
 import { StateInjuryTable } from "@/components/state-intelligence/StateInjuryTable";
-import type { StateConfig } from "@/lib/state-config";
+import type { StateConfig, CustomInsight } from "@/lib/state-config";
 import {
   CountyIntelligenceMap,
   FARS_DATA_YEARS,
@@ -501,7 +501,7 @@ export function StateIntelligenceClient({
           data={config.injuryData.rows}
           years={config.injuryData.years}
           latestCompleteYear={config.injuryData.latestYear}
-          partialYearLabels={{ 2025: "(Jan\u2013Sept)" }}
+          partialYearLabels={config.injuryData.partialYearLabels ?? { 2025: "(Jan\u2013Sept)" }}
           sourceLabel={config.injuryData.sourceName}
           sourceUrl={config.injuryData.sourceUrl}
         />
@@ -920,6 +920,13 @@ export function StateIntelligenceClient({
           sources
         </p>
 
+        {content.customInsights && content.customInsights.length > 0 ? (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {content.customInsights.map((ins, i) => (
+              <CustomInsightCard key={i} insight={ins} />
+            ))}
+          </div>
+        ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -986,6 +993,7 @@ export function StateIntelligenceClient({
             </p>
           </div>
         </div>
+        )}
       </div>
 
       {/* ============================================================ */}
@@ -1048,6 +1056,46 @@ export function StateIntelligenceClient({
           USCG Boating Accidents, Judicial Profile Data.
         </p>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Custom cross-signal insight card (Phase 3 legacy-migration)        */
+/*  Renders a bespoke insight: tone-tinted border, icon + title,       */
+/*  optional stat-lines, and a "so what" body.                         */
+/* ------------------------------------------------------------------ */
+
+const INSIGHT_TONE_BORDER: Record<string, string> = {
+  teal: "border-intelligence-teal/30",
+  emerald: "border-emerald-200",
+  red: "border-red-200",
+  amber: "border-amber-200",
+  steel: "border-steel-blue/30",
+};
+
+function CustomInsightCard({ insight }: { insight: CustomInsight }) {
+  const border = INSIGHT_TONE_BORDER[insight.tone ?? ""] ?? "border-cloud";
+  return (
+    <div className={`rounded-lg border bg-white p-5 shadow-sm ${border}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">{insight.icon ?? "🔎"}</span>
+        <h3 className="text-sm font-bold text-midnight-navy">{insight.title}</h3>
+      </div>
+      {insight.stats && insight.stats.length > 0 && (
+        <div className="mb-2.5 space-y-1">
+          {insight.stats.map((s, i) => (
+            <div
+              key={i}
+              className="flex items-baseline justify-between gap-2 text-[11px]"
+            >
+              <span className="text-slate-gray">{s.label}</span>
+              <span className="font-semibold text-midnight-navy">{s.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-[11px] leading-relaxed text-midnight-navy/70">{insight.body}</p>
     </div>
   );
 }

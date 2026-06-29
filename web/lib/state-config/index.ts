@@ -118,5 +118,6 @@ export type {
   StateInjuryData,
   CrashEmbed,
   StateContent,
+  CustomInsight,
   StateFeatureFlags,
 } from "./_types";
