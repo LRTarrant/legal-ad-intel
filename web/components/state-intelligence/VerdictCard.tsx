@@ -22,6 +22,17 @@ export function ScoreChip({ band }: { band: ViabilityBand }) {
   );
 }
 
+export interface VerdictCardProps {
+  /** Hex color for the 3px top accent rule (e.g. a viz-band color). */
+  top: string;
+  label: string;
+  value: string;
+  valueSuffix?: string;
+  chip: string;
+  chipTone: ChipTone;
+  note: string;
+}
+
 /**
  * Decision-first "verdict" card: a colored top rule, a label, a big value,
  * a tone chip, and a one-line "so what". The signature element of the
@@ -35,16 +46,7 @@ export function VerdictCard({
   chip,
   chipTone,
   note,
-}: {
-  /** Hex color for the 3px top accent rule (e.g. a viz-band color). */
-  top: string;
-  label: string;
-  value: string;
-  valueSuffix?: string;
-  chip: string;
-  chipTone: ChipTone;
-  note: string;
-}) {
+}: VerdictCardProps) {
   return (
     <div
       className="rounded-xl border border-cloud bg-white px-4.5 py-4 shadow-sm"

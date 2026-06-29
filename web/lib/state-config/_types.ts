@@ -99,6 +99,23 @@ export interface StateContent {
   /** Hero section subtitle / lede paragraph. */
   heroSubtitle?: string;
 
+  /**
+   * Design-D hero headline override. Plain text; when omitted the shared
+   * StateHero renders the templated default ("We turn where accidents
+   * actually happen…"). Hand-written copy wins when present.
+   */
+  heroTagline?: string;
+
+  /** Verdict card override: PI-viability "so what" note. Falls back to a
+   *  score/component-derived default. */
+  viabilityNote?: string;
+  /** Verdict card override: top-opportunity note. Falls back to a
+   *  case-volume-derived default. */
+  topOpportunityNote?: string;
+  /** Verdict card override: competition note (e.g. named firms). Falls back to
+   *  a derived note from the tracked competitor field. */
+  competitionNote?: string;
+
   /** Section: Legal landscape. Negligence rule, SOL, damages caps. ~3-5 sentences. */
   legalLandscape?: string;
 
