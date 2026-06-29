@@ -198,6 +198,15 @@ export interface IntegratedAllocation {
   pct: number;
 }
 
+export interface ReadinessItem {
+  /** Human-readable foundation item, e.g. "Dedicated landing pages for paid traffic". */
+  label: string;
+  /** "missing" = the firm said they don't have it; "confirm" = unverified. */
+  status: "missing" | "confirm";
+  /** Tactic labels that depend on this foundation. */
+  tactics: string[];
+}
+
 export interface Strategy {
   brand: StrategyBrand;
   audience: Voice;
@@ -218,6 +227,8 @@ export interface Strategy {
   };
   recommendations: Recommendation[];
   watch_list: WatchItem[];
+  /** Foundation gaps for the selected tactics — the "before you spend a dollar" gate. */
+  readiness: ReadinessItem[];
   integrated_plan: {
     allocation: IntegratedAllocation[];
     cadence: string;

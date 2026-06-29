@@ -148,6 +148,20 @@ export function standaloneStrategyToSlides(s: Strategy): SlideSpec[] {
     bullets: [s.prose?.channel_narrative].filter(Boolean) as string[],
   });
 
+  // 10b. Before you spend a dollar (readiness) — only when there are items.
+  const readiness = s.readiness ?? [];
+  if (readiness.length > 0) {
+    slides.push({
+      kicker: "Before you spend a dollar",
+      heading: "Foundation check",
+      table: {
+        columns: ["Foundation item", "Status", "Needed for"],
+        rows: readiness.map((r) => [r.label, r.status === "missing" ? "Fix first" : "Confirm", r.tactics.join(", ")]),
+      },
+      footnote: "A media plan is only as strong as the funnel it points at — close these before scaling spend.",
+    });
+  }
+
   // 11. Handoff
   slides.push({
     kicker: "Handoff",

@@ -43,6 +43,7 @@ import {
   strategistToRecommendations,
   strategistToAllocation,
   strategistToProse,
+  strategistToReadiness,
 } from "@/lib/strategy-engine/strategist-to-strategy";
 
 export const runtime = "nodejs";
@@ -311,6 +312,7 @@ export async function POST(req: NextRequest) {
     },
     recommendations,
     watch_list,
+    readiness: strategistToReadiness(strategistOut, menu),
     integrated_plan: {
       allocation: strategistToAllocation(strategistOut),
       cadence: "always_on",
