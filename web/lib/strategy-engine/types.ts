@@ -178,6 +178,8 @@ export interface StrategyInputs {
   /** Primary DMA used as the market key for channel tables. */
   top_dma_name: string | null;
   local_signal: LocalSignal | null;
+  /** Short demographic steer for format/language choices, or null. */
+  demographic_note: string | null;
   available: InputAvailability;
 }
 
