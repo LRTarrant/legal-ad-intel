@@ -61,6 +61,8 @@ import {
 } from "@/components/state-intelligence/state-verdict";
 import { viabilityBand } from "@/components/state-intelligence/viability";
 import { StateLegalViability } from "@/components/state-intelligence/state-legal-viability";
+import { SectionHeading } from "@/components/state-intelligence/SectionHeading";
+import { DataHealthBanner } from "@/components/state-intelligence/DataHealthBanner";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -181,6 +183,10 @@ export interface StateIntelligenceData {
   /** Native FARS charts — only rendered when features.showCrashIntelligence. */
   farsYearlyTrend?: FARSYearlyTrendRow[];
   farsTopCounties?: FARSTopCountyRow[];
+  /** Human-readable labels of datasets whose server fetch failed. When non-empty
+   *  the page shows a DataHealthBanner so a partially-zeroed page is never read
+   *  as "no activity". Absent/empty = all fetches succeeded. */
+  failedDatasets?: string[];
 }
 
 /* Section anchors, shared by the sticky desktop nav and the mobile jump menu.
@@ -217,6 +223,39 @@ function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
+/**
+ * Section header. Renders the larger numbered heading ("01  Overview") when
+ * `numbered` is set, else the small uppercase eyebrow divider. Both carry the
+ * section `id` + `scroll-mt-20` so the sticky-nav anchors keep working.
+ */
+function SectionDivider({
+  id,
+  n,
+  label,
+  numbered,
+}: {
+  id?: string;
+  n: number;
+  label: string;
+  numbered: boolean;
+}) {
+  if (numbered) {
+    return (
+      <div id={id} className="scroll-mt-20 pt-2">
+        <SectionHeading n={n} title={label} />
+      </div>
+    );
+  }
+  return (
+    <div id={id} className="flex items-center gap-3 pt-2 scroll-mt-20">
+      <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+        {label}
+      </h2>
+      <div className="h-px flex-1 bg-cloud" />
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -243,6 +282,10 @@ export function StateIntelligenceClient({
   const showCrashEmbeds =
     features.showCrashEmbeds ??
     (config.crashEmbeds != null && config.crashEmbeds.length > 0);
+  // Large numbered section headings vs the small eyebrow dividers. Opt-in today
+  // (Alabama); slated to become the default for all states.
+  const numberedHeadings = features.numberedSectionHeadings === true;
+  const failedDatasets = data.failedDatasets ?? [];
 
   useEffect(() => {
     trackStateViewed({
@@ -387,6 +430,13 @@ export function StateIntelligenceClient({
   return (
     <div className="space-y-8">
       {/* ============================================================ */}
+      {/* DATA-HEALTH BANNER (only when a server fetch actually failed) */}
+      {/* ============================================================ */}
+      {failedDatasets.length > 0 && (
+        <DataHealthBanner stateName={config.stateName} failed={failedDatasets} />
+      )}
+
+      {/* ============================================================ */}
       {/* STICKY CONTEXT BAR                                           */}
       {/* ============================================================ */}
       <StateStickyBar
@@ -429,12 +479,12 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div id="overview" className="flex items-center gap-3 pt-2 scroll-mt-20">
-        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
-          Overview
-        </h2>
-        <div className="h-px flex-1 bg-cloud" />
-      </div>
+      <SectionDivider
+        id="overview"
+        n={1}
+        label="Overview"
+        numbered={numberedHeadings}
+      />
 
       {/* ============================================================ */}
       {/* 2. STATE SNAPSHOT                                            */}
@@ -856,12 +906,12 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div id="legal" className="flex items-center gap-3 pt-2 scroll-mt-20">
-        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
-          Legal Landscape &amp; PI Viability
-        </h2>
-        <div className="h-px flex-1 bg-cloud" />
-      </div>
+      <SectionDivider
+        id="legal"
+        n={2}
+        label="Legal Landscape & PI Viability"
+        numbered={numberedHeadings}
+      />
 
       {/* ============================================================ */}
       {/* 4. LEGAL LANDSCAPE & PI VIABILITY (shared Design-D card)    */}
@@ -1225,12 +1275,12 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div className="flex items-center gap-3 pt-2">
-        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
-          Competitive Analysis
-        </h2>
-        <div className="h-px flex-1 bg-cloud" />
-      </div>
+      <SectionDivider
+        id="competition"
+        n={3}
+        label="Competitive Analysis"
+        numbered={numberedHeadings}
+      />
 
       {/* ============================================================ */}
       {/* COMPETITIVE ANALYSIS (PI-firm competition, DMA-filtered)    */}
@@ -1244,12 +1294,12 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div id="strategy" className="flex items-center gap-3 pt-2 scroll-mt-20">
-        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
-          Strategy
-        </h2>
-        <div className="h-px flex-1 bg-cloud" />
-      </div>
+      <SectionDivider
+        id="strategy"
+        n={4}
+        label="Strategy"
+        numbered={numberedHeadings}
+      />
 
       {/* ============================================================ */}
       {/* STRATEGY CLOSER — "Ready to act on this?" → Strategy Engine  */}
@@ -1259,12 +1309,12 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div id="signals" className="flex items-center gap-3 pt-2 scroll-mt-20">
-        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
-          Signals
-        </h2>
-        <div className="h-px flex-1 bg-cloud" />
-      </div>
+      <SectionDivider
+        id="signals"
+        n={5}
+        label="Signals"
+        numbered={numberedHeadings}
+      />
 
       {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
@@ -1375,7 +1425,13 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       <div id="sources" className="rounded-lg bg-white p-6 shadow-sm border scroll-mt-20">
         <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
+          {numberedHeadings ? (
+            <span className="font-mono text-xs font-semibold tabular-nums text-slate-gray">
+              06
+            </span>
+          ) : (
+            <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
+          )}
           <h2 className="font-heading text-2xl font-bold text-midnight-navy">
             Sources &amp; Methodology
           </h2>

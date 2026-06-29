@@ -280,6 +280,12 @@ export interface StateFeatureFlags {
    * / bicycleFatalities / hitAndRunFatalCrashes + content.pedBikeAudience/Media.
    */
   showPedBikeCard?: boolean;
+  /**
+   * Use the larger numbered section headings ("01  Overview", text-2xl) instead
+   * of the small uppercase eyebrow dividers. Defaults to off (eyebrow). Set true
+   * to opt in (Alabama; slated to become the default for all states).
+   */
+  numberedSectionHeadings?: boolean;
 }
 
 export interface StateConfig {

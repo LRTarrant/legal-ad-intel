@@ -1,3 +1,4 @@
+import { alabamaConfig } from "./alabama";
 import { alaskaConfig } from "./alaska";
 import { arizonaConfig } from "./arizona";
 import { arkansasConfig } from "./arkansas";
@@ -58,6 +59,7 @@ import type { StateConfig } from "./_types";
  * /app/(app)/state-intelligence/{slug}/ during the migration period.
  */
 export const STATE_CONFIGS: Record<string, StateConfig> = {
+  alabama: alabamaConfig,
   alaska: alaskaConfig,
   arizona: arizonaConfig,
   arkansas: arkansasConfig,

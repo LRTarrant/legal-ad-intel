@@ -139,6 +139,9 @@ export interface StateIntelligencePageData {
   /** Native FARS charts — only rendered when features.showCrashIntelligence. */
   farsYearlyTrend?: FARSYearlyTrendRow[];
   farsTopCounties?: FARSTopCountyRow[];
+  /** Human-readable labels of datasets whose fetch rejected (for the
+   *  DataHealthBanner). Empty/absent = every fetch succeeded. */
+  failedDatasets?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -555,6 +558,25 @@ export default async function StateIntelligencePage({
       results[11].reason,
     );
 
+  // Surface which core datasets failed so the client can show a DataHealthBanner
+  // instead of a misleading all-zeros page. Indices match the Promise.allSettled
+  // order above; the GA-only FARS fetches + the self-handling competitor count
+  // are intentionally excluded.
+  const DATASET_LABELS: [number, string][] = [
+    [0, "Accident & crash data"],
+    [1, "Rural/urban comparison"],
+    [2, "Storm events"],
+    [3, "Boating accidents"],
+    [4, "PI viability scores"],
+    [5, "Census demographics"],
+    [6, "Metro demographics"],
+    [7, "Judicial profiles"],
+    [8, "Storm count"],
+  ];
+  const failedDatasets = DATASET_LABELS.filter(
+    ([i]) => results[i].status === "rejected",
+  ).map(([, label]) => label);
+
   const pageData: StateIntelligencePageData = {
     accidentSummary,
     ruralUrban,
@@ -568,6 +590,7 @@ export default async function StateIntelligencePage({
     competition: { count: competitorCount },
     farsYearlyTrend,
     farsTopCounties,
+    failedDatasets,
   };
 
   console.log(
