@@ -175,7 +175,7 @@ const ACTIVE_MDLS: NavItem[] = [
 const STATE_PROFILES: NavItem[] = [
   { label: "Alabama", href: "/state-intelligence/alabama", Icon: MapPin },
   { label: "Alaska", href: "/state-intelligence/v2/alaska", Icon: MapPin },
-  { label: "Arizona", href: "/state-intelligence/arizona", Icon: MapPin },
+  { label: "Arizona", href: "/state-intelligence/v2/arizona", Icon: MapPin },
   { label: "Arkansas", href: "/state-intelligence/v2/arkansas", Icon: MapPin },
   { label: "California", href: "/state-intelligence/california", Icon: MapPin },
   { label: "Colorado", href: "/state-intelligence/v2/colorado", Icon: MapPin },
