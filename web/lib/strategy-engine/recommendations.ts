@@ -22,6 +22,7 @@
  */
 
 import { CHANNEL_LABELS } from "./types";
+export { CHANNEL_LABELS };
 import type { ChannelKey, ChannelPlan, NamedOutlet, PlannedChannel } from "./types";
 
 /* ── Inputs (built by the API route from the Layer RPCs) ─────────────────── */

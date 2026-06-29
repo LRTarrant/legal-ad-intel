@@ -2,16 +2,14 @@
  * POST /api/strategy/generate
  *
  * The standalone Strategy Engine endpoint. Re-assembles the market inputs
- * SERVER-SIDE (never trusting the client), runs the deterministic core
- * (scorer → channel planner → recommendation assembler), asks gpt-4o to NARRATE
- * the fixed plan in the chosen voice, and returns the contract `Strategy`
- * object the deck renders.
- *
- * Reuses the proven state-page engine route for auth / entitlement / LLM / cost,
- * and adds the two PR-1 layer RPCs + buildRecommendations + composeStrategy.
+ * SERVER-SIDE (never trusting the client), builds the tactic menu, runs the
+ * grounded AI strategist (gpt-5.5 via STRATEGIST_MODEL) to SELECT tactics and
+ * WRITE prose, maps the output into the deck's contract Strategy shape, and
+ * returns it. Competitive landscape, opportunity counties, brand, and handoff
+ * remain deterministic. The AI selects + writes; code owns every number.
  *
  * Errors: 400 invalid input · 401 unauth · 403 entitlement · 422 no data ·
- *         502 LLM/validation · 504 LLM timeout.
+ *         502 grounding failure · 504 LLM timeout · 500 config/internal.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -23,20 +21,10 @@ import {
 import { DemoModeAccessDenied, readDemoModeOverride } from "@/lib/admin/demo-mode";
 import { trackCall } from "@/lib/cost-tracking/tracker";
 import { assembleStrategyInputs } from "@/lib/strategy-engine/assemble-inputs";
-import { detectGorilla, scoreArchetypes } from "@/lib/strategy-engine/archetypes";
-import { buildStrategyPlan } from "@/lib/strategy-engine/channel-plan";
-import { buildRecommendations } from "@/lib/strategy-engine/recommendations";
 import type { MeasuredChannel, OpportunityCounty } from "@/lib/strategy-engine/recommendations";
-import {
-  STRATEGY_SYSTEM_PROMPT,
-  buildStrategyUserPrompt,
-  stripJSONWrapper,
-  validateStrategyProse,
-} from "@/lib/strategy-engine/prompt";
 import {
   buildCompetitiveChannels,
   buildHandoff,
-  buildIntegratedPlan,
   leadMetricFor,
   primaryTort,
   validateInterview,
@@ -45,6 +33,15 @@ import {
   type StrategyInterviewRequest,
 } from "@/lib/strategy-engine/standalone";
 import type { ChannelKey } from "@/lib/strategy-engine/types";
+import { buildTacticMenu } from "@/lib/strategy-engine/tactic-scoring";
+import { classifyGoal, budgetTierToMonthlyUsd } from "@/lib/strategy-engine/tactics";
+import { buildStrategistOutput, GroundingError } from "@/lib/strategy-engine/strategist";
+import { createOpenAICallModel, resolveStrategistModel } from "@/lib/strategy-engine/openai-strategist";
+import {
+  strategistToRecommendations,
+  strategistToAllocation,
+  strategistToProse,
+} from "@/lib/strategy-engine/strategist-to-strategy";
 
 export const runtime = "nodejs";
 
@@ -199,74 +196,64 @@ export async function POST(req: NextRequest) {
     : null;
   const marketLabel = dmaLabel ?? oppCounties[0]?.cbsa_title ?? `${inputs.state_name} statewide`;
 
-  // ── Deterministic core ───────────────────────────────────────────────────
-  const gorilla = detectGorilla(inputs.top_advertisers);
-  const scored = scoreArchetypes(inputs);
-  const chosen = scored.find((a) => !a.locked_out) ?? scored[0];
-  const plan = buildStrategyPlan(inputs, chosen, gorilla);
+  // ── Build the tactic menu (deterministic) ───────────────────────────────────
+  const budgetMonthlyUsd = budgetTierToMonthlyUsd(body.budget_tier);
+  const menu = buildTacticMenu(inputs, { goal: classifyGoal(body.goal), budgetMonthlyUsd });
 
-  const { recommendations, watch_list } = buildRecommendations(
-    plan.channel_plan,
-    { counties: oppCounties, market_label: marketLabel, lead_metric: leadMetric, fars_year_min: farsYearMin, fars_year_max: farsYearMax },
-    measured,
-  );
-
-  // ── LLM (writer only) ─────────────────────────────────────────────────────
+  // ── Run the grounded strategist (AI selects + writes; code owns numbers) ─────
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "OPENAI_API_KEY not configured" }, { status: 500 });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   const llmStartedAt = Date.now();
-  let llmData: {
-    choices?: Array<{ message?: { content?: string } }>;
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
-  };
+  let strategistOut;
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.4,
-        max_tokens: 1100,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: STRATEGY_SYSTEM_PROMPT },
-          { role: "user", content: buildStrategyUserPrompt(plan, body.audience) },
-        ],
-      }),
-      signal: controller.signal,
+    strategistOut = await buildStrategistOutput({
+      menu,
+      promptFacts: {
+        market_label: marketLabel,
+        tort_label: tortLabel,
+        voice: body.audience,
+        goal_text: body.goal,
+        recommended_tactic_count: menu.recommended_tactic_count,
+        outlets: inputs.outlets,
+        advertisers: inputs.top_advertisers,
+        demographic_note: undefined, // 4b populates from richer interview/demographic mix
+      },
+      groundingFacts: { outletNames: new Set(inputs.outlets.map((o) => o.name.toLowerCase())) },
+      outlets: inputs.outlets,
+      foundation: {}, // 4b populates from the readiness interview answers
+      confidence: menu.market_opportunity_intensity != null ? "moderate" : "directional",
+      callModel: createOpenAICallModel({ apiKey, signal: controller.signal }),
     });
-    clearTimeout(timeout);
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      console.error("OpenAI error (strategy):", response.status, errText);
-      return NextResponse.json({ error: "AI service unavailable" }, { status: 502 });
-    }
-    llmData = await response.json();
   } catch (err) {
     clearTimeout(timeout);
     if (err instanceof DOMException && err.name === "AbortError") {
       return NextResponse.json({ error: "AI service timed out" }, { status: 504 });
     }
-    console.error("strategy generate error:", err);
+    if (err instanceof GroundingError) {
+      return NextResponse.json({ error: "AI response failed validation", errors: err.errors }, { status: 502 });
+    }
+    console.error("strategist error:", err);
     return NextResponse.json({ error: "Internal error generating strategy" }, { status: 500 });
   }
-
+  clearTimeout(timeout);
   const latency_ms = Date.now() - llmStartedAt;
-  const rawContent = llmData.choices?.[0]?.message?.content?.trim();
-  if (!rawContent) return NextResponse.json({ error: "Empty AI response" }, { status: 502 });
 
-  let parsedJson: unknown;
-  try {
-    parsedJson = JSON.parse(stripJSONWrapper(rawContent));
-  } catch {
-    return NextResponse.json({ error: "AI returned invalid JSON" }, { status: 502 });
-  }
-  const proseResult = validateStrategyProse(parsedJson);
-  if (!proseResult.ok) {
-    return NextResponse.json({ error: "AI response failed validation", errors: proseResult.errors }, { status: 502 });
+  const mapFacts = {
+    market_label: marketLabel,
+    top_advertiser: inputs.top_advertisers[0]?.name ?? null,
+    opportunity_intensity: menu.market_opportunity_intensity,
+  };
+  const recommendations = strategistToRecommendations(strategistOut, menu, mapFacts);
+  const watch_list: { channel: ChannelKey; reason: string }[] = [];
+
+  if (recommendations.length === 0) {
+    return NextResponse.json(
+      { error: "The strategist returned no usable tactics for this market/budget." },
+      { status: 422 },
+    );
   }
 
   const tracked = await trackCall(supabase, {
@@ -274,14 +261,11 @@ export async function POST(req: NextRequest) {
     firm_id: null,
     purpose: "strategy_engine",
     provider: "openai",
-    model: "gpt-4o",
+    model: resolveStrategistModel(),
     called_from: "api/strategy/generate",
-    usage: {
-      input_tokens: llmData.usage?.prompt_tokens ?? 0,
-      output_tokens: llmData.usage?.completion_tokens ?? 0,
-    },
+    usage: { input_tokens: 0, output_tokens: 0 }, // token usage not surfaced by the adapter in 4a
     latency_ms,
-    meta: { state, tort: tortSlug, audience: body.audience, archetype: chosen.key, confidence: plan.confidence },
+    meta: { state, tort: tortSlug, audience: body.audience, tactics: strategistOut.briefs.length, confidence: strategistOut.confidence },
   });
 
   // ── Compose the contract Strategy object ──────────────────────────────────
@@ -321,14 +305,14 @@ export async function POST(req: NextRequest) {
     recommendations,
     watch_list,
     integrated_plan: {
-      allocation: buildIntegratedPlan(plan.channel_plan),
-      cadence: plan.channel_plan.cadence,
-      funnel_emphasis: plan.channel_plan.funnel,
+      allocation: strategistToAllocation(strategistOut),
+      cadence: "always_on",
+      funnel_emphasis: classifyGoal(body.goal) === "brand" ? "brand_led" : "conversion_led",
     },
     handoff: buildHandoff(tortSlug, body.dma_code ?? null, recommendations, stateDmas),
-    prose: proseResult.value,
-    confidence: plan.confidence,
-    data_warnings: dataErrors,
+    prose: strategistToProse(strategistOut, mapFacts),
+    confidence: strategistOut.confidence,
+    data_warnings: [...dataErrors, ...strategistOut.warnings],
     cost_cents: tracked.cost_cents ?? null,
   };
   return NextResponse.json(payload);
