@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   AlertTriangle,
   Scale,
   Car,
@@ -43,6 +41,19 @@ import {
   GEOMETRY_LOADERS,
   type GeometryModule,
 } from "@/lib/data/state-geometry/registry";
+import { LegalNewsSection } from "../../../components/legal-news/legal-news-section";
+import {
+  StateStickyBar,
+  StateHero,
+  PipelineStrip,
+  VerdictRow,
+  StrategyCloserCTA,
+} from "@/components/state-intelligence/state-top-of-page";
+import {
+  deriveStateVerdictCards,
+  negligenceMeta,
+} from "@/components/state-intelligence/state-verdict";
+import { viabilityBand } from "@/components/state-intelligence/viability";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -145,7 +156,20 @@ export interface StateIntelligenceData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
+  competition: { count: number };
 }
+
+/* Section anchors, shared by the sticky desktop nav and the mobile jump menu.
+   Activity (the lifted live carousel) leads, above Overview. */
+const SECTION_NAV: [string, string][] = [
+  ["#activity", "Activity"],
+  ["#overview", "Overview"],
+  ["#legal", "Legal"],
+  ["#competition", "Competition"],
+  ["#strategy", "Strategy"],
+  ["#signals", "Signals"],
+  ["#sources", "Sources"],
+];
 
 // State-specific stats blocks (TDOSHS / BLS / COMMUTE) and crash-embed iframes
 // now come from `config` per state. See lib/state-config/_types.ts.
@@ -299,47 +323,86 @@ export function StateIntelligenceClient({
   /* -- PI viability bar chart data -- */
   const piData = data.piViability;
 
-  /* -- Major TN metros -- */
-  const MAJOR_METROS = ["Nashville", "Memphis", "Knoxville", "Chattanooga"];
+  /* -- Design-D top-of-page derivations -- */
+  const composite = piData ? Number(piData.composite_score) || 0 : 0;
+  const band = viabilityBand(composite);
+  const neg = negligenceMeta(piData?.negligence_rule ?? null);
+
+  const componentScores = piData
+    ? [
+        { name: "Negligence rule", score: piData.negligence_score ?? 0 },
+        { name: "Non-economic caps", score: piData.non_economic_score ?? 0 },
+        { name: "Punitive caps", score: piData.punitive_score ?? 0 },
+        { name: "Med-mal caps", score: piData.med_mal_score ?? 0 },
+        { name: "Statute of limitations", score: piData.sol_score ?? 0 },
+        { name: "Jury verdicts", score: piData.verdict_score ?? 0 },
+      ]
+    : [];
+
+  const verdictCards = deriveStateVerdictCards({
+    composite,
+    negligenceRule: piData?.negligence_rule ?? null,
+    componentScores,
+    caseTypes: [
+      { label: "Motor Vehicle", noun: "MVA", value: mvaDeaths, topCounties: top5MVA.map((r) => r.county) },
+      { label: "Large Truck", noun: "truck", value: totalTruckDeaths, topCounties: top5Truck.map((r) => r.county) },
+      { label: "Motorcycle", noun: "motorcycle", value: totalMotoDeaths, topCounties: top5Moto.map((r) => r.county) },
+    ],
+    competitorNames: [],
+    competitorCount: data.competition?.count ?? 0,
+    overrides: {
+      viabilityNote: content.viabilityNote,
+      topOpportunityNote: content.topOpportunityNote,
+      competitionNote: content.competitionNote,
+    },
+  });
 
   return (
     <div className="space-y-8">
       {/* ============================================================ */}
-      {/* 1. STATE HEADER                                              */}
+      {/* STICKY CONTEXT BAR                                           */}
       {/* ============================================================ */}
-      <div>
-        <Link
-          href="/overview"
-          className="text-sm text-slate-gray hover:text-midnight-navy"
-        >
-          <span className="flex items-center gap-1">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Overview
-          </span>
-        </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="font-heading text-3xl font-bold text-midnight-navy">
-            {config.stateName}
-          </h1>
-          {piData?.negligence_rule && (
-            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-600">
-              {formatNegligenceRule(piData.negligence_rule)}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 text-lg text-slate-gray">
-          State Intelligence Report
-        </p>
-        <p className="mt-1 text-sm text-slate-gray max-w-3xl">
-          {content.heroSubtitle ??
-            `Cross-signal intelligence for plaintiff firm advertising and case acquisition in ${config.stateName} — combining accident data, demographics, judicial profiles, crash dashboards, and market opportunity signals across MVA, trucking, motorcycle, construction, and boating.`}
-        </p>
-      </div>
+      <StateStickyBar
+        stateName={config.stateName}
+        negligenceShort={neg.short}
+        negligenceTone={neg.tone}
+        composite={composite || "—"}
+        viabilityTone={band.tone}
+        nav={SECTION_NAV}
+      />
+
+      {/* ============================================================ */}
+      {/* HERO (Design D — strategy-primary CTAs)                     */}
+      {/* ============================================================ */}
+      <StateHero
+        stateName={config.stateName}
+        stateCode={config.stateCode}
+        negligenceLabel={piData?.negligence_rule ? neg.full : undefined}
+        negligenceTone={neg.tone}
+        tagline={content.heroTagline}
+        subtitle={content.heroSubtitle}
+      />
+
+      {/* ============================================================ */}
+      {/* LIVE CAROUSEL — dark "live feed" hero. Empty-honest for      */}
+      {/* sparse states (static dot + "Recent legal activity").       */}
+      {/* ============================================================ */}
+      <LegalNewsSection stateName={config.stateName} stateCode={config.stateCode} hero />
+
+      {/* ============================================================ */}
+      {/* PIPELINE STRIP — process map (CTAs live in the hero)        */}
+      {/* ============================================================ */}
+      <PipelineStrip />
+
+      {/* ============================================================ */}
+      {/* THE VERDICT — auto-derived 4-card row                       */}
+      {/* ============================================================ */}
+      <VerdictRow cards={verdictCards} />
 
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div className="flex items-center gap-3 pt-2">
+      <div id="overview" className="flex items-center gap-3 pt-2 scroll-mt-20">
         <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
           Overview
         </h2>
@@ -521,7 +584,7 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* GROUP HEADER                                                */}
       {/* ============================================================ */}
-      <div className="flex items-center gap-3 pt-2">
+      <div id="legal" className="flex items-center gap-3 pt-2 scroll-mt-20">
         <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
           Legal Landscape &amp; PI Viability
         </h2>
@@ -981,6 +1044,31 @@ export function StateIntelligenceClient({
       />
 
       {/* ============================================================ */}
+      {/* GROUP HEADER                                                */}
+      {/* ============================================================ */}
+      <div id="strategy" className="flex items-center gap-3 pt-2 scroll-mt-20">
+        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+          Strategy
+        </h2>
+        <div className="h-px flex-1 bg-cloud" />
+      </div>
+
+      {/* ============================================================ */}
+      {/* STRATEGY CLOSER — "Ready to act on this?" → Strategy Engine  */}
+      {/* ============================================================ */}
+      <StrategyCloserCTA stateName={config.stateName} stateCode={config.stateCode} />
+
+      {/* ============================================================ */}
+      {/* GROUP HEADER                                                */}
+      {/* ============================================================ */}
+      <div id="signals" className="flex items-center gap-3 pt-2 scroll-mt-20">
+        <h2 className="font-heading text-xs font-bold uppercase tracking-wider text-slate-gray">
+          Signals
+        </h2>
+        <div className="h-px flex-1 bg-cloud" />
+      </div>
+
+      {/* ============================================================ */}
       {/* 13. CROSS-SIGNAL INSIGHT CARDS                               */}
       {/* ============================================================ */}
       <div className="rounded-lg border border-intelligence-teal/20 bg-gradient-to-br from-intelligence-teal/[0.04] to-white p-6 shadow-sm">
@@ -1079,7 +1167,7 @@ export function StateIntelligenceClient({
       {/* ============================================================ */}
       {/* 14. SOURCES & METHODOLOGY                                    */}
       {/* ============================================================ */}
-      <div className="rounded-lg bg-white p-6 shadow-sm border">
+      <div id="sources" className="rounded-lg bg-white p-6 shadow-sm border scroll-mt-20">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4.5 h-4.5 text-intelligence-teal" />
           <h2 className="font-heading text-2xl font-bold text-midnight-navy">

@@ -119,6 +119,8 @@ export interface StateIntelligencePageData {
   msaDemographics: MSADemographicsRow[];
   judicialProfiles: JudicialProfileRow[];
   stormCount: number;
+  /** Tracked PI-firm count for the "Competition" verdict card level. */
+  competition: { count: number };
 }
 
 /* ------------------------------------------------------------------ */
@@ -254,6 +256,24 @@ async function fetchStormCount(stateName: string): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Count of tracked PI-firm competitors for the state (all markets), used to
+ * derive the "Competition" verdict-card level. Same RPC the client-side
+ * Competitive Analysis section uses; we only need the row count here, so a
+ * thin server call keeps the verdict card filled even before the client
+ * section hydrates. Sparse states return 0 → an "Open field" card.
+ */
+async function fetchCompetitorCount(stateCode: string): Promise<number> {
+  const supabase = getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("get_pi_competitors_by_dma", {
+    p_state: stateCode,
+    p_dma_code: null,
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data.length : 0;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Page component                                                     */
 /* ------------------------------------------------------------------ */
@@ -294,6 +314,7 @@ export default async function StateIntelligencePage({
   let msaDemographics: MSADemographicsRow[] = [];
   let judicialRows: JudicialProfileRow[] = [];
   let stormCount = 0;
+  let competitorCount = 0;
 
   const results = await Promise.allSettled([
     fetchRpc<AccidentSummaryRow>("get_state_accident_summary", {
@@ -313,6 +334,7 @@ export default async function StateIntelligencePage({
     fetchMSADemographics(stateCode),
     getJudicialProfiles(stateCode),
     fetchStormCount(stateName),
+    fetchCompetitorCount(stateCode),
   ]);
 
   if (results[0].status === "fulfilled") {
@@ -392,6 +414,13 @@ export default async function StateIntelligencePage({
       results[8].reason,
     );
 
+  if (results[9].status === "fulfilled") competitorCount = results[9].value;
+  else
+    console.error(
+      `[${stateCode}] fetchCompetitorCount failed:`,
+      results[9].reason,
+    );
+
   const pageData: StateIntelligencePageData = {
     accidentSummary,
     ruralUrban,
@@ -402,6 +431,7 @@ export default async function StateIntelligencePage({
     msaDemographics,
     judicialProfiles: judicialRows,
     stormCount,
+    competition: { count: competitorCount },
   };
 
   console.log(
