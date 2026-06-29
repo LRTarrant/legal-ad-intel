@@ -15,6 +15,7 @@ export function createOpenAICallModel(opts: {
   apiKey: string;
   signal?: AbortSignal;
   maxOutputTokens?: number;
+  onUsage?: (u: { input_tokens: number; output_tokens: number }) => void;
 }): CallModel {
   return async (messages) => {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -32,7 +33,16 @@ export function createOpenAICallModel(opts: {
       const body = await res.text().catch(() => "");
       throw new Error(`OpenAI ${res.status}: ${body.slice(0, 300)}`);
     }
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }>; usage?: unknown };
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    if (opts.onUsage && data.usage) {
+      opts.onUsage({
+        input_tokens: data.usage.prompt_tokens ?? 0,
+        output_tokens: data.usage.completion_tokens ?? 0,
+      });
+    }
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) throw new Error("OpenAI returned empty content");
     return content;
