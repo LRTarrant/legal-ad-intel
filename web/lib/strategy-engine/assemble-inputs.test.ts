@@ -10,9 +10,9 @@ import { assembleStrategyInputs, normalizeDmaName } from "./assemble-inputs";
 function mockSupabase(tables: Record<string, unknown[]>, rpcs: Record<string, unknown[]> = {}) {
   const builder = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
-    // "range" is required by the paginated media_outlets fetch; the canned row
-    // count is < 1000 so the pagination loop breaks after one page.
-    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) {
+    // The market-scoped media_outlets fetch chains .or().order().limit(); the mock
+    // returns all canned rows (the in-memory normalizeDmaName match does the filtering).
+    for (const m of ["select", "contains", "order", "eq", "limit", "range", "or"]) {
       b[m] = () => b;
     }
     // Awaiting the builder resolves to { data, error }.
@@ -110,7 +110,7 @@ test("forwards the selected DMA to the competitor RPC so the competitive field i
   const rpcCalls: Array<{ fn: string; params?: Record<string, unknown> }> = [];
   const builder = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
-    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) b[m] = () => b;
+    for (const m of ["select", "contains", "order", "eq", "limit", "range", "or"]) b[m] = () => b;
     (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
     return b;
   };
@@ -197,41 +197,36 @@ test("Portland-OR selection excludes a Portland, ME outlet (no cross-state leak)
   assert.ok(!names.includes("WCSH"), "Portland, ME outlet must NOT leak into a Portland, OR selection");
 });
 
-test("media_outlets pagination reaches rows past the first 1000-row page, ordered stably", async () => {
-  // Page 1 = 1000 non-matching rows; the only matching outlet lives on page 2.
-  // If pagination stops at page 1 (the old capped bug) it's unreachable; if the
-  // range() loop lacks a stable .order it can skip it nondeterministically.
-  const page1 = Array.from({ length: 1000 }, (_, i) => ({
-    call_sign: `N${i}`, media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Nowhere",
-  }));
-  const all = [
-    ...page1,
-    { call_sign: "WPG2", media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Pageville" },
-  ];
-
-  let orderedBeforeRange = false;
-  let sawSecondPage = false;
+test("media_outlets fetched market-scoped (not whole-table); Nielsen variant matches the short DMA label", async () => {
+  // The fetch must (a) scope server-side to the selected market via .or(ilike) so
+  // it never pulls the whole table, and (b) still match a Nielsen-variant DB market
+  // ("Dallas-Ft.Worth") to the short DMA display label ("Dallas") via full_name +
+  // normalizeDmaName — while excluding out-of-market rows.
+  let orFilter: string | null = null;
   const mediaOutletsBuilder = () => {
-    let ordered = false;
     const b: Record<string, unknown> = {};
     b.select = () => b;
-    b.order = (col: string) => { ordered = col === "id"; return b; };
-    b.range = (from: number, to: number) => {
-      if (ordered) orderedBeforeRange = true;
-      if (from >= 1000) sawSecondPage = true;
-      const slice = all.slice(from, to + 1);
-      return { then: (resolve: (v: unknown) => void) => resolve({ data: slice, error: null }) };
-    };
+    b.or = (f: string) => { orFilter = f; return b; };
+    b.order = () => b;
+    b.limit = () => b;
+    (b as { then: unknown }).then = (resolve: (v: unknown) => void) =>
+      resolve({
+        data: [
+          { call_sign: "KSCS", media_company: "x", media_format: "Audio", media_type: "", format_genre: "Country", market: "Dallas-Ft.Worth" },
+          { call_sign: "WOTH", media_company: "y", media_format: "Audio", media_type: "", format_genre: "News", market: "Houston" },
+        ],
+        error: null,
+      });
     return b;
   };
   const passthrough = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
-    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) b[m] = () => b;
+    for (const m of ["select", "contains", "order", "eq", "limit", "range", "or"]) b[m] = () => b;
     (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
     return b;
   };
   const tables: Record<string, unknown[]> = {
-    dma_markets: [{ dma_code: "999", display_name: "Pageville", full_name: "Pageville", rank: 1, states_covered: ["ZZ"], primary_state: "ZZ" }],
+    dma_markets: [{ dma_code: "623", display_name: "Dallas", full_name: "Dallas-Ft. Worth", rank: 1, states_covered: ["TX"], primary_state: "TX" }],
     media_consumption_baseline: [], media_profiles: [], census_demographics: [], broadcast_stations: [],
   };
   const sb = {
@@ -239,8 +234,9 @@ test("media_outlets pagination reaches rows past the first 1000-row page, ordere
     rpc: async () => ({ data: [], error: null }),
   };
 
-  const { inputs } = await assembleStrategyInputs(sb, "ZZ", { dmaCode: "999" });
-  assert.ok(sawSecondPage, "pagination must request rows beyond the first 1000-row page");
-  assert.ok(orderedBeforeRange, "range() must be preceded by a stable .order('id')");
-  assert.ok(inputs.outlets.some((o) => o.name === "WPG2"), "an outlet that only exists on page 2 must be reachable");
+  const { inputs } = await assembleStrategyInputs(sb, "TX", { dmaCode: "623" });
+  assert.ok(orFilter !== null && /market\.ilike\.Dallas\*/i.test(orFilter), "fetch is scoped server-side by the Dallas market prefix");
+  const names = inputs.outlets.map((o) => o.name);
+  assert.ok(names.includes("KSCS"), "Nielsen variant 'Dallas-Ft.Worth' matches the short 'Dallas' DMA label via full_name");
+  assert.ok(!names.includes("WOTH"), "out-of-market 'Houston' outlet excluded");
 });
