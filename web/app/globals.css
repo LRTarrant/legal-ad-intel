@@ -11,12 +11,23 @@
   /* Neutral */
   --color-charcoal: #1E1E2E;
   --color-slate-gray: #6B7280;
+  --color-slate-400: #94a3b8;
+  --color-slate-200: #e2e8f0;
   --color-cloud: #F1F5F9;
   --color-white: #FFFFFF;
+  /* Deep navy ramp (hero/rail gradients) */
+  --color-navy-700: #0F2035;
+  --color-navy-600: #0A2A3C;
   /* Semantic */
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-alert: #EF4444;
+
+  /* Font + motion aliases used in inline styles (DM Sans / Inter / JetBrains via next/font) */
+  --font-heading: var(--font-dm-sans), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
 
   --background: #F1F5F9;
   --foreground: #1E1E2E;
@@ -84,4 +95,36 @@ html {
 }
 @media (prefers-reduced-motion: reduce) {
   .mc-bar-fill { animation: none; }
+}
+
+/* JetBrains Mono helper for numerals (spend, counts, percentages). */
+.lmi-mono {
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Strategy Engine intake — entrance + micro-interactions ──
+   Transform-only so opacity stays 1: content never blanks if the
+   animation is paused (background tab), printed, or reduced-motion. */
+@keyframes lmiRise   { from { transform: translateY(18px); } to { transform: translateY(0); } }
+@keyframes lmiRailIn { from { transform: translateX(-18px); } to { transform: none; } }
+@keyframes lmiPop    { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
+@keyframes lmiBlink  { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes lmiPulse  { 0% { box-shadow: 0 0 0 0 rgba(79,184,196,.55); } 70% { box-shadow: 0 0 0 7px rgba(79,184,196,0); } 100% { box-shadow: 0 0 0 0 rgba(79,184,196,0); } }
+
+.rise     { animation: lmiRise .62s cubic-bezier(.16,.8,.3,1) both; }
+.railin   { animation: lmiRailIn .72s cubic-bezier(.16,.8,.3,1) both; }
+.chip-pop { animation: lmiPop .32s cubic-bezier(.16,.8,.3,1) both; }
+.pulse-dot { animation: lmiPulse 2.2s ease-out infinite; }
+.caret {
+  display: inline-block; width: 2px; height: 1.05em; background: var(--color-light-teal);
+  margin-left: 1px; vertical-align: -2px; animation: lmiBlink 1s steps(1) infinite;
+}
+.cta { transition: transform 160ms, box-shadow 160ms; }
+.cta:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 10px 22px -6px rgba(26,140,150,.6); }
+.cta:not(:disabled):active { transform: translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .railin, .chip-pop { animation: none !important; }
+  .caret { animation: none; }
 }

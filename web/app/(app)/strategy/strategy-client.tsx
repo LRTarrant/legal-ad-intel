@@ -1,19 +1,49 @@
 "use client";
 
 /**
- * Strategy Engine — interview + result (v1, PR 3a).
+ * Strategy Engine — interview + result.
  *
- * One-screen interview (mostly pills) → POST /api/strategy/generate → a plain,
- * source-tagged readout of the returned Strategy object. The designed 12-slide
- * deck + white-label brand land in PR 3b; this proves the pipeline end-to-end
- * (the Montgomery FARS number must render live, not a placeholder).
+ * "The Analyst's Brief" redesign: a navy intelligence rail (live typewriter
+ * brief + a deliverables list that reorders to the user's picks) beside a calm,
+ * numbered carded form with a sticky generate bar. The interview POSTs to
+ * /api/strategy/generate, which re-assembles inputs server-side; the returned
+ * Strategy renders in <StrategyDeck/> below the panel. Field values stay in the
+ * backend's slug vocabulary (trucking, paid_search, 25k_75k, …); display labels
+ * + icons are looked up only for the UI. Reduced-motion safe.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import {
+  Anchor,
+  ArrowLeft,
+  ArrowRight,
+  Bike,
+  Car,
+  Check,
+  ChevronDown,
+  HardHat,
+  HeartPulse,
+  Loader2,
+  MapPin,
+  PhoneCall,
+  RadioTower,
+  Truck,
+  UserRound,
+  Wallet,
+} from "lucide-react";
 import StrategyDeck from "./strategy-deck";
 
 type Voice = "firm" | "agency" | "seller";
+type LucideIcon = ComponentType<{ size?: number | string; className?: string; style?: React.CSSProperties }>;
 
 interface DmaOption {
   dma_code: string;
@@ -25,36 +55,398 @@ const AUDIENCES: { key: Voice; label: string }[] = [
   { key: "firm", label: "Law firm" },
   { key: "seller", label: "Media seller" },
 ];
+
 const CASE_TYPES = ["trucking", "auto", "motorcycle", "nursing_home", "workers_comp", "boating"];
+const CASE_META: Record<string, { label: string; Icon: LucideIcon }> = {
+  trucking: { label: "Trucking", Icon: Truck },
+  auto: { label: "Auto", Icon: Car },
+  motorcycle: { label: "Motorcycle", Icon: Bike },
+  nursing_home: { label: "Nursing Home", Icon: HeartPulse },
+  workers_comp: { label: "Workers Comp", Icon: HardHat },
+  boating: { label: "Boating", Icon: Anchor },
+};
+
 const BUDGET_TIERS = [
-  { key: "under_10k", label: "Under $10K/mo" },
-  { key: "10k_25k", label: "$10K–$25K/mo" },
-  { key: "25k_75k", label: "$25K–$75K/mo" },
-  { key: "75k_plus", label: "$75K+/mo" },
+  { key: "under_10k", label: "Under $10K/mo", range: "<$10K" },
+  { key: "10k_25k", label: "$10K–$25K/mo", range: "$10–25K" },
+  { key: "25k_75k", label: "$25K–$75K/mo", range: "$25–75K" },
+  { key: "75k_plus", label: "$75K+/mo", range: "$75K+" },
 ];
+
 const GOALS = ["More qualified signups", "Lower cost per case", "Brand awareness", "Enter a new market", "Defend share"];
-const CHANNELS = ["paid_search", "broadcast_tv", "billboards", "radio", "social", "ctv"];
+
+const CHANNELS: { key: string; label: string }[] = [
+  { key: "paid_search", label: "Paid Search" },
+  { key: "broadcast_tv", label: "Broadcast TV" },
+  { key: "billboards", label: "Billboards" },
+  { key: "radio", label: "Radio" },
+  { key: "social", label: "Social" },
+  { key: "ctv", label: "CTV" },
+];
+
 const INTAKE_OPTIONS = [
   { key: "steady", label: "Steady flow" },
   { key: "scale", label: "Can scale up" },
   { key: "high", label: "High capacity" },
 ];
+
 const READINESS = [
   { key: "landing_pages", label: "Dedicated landing pages for paid traffic?" },
   { key: "tracking", label: "Call + conversion tracking in place?" },
   { key: "intake", label: "Intake calls leads back within minutes?" },
   { key: "web_presence", label: "Site + claimed Google Business Profile?" },
 ];
-const READINESS_ANSWERS = ["yes", "no", "unsure"] as const;
+const READINESS_ANSWERS: { v: "yes" | "no" | "unsure"; label: string; dot: string }[] = [
+  { v: "yes", label: "Yes", dot: "var(--color-success)" },
+  { v: "no", label: "No", dot: "var(--color-alert)" },
+  { v: "unsure", label: "Unsure", dot: "var(--color-slate-gray)" },
+];
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
   "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
+const STATE_NAMES: Record<string, string> = {
+  AL:"Alabama", AK:"Alaska", AZ:"Arizona", AR:"Arkansas", CA:"California", CO:"Colorado", CT:"Connecticut",
+  DE:"Delaware", FL:"Florida", GA:"Georgia", HI:"Hawaii", ID:"Idaho", IL:"Illinois", IN:"Indiana", IA:"Iowa",
+  KS:"Kansas", KY:"Kentucky", LA:"Louisiana", ME:"Maine", MD:"Maryland", MA:"Massachusetts", MI:"Michigan",
+  MN:"Minnesota", MS:"Mississippi", MO:"Missouri", MT:"Montana", NE:"Nebraska", NV:"Nevada", NH:"New Hampshire",
+  NJ:"New Jersey", NM:"New Mexico", NY:"New York", NC:"North Carolina", ND:"North Dakota", OH:"Ohio",
+  OK:"Oklahoma", OR:"Oregon", PA:"Pennsylvania", RI:"Rhode Island", SC:"South Carolina", SD:"South Dakota",
+  TN:"Tennessee", TX:"Texas", UT:"Utah", VT:"Vermont", VA:"Virginia", WA:"Washington", WV:"West Virginia",
+  WI:"Wisconsin", WY:"Wyoming", DC:"District of Columbia",
+};
 
-function pretty(s: string): string {
-  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const EYEBROW: React.CSSProperties = {
+  fontFamily: "var(--font-heading)",
+  fontSize: 11,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.16em",
+};
+
+// ── Typewriter that retypes only from the point of change ────
+function TypedBrief({ segments }: { segments: { t: string; teal?: boolean }[] }) {
+  const full = useMemo(() => segments.map((s) => s.t).join(""), [segments]);
+  const colors = useMemo(() => {
+    const a: boolean[] = [];
+    segments.forEach((s) => {
+      for (let i = 0; i < s.t.length; i++) a.push(!!s.teal);
+    });
+    return a;
+  }, [segments]);
+  const [reduce] = useState(
+    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const [n, setN] = useState(0);
+  const prev = useRef("");
+
+  useEffect(() => {
+    // Reduced motion: render the whole brief at once, no typing.
+    if (reduce) {
+      prev.current = full;
+      return;
+    }
+    // Keep the longest common prefix with the previous brief, type the rest.
+    const a = prev.current;
+    let cp = 0;
+    while (cp < a.length && cp < full.length && a[cp] === full[cp]) cp++;
+    let cur = cp;
+    let id: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      cur += 1;
+      setN(cur);
+      if (cur < full.length) id = setTimeout(tick, 15);
+      else prev.current = full;
+    };
+    // Kick off asynchronously so no setState runs synchronously in the effect body.
+    id = setTimeout(() => {
+      setN(cp);
+      if (cp < full.length) id = setTimeout(tick, 110);
+      else prev.current = full;
+    }, 0);
+    return () => clearTimeout(id);
+  }, [full, reduce]);
+
+  const out: ReactNode[] = [];
+  const lim = reduce ? full.length : Math.min(n, full.length);
+  let i = 0;
+  while (i < lim) {
+    const teal = colors[i];
+    let j = i;
+    while (j < lim && colors[j] === teal) j++;
+    out.push(
+      <span key={i} style={teal ? { color: "var(--color-light-teal)", fontWeight: 600 } : undefined}>
+        {full.slice(i, j)}
+      </span>,
+    );
+    i = j;
+  }
+  return (
+    <span>
+      {out}
+      <span className="caret" />
+    </span>
+  );
+}
+
+// ── Deliverables list that FLIP-animates into its new order ──
+interface Deliverable {
+  key: string;
+  label: string;
+}
+function Deliverables({ items, anyPicked }: { items: Deliverable[]; anyPicked: boolean }) {
+  const refs = useRef<Record<string, HTMLDivElement | null>>({});
+  const prevTop = useRef<Record<string, number>>({});
+  useLayoutEffect(() => {
+    items.forEach((it) => {
+      const el = refs.current[it.key];
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const p = prevTop.current[it.key];
+      const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (p != null && Math.abs(p - top) > 0.5 && !reduce) {
+        el.animate([{ transform: `translateY(${p - top}px)` }, { transform: "translateY(0)" }], {
+          duration: 460,
+          easing: "cubic-bezier(.16,.8,.3,1)",
+        });
+      }
+      prevTop.current[it.key] = top;
+    });
+  });
+  return (
+    <div style={{ marginTop: 14, display: "grid", gap: 7 }}>
+      {items.map((d, idx) => {
+        const primary = anyPicked && idx === 0;
+        const Glyph = primary ? ArrowRight : Check;
+        return (
+          <div
+            key={d.key}
+            ref={(el) => {
+              refs.current[d.key] = el;
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 11,
+              padding: "9px 12px",
+              borderRadius: 10,
+              background: primary ? "rgba(79,184,196,.12)" : "transparent",
+              border: primary ? "1px solid rgba(79,184,196,.32)" : "1px solid transparent",
+              transition: "background 300ms, border-color 300ms",
+            }}
+          >
+            <Glyph size={15} style={{ flexShrink: 0, color: primary ? "var(--color-light-teal)" : "rgba(255,255,255,.5)" }} />
+            <span style={{ fontSize: 13.5, lineHeight: 1.4, color: primary ? "#fff" : "rgba(255,255,255,.78)", fontWeight: primary ? 600 : 400 }}>
+              {d.label}
+            </span>
+            {primary && (
+              <span style={{ marginLeft: "auto", fontFamily: "var(--font-heading)", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em", color: "var(--color-light-teal)", textTransform: "uppercase", flexShrink: 0 }}>
+                Top focus
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Primitive: pill / chip toggle ────────────────────────────
+function Pill({
+  active,
+  onClick,
+  children,
+  Icon,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  Icon?: LucideIcon;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "10px 16px",
+        borderRadius: 9999,
+        cursor: "pointer",
+        fontFamily: "var(--font-sans)",
+        fontSize: 14,
+        fontWeight: 500,
+        lineHeight: 1,
+        userSelect: "none",
+        whiteSpace: "nowrap",
+        transition: "all 160ms var(--ease-standard)",
+        border: "1px solid",
+        background: active ? "var(--color-intelligence-teal)" : "#fff",
+        color: active ? "#fff" : "var(--color-charcoal)",
+        borderColor: active ? "var(--color-intelligence-teal)" : "var(--color-slate-200)",
+        boxShadow: active ? "0 1px 2px rgba(11,29,58,.18)" : "none",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.borderColor = "var(--color-intelligence-teal)";
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.borderColor = "var(--color-slate-200)";
+      }}
+    >
+      {Icon && <Icon size={15} style={{ opacity: active ? 1 : 0.55 }} />}
+      {children}
+      {active && <Check size={14} style={{ marginLeft: 2 }} />}
+    </button>
+  );
+}
+
+// ── Primitive: field block (eyebrow label + optional helper) ──
+function FieldBlock({
+  index,
+  label,
+  helper,
+  children,
+  required,
+}: {
+  index?: number;
+  label: string;
+  helper?: string;
+  children?: ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        {index != null && (
+          <span className="lmi-mono" style={{ fontSize: 12, color: "var(--color-intelligence-teal)", fontWeight: 500 }}>
+            {String(index).padStart(2, "0")}
+          </span>
+        )}
+        <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--color-midnight-navy)" }}>
+          {label}
+        </span>
+        {!required && <span style={{ fontSize: 12, color: "var(--color-slate-400)", fontStyle: "italic" }}>optional</span>}
+        {helper && <span style={{ fontSize: 13, color: "var(--color-slate-gray)", marginLeft: "auto" }}>{helper}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const Row = ({ children }: { children: ReactNode }) => (
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>{children}</div>
+);
+
+// ── Primitive: styled select ─────────────────────────────────
+function SelectField({
+  value,
+  onChange,
+  options,
+  render,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  render?: (label: string) => string;
+}) {
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          background: "#fff",
+          border: "1px solid var(--color-slate-200)",
+          borderRadius: 8,
+          padding: "11px 40px 11px 14px",
+          fontFamily: "var(--font-sans)",
+          fontSize: 14,
+          fontWeight: 500,
+          color: "var(--color-charcoal)",
+          cursor: "pointer",
+          minWidth: 220,
+        }}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {render ? render(o.label) : o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown size={16} style={{ position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)", color: "var(--color-slate-gray)", pointerEvents: "none" }} />
+    </div>
+  );
+}
+
+// ── Primitive: textarea ──────────────────────────────────────
+function TextArea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={3}
+      style={{
+        width: "100%",
+        resize: "vertical",
+        background: "#fff",
+        border: "1px solid var(--color-slate-200)",
+        borderRadius: 10,
+        padding: "13px 15px",
+        fontFamily: "var(--font-sans)",
+        fontSize: 14.5,
+        lineHeight: 1.55,
+        color: "var(--color-charcoal)",
+      }}
+      onFocus={(e) => (e.target.style.borderColor = "var(--color-intelligence-teal)")}
+      onBlur={(e) => (e.target.style.borderColor = "var(--color-slate-200)")}
+    />
+  );
+}
+
+// ── Primitive: foundation Yes/No/Unsure row ──────────────────
+function FoundationRow({ q, value, onSet }: { q: string; value?: string; onSet: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 0", borderBottom: "1px solid var(--color-slate-200)", flexWrap: "wrap" }}>
+      <span style={{ fontSize: 14.5, color: "var(--color-charcoal)", flex: "1 1 220px", lineHeight: 1.4 }}>{q}</span>
+      <div style={{ display: "flex", gap: 6 }}>
+        {READINESS_ANSWERS.map((o) => {
+          const on = value === o.v;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => onSet(o.v)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 13px",
+                borderRadius: 9999,
+                cursor: "pointer",
+                fontFamily: "var(--font-sans)",
+                fontSize: 13,
+                fontWeight: 500,
+                border: "1px solid",
+                transition: "all 150ms",
+                background: on ? "var(--color-midnight-navy)" : "#fff",
+                color: on ? "#fff" : "var(--color-slate-gray)",
+                borderColor: on ? "var(--color-midnight-navy)" : "var(--color-slate-200)",
+              }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: 9999, background: o.dot, boxShadow: on ? "0 0 0 2px rgba(255,255,255,.25)" : "none" }} />
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 interface StrategyClientProps {
@@ -70,9 +462,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const seededCaseTypes = (initialCaseTypes ?? []).filter((c) => CASE_TYPES.includes(c));
 
   const [audience, setAudience] = useState<Voice>("agency");
-  const [caseTypes, setCaseTypes] = useState<string[]>(
-    seededCaseTypes.length > 0 ? seededCaseTypes : ["trucking"],
-  );
+  const [caseTypes, setCaseTypes] = useState<string[]>(seededCaseTypes.length > 0 ? seededCaseTypes : ["trucking"]);
   const [stateCode, setStateCode] = useState(seededState);
   const [dmaCode, setDmaCode] = useState<string>("");
   const [dmaOptions, setDmaOptions] = useState<DmaOption[]>([]);
@@ -87,6 +477,13 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any | null>(null);
+
+  // Reset the market when the state changes (a DMA from another state must not
+  // ride along), then fetch the new state's DMA list.
+  const onStateChange = (v: string) => {
+    setStateCode(v);
+    setDmaCode("");
+  };
 
   useEffect(() => {
     let active = true;
@@ -128,11 +525,8 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error ?? "Generation failed");
-      } else {
-        setResult(data);
-      }
+      if (!res.ok) setError(data?.error ?? "Generation failed");
+      else setResult(data);
     } catch {
       setError("Network error");
     } finally {
@@ -140,131 +534,334 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
     }
   }, [audience, caseTypes, stateCode, dmaCode, budgetTier, goal, existingChannels, intakeCapacity, goalContext, currentAdNotes, readiness]);
 
-  const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-sm transition ${
-        active ? "border-intelligence-teal bg-intelligence-teal/10 text-intelligence-teal" : "border-cloud text-slate-gray hover:border-slate-gray"
-      }`}
-    >
-      {children}
-    </button>
-  );
+  // ── Derived display values ─────────────────────────────────
+  const stateLabel = STATE_NAMES[stateCode] ?? stateCode;
+  const selectedMarket = dmaOptions.find((d) => d.dma_code === dmaCode)?.display_name ?? "";
+  const audienceLabel = AUDIENCES.find((a) => a.key === audience)?.label ?? "";
+  const budgetLabel = BUDGET_TIERS.find((b) => b.key === budgetTier)?.label ?? "";
+  const intakeLabel = INTAKE_OPTIONS.find((o) => o.key === intakeCapacity)?.label ?? "";
+  const caseLabel = (slug?: string) => (slug ? CASE_META[slug]?.label ?? slug : "");
+
+  const foundationDone = Object.values(readiness).filter(Boolean).length === READINESS.length;
+  const checks = [
+    !!audience,
+    caseTypes.length > 0,
+    !!stateCode,
+    !!budgetTier,
+    !!goal,
+    !!intakeCapacity,
+    foundationDone,
+    goalContext.trim() !== "",
+  ];
+  const done = checks.filter(Boolean).length;
+  const total = checks.length;
+  const pct = Math.round((done / total) * 100);
+  const anyPicked = done > 1;
+  const canSubmit = caseTypes.length > 0 && !!intakeCapacity && goalContext.trim() !== "";
+
+  const caseStr =
+    caseTypes.length === 0
+      ? "your case types"
+      : caseTypes.length <= 2
+        ? caseTypes.map(caseLabel).join(" & ")
+        : `${caseTypes.length} case types`;
+
+  const marketSuffix = selectedMarket ? " · " + selectedMarket.split(" (")[0] : "";
+  const briefSegments = [
+    { t: "Build a strategy for " },
+    { t: caseStr, teal: true },
+    { t: " in " },
+    { t: stateLabel + marketSuffix, teal: true },
+    ...(budgetTier ? [{ t: " at " }, { t: budgetLabel, teal: true }] : []),
+    ...(goal ? [{ t: ", optimized for " }, { t: goal.toLowerCase(), teal: true }] : []),
+    { t: "." },
+  ];
+
+  const briefChips = [
+    audienceLabel && { Icon: UserRound, v: audienceLabel },
+    { Icon: MapPin, v: stateLabel + (selectedMarket ? "" : " · statewide") },
+    budgetLabel && { Icon: Wallet, v: budgetLabel },
+    intakeLabel && { Icon: PhoneCall, v: intakeLabel },
+    existingChannels.length > 0 && {
+      Icon: RadioTower,
+      v: existingChannels.length + " channel" + (existingChannels.length > 1 ? "s" : "") + " running",
+    },
+  ].filter(Boolean) as { Icon: LucideIcon; v: string }[];
+
+  const dels: Deliverable[] = [
+    { key: "mix", label: "Recommended media mix by channel & flight", score: 2 + (existingChannels.length ? 2 : 0) + (budgetTier ? 1 : 0) + (goal === "More qualified signups" ? 2 : 0) },
+    { key: "cpc", label: "Realistic cost per signed case for " + (caseLabel(caseTypes[0]) || "your tort"), score: 2 + (goal === "Lower cost per case" ? 4 : 0) + (budgetTier ? 1 : 0) },
+    { key: "comp", label: "Where competitors are over- and under-spending", score: 2 + (goal === "Defend share" || goal === "Enter a new market" ? 4 : 0) + (audience === "agency" ? 2 : 0) },
+    { key: "sat", label: "Saturation & opportunity read for " + stateLabel, score: 2 + (goal === "Brand awareness" || goal === "Enter a new market" ? 3 : 0) + (caseTypes.length > 1 ? 1 : 0) },
+  ]
+    .map((d, idx) => ({ ...d, idx }))
+    .sort((a, b) => b.score - a.score || a.idx - b.idx);
+
+  const railCard: React.CSSProperties = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 14,
+  };
+
+  // Staggered entrance for the right-column blocks (pure: no render-time mutation).
+  const riseStyle = (i: number): React.CSSProperties => ({ animationDelay: `${i * 90}ms` });
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <h1 className="text-2xl font-bold text-midnight-navy">Strategy Engine</h1>
-      <p className="mt-1 text-sm text-slate-gray">
-        A defensible, data-traced media strategy for a market — every number carries its source.
-      </p>
-
-      {/* Interview */}
-      <div className="mt-6 space-y-5 rounded-xl border border-cloud bg-white p-5">
-        <Field label="Audience">
-          <div className="flex flex-wrap gap-2">
-            {AUDIENCES.map((a) => (
-              <Pill key={a.key} active={audience === a.key} onClick={() => setAudience(a.key)}>{a.label}</Pill>
-            ))}
-          </div>
-        </Field>
-        <Field label="Case types">
-          <div className="flex flex-wrap gap-2">
-            {CASE_TYPES.map((c) => (
-              <Pill key={c} active={caseTypes.includes(c)} onClick={() => toggle(caseTypes, c, setCaseTypes)}>{pretty(c)}</Pill>
-            ))}
-          </div>
-        </Field>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="State">
-            <select value={stateCode} onChange={(e) => setStateCode(e.target.value)} className="rounded-lg border border-cloud px-3 py-2 text-sm">
-              {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </Field>
-          <Field label="Market (DMA)">
-            <select value={dmaCode} onChange={(e) => setDmaCode(e.target.value)} className="rounded-lg border border-cloud px-3 py-2 text-sm">
-              <option value="">All markets (statewide)</option>
-              {dmaOptions.map((d) => <option key={d.dma_code} value={d.dma_code}>{d.display_name}</option>)}
-            </select>
-          </Field>
-        </div>
-        <Field label="Budget tier">
-          <div className="flex flex-wrap gap-2">
-            {BUDGET_TIERS.map((b) => (
-              <Pill key={b.key} active={budgetTier === b.key} onClick={() => setBudgetTier(b.key)}>{b.label}</Pill>
-            ))}
-          </div>
-        </Field>
-        <Field label="Goal">
-          <div className="flex flex-wrap gap-2">
-            {GOALS.map((g) => <Pill key={g} active={goal === g} onClick={() => setGoal(g)}>{g}</Pill>)}
-          </div>
-        </Field>
-        <Field label="Existing channels">
-          <div className="flex flex-wrap gap-2">
-            {CHANNELS.map((c) => (
-              <Pill key={c} active={existingChannels.includes(c)} onClick={() => toggle(existingChannels, c, setExistingChannels)}>{pretty(c)}</Pill>
-            ))}
-          </div>
-        </Field>
-        <Field label="Intake capacity">
-          <div className="flex flex-wrap gap-2">
-            {INTAKE_OPTIONS.map((o) => (
-              <Pill key={o.key} active={intakeCapacity === o.key} onClick={() => setIntakeCapacity(o.key)}>{o.label}</Pill>
-            ))}
-          </div>
-        </Field>
-        <Field label="What does winning look like in 90 days? Anything off-limits?">
-          <textarea
-            value={goalContext}
-            onChange={(e) => setGoalContext(e.target.value)}
-            rows={3}
-            placeholder="e.g. 25 signed truck cases a quarter; we don't do billboards or daytime TV."
-            className="w-full rounded-lg border border-cloud px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="What are you running now, and what's working? (optional)">
-          <textarea
-            value={currentAdNotes}
-            onChange={(e) => setCurrentAdNotes(e.target.value)}
-            rows={2}
-            placeholder="e.g. Search converts well, TV didn't pay back."
-            className="w-full rounded-lg border border-cloud px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="Foundation check">
-          <div className="space-y-2">
-            {READINESS.map((q) => (
-              <div key={q.key} className="flex flex-wrap items-center gap-2">
-                <span className="min-w-[16rem] text-sm text-slate-gray">{q.label}</span>
-                {READINESS_ANSWERS.map((a) => (
-                  <Pill key={a} active={readiness[q.key] === a} onClick={() => setReadiness({ ...readiness, [q.key]: a })}>{pretty(a)}</Pill>
-                ))}
-              </div>
-            ))}
-          </div>
-        </Field>
-        <button
-          onClick={generate}
-          disabled={loading || caseTypes.length === 0 || !intakeCapacity || goalContext.trim() === ""}
-          className="inline-flex items-center gap-2 rounded-lg bg-intelligence-teal px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+    <div>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "calc(100vh - 6rem)",
+          borderRadius: 20,
+          border: "1px solid var(--color-slate-200)",
+          background: "#fff",
+          boxShadow: "0 10px 30px -12px rgba(11,29,58,.22)",
+        }}
+        className="flex-col lg:flex-row"
+      >
+        {/* ───────────── LEFT — navy intelligence rail ───────────── */}
+        <aside
+          className="no-scrollbar rounded-t-[20px] lg:rounded-t-none lg:rounded-l-[20px] w-full lg:w-[42%] lg:max-w-[560px]"
+          style={{
+            position: "relative",
+            flexShrink: 0,
+            color: "#fff",
+            background: "linear-gradient(158deg, var(--color-midnight-navy) 0%, var(--color-navy-700) 52%, var(--color-navy-600) 100%)",
+          }}
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {loading ? "Building strategy…" : "Generate strategy"}
-        </button>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {/* atmosphere: teal glow + dot grid */}
+          <div
+            className="rounded-t-[20px] lg:rounded-t-none lg:rounded-l-[20px]"
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(115% 75% at 0% -5%, rgba(79,184,196,.18), transparent 55%)" }}
+          />
+          <div
+            className="rounded-t-[20px] lg:rounded-t-none lg:rounded-l-[20px]"
+            style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none", backgroundImage: "radial-gradient(rgba(255,255,255,.9) 1px, transparent 1px)", backgroundSize: "22px 22px" }}
+          />
+
+          <div className="lg:sticky lg:top-6" style={{ position: "relative", zIndex: 1, padding: "44px 48px", display: "flex", flexDirection: "column" }}>
+            <div className="railin" style={{ display: "flex", alignItems: "center" }}>
+              {/* White horizontal lockup (wordmark baked in) — reads on navy. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-horizontal-white.svg" alt="Legal Marketing Intelligence" style={{ height: 30, width: "auto" }} />
+            </div>
+
+            <div className="railin" style={{ marginTop: 40, animationDelay: "90ms" }}>
+              <div style={{ ...EYEBROW, letterSpacing: "0.2em", color: "var(--color-light-teal)", display: "flex", alignItems: "center", gap: 9, whiteSpace: "nowrap" }}>
+                <span className="pulse-dot" style={{ width: 7, height: 7, borderRadius: 9999, background: "var(--color-light-teal)", display: "inline-block", flexShrink: 0 }} />
+                Strategy Engine
+              </div>
+              <h1 style={{ color: "#fff", fontSize: 36, lineHeight: 1.12, fontWeight: 700, marginTop: 16, letterSpacing: "-0.015em", textWrap: "balance" }}>
+                A defensible, data-traced media strategy for {stateLabel}.
+              </h1>
+              <p style={{ color: "rgba(255,255,255,.72)", fontSize: 16, lineHeight: 1.62, marginTop: 18, maxWidth: 430 }}>
+                Answer eight quick questions. We turn market-wide ad activity and risk signals into a plan you can defend in a partner meeting —{" "}
+                <span style={{ color: "var(--color-light-teal)", fontWeight: 500 }}>every number carries its source.</span>
+              </p>
+            </div>
+
+            {/* live, typed brief */}
+            <div className="railin" style={{ marginTop: 28, ...railCard, padding: "20px 22px", animationDelay: "180ms" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ ...EYEBROW, color: "rgba(255,255,255,.55)" }}>Your brief so far</span>
+                <span className="lmi-mono" style={{ fontSize: 12, color: "var(--color-light-teal)" }}>{pct}%</span>
+              </div>
+              <p style={{ fontSize: 16, lineHeight: 1.55, marginTop: 12, color: "#fff", minHeight: 50 }}>
+                <TypedBrief segments={briefSegments} />
+              </p>
+              {briefChips.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+                  {briefChips.map((c) => (
+                    <span key={c.v} className="chip-pop" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 9999, background: "rgba(79,184,196,.14)", border: "1px solid rgba(79,184,196,.3)", fontSize: 12.5, color: "#fff" }}>
+                      <c.Icon size={13} style={{ color: "var(--color-light-teal)" }} />
+                      {c.v}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* what you'll get — reorders to picks */}
+            <div className="railin" style={{ marginTop: 30, paddingTop: 0 }}>
+              <span style={{ ...EYEBROW, color: "rgba(255,255,255,.45)" }}>What you&apos;ll get back</span>
+              <Deliverables items={dels} anyPicked={anyPicked} />
+            </div>
+          </div>
+        </aside>
+
+        {/* ───────────── RIGHT — the form ───────────── */}
+        <section className="rounded-b-[20px] lg:rounded-b-none lg:rounded-r-[20px]" style={{ flex: 1, minWidth: 0, position: "relative", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, padding: "48px 44px 40px" }} className="lg:px-14">
+
+            <div className="rise" style={{ ...riseStyle(1) }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+                <span style={{ width: 26, height: 26, borderRadius: 9999, background: "#fff", border: "1px solid var(--color-slate-200)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <ArrowLeft size={14} style={{ color: "var(--color-intelligence-teal)" }} />
+                </span>
+                <span style={{ fontSize: 13.5, color: "var(--color-slate-gray)" }}>
+                  From your <b style={{ color: "var(--color-midnight-navy)", fontWeight: 600 }}>{stateLabel}</b> state report
+                </span>
+              </div>
+              <h2 style={{ fontSize: 27, fontWeight: 700, color: "var(--color-midnight-navy)", letterSpacing: "-0.015em", fontFamily: "var(--font-heading)" }}>Build your market strategy</h2>
+              <p style={{ fontSize: 15, color: "var(--color-slate-gray)", marginTop: 8, marginBottom: 40 }}>Takes about a minute. The more you tell us, the sharper the plan.</p>
+            </div>
+
+            <div style={{ display: "grid", gap: 36 }}>
+              <div className="rise" style={{ ...riseStyle(2) }}>
+                <FieldBlock index={1} label="Audience" required helper="Who is this strategy for?">
+                  <Row>{AUDIENCES.map((a) => <Pill key={a.key} active={audience === a.key} onClick={() => setAudience(a.key)}>{a.label}</Pill>)}</Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(3) }}>
+                <FieldBlock index={2} label="Case types" required helper="Select all that apply">
+                  <Row>{CASE_TYPES.map((c) => <Pill key={c} Icon={CASE_META[c].Icon} active={caseTypes.includes(c)} onClick={() => toggle(caseTypes, c, setCaseTypes)}>{CASE_META[c].label}</Pill>)}</Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ display: "flex", gap: 32, flexWrap: "wrap", ...riseStyle(4) }}>
+                <FieldBlock index={3} label="State" required>
+                  <SelectField value={stateCode} onChange={onStateChange} options={US_STATES.map((s) => ({ value: s, label: s }))} render={(s) => `${s} — ${STATE_NAMES[s] ?? s}`} />
+                </FieldBlock>
+                <FieldBlock index={4} label="Market (DMA)">
+                  <SelectField
+                    value={dmaCode}
+                    onChange={setDmaCode}
+                    options={[{ value: "", label: "All markets (statewide)" }, ...dmaOptions.map((d) => ({ value: d.dma_code, label: d.display_name }))]}
+                  />
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(5) }}>
+                <FieldBlock index={5} label="Budget tier" required helper="Monthly media budget">
+                  <Row>
+                    {BUDGET_TIERS.map((b) => {
+                      const on = budgetTier === b.key;
+                      return (
+                        <button
+                          key={b.key}
+                          type="button"
+                          onClick={() => setBudgetTier(b.key)}
+                          style={{
+                            flex: "1 1 140px",
+                            textAlign: "left",
+                            padding: "14px 16px",
+                            borderRadius: 12,
+                            cursor: "pointer",
+                            border: "1px solid",
+                            transition: "all 160ms var(--ease-standard)",
+                            background: on ? "var(--color-midnight-navy)" : "#fff",
+                            borderColor: on ? "var(--color-midnight-navy)" : "var(--color-slate-200)",
+                            boxShadow: on ? "0 6px 16px -8px rgba(11,29,58,.5)" : "none",
+                          }}
+                        >
+                          <div className="lmi-mono" style={{ fontSize: 17, fontWeight: 500, color: on ? "var(--color-light-teal)" : "var(--color-midnight-navy)" }}>{b.range}</div>
+                          <div style={{ fontSize: 12.5, marginTop: 4, color: on ? "rgba(255,255,255,.7)" : "var(--color-slate-gray)" }}>per month</div>
+                        </button>
+                      );
+                    })}
+                  </Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(6) }}>
+                <FieldBlock index={6} label="Primary goal" required helper="Pick the one that matters most">
+                  <Row>{GOALS.map((g) => <Pill key={g} active={goal === g} onClick={() => setGoal(g)}>{g}</Pill>)}</Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(7) }}>
+                <FieldBlock index={7} label="Existing channels" helper="What you run today">
+                  <Row>{CHANNELS.map((c) => <Pill key={c.key} active={existingChannels.includes(c.key)} onClick={() => toggle(existingChannels, c.key, setExistingChannels)}>{c.label}</Pill>)}</Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(8) }}>
+                <FieldBlock index={8} label="Intake capacity" required>
+                  <Row>{INTAKE_OPTIONS.map((o) => <Pill key={o.key} active={intakeCapacity === o.key} onClick={() => setIntakeCapacity(o.key)}>{o.label}</Pill>)}</Row>
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(9) }}>
+                <FieldBlock index={9} label="What does winning look like in 90 days? Anything off-limits?" required>
+                  <TextArea value={goalContext} onChange={setGoalContext} placeholder="e.g. 25 signed truck cases a quarter; we don't do billboards or daytime TV." />
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ ...riseStyle(10) }}>
+                <FieldBlock label="What are you running now, and what's working?">
+                  <TextArea value={currentAdNotes} onChange={setCurrentAdNotes} placeholder="e.g. Search converts well, TV didn't pay back." />
+                </FieldBlock>
+              </div>
+
+              <div className="rise" style={{ background: "#fff", border: "1px solid var(--color-slate-200)", borderRadius: 16, padding: "8px 24px 16px", boxShadow: "var(--shadow-card)", ...riseStyle(11) }}>
+                <div style={{ paddingTop: 18, paddingBottom: 4 }}>
+                  <FieldBlock index={10} label="Foundation check" required helper="So we don't recommend spend you can't convert" />
+                </div>
+                {READINESS.map((f) => <FoundationRow key={f.key} q={f.label} value={readiness[f.key]} onSet={(v) => setReadiness({ ...readiness, [f.key]: v })} />)}
+              </div>
+
+              {error ? (
+                <p style={{ fontSize: 14, color: "var(--color-alert)", marginTop: -8 }}>{error}</p>
+              ) : null}
+            </div>
+          </div>
+
+          {/* sticky generate bar */}
+          <div
+            className="rounded-b-[20px] lg:rounded-b-none lg:rounded-br-[20px]"
+            style={{
+              position: "sticky",
+              bottom: 0,
+              background: "rgba(255,255,255,.85)",
+              backdropFilter: "blur(10px)",
+              borderTop: "1px solid var(--color-slate-200)",
+              padding: "16px 44px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 130, height: 6, borderRadius: 9999, background: "var(--color-slate-200)", overflow: "hidden" }}>
+                <div style={{ width: pct + "%", height: "100%", background: "var(--color-intelligence-teal)", transition: "width 360ms var(--ease-standard)" }} />
+              </div>
+              <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>
+                <b className="lmi-mono" style={{ color: "var(--color-midnight-navy)" }}>{done}</b> of {total} ready
+              </span>
+            </div>
+            <button
+              type="button"
+              className="cta"
+              onClick={generate}
+              disabled={loading || !canSubmit}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 9,
+                padding: "13px 26px",
+                borderRadius: 9999,
+                background: "var(--color-intelligence-teal)",
+                color: "#fff",
+                border: "none",
+                cursor: loading || !canSubmit ? "not-allowed" : "pointer",
+                fontFamily: "var(--font-heading)",
+                fontSize: 15,
+                fontWeight: 600,
+                boxShadow: "0 6px 16px -4px rgba(26,140,150,.5)",
+                opacity: loading || !canSubmit ? 0.55 : 1,
+              }}
+            >
+              {loading ? "Building strategy…" : "Generate strategy"}
+              {loading ? <Loader2 size={17} className="animate-spin" /> : <ArrowRight size={17} />}
+            </button>
+          </div>
+        </section>
       </div>
 
       {result ? <StrategyDeck data={result} /> : null}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-gray">{label}</div>
-      {children}
     </div>
   );
 }
