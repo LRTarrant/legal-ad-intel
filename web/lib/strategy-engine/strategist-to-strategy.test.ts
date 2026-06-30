@@ -6,6 +6,10 @@ import { buildTacticMenu } from "./tactic-scoring";
 import { containsAbsoluteReach } from "./prompt";
 import type { StrategyInputs, ChannelSignal, NamedOutlet } from "./types";
 import type { StrategistOutput } from "./strategist";
+import type { MeasuredChannel } from "./recommendations";
+
+// paid_search is measured (14 firms, defended); every other channel is modeled.
+const MEASURED: MeasuredChannel[] = [{ channel: "search", active_firms: 14, status: "defended" }];
 
 function menu(budget = 50000) {
   const channels: ChannelSignal[] = [
@@ -40,7 +44,7 @@ function out(): StrategistOutput {
 const facts = { market_label: "Huntsville", top_advertiser: "Firm A", opportunity_intensity: 0.6 };
 
 test("each brief becomes a recommendation with a channel, headline, three links, and a buy", () => {
-  const recs = strategistToRecommendations(out(), menu(), facts);
+  const recs = strategistToRecommendations(out(), menu(), facts, MEASURED);
   assert.equal(recs.length, 2);
   const radio = recs.find((r) => r.channel === "radio")!;
   assert.ok(radio.headline.length > 0);
@@ -49,6 +53,22 @@ test("each brief becomes a recommendation with a channel, headline, three links,
   assert.equal(radio.buy.kind, "outlets");
   // the AI rationale is surfaced somewhere visible
   assert.ok(JSON.stringify(radio).includes("country and urban"));
+});
+
+test("white space inherits the measured channel read; 'unmeasured' never appears", () => {
+  const recs = strategistToRecommendations(out(), menu(), facts, MEASURED);
+  // measured paid_search → real status + firm count, matching the section
+  const search = recs.find((r) => r.channel === "search")!;
+  assert.equal(search.white_space.depth, "primary");
+  assert.equal(search.white_space.status, "defended");
+  assert.match(search.white_space.value, /14 firms/);
+  assert.equal(search.data_depth, "strong");
+  // untracked radio → honest modeled read (open), not a fabricated number
+  const radio = recs.find((r) => r.channel === "radio")!;
+  assert.equal(radio.white_space.depth, "modeled");
+  assert.equal(radio.white_space.status, "open");
+  // the legacy placeholder is gone from every card
+  assert.ok(!JSON.stringify(recs).includes("unmeasured"));
 });
 
 test("allocation maps from briefs and sums to 100", () => {
@@ -67,7 +87,7 @@ test("prose fills all three rigid fields, none empty, none with absolute reach",
 });
 
 test("a brief with no example outlets maps to a channel_target buy", () => {
-  const recs = strategistToRecommendations(out(), menu(), facts);
+  const recs = strategistToRecommendations(out(), menu(), facts, MEASURED);
   const search = recs.find((r) => r.channel === "search")!;
   assert.equal(search.buy.kind, "channel_target");
 });

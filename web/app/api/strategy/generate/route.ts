@@ -254,7 +254,7 @@ export async function POST(req: NextRequest) {
     top_advertiser: inputs.top_advertisers[0]?.name ?? null,
     opportunity_intensity: menu.market_opportunity_intensity,
   };
-  const recommendations = strategistToRecommendations(strategistOut, menu, mapFacts);
+  const recommendations = strategistToRecommendations(strategistOut, menu, mapFacts, measured);
   const watch_list: { channel: ChannelKey; reason: string }[] = [];
 
   if (recommendations.length === 0) {

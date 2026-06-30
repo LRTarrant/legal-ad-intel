@@ -10,7 +10,8 @@
  */
 import type { MediaBrief, StrategistOutput } from "./strategist";
 import type { TacticMenu, ScoredTactic } from "./tactic-scoring";
-import type { Recommendation, RecommendationLink, ProofPoint, DataDepth } from "./recommendations";
+import type { Recommendation, RecommendationLink, ProofPoint, MeasuredChannel } from "./recommendations";
+import { buildWhiteSpaceLink, deriveDataDepth } from "./recommendations";
 import type { IntegratedAllocation, ReadinessItem } from "./standalone";
 import type { Prerequisite } from "./tactics";
 import type { StrategyProse } from "./types";
@@ -31,6 +32,7 @@ export function briefToRecommendation(
   brief: MediaBrief,
   scored: ScoredTactic,
   facts: StrategistMapFacts,
+  measuredByChannel: Map<MeasuredChannel["channel"], MeasuredChannel>,
 ): Recommendation {
   const fmt = brief.format_call.length ? ` — ${brief.format_call.join(" / ")}` : "";
   const headline = `${brief.tactic.label}${fmt} in ${facts.market_label}`;
@@ -42,9 +44,11 @@ export function briefToRecommendation(
       : "priority market";
   const opportunity = link(oppValue, "Plan target", brief.rationale);
 
-  const wsValue =
-    scored.whitespace == null ? "unmeasured" : scored.whitespace >= 0.5 ? "open" : "contested";
-  const white_space = link(wsValue, "competitive scan", `Competitive whitespace: ${wsValue}.`);
+  // White space inherits the measured channel read (firm count + open/contested/
+  // defended status) by the tactic's channel, falling back to an honest modeled
+  // read for untracked channels — the same logic the on-page white-space section
+  // uses. Never the legacy "unmeasured" placeholder.
+  const white_space = buildWhiteSpaceLink(brief.tactic.channel, measuredByChannel);
 
   const fitValue = scored.audience_fit == null ? "directional" : pct(scored.audience_fit);
   const fitText = scored.audience_fit_scope === "news_proxy" ? "Audience fit (news-consumption proxy)." : "Audience fit for this market.";
@@ -59,7 +63,7 @@ export function briefToRecommendation(
       ? { kind: "outlets", outlets: brief.example_outlets }
       : { kind: "channel_target", target: brief.tactic.label };
 
-  const data_depth: DataDepth = scored.audience_fit == null || scored.whitespace == null ? "moderate" : "strong";
+  const data_depth = deriveDataDepth([opportunity, white_space, fit]);
 
   return { channel: brief.tactic.channel, headline, opportunity, white_space, fit, proof, buy, data_depth };
 }
@@ -68,12 +72,14 @@ export function strategistToRecommendations(
   out: StrategistOutput,
   menu: TacticMenu,
   facts: StrategistMapFacts,
+  measured: MeasuredChannel[],
 ): Recommendation[] {
   const byKey = new Map(menu.tactics.map((s) => [s.tactic.key, s]));
+  const measuredByChannel = new Map(measured.map((m) => [m.channel, m]));
   return out.briefs
     .map((b) => {
       const scored = byKey.get(b.tactic.key);
-      return scored ? briefToRecommendation(b, scored, facts) : null;
+      return scored ? briefToRecommendation(b, scored, facts, measuredByChannel) : null;
     })
     .filter((r): r is Recommendation => r !== null);
 }

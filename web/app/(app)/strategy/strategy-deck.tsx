@@ -80,6 +80,23 @@ function readinessPill(missing: boolean) {
   );
 }
 
+/* Compact, glanceable key for the two vocabularies the white-space section and
+ * the recommendation cards share: contention (open/contested/defended) and
+ * confidence (measured vs modeled). One place, not a tooltip on every row. */
+function WhitespaceLegend() {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-3 text-[11px]" style={{ borderColor: BORDER, color: MUTED }}>
+      <span style={{ fontFamily: mono, color: LABEL }} className="uppercase tracking-wide">Key</span>
+      <span>
+        <b style={{ color: NAVY }}>Open / Contested / Defended</b> — competing firms in the channel: few / some / many.
+      </span>
+      <span>
+        <b style={{ color: NAVY }}>Measured</b> = counted from live ad data · <b style={{ color: NAVY }}>Modeled</b> = estimated from ad-library coverage.
+      </span>
+    </div>
+  );
+}
+
 export default function StrategyDeck({ data }: { data: any }) {
   const brand = data.brand ?? {};
   const accent = brand.primary_color || "#1A8C96";
@@ -232,9 +249,7 @@ export default function StrategyDeck({ data }: { data: any }) {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span style={{ fontFamily: mono, color: LABEL }} className="text-[11px]">Untracked channels: presence modeled from ad-library coverage.</span>
-        </div>
+        <WhitespaceLegend />
       </Slide>
 
       {/* 7. DIVIDER */}
@@ -251,14 +266,33 @@ export default function StrategyDeck({ data }: { data: any }) {
       {recs.map((r: any, i: number) => (
         <Slide key={i} eyebrow={`Recommendation ${String(i + 1).padStart(2, "0")}`} title={r.headline} right={<DepthBadge depth={r.data_depth} />}>
           <div className="grid gap-4 md:grid-cols-3">
-            {(["opportunity", "white_space", "fit"] as const).map((k, idx) => (
-              <div key={k} className="relative rounded-xl border bg-white p-6" style={{ borderColor: BORDER }}>
-                <div className="absolute -top-3 left-6 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--lmi-accent)" }}>{idx + 1}</div>
-                <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--lmi-accent)" }}>{k.replace("_", " ")}</div>
-                <div className="mt-2 text-3xl font-bold leading-none" style={{ color: NAVY }}>{r[k].value}</div>
-                <div className="mt-2 text-sm" style={{ color: "#3A4D67" }}>{r[k].text}</div>
-              </div>
-            ))}
+            {(["opportunity", "white_space", "fit"] as const).map((k, idx) => {
+              const lnk = r[k];
+              const isWhite = k === "white_space";
+              const modeled = isWhite && lnk.depth === "modeled";
+              return (
+                <div key={k} className="relative rounded-xl border bg-white p-6" style={{ borderColor: BORDER }}>
+                  <div className="absolute -top-3 left-6 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--lmi-accent)" }}>{idx + 1}</div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--lmi-accent)" }}>{k.replace("_", " ")}</div>
+                  {isWhite ? (
+                    // White space matches the section: a status pill (open/contested/
+                    // defended) plus the real firm count when measured, or a quiet
+                    // "Modeled" tag when inferred — never the word "unmeasured".
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {statusPill(lnk.status ?? "open")}
+                      {modeled ? (
+                        <span className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ background: CHIP, color: MUTED }}>Modeled</span>
+                      ) : (
+                        <span className="text-lg font-bold" style={{ color: NAVY }}>{lnk.value} active</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-3xl font-bold leading-none" style={{ color: NAVY }}>{lnk.value}</div>
+                  )}
+                  <div className="mt-2 text-sm" style={{ color: "#3A4D67" }}>{lnk.text}</div>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t pt-4" style={{ borderColor: BORDER }}>
             {(r.proof ?? []).map((p: any, j: number) => (
