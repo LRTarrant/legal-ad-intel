@@ -38,6 +38,14 @@ import type { ChannelKey } from "@/lib/strategy-engine/types";
 import { buildTacticMenu } from "@/lib/strategy-engine/tactic-scoring";
 import { classifyGoal, budgetTierToMonthlyUsd } from "@/lib/strategy-engine/tactics";
 import { buildStrategistOutput, GroundingError } from "@/lib/strategy-engine/strategist";
+import { budgetTierToRange } from "@/lib/strategy-engine/campaign-handoff";
+import {
+  computeEconomics,
+  economicsCaseType,
+  resolveMarketTier,
+  DEFAULT_LEVERS,
+} from "@/lib/strategy-engine/economics";
+import { fetchPiEconomicsBenchmark } from "@/lib/queries/pi-economics";
 import { createOpenAICallModel, resolveStrategistModel } from "@/lib/strategy-engine/openai-strategist";
 import {
   strategistToRecommendations,
@@ -147,7 +155,7 @@ export async function POST(req: NextRequest) {
     }),
     sb
       .from("dma_markets")
-      .select("dma_code, display_name")
+      .select("dma_code, display_name, rank")
       .contains("states_covered", [state])
       .order("rank", { ascending: true }),
     sb.rpc("strategy_market_creatives", {
@@ -189,14 +197,14 @@ export async function POST(req: NextRequest) {
     .filter((m): m is MeasuredChannel => m !== null);
   const seoRow = wsRows.find((r) => r.channel === "seo");
 
-  const stateDmas = ((dmaRes.data as Array<{ dma_code: string; display_name: string }> | null) ?? []).map(
-    (d) => d.dma_code,
-  );
-  const dmaLabel = body.dma_code
-    ? ((dmaRes.data as Array<{ dma_code: string; display_name: string }> | null) ?? []).find(
-        (d) => d.dma_code === body.dma_code,
-      )?.display_name
-    : null;
+  const dmaRows =
+    (dmaRes.data as Array<{ dma_code: string; display_name: string; rank: number | null }> | null) ?? [];
+  const stateDmas = dmaRows.map((d) => d.dma_code);
+  const selectedDma = body.dma_code ? dmaRows.find((d) => d.dma_code === body.dma_code) : null;
+  const dmaLabel = selectedDma?.display_name ?? null;
+  // Market-tier heuristic: the selected DMA's Nielsen rank, or — statewide — the
+  // state's top-ranked DMA (dmaRows are ordered by rank ascending).
+  const selectedDmaRank = selectedDma?.rank ?? dmaRows[0]?.rank ?? null;
   const marketLabel = dmaLabel ?? oppCounties[0]?.cbsa_title ?? `${inputs.state_name} statewide`;
 
   // ── Build the tactic menu (deterministic) ───────────────────────────────────
@@ -276,6 +284,29 @@ export async function POST(req: NextRequest) {
     meta: { state, tort: tortSlug, audience: body.audience, tactics: strategistOut.briefs.length, confidence: strategistOut.confidence },
   });
 
+  // ── PI ad economics (budget → signed cases) ───────────────────────────────
+  // Only the three motor-vehicle PI case types have economics coverage; others
+  // (nursing_home/workers_comp/boating/general PI) omit the section honestly.
+  let economics: Strategy["economics"] = null;
+  const econCaseType = economicsCaseType(tortSlug);
+  if (econCaseType) {
+    const marketTier = resolveMarketTier(selectedDmaRank);
+    const benchmark = await fetchPiEconomicsBenchmark(sb, econCaseType, marketTier);
+    if (benchmark) {
+      const range = budgetTierToRange(body.budget_tier);
+      const monthly = range
+        ? { min: range.min, max: range.max, mid: range.midpoint }
+        : { min: budgetMonthlyUsd, max: budgetMonthlyUsd, mid: budgetMonthlyUsd };
+      economics = {
+        case_type: econCaseType,
+        market_tier: marketTier,
+        monthly_spend: monthly,
+        benchmark,
+        default_result: computeEconomics(benchmark, monthly.mid, DEFAULT_LEVERS),
+      };
+    }
+  }
+
   // ── Compose the contract Strategy object ──────────────────────────────────
   const competitiveChannels = buildCompetitiveChannels(measured, recommendations);
   if (seoRow) {
@@ -323,6 +354,7 @@ export async function POST(req: NextRequest) {
     confidence: strategistOut.confidence,
     data_warnings: [...dataErrors, ...strategistOut.warnings],
     cost_cents: tracked.cost_cents ?? null,
+    economics,
   };
   return NextResponse.json(payload);
 }

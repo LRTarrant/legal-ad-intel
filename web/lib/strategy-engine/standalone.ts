@@ -23,8 +23,27 @@ import type {
   Recommendation,
   WatchItem,
 } from "./recommendations";
+import type {
+  EconomicsCaseType,
+  EconomicsResult,
+  MarketTier,
+  PiEconomicsBenchmark,
+} from "./economics";
 
 /* ── Interview request ──────────────────────────────────────────────────── */
+
+/** PI economics block on the strategy payload. The deck recomputes the funnel
+ *  client-side from `benchmark` + `monthly_spend.mid` as the user moves the
+ *  intake levers; `default_result` is the server-computed initial state (also
+ *  what a non-interactive/export consumer reads). Null when the case type has
+ *  no PI ad-economics coverage. */
+export interface StrategyEconomics {
+  case_type: EconomicsCaseType;
+  market_tier: MarketTier;
+  monthly_spend: { min: number; max: number; mid: number };
+  benchmark: PiEconomicsBenchmark;
+  default_result: EconomicsResult;
+}
 
 export type ReadinessAnswer = "yes" | "no" | "unsure";
 
@@ -239,6 +258,8 @@ export interface Strategy {
   confidence: Confidence;
   data_warnings: string[];
   cost_cents: number | null;
+  /** PI ad-economics (budget → signed cases). Null when the case type has no coverage. */
+  economics: StrategyEconomics | null;
 }
 
 /* ── Pure builders ──────────────────────────────────────────────────────── */
