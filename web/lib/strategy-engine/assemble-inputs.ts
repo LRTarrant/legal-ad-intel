@@ -176,46 +176,51 @@ function buildNormalizedDmaSet(pairs: Array<{ display: string; full: string }>):
 }
 
 /**
- * Fetch ALL media_outlets rows with paginated .range() to bypass the default
- * 1,000-row PostgREST cap (the table is ~7,900 rows / 108 markets; the capped
- * single query silently dropped ~62 of those markets). Mirrors the Recall
- * Watchlist reader pattern. Resolves to the same { data, error } shape the
- * inline query did, so the parallel-fetch + graceful-degrade structure is
- * untouched.
+ * Coarse server-side prefilter prefixes for the media_outlets fetch. Each prefix
+ * is the FIRST alphanumeric token of an in-scope DMA's display_name / full_name
+ * (e.g. "Dallas", "Washington", "New"). Used as `market.ilike.<prefix>*` so the
+ * query returns only that market's handful of rows instead of the whole 7,900-row
+ * table. Deliberately coarse: the exact `normalizeDmaName` match in the assembler
+ * still governs inclusion, so OVER-fetching (e.g. "New" → "New York" + "New
+ * Orleans") is harmless, while a first-token prefix can't UNDER-fetch a Nielsen
+ * variant ("Dallas" prefix still catches DB row "Dallas-Ft.Worth").
  */
-async function fetchAllMediaOutlets(
-  supabase: SupabaseLike,
-): Promise<{ data: Array<Record<string, unknown>>; error: unknown; truncated: boolean }> {
-  const pageSize = 1000;
-  // Runaway guard. The real terminator is the short final page; this only trips
-  // if the table grows past the cap, in which case we flag `truncated` so the
-  // caller surfaces a warning rather than silently dropping rows (the very bug
-  // this helper fixes). Generous headroom over the current ~7.9k rows.
-  const maxRows = 60000;
-  const all: Array<Record<string, unknown>> = [];
-  let from = 0;
-  let truncated = false;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("media_outlets")
-      .select("call_sign, media_company, media_format, media_type, format_genre, market")
-      // Stable sort is REQUIRED for .range() pagination: without a deterministic
-      // ORDER BY, Postgres can return rows in a different order between page
-      // fetches and silently skip/duplicate rows across page boundaries. `id`
-      // is the table's non-null PK.
-      .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
-    if (error) return { data: all, error, truncated };
-    const batch = (data as Array<Record<string, unknown>> | null) ?? [];
-    all.push(...batch);
-    if (batch.length < pageSize) break;
-    from += pageSize;
-    if (from >= maxRows) {
-      truncated = true;
-      break;
+function buildMarketPrefixes(pairs: Array<{ display: string; full: string }>): string[] {
+  const set = new Set<string>();
+  for (const p of pairs) {
+    for (const label of [p.display, p.full]) {
+      const token = label?.match(/[A-Za-z0-9]+/)?.[0];
+      if (token) set.add(token);
     }
   }
-  return { data: all, error: null, truncated };
+  return [...set];
+}
+
+/**
+ * Fetch media_outlets scoped to the in-scope DMA market(s) via a single
+ * server-side `.or(... ilike ...)` query — replaces the old whole-table
+ * pagination. Returns the same { data, error } shape the inline query did so the
+ * parallel-fetch + graceful-degrade structure is untouched. Empty prefixes
+ * (strict mode with an unresolved dmaCode → Finding 5) yields zero rows without
+ * a query.
+ */
+async function fetchMediaOutletsForMarkets(
+  supabase: SupabaseLike,
+  prefixes: string[],
+): Promise<{ data: Array<Record<string, unknown>>; error: unknown }> {
+  if (prefixes.length === 0) return { data: [], error: null };
+  // prefixes are alphanumeric-only (buildMarketPrefixes), safe in the or() syntax.
+  const orFilter = prefixes.map((p) => `market.ilike.${p}*`).join(",");
+  const { data, error } = await supabase
+    .from("media_outlets")
+    .select("call_sign, media_company, media_format, media_type, format_genre, market")
+    .or(orFilter)
+    .order("id", { ascending: true }) // stable order → deterministic pick under the 16-cap
+    // Ceiling guard only. Set above the whole media_outlets table (~7.9k rows) so a
+    // wide statewide fan-out (broad prefixes like "San*") can never truncate a
+    // legitimate in-market row before the in-memory match runs.
+    .limit(10000);
+  return { data: (data as Array<Record<string, unknown>> | null) ?? [], error };
 }
 
 /* ── The assembler ──────────────────────────────────────────────────────── */
@@ -240,43 +245,84 @@ export async function assembleStrategyInputs(
   // An unmatched code must produce zero outlets, never a statewide or #1-DMA fallback.
   const strictMarket = Boolean(opts.dmaCode);
 
-  // Fetch every block independently; never let one failure sink the rest.
-  const [
-    competitorsRes,
-    dmaRes,
-    accidentRes,
-    profilesRes,
-    outletsRes,
-    baselineRes,
-    censusRes,
-  ] = await Promise.allSettled([
-    // Scope the competitive field to the selected market when one is chosen
-    // (NULL p_dma_code = all-markets/statewide view). Without this, picking a
-    // DMA still returned statewide competitors while white space + creatives
-    // were already market-scoped — an inconsistency.
-    supabase.rpc("get_pi_competitors_by_dma", { p_state: state, p_dma_code: opts.dmaCode ?? null }),
-    supabase
-      .from("dma_markets")
-      .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
-      .contains("states_covered", [state])
-      .order("rank", { ascending: true }),
-    supabase.rpc("get_state_accident_summary", { p_state: state }),
-    supabase.from("media_profiles").select("*"),
-    // Paginated whole-table pull — the capped single query dropped ~62 markets.
-    fetchAllMediaOutlets(supabase),
-    // National demographic consumption baseline (Pew + BLS ATUS + Nielsen-cited).
-    supabase
-      .from("media_consumption_baseline")
-      .select("demographic_type, demographic_group, channel, metric, scope, value, unit, source")
-      .eq("geography_level", "national"),
-    // County demographics for this state → population-weighted demographic mix.
-    supabase
-      .from("census_demographics")
-      .select(
-        "total_population, pct_black, pct_white, pct_hispanic, pct_asian, pop_18_to_24, pop_25_to_34, pop_35_to_44, pop_45_to_54, pop_55_to_64, pop_65_to_74, pop_75_plus",
-      )
-      .eq("state_abbr", state),
-  ]);
+  // Resolve the state's DMAs FIRST: the media_outlets fetch is scoped by market,
+  // so the in-scope DMA names must be known before issuing it.
+  const { data: dmaData, error: dmaErr } = await supabase
+    .from("dma_markets")
+    .select("dma_code, display_name, full_name, rank, states_covered, primary_state")
+    .contains("states_covered", [state])
+    .order("rank", { ascending: true });
+
+  let topDmaName: string | null = null;
+  let topDmaCode: string | null = null;
+  // Display + full_name for every in-scope DMA, so the outlet match set can be
+  // built from BOTH labels — "Dallas" (display) matches the Nielsen variant
+  // "Dallas-Ft.Worth" via full_name "Dallas-Ft. Worth".
+  const stateDmaPairs: Array<{ display: string; full: string }> = [];
+  let selectedDmaPair: { display: string; full: string } | null = null;
+  if (dmaErr) {
+    errors.push("dma_markets fetch failed");
+  } else {
+    const rows = (dmaData as Array<Record<string, unknown>>) ?? [];
+    // Prefer DMAs whose primary_state is this state (drops border markets like
+    // Columbus GA that merely touch the state).
+    const inState = rows.filter((r) => String(r.primary_state ?? "") === state);
+    const ordered = inState.length > 0 ? inState : rows;
+    const selected = opts.dmaCode
+      ? ordered.find((r) => String(r.dma_code ?? "").trim() === opts.dmaCode)
+      : undefined;
+    for (const r of ordered) {
+      const display = String(r.display_name ?? r.full_name ?? "").trim();
+      const full = String(r.full_name ?? "").trim();
+      if (display || full) stateDmaPairs.push({ display, full });
+    }
+    if (selected) {
+      selectedDmaPair = {
+        display: String(selected.display_name ?? selected.full_name ?? "").trim(),
+        full: String(selected.full_name ?? "").trim(),
+      };
+    }
+    // Finding 4: when dmaCode was provided but not found, do NOT label by ordered[0].
+    const labelRow = selected ?? (strictMarket ? undefined : ordered[0]);
+    if (labelRow) {
+      topDmaName = String(labelRow.display_name ?? labelRow.full_name ?? "").trim() || null;
+      topDmaCode = String(labelRow.dma_code ?? "").trim() || null;
+    }
+  }
+
+  // Coarse server-side prefilter for the outlet fetch: strict mode scopes to the
+  // selected DMA, statewide to all of the state's DMAs. Empty (strict + unresolved
+  // dmaCode) → zero outlets, preserving Finding 5. The exact normalizeDmaName match
+  // in the outlet-assembly block below still governs final inclusion.
+  const marketPrefixes = buildMarketPrefixes(
+    strictMarket ? (selectedDmaPair ? [selectedDmaPair] : []) : stateDmaPairs,
+  );
+
+  // Fetch the remaining blocks independently; never let one failure sink the rest.
+  const [competitorsRes, accidentRes, profilesRes, outletsRes, baselineRes, censusRes] =
+    await Promise.allSettled([
+      // Scope the competitive field to the selected market when one is chosen
+      // (NULL p_dma_code = all-markets/statewide view). Without this, picking a
+      // DMA still returned statewide competitors while white space + creatives
+      // were already market-scoped — an inconsistency.
+      supabase.rpc("get_pi_competitors_by_dma", { p_state: state, p_dma_code: opts.dmaCode ?? null }),
+      supabase.rpc("get_state_accident_summary", { p_state: state }),
+      supabase.from("media_profiles").select("*"),
+      // Market-scoped fetch (replaces the old whole-table pagination).
+      fetchMediaOutletsForMarkets(supabase, marketPrefixes),
+      // National demographic consumption baseline (Pew + BLS ATUS + Nielsen-cited).
+      supabase
+        .from("media_consumption_baseline")
+        .select("demographic_type, demographic_group, channel, metric, scope, value, unit, source")
+        .eq("geography_level", "national"),
+      // County demographics for this state → population-weighted demographic mix.
+      supabase
+        .from("census_demographics")
+        .select(
+          "total_population, pct_black, pct_white, pct_hispanic, pct_asian, pop_18_to_24, pop_25_to_34, pop_35_to_44, pop_45_to_54, pop_55_to_64, pop_65_to_74, pop_75_plus",
+        )
+        .eq("state_abbr", state),
+    ]);
 
   /* advertiser landscape + Gorilla share (state-PI-specific) --------------- */
   let top_advertisers: AdvertiserShare[] = [];
@@ -335,43 +381,7 @@ export async function assembleStrategyInputs(
     errors.push("pi_competitors fetch failed");
   }
 
-  /* DMAs + county→DMA translation ------------------------------------------ */
-  let topDmaName: string | null = null;
-  let topDmaCode: string | null = null;
-  // Display + full_name for every in-scope DMA, so the outlet match set can be
-  // built from BOTH labels — "Dallas" (display) matches the Nielsen variant
-  // "Dallas-Ft.Worth" via full_name "Dallas-Ft. Worth".
-  const stateDmaPairs: Array<{ display: string; full: string }> = [];
-  let selectedDmaPair: { display: string; full: string } | null = null;
-  if (dmaRes.status === "fulfilled" && !dmaRes.value.error) {
-    const rows = (dmaRes.value.data as Array<Record<string, unknown>>) ?? [];
-    // Prefer DMAs whose primary_state is this state (drops border markets like
-    // Columbus GA that merely touch the state).
-    const inState = rows.filter((r) => String(r.primary_state ?? "") === state);
-    const ordered = inState.length > 0 ? inState : rows;
-    const selected = opts.dmaCode
-      ? ordered.find((r) => String(r.dma_code ?? "").trim() === opts.dmaCode)
-      : undefined;
-    for (const r of ordered) {
-      const display = String(r.display_name ?? r.full_name ?? "").trim();
-      const full = String(r.full_name ?? "").trim();
-      if (display || full) stateDmaPairs.push({ display, full });
-    }
-    if (selected) {
-      selectedDmaPair = {
-        display: String(selected.display_name ?? selected.full_name ?? "").trim(),
-        full: String(selected.full_name ?? "").trim(),
-      };
-    }
-    // Finding 4: when dmaCode was provided but not found, do NOT label by ordered[0].
-    const labelRow = selected ?? (strictMarket ? undefined : ordered[0]);
-    if (labelRow) {
-      topDmaName = String(labelRow.display_name ?? labelRow.full_name ?? "").trim() || null;
-      topDmaCode = String(labelRow.dma_code ?? "").trim() || null;
-    }
-  } else if (dmaRes.status === "rejected") {
-    errors.push("dma_markets fetch failed");
-  }
+  /* county→DMA translation (DMAs resolved earlier, before the outlet fetch) - */
 
   /* local signal (FARS) ---------------------------------------------------- */
   // The narrative signal surfaces counties by death RATE (highlights rural
@@ -546,11 +556,6 @@ export async function assembleStrategyInputs(
   // Selected DMA's normalized labels — used for the strict broadcast in-market filter.
   const selectedDmaSet = buildNormalizedDmaSet(selectedDmaPair ? [selectedDmaPair] : []);
   if (outletsRes.status === "fulfilled" && !outletsRes.value.error) {
-    if (outletsRes.value.truncated) {
-      // The paginated fetch hit its runaway cap before the table ended — some
-      // markets may be missing. Surface it instead of silently under-serving.
-      errors.push("media_outlets pagination hit row cap (results may be incomplete)");
-    }
     const rows = (outletsRes.value.data as Array<Record<string, unknown>>) ?? [];
     for (const r of rows) {
       const market = String(r.market ?? "").trim();
