@@ -13,7 +13,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync } from "node:fs";
-import { assembleStrategyInputs } from "../lib/strategy-engine/assemble-inputs.ts";
+import { assembleStrategyInputs } from "../lib/strategy-engine/assemble-inputs";
 
 /* ── env ─────────────────────────────────────────────────────────────────── */
 function loadEnv(path: string): Record<string, string> {
@@ -93,7 +93,11 @@ interface PassMetrics {
 
 async function runPass(state: string, scope: "statewide" | "top_dma", dma: { code: string | null; name: string | null }): Promise<PassMetrics> {
   const dmaCode = scope === "statewide" ? null : dma.code;
-  const { inputs, errors } = await assembleStrategyInputs(sb, state, { tortSlug: TORT_SLUG, tortLabel: TORT_LABEL, dmaCode });
+  const { inputs, errors } = await assembleStrategyInputs(
+    sb as unknown as Parameters<typeof assembleStrategyInputs>[0],
+    state,
+    { tortSlug: TORT_SLUG, tortLabel: TORT_LABEL, dmaCode },
+  );
 
   const [opp, ws, cr] = await Promise.all([
     rpc("strategy_opportunity_counties", { p_state: state, p_fips_full: null }),
