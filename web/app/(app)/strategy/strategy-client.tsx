@@ -3,20 +3,19 @@
 /**
  * Strategy Engine — interview + result.
  *
- * "The Analyst's Brief" redesign: a navy intelligence rail (live typewriter
- * brief + a deliverables list that reorders to the user's picks) beside a calm,
- * numbered carded form with a sticky generate bar. The interview POSTs to
- * /api/strategy/generate, which re-assembles inputs server-side; the returned
- * Strategy renders in <StrategyDeck/> below the panel. Field values stay in the
- * backend's slug vocabulary (trucking, paid_search, 25k_75k, …); display labels
- * + icons are looked up only for the UI. Reduced-motion safe.
+ * "The Analyst's Brief": a navy intelligence rail (a live brief that mirrors the
+ * user's picks + a deliverables list that reorders to them) beside a calm carded
+ * form with a sticky generate bar. The interview POSTs to /api/strategy/generate,
+ * which re-assembles inputs server-side; the returned Strategy renders in
+ * <StrategyDeck/> below the panel (auto-scrolled into view). Field values stay in
+ * the backend's slug vocabulary (trucking, paid_search, 25k_75k, …); display
+ * labels + icons are looked up only for the UI. Reduced-motion safe.
  */
 
 import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -36,6 +35,8 @@ import {
   MapPin,
   PhoneCall,
   RadioTower,
+  RefreshCw,
+  TriangleAlert,
   Truck,
   UserRound,
   Wallet,
@@ -74,6 +75,8 @@ const BUDGET_TIERS = [
 ];
 
 const GOALS = ["More qualified signups", "Lower cost per case", "Brand awareness", "Enter a new market", "Defend share"];
+
+const LOADING_STAGE_COUNT = 4;
 
 const CHANNELS: { key: string; label: string }[] = [
   { key: "paid_search", label: "Paid Search" },
@@ -126,67 +129,15 @@ const EYEBROW: React.CSSProperties = {
   letterSpacing: "0.16em",
 };
 
-// ── Typewriter that retypes only from the point of change ────
-function TypedBrief({ segments }: { segments: { t: string; teal?: boolean }[] }) {
-  const full = useMemo(() => segments.map((s) => s.t).join(""), [segments]);
-  const colors = useMemo(() => {
-    const a: boolean[] = [];
-    segments.forEach((s) => {
-      for (let i = 0; i < s.t.length; i++) a.push(!!s.teal);
-    });
-    return a;
-  }, [segments]);
-  const [reduce] = useState(
-    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  const [n, setN] = useState(0);
-  const prev = useRef("");
-
-  useEffect(() => {
-    // Reduced motion: render the whole brief at once, no typing.
-    if (reduce) {
-      prev.current = full;
-      return;
-    }
-    // Keep the longest common prefix with the previous brief, type the rest.
-    const a = prev.current;
-    let cp = 0;
-    while (cp < a.length && cp < full.length && a[cp] === full[cp]) cp++;
-    let cur = cp;
-    let id: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      cur += 1;
-      setN(cur);
-      if (cur < full.length) id = setTimeout(tick, 15);
-      else prev.current = full;
-    };
-    // Kick off asynchronously so no setState runs synchronously in the effect body.
-    id = setTimeout(() => {
-      setN(cp);
-      if (cp < full.length) id = setTimeout(tick, 110);
-      else prev.current = full;
-    }, 0);
-    return () => clearTimeout(id);
-  }, [full, reduce]);
-
-  const out: ReactNode[] = [];
-  const lim = reduce ? full.length : Math.min(n, full.length);
-  let i = 0;
-  while (i < lim) {
-    const teal = colors[i];
-    let j = i;
-    while (j < lim && colors[j] === teal) j++;
-    out.push(
-      <span key={i} style={teal ? { color: "var(--color-light-teal)", fontWeight: 600 } : undefined}>
-        {full.slice(i, j)}
-      </span>,
-    );
-    i = j;
-  }
+// ── Live brief — updates instantly with the user's picks (teal = dynamic) ────
+function Brief({ segments }: { segments: { t: string; teal?: boolean }[] }) {
   return (
     <span>
-      {out}
-      <span className="caret" />
+      {segments.map((s, i) => (
+        <span key={i} style={s.teal ? { color: "var(--color-light-teal)", fontWeight: 600 } : undefined}>
+          {s.t}
+        </span>
+      ))}
     </span>
   );
 }
@@ -269,6 +220,7 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
+      className="lmi-focus"
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -303,15 +255,13 @@ function Pill({
   );
 }
 
-// ── Primitive: field block (eyebrow label + optional helper) ──
+// ── Primitive: field block (label + optional helper) ─────────
 function FieldBlock({
-  index,
   label,
   helper,
   children,
   required,
 }: {
-  index?: number;
   label: string;
   helper?: string;
   children?: ReactNode;
@@ -320,15 +270,10 @@ function FieldBlock({
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-        {index != null && (
-          <span className="lmi-mono" style={{ fontSize: 12, color: "var(--color-intelligence-teal)", fontWeight: 500 }}>
-            {String(index).padStart(2, "0")}
-          </span>
-        )}
         <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--color-midnight-navy)" }}>
           {label}
         </span>
-        {!required && <span style={{ fontSize: 12, color: "var(--color-slate-400)", fontStyle: "italic" }}>optional</span>}
+        {!required && <span style={{ fontSize: 12, color: "var(--color-slate-gray)", fontStyle: "italic" }}>optional</span>}
         {helper && <span style={{ fontSize: 13, color: "var(--color-slate-gray)", marginLeft: "auto" }}>{helper}</span>}
       </div>
       {children}
@@ -357,6 +302,7 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        className="lmi-focus"
         style={{
           appearance: "none",
           WebkitAppearance: "none",
@@ -422,6 +368,7 @@ function FoundationRow({ q, value, onSet }: { q: string; value?: string; onSet: 
               key={o.v}
               type="button"
               onClick={() => onSet(o.v)}
+              className="lmi-focus"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -475,8 +422,10 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const [readiness, setReadiness] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any | null>(null);
+  const deckRef = useRef<HTMLDivElement>(null);
 
   // Reset the market when the state changes (a DMA from another state must not
   // ride along), then fetch the new state's DMA list.
@@ -503,6 +452,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
 
   const generate = useCallback(async () => {
     setLoading(true);
+    setLoadingStage(0);
     setError(null);
     setResult(null);
     try {
@@ -525,10 +475,10 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
         }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data?.error ?? "Generation failed");
+      if (!res.ok) setError(data?.error ?? "Something went wrong building the strategy. Please try again.");
       else setResult(data);
     } catch {
-      setError("Network error");
+      setError("We couldn't reach the server. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -541,6 +491,28 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const budgetLabel = BUDGET_TIERS.find((b) => b.key === budgetTier)?.label ?? "";
   const intakeLabel = INTAKE_OPTIONS.find((o) => o.key === intakeCapacity)?.label ?? "";
   const caseLabel = (slug?: string) => (slug ? CASE_META[slug]?.label ?? slug : "");
+
+  // Staged status for the ~30s generate so a long wait never reads as frozen.
+  const loadingStages = [
+    `Pulling ${selectedMarket || stateLabel} ad activity…`,
+    "Scoring the tactic mix…",
+    "Writing your brief…",
+    "Putting the deck together…",
+  ];
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => {
+      setLoadingStage((s) => Math.min(s + 1, LOADING_STAGE_COUNT - 1));
+    }, 3500);
+    return () => clearInterval(id);
+  }, [loading]);
+
+  // Bring the freshly generated deck into view.
+  useEffect(() => {
+    if (!result || !deckRef.current) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    deckRef.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [result]);
 
   const foundationDone = Object.values(readiness).filter(Boolean).length === READINESS.length;
   const checks = [
@@ -603,8 +575,8 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
     borderRadius: 14,
   };
 
-  // Staggered entrance for the right-column blocks (pure: no render-time mutation).
-  const riseStyle = (i: number): React.CSSProperties => ({ animationDelay: `${i * 90}ms` });
+  // Short, capped entrance stagger (quiet, not an orchestrated page-load).
+  const riseStyle = (i: number): React.CSSProperties => ({ animationDelay: `${Math.min(i, 8) * 45}ms` });
 
   return (
     <div>
@@ -639,7 +611,10 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
             style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none", backgroundImage: "radial-gradient(rgba(255,255,255,.9) 1px, transparent 1px)", backgroundSize: "22px 22px" }}
           />
 
-          <div className="lg:sticky lg:top-6" style={{ position: "relative", zIndex: 1, padding: "44px 48px", display: "flex", flexDirection: "column" }}>
+          <div
+            className="lg:sticky lg:top-6 px-7 py-9 lg:px-12 lg:py-11"
+            style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column" }}
+          >
             <div className="railin" style={{ display: "flex", alignItems: "center" }}>
               {/* White horizontal lockup (wordmark baked in) — reads on navy. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -651,23 +626,23 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
                 <span className="pulse-dot" style={{ width: 7, height: 7, borderRadius: 9999, background: "var(--color-light-teal)", display: "inline-block", flexShrink: 0 }} />
                 Strategy Engine
               </div>
-              <h1 style={{ color: "#fff", fontSize: 36, lineHeight: 1.12, fontWeight: 700, marginTop: 16, letterSpacing: "-0.015em", textWrap: "balance" }}>
+              <h1 style={{ color: "#fff", fontSize: "clamp(28px, 7vw, 36px)", lineHeight: 1.12, fontWeight: 700, marginTop: 16, letterSpacing: "-0.015em", textWrap: "balance" }}>
                 A defensible, data-traced media strategy for {stateLabel}.
               </h1>
-              <p style={{ color: "rgba(255,255,255,.72)", fontSize: 16, lineHeight: 1.62, marginTop: 18, maxWidth: 430 }}>
+              <p className="hidden lg:block" style={{ color: "rgba(255,255,255,.72)", fontSize: 16, lineHeight: 1.62, marginTop: 18, maxWidth: 430 }}>
                 Answer eight quick questions. We turn market-wide ad activity and risk signals into a plan you can defend in a partner meeting —{" "}
                 <span style={{ color: "var(--color-light-teal)", fontWeight: 500 }}>every number carries its source.</span>
               </p>
             </div>
 
-            {/* live, typed brief */}
+            {/* live brief — mirrors the user's picks */}
             <div className="railin" style={{ marginTop: 28, ...railCard, padding: "20px 22px", animationDelay: "180ms" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ ...EYEBROW, color: "rgba(255,255,255,.55)" }}>Your brief so far</span>
                 <span className="lmi-mono" style={{ fontSize: 12, color: "var(--color-light-teal)" }}>{pct}%</span>
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.55, marginTop: 12, color: "#fff", minHeight: 50 }}>
-                <TypedBrief segments={briefSegments} />
+                <Brief segments={briefSegments} />
               </p>
               {briefChips.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
@@ -681,8 +656,8 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
               )}
             </div>
 
-            {/* what you'll get — reorders to picks */}
-            <div className="railin" style={{ marginTop: 30, paddingTop: 0 }}>
+            {/* what you'll get — reorders to picks (desktop only; mobile leads with the form) */}
+            <div className="railin hidden lg:block" style={{ marginTop: 30, paddingTop: 0 }}>
               <span style={{ ...EYEBROW, color: "rgba(255,255,255,.45)" }}>What you&apos;ll get back</span>
               <Deliverables items={dels} anyPicked={anyPicked} />
             </div>
@@ -708,22 +683,22 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
 
             <div style={{ display: "grid", gap: 36 }}>
               <div className="rise" style={{ ...riseStyle(2) }}>
-                <FieldBlock index={1} label="Audience" required helper="Who is this strategy for?">
+                <FieldBlock label="Audience" required helper="Who is this strategy for?">
                   <Row>{AUDIENCES.map((a) => <Pill key={a.key} active={audience === a.key} onClick={() => setAudience(a.key)}>{a.label}</Pill>)}</Row>
                 </FieldBlock>
               </div>
 
               <div className="rise" style={{ ...riseStyle(3) }}>
-                <FieldBlock index={2} label="Case types" required helper="Select all that apply">
+                <FieldBlock label="Case types" required helper="Select all that apply">
                   <Row>{CASE_TYPES.map((c) => <Pill key={c} Icon={CASE_META[c].Icon} active={caseTypes.includes(c)} onClick={() => toggle(caseTypes, c, setCaseTypes)}>{CASE_META[c].label}</Pill>)}</Row>
                 </FieldBlock>
               </div>
 
               <div className="rise" style={{ display: "flex", gap: 32, flexWrap: "wrap", ...riseStyle(4) }}>
-                <FieldBlock index={3} label="State" required>
+                <FieldBlock label="State" required>
                   <SelectField value={stateCode} onChange={onStateChange} options={US_STATES.map((s) => ({ value: s, label: s }))} render={(s) => `${s} — ${STATE_NAMES[s] ?? s}`} />
                 </FieldBlock>
-                <FieldBlock index={4} label="Market (DMA)">
+                <FieldBlock label="Market (DMA)">
                   <SelectField
                     value={dmaCode}
                     onChange={setDmaCode}
@@ -733,7 +708,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
               </div>
 
               <div className="rise" style={{ ...riseStyle(5) }}>
-                <FieldBlock index={5} label="Budget tier" required helper="Monthly media budget">
+                <FieldBlock label="Budget tier" required helper="Monthly media budget">
                   <Row>
                     {BUDGET_TIERS.map((b) => {
                       const on = budgetTier === b.key;
@@ -742,6 +717,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
                           key={b.key}
                           type="button"
                           onClick={() => setBudgetTier(b.key)}
+                          className="lmi-focus"
                           style={{
                             flex: "1 1 140px",
                             textAlign: "left",
@@ -765,25 +741,25 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
               </div>
 
               <div className="rise" style={{ ...riseStyle(6) }}>
-                <FieldBlock index={6} label="Primary goal" required helper="Pick the one that matters most">
+                <FieldBlock label="Primary goal" required helper="Pick the one that matters most">
                   <Row>{GOALS.map((g) => <Pill key={g} active={goal === g} onClick={() => setGoal(g)}>{g}</Pill>)}</Row>
                 </FieldBlock>
               </div>
 
               <div className="rise" style={{ ...riseStyle(7) }}>
-                <FieldBlock index={7} label="Existing channels" helper="What you run today">
+                <FieldBlock label="Existing channels" helper="What you run today">
                   <Row>{CHANNELS.map((c) => <Pill key={c.key} active={existingChannels.includes(c.key)} onClick={() => toggle(existingChannels, c.key, setExistingChannels)}>{c.label}</Pill>)}</Row>
                 </FieldBlock>
               </div>
 
               <div className="rise" style={{ ...riseStyle(8) }}>
-                <FieldBlock index={8} label="Intake capacity" required>
+                <FieldBlock label="Intake capacity" required>
                   <Row>{INTAKE_OPTIONS.map((o) => <Pill key={o.key} active={intakeCapacity === o.key} onClick={() => setIntakeCapacity(o.key)}>{o.label}</Pill>)}</Row>
                 </FieldBlock>
               </div>
 
               <div className="rise" style={{ ...riseStyle(9) }}>
-                <FieldBlock index={9} label="What does winning look like in 90 days? Anything off-limits?" required>
+                <FieldBlock label="What does winning look like in 90 days? Anything off-limits?" required>
                   <TextArea value={goalContext} onChange={setGoalContext} placeholder="e.g. 25 signed truck cases a quarter; we don't do billboards or daytime TV." />
                 </FieldBlock>
               </div>
@@ -796,13 +772,55 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
 
               <div className="rise" style={{ background: "#fff", border: "1px solid var(--color-slate-200)", borderRadius: 16, padding: "8px 24px 16px", boxShadow: "var(--shadow-card)", ...riseStyle(11) }}>
                 <div style={{ paddingTop: 18, paddingBottom: 4 }}>
-                  <FieldBlock index={10} label="Foundation check" required helper="So we don't recommend spend you can't convert" />
+                  <FieldBlock label="Foundation check" required helper="So we don't recommend spend you can't convert" />
                 </div>
                 {READINESS.map((f) => <FoundationRow key={f.key} q={f.label} value={readiness[f.key]} onSet={(v) => setReadiness({ ...readiness, [f.key]: v })} />)}
               </div>
 
               {error ? (
-                <p style={{ fontSize: 14, color: "var(--color-alert)", marginTop: -8 }}>{error}</p>
+                <div
+                  role="alert"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    padding: "16px 18px",
+                    borderRadius: 12,
+                    background: "rgba(239,68,68,.06)",
+                    border: "1px solid rgba(239,68,68,.28)",
+                  }}
+                >
+                  <TriangleAlert size={18} style={{ color: "var(--color-alert)", flexShrink: 0, marginTop: 1 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14.5, color: "var(--color-midnight-navy)" }}>We couldn&apos;t build that strategy.</div>
+                    <div style={{ fontSize: 13.5, color: "var(--color-slate-gray)", marginTop: 3, lineHeight: 1.5 }}>{error}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="lmi-focus"
+                    onClick={generate}
+                    disabled={loading}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "8px 14px",
+                      borderRadius: 9999,
+                      background: "#fff",
+                      color: "var(--color-intelligence-teal)",
+                      border: "1px solid var(--color-intelligence-teal)",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      fontFamily: "var(--font-heading)",
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <RefreshCw size={14} />
+                    Try again
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>
@@ -824,17 +842,31 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
               flexWrap: "wrap",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 130, height: 6, borderRadius: 9999, background: "var(--color-slate-200)", overflow: "hidden" }}>
-                <div style={{ width: pct + "%", height: "100%", background: "var(--color-intelligence-teal)", transition: "width 360ms var(--ease-standard)" }} />
-              </div>
-              <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>
-                <b className="lmi-mono" style={{ color: "var(--color-midnight-navy)" }}>{done}</b> of {total} ready
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              {loading ? (
+                <>
+                  <div style={{ width: 130, height: 6, borderRadius: 9999, background: "var(--color-slate-200)", overflow: "hidden", position: "relative", flexShrink: 0 }}>
+                    <div
+                      className="lmi-indeterminate-bar"
+                      style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "33%", borderRadius: 9999, background: "var(--color-intelligence-teal)" }}
+                    />
+                  </div>
+                  <span aria-live="polite" style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>{loadingStages[loadingStage]}</span>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 130, height: 6, borderRadius: 9999, background: "var(--color-slate-200)", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: "100%", background: "var(--color-intelligence-teal)", transformOrigin: "left", transform: `scaleX(${pct / 100})`, transition: "transform 360ms var(--ease-standard)" }} />
+                  </div>
+                  <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>
+                    <b className="lmi-mono" style={{ color: "var(--color-midnight-navy)" }}>{done}</b> of {total} ready
+                  </span>
+                </>
+              )}
             </div>
             <button
               type="button"
-              className="cta"
+              className="cta lmi-focus"
               onClick={generate}
               disabled={loading || !canSubmit}
               style={{
@@ -861,7 +893,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
         </section>
       </div>
 
-      {result ? <StrategyDeck data={result} /> : null}
+      <div ref={deckRef}>{result ? <StrategyDeck data={result} /> : null}</div>
     </div>
   );
 }
