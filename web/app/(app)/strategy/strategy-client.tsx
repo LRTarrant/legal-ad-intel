@@ -270,7 +270,7 @@ function FieldBlock({
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--color-midnight-navy)" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 600, letterSpacing: "0.005em", color: "var(--color-midnight-navy)" }}>
           {label}
         </span>
         {!required && <span style={{ fontSize: 12, color: "var(--color-slate-gray)", fontStyle: "italic" }}>optional</span>}
@@ -426,6 +426,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any | null>(null);
   const deckRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Reset the market when the state changes (a DMA from another state must not
   // ride along), then fetch the new state's DMA list.
@@ -484,6 +485,25 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
     }
   }, [audience, caseTypes, stateCode, dmaCode, budgetTier, goal, existingChannels, intakeCapacity, goalContext, currentAdNotes, readiness]);
 
+  // Start over: reset the interview to its initial seed and clear the result.
+  const resetForm = useCallback(() => {
+    setAudience("agency");
+    setCaseTypes(seededCaseTypes.length > 0 ? seededCaseTypes : ["trucking"]);
+    setStateCode(seededState);
+    setDmaCode("");
+    setBudgetTier("25k_75k");
+    setGoal(GOALS[0]);
+    setExistingChannels(["paid_search", "billboards"]);
+    setIntakeCapacity("scale");
+    setGoalContext("");
+    setCurrentAdNotes("");
+    setReadiness({});
+    setResult(null);
+    setError(null);
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    panelRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [seededCaseTypes, seededState]);
+
   // ── Derived display values ─────────────────────────────────
   const stateLabel = STATE_NAMES[stateCode] ?? stateCode;
   const selectedMarket = dmaOptions.find((d) => d.dma_code === dmaCode)?.display_name ?? "";
@@ -530,6 +550,15 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   const pct = Math.round((done / total) * 100);
   const anyPicked = done > 1;
   const canSubmit = caseTypes.length > 0 && !!intakeCapacity && goalContext.trim() !== "";
+  // Names the first field blocking submit, so the disabled CTA isn't silent.
+  const missingHint =
+    caseTypes.length === 0
+      ? "Pick at least one case type to generate"
+      : !intakeCapacity
+        ? "Choose intake capacity to generate"
+        : goalContext.trim() === ""
+          ? "Add your 90-day goal to generate"
+          : "";
 
   const caseStr =
     caseTypes.length === 0
@@ -581,6 +610,7 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
   return (
     <div>
       <div
+        ref={panelRef}
         style={{
           display: "flex",
           minHeight: "calc(100vh - 6rem)",
@@ -858,37 +888,68 @@ export default function StrategyClient({ initialState, initialCaseTypes }: Strat
                   <div style={{ width: 130, height: 6, borderRadius: 9999, background: "var(--color-slate-200)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: "100%", background: "var(--color-intelligence-teal)", transformOrigin: "left", transform: `scaleX(${pct / 100})`, transition: "transform 360ms var(--ease-standard)" }} />
                   </div>
-                  <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>
-                    <b className="lmi-mono" style={{ color: "var(--color-midnight-navy)" }}>{done}</b> of {total} ready
-                  </span>
+                  {canSubmit ? (
+                    <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>
+                      <b className="lmi-mono" style={{ color: "var(--color-midnight-navy)" }}>{done}</b> of {total} ready
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 13, color: "var(--color-slate-gray)" }}>{missingHint}</span>
+                  )}
                 </>
               )}
             </div>
-            <button
-              type="button"
-              className="cta lmi-focus"
-              onClick={generate}
-              disabled={loading || !canSubmit}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 9,
-                padding: "13px 26px",
-                borderRadius: 9999,
-                background: "var(--color-intelligence-teal)",
-                color: "#fff",
-                border: "none",
-                cursor: loading || !canSubmit ? "not-allowed" : "pointer",
-                fontFamily: "var(--font-heading)",
-                fontSize: 15,
-                fontWeight: 600,
-                boxShadow: "0 6px 16px -4px rgba(26,140,150,.5)",
-                opacity: loading || !canSubmit ? 0.55 : 1,
-              }}
-            >
-              {loading ? "Building strategy…" : "Generate strategy"}
-              {loading ? <Loader2 size={17} className="animate-spin" /> : <ArrowRight size={17} />}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {result && !loading && (
+                <button
+                  type="button"
+                  className="lmi-focus"
+                  onClick={resetForm}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "12px 16px",
+                    borderRadius: 9999,
+                    background: "transparent",
+                    color: "var(--color-slate-gray)",
+                    border: "1px solid var(--color-slate-200)",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-heading)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <RefreshCw size={15} />
+                  Start over
+                </button>
+              )}
+              <button
+                type="button"
+                className="cta lmi-focus"
+                onClick={generate}
+                disabled={loading || !canSubmit}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 9,
+                  padding: "13px 26px",
+                  borderRadius: 9999,
+                  background: "var(--color-intelligence-teal)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: loading || !canSubmit ? "not-allowed" : "pointer",
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  boxShadow: "0 6px 16px -4px rgba(26,140,150,.5)",
+                  opacity: loading || !canSubmit ? 0.55 : 1,
+                }}
+              >
+                {loading ? "Building strategy…" : result ? "Regenerate" : "Generate strategy"}
+                {loading ? <Loader2 size={17} className="animate-spin" /> : <ArrowRight size={17} />}
+              </button>
+            </div>
           </div>
         </section>
       </div>
