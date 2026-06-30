@@ -196,3 +196,51 @@ test("Portland-OR selection excludes a Portland, ME outlet (no cross-state leak)
   assert.ok(names.includes("KGW"), "Portland OR outlet present");
   assert.ok(!names.includes("WCSH"), "Portland, ME outlet must NOT leak into a Portland, OR selection");
 });
+
+test("media_outlets pagination reaches rows past the first 1000-row page, ordered stably", async () => {
+  // Page 1 = 1000 non-matching rows; the only matching outlet lives on page 2.
+  // If pagination stops at page 1 (the old capped bug) it's unreachable; if the
+  // range() loop lacks a stable .order it can skip it nondeterministically.
+  const page1 = Array.from({ length: 1000 }, (_, i) => ({
+    call_sign: `N${i}`, media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Nowhere",
+  }));
+  const all = [
+    ...page1,
+    { call_sign: "WPG2", media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Pageville" },
+  ];
+
+  let orderedBeforeRange = false;
+  let sawSecondPage = false;
+  const mediaOutletsBuilder = () => {
+    let ordered = false;
+    const b: Record<string, unknown> = {};
+    b.select = () => b;
+    b.order = (col: string) => { ordered = col === "id"; return b; };
+    b.range = (from: number, to: number) => {
+      if (ordered) orderedBeforeRange = true;
+      if (from >= 1000) sawSecondPage = true;
+      const slice = all.slice(from, to + 1);
+      return { then: (resolve: (v: unknown) => void) => resolve({ data: slice, error: null }) };
+    };
+    return b;
+  };
+  const passthrough = (rows: unknown[]) => {
+    const b: Record<string, unknown> = {};
+    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) b[m] = () => b;
+    (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
+    return b;
+  };
+  const tables: Record<string, unknown[]> = {
+    dma_markets: [{ dma_code: "999", display_name: "Pageville", full_name: "Pageville", rank: 1, states_covered: ["ZZ"], primary_state: "ZZ" }],
+    media_consumption_baseline: [], media_profiles: [], census_demographics: [], broadcast_stations: [],
+  };
+  const sb = {
+    from: (t: string) => (t === "media_outlets" ? mediaOutletsBuilder() : passthrough(tables[t] ?? [])),
+    rpc: async () => ({ data: [], error: null }),
+  };
+
+  const { inputs } = await assembleStrategyInputs(sb, "ZZ", { dmaCode: "999" });
+  assert.ok(sawSecondPage, "pagination must request rows beyond the first 1000-row page");
+  assert.ok(orderedBeforeRange, "range() must be preceded by a stable .order('id')");
+  assert.ok(inputs.outlets.some((o) => o.name === "WPG2"), "an outlet that only exists on page 2 must be reachable");
+});

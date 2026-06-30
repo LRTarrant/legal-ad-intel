@@ -185,23 +185,37 @@ function buildNormalizedDmaSet(pairs: Array<{ display: string; full: string }>):
  */
 async function fetchAllMediaOutlets(
   supabase: SupabaseLike,
-): Promise<{ data: Array<Record<string, unknown>>; error: unknown }> {
+): Promise<{ data: Array<Record<string, unknown>>; error: unknown; truncated: boolean }> {
   const pageSize = 1000;
+  // Runaway guard. The real terminator is the short final page; this only trips
+  // if the table grows past the cap, in which case we flag `truncated` so the
+  // caller surfaces a warning rather than silently dropping rows (the very bug
+  // this helper fixes). Generous headroom over the current ~7.9k rows.
+  const maxRows = 60000;
   const all: Array<Record<string, unknown>> = [];
   let from = 0;
-  // Safety cap (~12k; table is ~7.9k rows) to prevent a runaway loop.
-  while (from < 12000) {
+  let truncated = false;
+  for (;;) {
     const { data, error } = await supabase
       .from("media_outlets")
       .select("call_sign, media_company, media_format, media_type, format_genre, market")
+      // Stable sort is REQUIRED for .range() pagination: without a deterministic
+      // ORDER BY, Postgres can return rows in a different order between page
+      // fetches and silently skip/duplicate rows across page boundaries. `id`
+      // is the table's non-null PK.
+      .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
-    if (error) return { data: all, error };
+    if (error) return { data: all, error, truncated };
     const batch = (data as Array<Record<string, unknown>> | null) ?? [];
     all.push(...batch);
     if (batch.length < pageSize) break;
     from += pageSize;
+    if (from >= maxRows) {
+      truncated = true;
+      break;
+    }
   }
-  return { data: all, error: null };
+  return { data: all, error: null, truncated };
 }
 
 /* ── The assembler ──────────────────────────────────────────────────────── */
@@ -532,6 +546,11 @@ export async function assembleStrategyInputs(
   // Selected DMA's normalized labels — used for the strict broadcast in-market filter.
   const selectedDmaSet = buildNormalizedDmaSet(selectedDmaPair ? [selectedDmaPair] : []);
   if (outletsRes.status === "fulfilled" && !outletsRes.value.error) {
+    if (outletsRes.value.truncated) {
+      // The paginated fetch hit its runaway cap before the table ended — some
+      // markets may be missing. Surface it instead of silently under-serving.
+      errors.push("media_outlets pagination hit row cap (results may be incomplete)");
+    }
     const rows = (outletsRes.value.data as Array<Record<string, unknown>>) ?? [];
     for (const r of rows) {
       const market = String(r.market ?? "").trim();
