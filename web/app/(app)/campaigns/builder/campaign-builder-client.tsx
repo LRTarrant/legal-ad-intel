@@ -288,6 +288,10 @@ export function CampaignBuilderClient() {
     piCategory?: string;
     state?: string;
     marketDmaCode?: string;
+    // Strategy Engine handoff (PHASE 1): named market + statewide target + goal.
+    marketDisplayName?: string;
+    statewide?: boolean;
+    goal?: string;
   }>({});
   // True when the practice_area was set from a URL param (vs. user click /
   // localStorage). Used to auto-open the upgrade modal if the deep-linked
@@ -323,8 +327,21 @@ export function CampaignBuilderClient() {
     }
 
     const marketDmaParam = url.searchParams.get("market_dma_code");
+    // Strategy Engine handoff (PHASE 1) additions.
+    const marketDisplayParam = url.searchParams.get("market_display_name");
+    const firmNameParam = url.searchParams.get("firm_name");
+    const goalParam = url.searchParams.get("goal");
+    const budgetMidParam = url.searchParams.get("budget_midpoint");
 
-    const next: { tortName?: string; piCategory?: string; state?: string; marketDmaCode?: string } = {};
+    const next: {
+      tortName?: string;
+      piCategory?: string;
+      state?: string;
+      marketDmaCode?: string;
+      marketDisplayName?: string;
+      statewide?: boolean;
+      goal?: string;
+    } = {};
     if (tortNameParam) {
       next.tortName = tortNameParam;
       url.searchParams.delete("tort_name");
@@ -345,7 +362,51 @@ export function CampaignBuilderClient() {
       url.searchParams.delete("market_dma_code");
       dirty = true;
     }
-    if (next.tortName || next.piCategory || next.state || next.marketDmaCode) {
+    if (marketDisplayParam) {
+      next.marketDisplayName = marketDisplayParam;
+      // "Statewide – <State>" signals a statewide target (no DMA required).
+      next.statewide = /^\s*statewide\b/i.test(marketDisplayParam);
+      url.searchParams.delete("market_display_name");
+      dirty = true;
+    }
+    if (goalParam) {
+      // No PI input maps to goal yet — carried for downstream use (later phase).
+      next.goal = goalParam;
+      url.searchParams.delete("goal");
+      dirty = true;
+    }
+    // firm_name → the shared firmName field. A handoff value wins over the
+    // law-firm self-firm auto-fill (both guard on an empty field).
+    if (firmNameParam) {
+      const trimmed = firmNameParam.trim();
+      if (trimmed) setFirmName((prev) => prev || trimmed);
+      url.searchParams.delete("firm_name");
+      dirty = true;
+    }
+    // budget_midpoint → the existing monthlyBudget field (the only budget input).
+    if (budgetMidParam) {
+      const n = Number(budgetMidParam);
+      if (Number.isFinite(n) && n > 0) setMonthlyBudget((prev) => prev || String(Math.round(n)));
+      url.searchParams.delete("budget_midpoint");
+      dirty = true;
+    }
+    // Strip the remaining handoff params we don't bind to a field, so the URL
+    // stays clean. (audience is authoritative-from-subscription, not consumed
+    // here; budget_tier/min/max are summarized by budget_midpoint above.)
+    for (const key of ["budget_tier", "budget_min", "budget_max", "audience"]) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        dirty = true;
+      }
+    }
+    if (
+      next.tortName ||
+      next.piCategory ||
+      next.state ||
+      next.marketDmaCode ||
+      next.marketDisplayName ||
+      next.goal
+    ) {
       setDeepLink(next);
     }
     if (dirty) {
@@ -440,6 +501,13 @@ export function CampaignBuilderClient() {
   // Firms / MCC: selected firm_id flows into save + plan calls so every
   // campaign is persisted under the right client. Law firms have one
   // firm and never see the picker; agencies/media see a dropdown.
+  //
+  // buyer_type comes from the subscription via useFirms() and is
+  // AUTHORITATIVE. The Strategy Engine handoff collects `audience`
+  // (firm | agency | seller; mapped by audienceToBuyerType in
+  // lib/strategy-engine/campaign-handoff) as an intent hint only — it is
+  // deliberately NOT passed here and never overrides this value. If they
+  // disagree, the subscription wins.
   const firmsResult = useFirms();
   const [selectedFirmId, setSelectedFirmId] = useState<string | null>(null);
 
@@ -1197,6 +1265,8 @@ export function CampaignBuilderClient() {
             initialState={deepLink.state}
             initialCategory={deepLink.piCategory}
             initialDmaCode={deepLink.marketDmaCode}
+            initialMarketDisplayName={deepLink.marketDisplayName}
+            statewide={deepLink.statewide}
             onEntitlementError={({ reason, meta }) =>
               setUpgradeModal({ open: true, reason, meta })
             }
