@@ -4,13 +4,15 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assembleStrategyInputs } from "./assemble-inputs";
+import { assembleStrategyInputs, normalizeDmaName } from "./assemble-inputs";
 
 /** Minimal chainable Supabase mock. Each table/rpc returns canned rows. */
 function mockSupabase(tables: Record<string, unknown[]>, rpcs: Record<string, unknown[]> = {}) {
   const builder = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
-    for (const m of ["select", "contains", "order", "eq", "limit"]) {
+    // "range" is required by the paginated media_outlets fetch; the canned row
+    // count is < 1000 so the pagination loop breaks after one page.
+    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) {
       b[m] = () => b;
     }
     // Awaiting the builder resolves to { data, error }.
@@ -108,7 +110,7 @@ test("forwards the selected DMA to the competitor RPC so the competitive field i
   const rpcCalls: Array<{ fn: string; params?: Record<string, unknown> }> = [];
   const builder = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
-    for (const m of ["select", "contains", "order", "eq", "limit"]) b[m] = () => b;
+    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) b[m] = () => b;
     (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
     return b;
   };
@@ -130,4 +132,115 @@ test("forwards the selected DMA to the competitor RPC so the competitive field i
   await assembleStrategyInputs(sb, "AL", {});
   const statewideCall = rpcCalls.find((c) => c.fn === "get_pi_competitors_by_dma");
   assert.equal(statewideCall!.params?.p_dma_code, null, "no DMA → null (statewide), not undefined");
+});
+
+test("normalizeDmaName collapses Nielsen market variants but preserves state disambiguation", () => {
+  // Dallas: short dim label, two media_outlets spellings, and the broadcast spelling all align.
+  const dallas = normalizeDmaName("Dallas-Ft. Worth");
+  assert.equal(normalizeDmaName("Dallas"), "DALLAS"); // sanity: short label
+  assert.equal(normalizeDmaName("Dallas-Ft.Worth"), dallas);
+  assert.equal(normalizeDmaName("DALLAS-FT. WORTH"), dallas);
+  assert.equal(dallas, "DALLAS FT WORTH");
+
+  // Washington DC: comma variant aligns.
+  assert.equal(normalizeDmaName("Washington DC"), normalizeDmaName("Washington, DC"));
+
+  // St. Louis: period collapses to space.
+  assert.equal(normalizeDmaName("St. Louis"), "ST LOUIS");
+
+  // Disambiguation MUST survive — Portland ME and Portland OR stay distinct.
+  assert.notEqual(normalizeDmaName("Portland, ME"), normalizeDmaName("Portland, OR"));
+});
+
+test("short dim label matches an outlet whose market is the Nielsen variant (via full_name)", async () => {
+  const sb = mockSupabase(
+    {
+      dma_markets: [
+        // display "Dallas", full_name carries the Nielsen variant.
+        { dma_code: "623", display_name: "Dallas", full_name: "Dallas-Ft. Worth", rank: 5, states_covered: ["TX"], primary_state: "TX" },
+      ],
+      media_outlets: [
+        { call_sign: "KDFW", media_company: "x", media_format: "Video", media_type: "", format_genre: "News", market: "Dallas-Ft.Worth" },
+      ],
+      media_consumption_baseline: [],
+      media_profiles: [],
+      census_demographics: [],
+    },
+    { get_pi_competitors_by_dma: [], get_state_accident_summary: [] },
+  );
+
+  const { inputs } = await assembleStrategyInputs(sb, "TX", { dmaCode: "623" });
+  const names = inputs.outlets.map((o) => o.name);
+  assert.ok(names.includes("KDFW"), "Nielsen-variant outlet must match the short 'Dallas' label via full_name");
+});
+
+test("Portland-OR selection excludes a Portland, ME outlet (no cross-state leak)", async () => {
+  const sb = mockSupabase(
+    {
+      dma_markets: [
+        { dma_code: "820", display_name: "Portland OR", full_name: "Portland, OR", rank: 21, states_covered: ["OR"], primary_state: "OR" },
+      ],
+      media_outlets: [
+        { call_sign: "KGW", media_company: "x", media_format: "Video", media_type: "", format_genre: "News", market: "Portland, OR" },
+        { call_sign: "WCSH", media_company: "y", media_format: "Video", media_type: "", format_genre: "News", market: "Portland, ME" },
+      ],
+      media_consumption_baseline: [],
+      media_profiles: [],
+      census_demographics: [],
+    },
+    { get_pi_competitors_by_dma: [], get_state_accident_summary: [] },
+  );
+
+  const { inputs } = await assembleStrategyInputs(sb, "OR", { dmaCode: "820" });
+  const names = inputs.outlets.map((o) => o.name);
+  assert.ok(names.includes("KGW"), "Portland OR outlet present");
+  assert.ok(!names.includes("WCSH"), "Portland, ME outlet must NOT leak into a Portland, OR selection");
+});
+
+test("media_outlets pagination reaches rows past the first 1000-row page, ordered stably", async () => {
+  // Page 1 = 1000 non-matching rows; the only matching outlet lives on page 2.
+  // If pagination stops at page 1 (the old capped bug) it's unreachable; if the
+  // range() loop lacks a stable .order it can skip it nondeterministically.
+  const page1 = Array.from({ length: 1000 }, (_, i) => ({
+    call_sign: `N${i}`, media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Nowhere",
+  }));
+  const all = [
+    ...page1,
+    { call_sign: "WPG2", media_company: "x", media_format: "Audio", media_type: "", format_genre: "News", market: "Pageville" },
+  ];
+
+  let orderedBeforeRange = false;
+  let sawSecondPage = false;
+  const mediaOutletsBuilder = () => {
+    let ordered = false;
+    const b: Record<string, unknown> = {};
+    b.select = () => b;
+    b.order = (col: string) => { ordered = col === "id"; return b; };
+    b.range = (from: number, to: number) => {
+      if (ordered) orderedBeforeRange = true;
+      if (from >= 1000) sawSecondPage = true;
+      const slice = all.slice(from, to + 1);
+      return { then: (resolve: (v: unknown) => void) => resolve({ data: slice, error: null }) };
+    };
+    return b;
+  };
+  const passthrough = (rows: unknown[]) => {
+    const b: Record<string, unknown> = {};
+    for (const m of ["select", "contains", "order", "eq", "limit", "range"]) b[m] = () => b;
+    (b as { then: unknown }).then = (resolve: (v: unknown) => void) => resolve({ data: rows, error: null });
+    return b;
+  };
+  const tables: Record<string, unknown[]> = {
+    dma_markets: [{ dma_code: "999", display_name: "Pageville", full_name: "Pageville", rank: 1, states_covered: ["ZZ"], primary_state: "ZZ" }],
+    media_consumption_baseline: [], media_profiles: [], census_demographics: [], broadcast_stations: [],
+  };
+  const sb = {
+    from: (t: string) => (t === "media_outlets" ? mediaOutletsBuilder() : passthrough(tables[t] ?? [])),
+    rpc: async () => ({ data: [], error: null }),
+  };
+
+  const { inputs } = await assembleStrategyInputs(sb, "ZZ", { dmaCode: "999" });
+  assert.ok(sawSecondPage, "pagination must request rows beyond the first 1000-row page");
+  assert.ok(orderedBeforeRange, "range() must be preceded by a stable .order('id')");
+  assert.ok(inputs.outlets.some((o) => o.name === "WPG2"), "an outlet that only exists on page 2 must be reachable");
 });
