@@ -101,6 +101,12 @@ interface PIConfigFormProps {
   initialCategory?: string;
   /** Deep-link default DMA code (Strategy Engine handoff). */
   initialDmaCode?: string;
+  /** Statewide handoff (Strategy Engine, no DMA picked): the market display
+   *  name to generate against, e.g. "Statewide – Alabama". */
+  initialMarketDisplayName?: string;
+  /** True when the Strategy handoff was statewide — Generate is allowed
+   *  without a DMA, and the statewide label above is used as the market. */
+  statewide?: boolean;
   /**
    * Called when the server returns a 403/429 entitlement denial. The
    * parent uses this to open the buyer-type-specific upgrade modal
@@ -120,6 +126,8 @@ export function PIConfigForm({
   initialState,
   initialCategory,
   initialDmaCode,
+  initialMarketDisplayName,
+  statewide,
   onEntitlementError,
 }: PIConfigFormProps) {
   const [category, setCategory] = useState<PICategory | "">(
@@ -130,6 +138,12 @@ export function PIConfigForm({
   );
   const [dma, setDma] = useState<SelectedDMA | null>(null);
   const [severity, setSeverity] = useState<SeverityModifier | null>(null);
+
+  // Statewide handoff: a strategy run without a DMA is a valid target. We
+  // generate against the statewide label when no specific metro is picked.
+  // A DMA the user later selects overrides it (more specific wins).
+  const statewideLabel = (initialMarketDisplayName ?? "").trim();
+  const statewideMode = Boolean(statewide) && statewideLabel !== "";
 
   // Apply deep-link defaults if they arrive AFTER mount (e.g. parent
   // hydrates URL params async and passes them in a re-render). We only
@@ -154,14 +168,20 @@ export function PIConfigForm({
     () =>
       Boolean(category) &&
       Boolean(state) &&
-      Boolean(dma) &&
+      (Boolean(dma) || statewideMode) &&
       Boolean(firmName.trim()) &&
       !generating,
-    [category, state, dma, firmName, generating],
+    [category, state, dma, statewideMode, firmName, generating],
   );
 
+  // The market we generate against: a picked DMA wins; otherwise the statewide
+  // label from the handoff. The PI router requires market_display_name, not a
+  // DMA code, so statewide generates cleanly.
+  const marketDisplayName = dma?.display_name ?? (statewideMode ? statewideLabel : "");
+
   async function handleGenerate() {
-    if (!canGenerate || !category || !dma) return;
+    if (!canGenerate || !category) return;
+    if (!dma && !statewideMode) return;
     setGenerating(true);
     setError(null);
 
@@ -173,8 +193,9 @@ export function PIConfigForm({
         body: JSON.stringify({
           practice_area: "personal_injury",
           pi_category: category,
-          market_dma_code: dma.dma_code,
-          market_display_name: dma.display_name,
+          // Omitted for statewide — the router keys on market_display_name.
+          market_dma_code: dma?.dma_code,
+          market_display_name: marketDisplayName,
           state,
           state_full_name: US_STATES_FULL[state] ?? state,
           firm_name: firmName.trim(),
@@ -208,7 +229,7 @@ export function PIConfigForm({
       const data = (await res.json()) as PIPlanResult;
       onGenerated(data, {
         pi_category: category,
-        market_display_name: dma.display_name,
+        market_display_name: marketDisplayName,
         state,
         severity_modifiers: severity ? [severity] : [],
       });
@@ -286,13 +307,22 @@ export function PIConfigForm({
 
       {/* Row 2: DMA + Severity */}
       <div className="grid gap-4 md:grid-cols-2">
-        <DMASelector
-          state={state || null}
-          value={dma}
-          onChange={setDma}
-          accentColor={accentColor}
-          initialDmaCode={initialDmaCode}
-        />
+        <div>
+          <DMASelector
+            state={state || null}
+            value={dma}
+            onChange={setDma}
+            accentColor={accentColor}
+            initialDmaCode={initialDmaCode}
+          />
+          {statewideMode && !dma && (
+            <p className="mt-1.5 text-xs text-slate-gray">
+              Statewide campaign — generating for{" "}
+              <strong className="text-midnight-navy">{statewideLabel}</strong>. Pick
+              a metro to narrow (optional).
+            </p>
+          )}
+        </div>
         <SeverityModifierCheckboxes
           value={severity}
           onChange={setSeverity}

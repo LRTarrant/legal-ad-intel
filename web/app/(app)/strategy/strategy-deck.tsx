@@ -12,6 +12,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { Download, Loader2 } from "lucide-react";
+import { buildCampaignBuilderHandoff } from "@/lib/strategy-engine/campaign-handoff";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -32,15 +33,6 @@ const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
 function pretty(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-/** Strategy tort slug → Campaign Builder pi_category enum (different vocab).
- *  Unmapped slugs (nursing_home, workers_comp) have no builder category. */
-const TORT_TO_PI_CATEGORY: Record<string, string> = {
-  truck_accident: "truck_accident",
-  motor_vehicle: "car_accident",
-  motorcycle: "motorcycle_accident",
-  boating: "boating_accident",
-};
 
 function SourceChip({ children }: { children: React.ReactNode }) {
   return (
@@ -97,8 +89,10 @@ export default function StrategyDeck({ data }: { data: any }) {
   const counties = data.opportunity?.counties ?? [];
   const maxTruck = Math.max(1, ...counties.map((c: any) => c.truck_fatalities || 0));
   const recs = data.recommendations ?? [];
-  const piCategory = TORT_TO_PI_CATEGORY[data.handoff?.case_type ?? ""];
-  const buildUrl = `/campaigns/builder?practice_area=personal_injury&state=${data.market.state}${piCategory ? `&pi_category=${piCategory}` : ""}${data.market?.dma_code ? `&market_dma_code=${data.market.dma_code}` : ""}`;
+  // Widened handoff (PHASE 1): named market, firm, budget range, and goal ride
+  // the URL so the user lands ready to generate. Statewide is first-class; the
+  // two unmapped case types (nursing_home, workers_comp) get an honest block.
+  const handoff = buildCampaignBuilderHandoff(data);
 
   return (
     <div style={rootStyle} className="mt-8 space-y-5">
@@ -332,9 +326,15 @@ export default function StrategyDeck({ data }: { data: any }) {
         <div className="text-sm font-bold tracking-[0.22em]" style={{ color: "var(--lmi-accent-2)" }}>HANDOFF</div>
         <h2 className="mt-4 text-3xl font-bold md:text-4xl">Turn this strategy into a campaign</h2>
         <p className="mt-3 max-w-2xl text-lg" style={{ color: "#9FB1C7" }}>{data.prose?.approach_rationale}</p>
-        <a href={buildUrl} className="mt-6 inline-block rounded-lg px-6 py-3 text-sm font-bold text-white" style={{ background: "var(--lmi-accent)" }}>
-          Continue in Campaign Builder →
-        </a>
+        {handoff.href ? (
+          <a href={handoff.href} className="mt-6 inline-block rounded-lg px-6 py-3 text-sm font-bold text-white" style={{ background: "var(--lmi-accent)" }}>
+            Continue in Campaign Builder →
+          </a>
+        ) : (
+          <div className="mt-6 max-w-2xl rounded-lg border border-white/15 bg-white/10 px-5 py-4 text-sm" style={{ color: "#D7E0EC" }}>
+            Campaign Builder support for nursing home and workers&rsquo; comp campaigns is coming soon — these case types aren&rsquo;t in the PI campaign flow yet.
+          </div>
+        )}
       </section>
     </div>
   );
