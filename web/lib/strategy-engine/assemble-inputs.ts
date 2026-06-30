@@ -142,6 +142,68 @@ function formatToChannel(format: string, callSign?: string): ChannelKey | null {
 const num = (v: unknown): number => (typeof v === "number" ? v : Number(v) || 0);
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
+/**
+ * Normalize a DMA / market name for cross-source comparison.
+ *
+ * `dma_markets` carries short labels ("Dallas", "Washington DC") while
+ * `media_outlets.market` and `broadcast_stations.nielsen_dma` carry Nielsen
+ * full/uppercase variants ("Dallas-Ft.Worth", "DALLAS-FT. WORTH",
+ * "Washington, DC"). Uppercasing, dropping periods (so "Ft."/"St." collapse),
+ * turning separators (-,&/()) into spaces, and collapsing whitespace makes all
+ * those variants compare equal.
+ *
+ * Deliberately does NOT strip trailing state suffixes: `media_outlets` carries
+ * both "Portland, ME" and "Portland, OR", so "PORTLAND ME" must stay distinct
+ * from "PORTLAND OR" or an OR strategy would leak ME outlets.
+ */
+export function normalizeDmaName(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(/\./g, " ") // periods → space ("FT."→"FT", "ST."→"ST")
+    .replace(/[-,&/()]/g, " ") // separators → space
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Build a normalized-name Set from {display_name, full_name} pairs. */
+function buildNormalizedDmaSet(pairs: Array<{ display: string; full: string }>): Set<string> {
+  const set = new Set<string>();
+  for (const p of pairs) {
+    if (p.display) set.add(normalizeDmaName(p.display));
+    if (p.full) set.add(normalizeDmaName(p.full));
+  }
+  return set;
+}
+
+/**
+ * Fetch ALL media_outlets rows with paginated .range() to bypass the default
+ * 1,000-row PostgREST cap (the table is ~7,900 rows / 108 markets; the capped
+ * single query silently dropped ~62 of those markets). Mirrors the Recall
+ * Watchlist reader pattern. Resolves to the same { data, error } shape the
+ * inline query did, so the parallel-fetch + graceful-degrade structure is
+ * untouched.
+ */
+async function fetchAllMediaOutlets(
+  supabase: SupabaseLike,
+): Promise<{ data: Array<Record<string, unknown>>; error: unknown }> {
+  const pageSize = 1000;
+  const all: Array<Record<string, unknown>> = [];
+  let from = 0;
+  // Safety cap (~12k; table is ~7.9k rows) to prevent a runaway loop.
+  while (from < 12000) {
+    const { data, error } = await supabase
+      .from("media_outlets")
+      .select("call_sign, media_company, media_format, media_type, format_genre, market")
+      .range(from, from + pageSize - 1);
+    if (error) return { data: all, error };
+    const batch = (data as Array<Record<string, unknown>> | null) ?? [];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+  return { data: all, error: null };
+}
+
 /* ── The assembler ──────────────────────────────────────────────────────── */
 
 export interface AssembleResult {
@@ -186,9 +248,8 @@ export async function assembleStrategyInputs(
       .order("rank", { ascending: true }),
     supabase.rpc("get_state_accident_summary", { p_state: state }),
     supabase.from("media_profiles").select("*"),
-    supabase
-      .from("media_outlets")
-      .select("call_sign, media_company, media_format, media_type, format_genre, market"),
+    // Paginated whole-table pull — the capped single query dropped ~62 markets.
+    fetchAllMediaOutlets(supabase),
     // National demographic consumption baseline (Pew + BLS ATUS + Nielsen-cited).
     supabase
       .from("media_consumption_baseline")
@@ -263,7 +324,11 @@ export async function assembleStrategyInputs(
   /* DMAs + county→DMA translation ------------------------------------------ */
   let topDmaName: string | null = null;
   let topDmaCode: string | null = null;
-  const dmaNames: string[] = [];
+  // Display + full_name for every in-scope DMA, so the outlet match set can be
+  // built from BOTH labels — "Dallas" (display) matches the Nielsen variant
+  // "Dallas-Ft.Worth" via full_name "Dallas-Ft. Worth".
+  const stateDmaPairs: Array<{ display: string; full: string }> = [];
+  let selectedDmaPair: { display: string; full: string } | null = null;
   if (dmaRes.status === "fulfilled" && !dmaRes.value.error) {
     const rows = (dmaRes.value.data as Array<Record<string, unknown>>) ?? [];
     // Prefer DMAs whose primary_state is this state (drops border markets like
@@ -275,7 +340,14 @@ export async function assembleStrategyInputs(
       : undefined;
     for (const r of ordered) {
       const display = String(r.display_name ?? r.full_name ?? "").trim();
-      if (display) dmaNames.push(display);
+      const full = String(r.full_name ?? "").trim();
+      if (display || full) stateDmaPairs.push({ display, full });
+    }
+    if (selected) {
+      selectedDmaPair = {
+        display: String(selected.display_name ?? selected.full_name ?? "").trim(),
+        full: String(selected.full_name ?? "").trim(),
+      };
     }
     // Finding 4: when dmaCode was provided but not found, do NOT label by ordered[0].
     const labelRow = selected ?? (strictMarket ? undefined : ordered[0]);
@@ -449,16 +521,24 @@ export async function assembleStrategyInputs(
   // When a market is selected, scope strictly to it; else allow all state DMAs.
   // Finding 5: in strict mode the scope set may be empty (unmatched dmaCode) — that
   // must produce zero outlets, not a statewide pass.  Non-strict keeps the old guard.
-  const scopedDmaNames = strictMarket ? (topDmaName ? [topDmaName] : []) : dmaNames;
-  const dmaNameSet = new Set(scopedDmaNames.map((d) => d.toLowerCase()));
+  // The set carries the NORMALIZED display AND full_name of each in-scope DMA so
+  // Nielsen market variants ("Dallas-Ft.Worth") match short dim labels ("Dallas").
+  const scopedDmaPairs = strictMarket
+    ? selectedDmaPair
+      ? [selectedDmaPair]
+      : []
+    : stateDmaPairs;
+  const dmaNameSet = buildNormalizedDmaSet(scopedDmaPairs);
+  // Selected DMA's normalized labels — used for the strict broadcast in-market filter.
+  const selectedDmaSet = buildNormalizedDmaSet(selectedDmaPair ? [selectedDmaPair] : []);
   if (outletsRes.status === "fulfilled" && !outletsRes.value.error) {
     const rows = (outletsRes.value.data as Array<Record<string, unknown>>) ?? [];
     for (const r of rows) {
       const market = String(r.market ?? "").trim();
       if (strictMarket) {
         // Strict: outlet must be in the scoped set; empty set → exclude all.
-        if (!market || !dmaNameSet.has(market.toLowerCase())) continue;
-      } else if (dmaNameSet.size > 0 && market && !dmaNameSet.has(market.toLowerCase())) {
+        if (!market || !dmaNameSet.has(normalizeDmaName(market))) continue;
+      } else if (dmaNameSet.size > 0 && market && !dmaNameSet.has(normalizeDmaName(market))) {
         continue;
       }
       const name = String(r.call_sign ?? r.media_company ?? "").trim();
@@ -490,8 +570,9 @@ export async function assembleStrategyInputs(
         for (const r of data as Array<Record<string, unknown>>) {
           if (r.active === false) continue;
           if (opts.dmaCode && topDmaName) {
-            const stationDma = String(r.nielsen_dma ?? "").trim().toLowerCase();
-            if (stationDma !== topDmaName.toLowerCase()) continue; // strict in-market
+            // Normalized match against the selected DMA's display + full_name, so
+            // "DALLAS-FT. WORTH" matches the "Dallas" dim row via full_name.
+            if (!selectedDmaSet.has(normalizeDmaName(String(r.nielsen_dma ?? "")))) continue;
           }
           const name = String(r.call_sign ?? "").trim();
           const ch = formatToChannel(String(r.service_type ?? ""), name);
