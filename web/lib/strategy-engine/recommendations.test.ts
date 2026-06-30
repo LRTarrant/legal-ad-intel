@@ -113,6 +113,7 @@ test("data-depth: untracked white space (one modeled link) = moderate", () => {
   const plan = planWith(planned({ channel: "ctv", fit_scope: "general" }));
   const { recommendations } = buildRecommendations(plan, MONTGOMERY, []);
   assert.equal(recommendations[0].white_space.depth, "modeled");
+  assert.equal(recommendations[0].white_space.status, "open");
   assert.equal(recommendations[0].fit.depth, "primary");
   assert.equal(recommendations[0].data_depth, "moderate");
 });
@@ -138,6 +139,7 @@ test("measured channel reports a real firm count (primary white space)", () => {
   assert.equal(recommendations[0].white_space.value, "22 firms");
   assert.match(recommendations[0].white_space.text, /defended/);
   assert.equal(recommendations[0].white_space.depth, "primary");
+  assert.equal(recommendations[0].white_space.status, "defended");
 });
 
 test("caps at maxRecommendations and orders by planner opportunity", () => {

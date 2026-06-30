@@ -76,6 +76,10 @@ export interface RecommendationLink {
   /** Deterministic sentence (the LLM may rewrite the voice, not the value). */
   text: string;
   depth: LinkDepth;
+  /** Contention read for a white-space link (open/contested/defended); the
+   *  card renders this as the same status pill the white-space section uses.
+   *  Only set on white-space links — opportunity/fit links leave it undefined. */
+  status?: MeasuredChannel["status"];
 }
 
 export interface ProofPoint {
@@ -143,7 +147,7 @@ function buildOpportunityLink(opp: OpportunitySummary): RecommendationLink | nul
   };
 }
 
-function buildWhiteSpaceLink(
+export function buildWhiteSpaceLink(
   channel: ChannelKey,
   measured: Map<ChannelKey, MeasuredChannel>,
 ): RecommendationLink {
@@ -156,6 +160,7 @@ function buildWhiteSpaceLink(
       source: channel === "search" ? "pi_search (rolling 90d)" : "ad library",
       text: `${m.active_firms} PI ${m.active_firms === 1 ? "firm is" : "firms are"} active on ${label} here (${m.status}).`,
       depth: "primary",
+      status: m.status,
     };
   }
   // Untracked channel: white space inferred from absence of measured competition.
@@ -164,6 +169,7 @@ function buildWhiteSpaceLink(
     source: "ad-library coverage (modeled)",
     text: `No PI advertiser observed on ${label} in our ad-library coverage — modeled white space.`,
     depth: "modeled",
+    status: "open",
   };
 }
 
@@ -181,7 +187,7 @@ function buildFitLink(ch: PlannedChannel): RecommendationLink {
 }
 
 /** strong = all primary; moderate = exactly one modeled; thin = 2+ modeled. */
-function deriveDataDepth(links: RecommendationLink[]): DataDepth {
+export function deriveDataDepth(links: RecommendationLink[]): DataDepth {
   const modeled = links.filter((l) => l.depth === "modeled").length;
   if (modeled === 0) return "strong";
   if (modeled === 1) return "moderate";
