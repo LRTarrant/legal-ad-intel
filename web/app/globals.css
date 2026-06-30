@@ -109,22 +109,23 @@ html {
 @keyframes lmiRise   { from { transform: translateY(18px); } to { transform: translateY(0); } }
 @keyframes lmiRailIn { from { transform: translateX(-18px); } to { transform: none; } }
 @keyframes lmiPop    { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
-@keyframes lmiBlink  { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 @keyframes lmiPulse  { 0% { box-shadow: 0 0 0 0 rgba(79,184,196,.55); } 70% { box-shadow: 0 0 0 7px rgba(79,184,196,0); } 100% { box-shadow: 0 0 0 0 rgba(79,184,196,0); } }
+@keyframes lmiIndeterminate { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
 
 .rise     { animation: lmiRise .62s cubic-bezier(.16,.8,.3,1) both; }
 .railin   { animation: lmiRailIn .72s cubic-bezier(.16,.8,.3,1) both; }
 .chip-pop { animation: lmiPop .32s cubic-bezier(.16,.8,.3,1) both; }
 .pulse-dot { animation: lmiPulse 2.2s ease-out infinite; }
-.caret {
-  display: inline-block; width: 2px; height: 1.05em; background: var(--color-light-teal);
-  margin-left: 1px; vertical-align: -2px; animation: lmiBlink 1s steps(1) infinite;
-}
+/* Keyboard focus ring for the bespoke inline-styled controls (pills, budget
+   cards, foundation buttons, CTA) — visible only for keyboard users. */
+.lmi-focus:focus-visible { outline: 2px solid var(--color-intelligence-teal); outline-offset: 2px; }
+/* Indeterminate progress sweep for the ~30s strategy generate. */
+.lmi-indeterminate-bar { animation: lmiIndeterminate 1.15s ease-in-out infinite; }
 .cta { transition: transform 160ms, box-shadow 160ms; }
 .cta:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 10px 22px -6px rgba(26,140,150,.6); }
 .cta:not(:disabled):active { transform: translateY(0); }
 
 @media (prefers-reduced-motion: reduce) {
   .rise, .railin, .chip-pop { animation: none !important; }
-  .caret { animation: none; }
+  .lmi-indeterminate-bar { animation: none; }
 }
