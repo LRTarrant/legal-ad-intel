@@ -22,6 +22,7 @@ import { useSuperAdmin } from "@/lib/admin/use-super-admin";
 import {
   presetForBuyerType,
   readDemoModeStored,
+  reconcileDemoModeCookie,
   writeDemoModeStored,
   type DemoModeStored,
 } from "@/lib/admin/demo-mode-client";
@@ -47,6 +48,9 @@ export function DemoModePill() {
 
   // Initial load + cross-tab sync via storage events.
   useEffect(() => {
+    // Seed the mirror cookie if a pre-cookie-channel override is in localStorage
+    // (else the server read guards stay unaware until the next pill toggle).
+    reconcileDemoModeCookie();
     setOverride(readDemoModeStored());
     if (typeof window === "undefined") return;
     const handler = () => setOverride(readDemoModeStored());

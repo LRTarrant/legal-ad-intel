@@ -19,6 +19,9 @@
  * client-safe.
  */
 
+// NOTE: the server-only guard is enforced implicitly — importing `next/headers`
+// below already fails the build if this module is pulled into a client bundle,
+// so the `server-only` package (not a dependency in this repo) is unnecessary.
 import { cookies } from "next/headers";
 import {
   DEMO_COOKIE_NAME,

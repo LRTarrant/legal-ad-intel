@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
 import { createClient } from "@/lib/supabase/client";
+import { writeDemoModeStored } from "@/lib/admin/demo-mode-client";
 import { isAdmin as isAdminRole, canManageUsers } from "@/lib/roles";
 import {
   Anchor,
@@ -265,6 +266,9 @@ export function Sidebar() {
 
   async function handleLogout() {
     const supabase = createClient();
+    // Clear any demo-mode override (localStorage + mirror cookie) so a next
+    // super_admin on a shared browser doesn't inherit this session's preview.
+    writeDemoModeStored(null);
     await supabase.auth.signOut();
     router.push("/login");
   }

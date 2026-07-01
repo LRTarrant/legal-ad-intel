@@ -97,12 +97,18 @@ export function writeDemoModeStored(value: DemoModeStored | null): void {
     // re-verifying super_admin from the real profile row, not on cookie
     // secrecy (same trust model as the forgeable x-demo-mode-* headers).
     if (typeof document !== "undefined") {
+      // Secure over HTTPS (prod); omit on http localhost so dev still works.
+      const secure =
+        typeof window !== "undefined" &&
+        window.location.protocol === "https:"
+          ? ";secure"
+          : "";
       if (value === null) {
-        document.cookie = `${DEMO_COOKIE_NAME}=;path=/;max-age=0;samesite=lax`;
+        document.cookie = `${DEMO_COOKIE_NAME}=;path=/;max-age=0;samesite=lax${secure}`;
       } else {
         document.cookie = `${DEMO_COOKIE_NAME}=${encodeURIComponent(
           JSON.stringify(value),
-        )};path=/;max-age=2592000;samesite=lax`;
+        )};path=/;max-age=2592000;samesite=lax${secure}`;
       }
     }
     // Notify other components in the same tab (the storage event only
@@ -113,6 +119,26 @@ export function writeDemoModeStored(value: DemoModeStored | null): void {
     // show what the user picked in the dropdown for the current
     // session.
   }
+}
+
+/**
+ * Reconcile the mirror cookie with localStorage.
+ *
+ * The cookie is only written when `writeDemoModeStored` runs (a pill toggle).
+ * A super_admin who already had demo mode ON in localStorage BEFORE the cookie
+ * channel shipped has no cookie, so the server-side read guards keep bypassing
+ * while the action routes (header path) still see demo mode. Call this on the
+ * pill's mount: if an override exists but the cookie is missing, re-seed the
+ * cookie. Idempotent; a no-op when the two channels already agree.
+ */
+export function reconcileDemoModeCookie(): void {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const stored = readDemoModeStored();
+  if (!stored) return;
+  const hasCookie = document.cookie
+    .split(";")
+    .some((c) => c.trim().startsWith(`${DEMO_COOKIE_NAME}=`));
+  if (!hasCookie) writeDemoModeStored(stored);
 }
 
 /**
@@ -159,6 +185,11 @@ export function presetForBuyerType(
   buyerType: BuyerTypeOverride,
 ): DemoModeStored {
   if (buyerType === "law_firm") {
+    // Scoped preset: exercises BOTH read-surface axes so a super_admin can
+    // preview positive + negative gating. geo=[AL] (Alabama renders, other
+    // states → AccessDenied); active_tort_addons=[roundup] (Roundup renders,
+    // other torts → AccessDenied). Without a tort add-on here the positive-tort
+    // preview is unreachable — geo_scope_unlimited never grants torts.
     return {
       buyer_type: "law_firm",
       pi_access: true,
@@ -166,6 +197,7 @@ export function presetForBuyerType(
       monthly_cap: 50,
       geo_scope_states: ["AL"],
       geo_scope_unlimited: false,
+      active_tort_addons: ["roundup"],
     };
   }
   if (buyerType === "ad_agency") {
