@@ -133,7 +133,14 @@ export function buildAccess(
   return {
     role,
     status: sub.status,
-    states: sub.geo_scope_unlimited ? null : sub.geo_scope_states ?? [],
+    // Normalize to uppercase so the guard's `stateCode.toUpperCase()` compare
+    // matches even if a subscription row stored codes lowercase — a lowercase
+    // ["al"] must not wrongly deny a paying seat's "AL" request. Honors the
+    // `Access.states` "(uppercase)" contract at the boundary rather than
+    // trusting an unenforced upstream invariant.
+    states: sub.geo_scope_unlimited
+      ? null
+      : (sub.geo_scope_states ?? []).map((s) => s.toUpperCase()),
     unlimited: sub.geo_scope_unlimited,
     torts: sub.active_tort_addons ?? [],
     features: {
