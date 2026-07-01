@@ -4,8 +4,11 @@ import { PageTracker } from "./page-tracker";
 import { TrialGate } from "./components/trial-gate";
 import { TrialExpired } from "./components/trial-expired";
 import { DemoModePill } from "./components/demo-mode-pill";
-import { createClient } from "@/lib/supabase/server";
 import { hasUnlimitedAccess } from "@/lib/roles";
+import {
+  getRequestUser,
+  getRequestProfile,
+} from "@/lib/entitlements/request-context";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -25,17 +28,13 @@ export default async function AppLayout({
   let expired = false;
   let daysRemaining: number | null = null;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Shared per-request reads (memoized) — the entitlement guards on the child
+  // page reuse the same user + profile, so this costs one getUser + one
+  // profiles read per request, not two.
+  const user = await getRequestUser();
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, trial_expires_at")
-      .eq("id", user.id)
-      .single();
+    const profile = await getRequestProfile(user.id);
 
     if (
       profile &&

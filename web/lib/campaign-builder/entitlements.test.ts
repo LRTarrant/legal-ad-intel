@@ -80,6 +80,7 @@ const ACTIVE_FULL: ServerSubscription = {
   campaign_builder_monthly_cap: null, // unlimited
   geo_scope_states: null,
   geo_scope_unlimited: true,
+  active_tort_addons: null,
   status: "active",
   current_period_start: "2026-05-01T00:00:00Z",
   current_period_end: "2026-06-01T00:00:00Z",

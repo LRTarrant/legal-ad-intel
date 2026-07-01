@@ -7,7 +7,7 @@
  * Unit tests for the account-inheritance governing-subscription rule.
  *
  * Covers the pure pieces of resolveAccess() that don't need a DB:
- *   - pickGoverningSubscription: admin-first, then active/trialing.
+ *   - pickGoverningSubscription: active/trialing first, then admin role.
  *   - buildAccess: geo scope + tort add-on + legacy (no-sub) shaping.
  *
  * Mirrors the import-less test/expect style used elsewhere in this package.
@@ -53,6 +53,17 @@ test("among non-admins, prefers an active/trialing subscription over cancelled",
 
 test("returns null when there are no subscriptions", () => {
   expect(pickGoverningSubscription([], {})).toBe(null);
+});
+
+test("active status ranks above admin role: a user's active plan beats an admin's cancelled plan", () => {
+  // Regression for the sort-order bug: admin rank must NOT outrank active
+  // status, or a seat gets handed the admin's inactive sub and is wrongly
+  // denied even though an active plan exists in the tenant.
+  const adminCancelled = makeSub({ user_id: "admin", status: "cancelled" });
+  const userActive = makeSub({ user_id: "user", status: "active" });
+  const roles = { admin: "tenant_admin", user: "user" };
+  const picked = pickGoverningSubscription([adminCancelled, userActive], roles);
+  expect(picked?.user_id).toBe("user");
 });
 
 /* ── buildAccess ─────────────────────────────────────────────────────────── */

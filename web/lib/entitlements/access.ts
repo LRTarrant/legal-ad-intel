@@ -12,8 +12,10 @@
  *   (a) the user's OWN subscriptions row, if present; else
  *   (b) the subscription of the firm 'owner' the user is a firm_managers seat on
  *       (agency/media seats inherit the law-firm owner's plan); else
- *   (c) a CO-TENANT subscription resolved via profiles.tenant_id, preferring a
- *       tenant_admin / super_admin's plan, then any status active/trialing.
+ *   (c) a CO-TENANT subscription resolved via profiles.tenant_id, preferring an
+ *       active/trialing subscription, then a tenant_admin / super_admin's plan.
+ *       (Active status ranks ABOVE role so an admin's cancelled plan never
+ *       shadows a co-tenant's active one and wrongly denies a paying seat.)
  *
  * Degraded mode: if SUPABASE_SERVICE_ROLE_KEY is unset, this falls back to an
  * own-row RLS read only — seats without their own subscription row resolve to
@@ -23,6 +25,7 @@
  * a client component.
  */
 
+import { cache } from "react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
@@ -31,6 +34,7 @@ import {
   type ServerSubscription,
 } from "@/lib/campaign-builder/entitlements";
 import { roleRank } from "@/lib/roles";
+import { getRequestProfile } from "./request-context";
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Types                                                                    */
@@ -82,9 +86,11 @@ function isActiveStatus(status: string | null | undefined): boolean {
 }
 
 /**
- * Pick the governing co-tenant subscription: admin-first (tenant_admin /
- * super_admin), then active/trialing. Pure so it can be unit-tested against
- * synthetic seat data.
+ * Pick the governing co-tenant subscription: active/trialing FIRST, then admin
+ * role (tenant_admin / super_admin) as the tiebreak. Active-first matters — an
+ * admin co-tenant's cancelled/past_due plan must never outrank a co-tenant
+ * user's active plan, or the seat gets handed an inactive sub and is wrongly
+ * denied. Pure so it can be unit-tested against synthetic seat data.
  */
 export function pickGoverningSubscription(
   subs: ServerSubscription[],
@@ -98,7 +104,7 @@ export function pickGoverningSubscription(
       activeRank: isActiveStatus(s.status) ? 1 : 0,
     }))
     .sort(
-      (a, b) => b.adminRank - a.adminRank || b.activeRank - a.activeRank,
+      (a, b) => b.activeRank - a.activeRank || b.adminRank - a.adminRank,
     );
   return scored[0]?.s ?? null;
 }
@@ -143,39 +149,27 @@ export function buildAccess(
 /* Resolver                                                                 */
 /* ──────────────────────────────────────────────────────────────────────── */
 
-async function readRole(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<string | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any;
-  const { data } = await db
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
-  return (data?.role as string | undefined) ?? null;
-}
-
 /**
  * Resolve the governing account-level entitlements for a user. See the file
  * header for the (a)/(b)/(c) governing rule and degraded-mode behavior.
+ *
+ * Memoized per request (React `cache`) so multiple guards on one page share a
+ * single resolution. The seat's own role comes from `getRequestProfile`, which
+ * the (app) layout's trial check also uses — so role is read once per request.
  */
-export async function resolveAccess(userId: string): Promise<Access> {
+export const resolveAccess = cache(async (userId: string): Promise<Access> => {
   const service = getServiceClient();
+  const role = (await getRequestProfile(userId))?.role ?? null;
 
   // Degraded mode: no service key → own-row RLS read only.
   if (!service) {
     const rls = await createServerSupabase();
-    const [sub, role] = await Promise.all([
-      getSubscriptionForUser(rls as unknown as SupabaseClient, userId),
-      readRole(rls as unknown as SupabaseClient, userId),
-    ]);
+    const sub = await getSubscriptionForUser(
+      rls as unknown as SupabaseClient,
+      userId,
+    );
     return buildAccess(sub, role, sub ? "own" : "none");
   }
-
-  // The seat's own role always comes from the seat's own profile.
-  const role = await readRole(service, userId);
 
   // (a) Own subscription row.
   const ownSub = await getSubscriptionForUser(service, userId);
@@ -190,7 +184,7 @@ export async function resolveAccess(userId: string): Promise<Access> {
   if (coTenantSub) return buildAccess(coTenantSub, role, "co_tenant");
 
   return buildAccess(null, role, "none");
-}
+});
 
 /**
  * (b) Find the subscription of the 'owner' seat on any firm the user is a
@@ -232,7 +226,7 @@ async function resolveFirmOwnerSubscription(
 
 /**
  * (c) Resolve a governing subscription across co-tenants (profiles.tenant_id),
- * preferring admin plans, then active/trialing.
+ * preferring active/trialing plans, then admin role (see pickGoverningSubscription).
  */
 async function resolveCoTenantSubscription(
   service: SupabaseClient,
