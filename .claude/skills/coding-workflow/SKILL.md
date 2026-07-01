@@ -5,6 +5,21 @@ description: Use this skill for any coding task that involves working with repos
 
 # Coding Workflow
 
+## Plan first, then implement
+
+Before writing any code, lead with a short plan: 3-5 bullets naming the exact
+files you'll touch and the concrete change in each (the specific edit, param, or
+function, not "update the component"). This is the first thing in the response.
+
+- **Routine, well-scoped change:** lead with the plan, then implement in the same
+  turn. Don't wait for approval, the plan is a lead-in, not a gate.
+- **Big or risky change (schema, RLS, auth, pricing/entitlements, a refactor across
+  many files):** stop after the plan and wait for confirmation before the diff. Per
+  the repo CLAUDE.md, risky changes get called out and confirmed first.
+
+If the scope is unclear after a quick read, ask before planning. A plan built on a
+wrong assumption wastes the turn.
+
 ## GitHub CLI (`gh`)
 
 Always use the `gh` CLI for all GitHub operations. Both `gh` and `git` are authenticated automatically through the agent proxy.
