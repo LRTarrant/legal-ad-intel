@@ -341,21 +341,26 @@ export async function assembleStrategyInputs(
     // presence = metro breadth (integer-dominant) + a per-active-day-rate
     // tiebreaker in [0,0.99), × 0.4 if low-confidence (new / thin sample).
     // One firm can appear under multiple domains — group by name, keep its best.
-    const byName = new Map<string, { metros: number; rate: number; lowConf: boolean }>();
+    const byName = new Map<string, { metros: number; rate: number; lowConf: boolean; domain: string | null }>();
     for (const r of rows) {
       const name = String(r.advertiser_name ?? "").trim();
       if (!name) continue;
       const metros = Array.isArray(r.metros_active) ? r.metros_active.length : 0;
       const rate = num(r.observations_per_active_day);
       const lowConf = Boolean(r.low_confidence);
+      // Keep a domain for linking (the firm may appear under several — take the
+      // one on its highest-presence row, i.e. the row that wins the max below).
+      const domain = String(r.advertiser_domain ?? "").trim() || null;
       const prev = byName.get(name);
       if (!prev) {
-        byName.set(name, { metros, rate, lowConf });
+        byName.set(name, { metros, rate, lowConf, domain });
       } else {
+        const winsRate = rate > prev.rate;
         byName.set(name, {
           metros: Math.max(prev.metros, metros),
           rate: Math.max(prev.rate, rate),
           lowConf: prev.lowConf && lowConf, // confident if any domain is confident
+          domain: winsRate ? domain ?? prev.domain : prev.domain ?? domain,
         });
       }
     }
@@ -365,12 +370,12 @@ export async function assembleStrategyInputs(
       const base = v.metros + rateNorm;
       return v.lowConf ? base * 0.4 : base;
     };
-    const scored = Array.from(byName.entries()).map(([name, v]) => ({ name, score: presence(v) }));
+    const scored = Array.from(byName.entries()).map(([name, v]) => ({ name, score: presence(v), domain: v.domain }));
     const totalScore = scored.reduce((s, x) => s + x.score, 0);
     top_advertisers = scored
-      .map(({ name, score }) => ({ name, share: totalScore > 0 ? score / totalScore : 0, rank: 0 }))
+      .map(({ name, score, domain }) => ({ name, share: totalScore > 0 ? score / totalScore : 0, rank: 0, domain }))
       .sort((a, b) => b.share - a.share)
-      .slice(0, 10)
+      .slice(0, 20)
       .map((r, i) => ({ ...r, rank: i + 1 }));
     if (byName.size > 0) {
       total_advertisers = byName.size;

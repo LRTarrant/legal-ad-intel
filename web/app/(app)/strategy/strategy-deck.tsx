@@ -188,23 +188,9 @@ export default function StrategyDeck({ data }: { data: any }) {
       </Slide>
 
       {/* 4. COMPETITIVE FIELD */}
-      <Slide eyebrow="Competitive landscape" title="The competitive field" sub="Who's advertising in the market, ranked by sustained presence (market breadth + recent activity)" tags={["pi_search", "ad library"]}>
-        <table className="w-full text-left text-sm">
-          <thead><tr className="border-b-2 text-xs uppercase" style={{ borderColor: "#C9D4E0", color: LABEL, fontFamily: mono }}>
-            <th className="py-2">Firm</th><th className="text-right">Presence share</th>
-          </tr></thead>
-          <tbody>
-            {(data.competitive?.advertisers ?? []).slice(0, 6).map((a: any) => (
-              <tr key={a.name} className="border-b" style={{ borderColor: "#E0E7EF" }}>
-                <td className="py-3 text-base font-semibold" style={{ color: NAVY }}>{a.rank}. {a.name}</td>
-                <td className="py-3"><div className="ml-auto flex w-48 items-center gap-3">
-                  <div className="h-3.5 flex-1 rounded-full" style={{ background: "#E4EBF2" }}><div className="h-full rounded-full" style={{ width: `${Math.round(a.share * 100)}%`, background: "var(--lmi-accent)" }} /></div>
-                  <span className="w-10 text-right font-bold" style={{ color: NAVY }}>{Math.round(a.share * 100)}%</span>
-                </div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <Slide eyebrow="Competitive landscape" title="The competitive field" sub="Who's advertising in the market, ranked by sustained presence (market breadth + recent activity)" tags={["pi_search"]}>
+        <p className="mb-3 text-[11px]" style={{ fontFamily: mono, color: LABEL }}>Ranked across paid-search presence (pi_search observations, per DMA).</p>
+        <CompetitiveTable advertisers={data.competitive?.advertisers ?? []} />
         <p className="mt-3 text-[11px]" style={{ color: MUTED }}>Presence share weights sustained market presence — geographic breadth first, then recent activity — the same ranking as the Competitive Analysis tab, so a dense burst in one or two metros doesn&rsquo;t read as market dominance. No estimated dollar spend is shown: per-firm spend isn&rsquo;t reliably sourceable for local PI.</p>
       </Slide>
 
@@ -244,17 +230,7 @@ export default function StrategyDeck({ data }: { data: any }) {
 
       {/* 6. WHITE SPACE */}
       <Slide eyebrow="Competitive landscape" title="Where the white space is" tags={["ad library"]}>
-        <div className="space-y-2">
-          {(data.competitive?.channels ?? []).map((c: any) => (
-            <div key={c.channel} className="flex items-center gap-4 rounded-lg border-b px-3 py-3" style={{ borderColor: "#E0E7EF", background: c.status === "open" ? "#EAF6F6" : undefined }}>
-              <div className="w-56 text-base font-semibold" style={{ color: NAVY }}>{c.label}{!c.measured ? " (modeled)" : ""}</div>
-              <div className="w-28">{statusPill(c.status)}</div>
-              <div className="flex-1 text-sm" style={{ color: c.status === "open" ? "#14707A" : MUTED }}>
-                {c.status === "open" ? "No PI firm present" : `${c.active_firms} firm${c.active_firms === 1 ? "" : "s"} active`}
-              </div>
-            </div>
-          ))}
-        </div>
+        <WhitespaceChannels channels={data.competitive?.channels ?? []} advertisers={data.competitive?.advertisers ?? []} />
         <WhitespaceLegend />
       </Slide>
 
@@ -379,6 +355,89 @@ export default function StrategyDeck({ data }: { data: any }) {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/* ── Competitive field: firm→link + show-more ───────────────────────────── */
+
+function FirmName({ a }: { a: any }) {
+  const url = a.domain ? `https://${a.domain}` : null;
+  const label = `${a.rank}. ${a.name}`;
+  return url ? (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: NAVY }}>{label}</a>
+  ) : (
+    <span style={{ color: NAVY }}>{label}</span>
+  );
+}
+
+function CompetitiveTable({ advertisers }: { advertisers: any[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const rows = showAll ? advertisers : advertisers.slice(0, 6);
+  return (
+    <>
+      <table className="w-full text-left text-sm">
+        <thead><tr className="border-b-2 text-xs uppercase" style={{ borderColor: "#C9D4E0", color: LABEL, fontFamily: mono }}>
+          <th className="py-2">Firm</th><th className="text-right">Presence share</th>
+        </tr></thead>
+        <tbody>
+          {rows.map((a) => (
+            <tr key={a.name} className="border-b" style={{ borderColor: "#E0E7EF" }}>
+              <td className="py-3 text-base font-semibold"><FirmName a={a} /></td>
+              <td className="py-3"><div className="ml-auto flex w-48 items-center gap-3">
+                <div className="h-3.5 flex-1 rounded-full" style={{ background: "#E4EBF2" }}><div className="h-full rounded-full" style={{ width: `${Math.round(a.share * 100)}%`, background: "var(--lmi-accent)" }} /></div>
+                <span className="w-10 text-right font-bold" style={{ color: NAVY }}>{Math.round(a.share * 100)}%</span>
+              </div></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {advertisers.length > 6 ? (
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="mt-3 text-sm font-semibold hover:underline" style={{ color: "var(--lmi-accent)" }}>
+          {showAll ? "Show fewer" : `Show all ${advertisers.length} firms`}
+        </button>
+      ) : null}
+    </>
+  );
+}
+
+/* ── White space: reveal the paid-search defenders (same pi_search roster) ─── */
+
+function WhitespaceChannels({ channels, advertisers }: { channels: any[]; advertisers: any[] }) {
+  const [openCh, setOpenCh] = useState<string | null>(null);
+  return (
+    <div className="space-y-2">
+      {channels.map((c) => {
+        // Only the measured paid-search channel can name defenders — it shares the
+        // pi_search roster shown above. seo (a different serp roster) and modeled
+        // channels stay count-only; never fabricate names.
+        const canName = c.channel === "search" && c.measured && c.status !== "open" && advertisers.length > 0;
+        const expanded = openCh === c.channel;
+        return (
+          <div key={c.channel} className="rounded-lg border-b px-3 py-3" style={{ borderColor: "#E0E7EF", background: c.status === "open" ? "#EAF6F6" : undefined }}>
+            <div className="flex items-center gap-4">
+              <div className="w-56 text-base font-semibold" style={{ color: NAVY }}>{c.label}{!c.measured ? " (modeled)" : ""}</div>
+              <div className="w-28">{statusPill(c.status)}</div>
+              <div className="flex-1 text-sm" style={{ color: c.status === "open" ? "#14707A" : MUTED }}>
+                {c.status === "open" ? "No PI firm present" : `${c.active_firms} firm${c.active_firms === 1 ? "" : "s"} active`}
+                {canName ? (
+                  <button type="button" onClick={() => setOpenCh(expanded ? null : c.channel)} className="ml-2 font-semibold hover:underline" style={{ color: "var(--lmi-accent)" }}>
+                    {expanded ? "hide firms" : "who?"}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {canName && expanded ? (
+              <div className="mt-2 text-[13px]" style={{ color: "#3A4D67" }}>
+                <span style={{ color: MUTED }}>Active firms include: </span>
+                {advertisers.map((a: any, i: number) => (
+                  <span key={a.name}>{i > 0 ? " · " : ""}{a.name}</span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

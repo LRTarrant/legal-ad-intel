@@ -328,7 +328,7 @@ export async function POST(req: NextRequest) {
     goal: body.goal,
     opportunity: { counties: oppCounties, fars_year_min: farsYearMin, fars_year_max: farsYearMax, lead_metric: leadMetric },
     competitive: {
-      advertisers: inputs.top_advertisers.map((a) => ({ name: a.name, share: a.share, rank: a.rank })),
+      advertisers: inputs.top_advertisers.map((a) => ({ name: a.name, share: a.share, rank: a.rank, domain: a.domain ?? null })),
       channels: competitiveChannels,
       creative: ((creativesRes.data as MarketCreative[] | null) ?? []).map((c) => ({
         channel: c.channel,

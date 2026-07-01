@@ -94,6 +94,8 @@ export interface AdvertiserShare {
   share: number;
   /** Activity rank, 1 = largest. */
   rank: number;
+  /** Best observed domain for the firm (from pi_search), for linking. Null when unknown. */
+  domain?: string | null;
 }
 
 /** Per-channel audience-fit + competitive-density signal. */
