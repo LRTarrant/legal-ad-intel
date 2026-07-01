@@ -33,7 +33,12 @@ import {
   getSubscriptionForUser,
   type ServerSubscription,
 } from "@/lib/campaign-builder/entitlements";
-import { roleRank } from "@/lib/roles";
+import { isSuperAdmin, roleRank } from "@/lib/roles";
+import {
+  synthesizeSubscription,
+  type DemoModeOverride,
+} from "@/lib/admin/demo-mode";
+import { readDemoModeCookieOverride } from "@/lib/admin/demo-mode-server";
 import { getRequestProfile } from "./request-context";
 
 /* ──────────────────────────────────────────────────────────────────────── */
@@ -153,6 +158,33 @@ export function buildAccess(
 }
 
 /* ──────────────────────────────────────────────────────────────────────── */
+/* Demo-mode override (super_admin read-surface preview)                     */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Build a demo-preview Access from a super_admin's override, or null.
+ *
+ * Returns null unless the caller's REAL role is super_admin AND an override is
+ * present — a non-super-admin who forges the demo cookie gets NO override and
+ * stays on the real subscription path (privilege-escalation guard; unit-tested).
+ *
+ * The synthesized Access is built with `role = null` ON PURPOSE. `Access.role`
+ * feeds exactly one consumer — `passesBaseline`'s `isSuperAdmin(access.role)`
+ * scope bypass (grep-verified). Passing the real super_admin role would make the
+ * guards allow EVERYTHING and defeat the preview. Nulling it suppresses that
+ * bypass so the synthesized geo/tort scope is actually enforced while previewing.
+ * Do NOT start trusting `Access.role` for identity elsewhere without revisiting.
+ */
+export function resolveDemoOverrideAccess(
+  role: string | null,
+  override: DemoModeOverride | null,
+  userId: string,
+): Access | null {
+  if (!isSuperAdmin(role) || !override) return null;
+  return buildAccess(synthesizeSubscription(userId, override), null, "own");
+}
+
+/* ──────────────────────────────────────────────────────────────────────── */
 /* Resolver                                                                 */
 /* ──────────────────────────────────────────────────────────────────────── */
 
@@ -167,6 +199,15 @@ export function buildAccess(
 export const resolveAccess = cache(async (userId: string): Promise<Access> => {
   const service = getServiceClient();
   const role = (await getRequestProfile(userId))?.role ?? null;
+
+  // Demo-mode preview: ONLY when the caller's real, server-read role is
+  // super_admin do we read + apply the (untrusted, forgeable) demo cookie. A
+  // non-super-admin never reaches this branch, so a forged cookie is inert.
+  if (isSuperAdmin(role)) {
+    const override = await readDemoModeCookieOverride();
+    const demoAccess = resolveDemoOverrideAccess(role, override, userId);
+    if (demoAccess) return demoAccess;
+  }
 
   // Degraded mode: no service key → own-row RLS read only.
   if (!service) {

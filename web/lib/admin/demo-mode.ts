@@ -51,6 +51,13 @@ export interface DemoModeOverride {
   geo_scope_states: string[];
   /** When true, geo_scope_states is ignored \u2014 demo has unlimited geo. */
   geo_scope_unlimited: boolean;
+  /**
+   * Purchased tort add-on slugs to preview (optional, additive). Unset/undefined
+   * leaves the synthesized subscription's tort scope null (the header path never
+   * sets it, so the 13 action routes are unaffected). Seed this to preview the
+   * positive-tort read surface (assertTortAccess) under demo mode.
+   */
+  active_tort_addons?: string[];
 }
 
 /**
@@ -65,7 +72,18 @@ export const DEMO_HEADER_CAP = "x-demo-mode-cap";
 export const DEMO_HEADER_GEO_STATES = "x-demo-mode-geo-states";
 export const DEMO_HEADER_GEO_UNLIMITED = "x-demo-mode-geo-unlimited";
 
-const VALID_BUYER_TYPES: ReadonlySet<string> = new Set([
+/**
+ * Browser cookie name for the read-surface demo override. Same key family as
+ * the client localStorage key so the pill's write point can mirror both. The
+ * cookie is what the SERVER-side read guards (assertStateAccess /
+ * assertTortAccess) see on a full document navigation — custom headers never
+ * ride those requests. Read server-side via readDemoModeCookieOverride() in
+ * demo-mode-server.ts (isolates the next/headers import out of this
+ * client-bundle-safe module).
+ */
+export const DEMO_COOKIE_NAME = "lmi_demo_mode_v1";
+
+export const VALID_BUYER_TYPES: ReadonlySet<string> = new Set([
   "law_firm",
   "ad_agency",
   "media_company",
@@ -169,7 +187,10 @@ export function synthesizeSubscription(
     campaign_builder_monthly_cap: override.monthly_cap,
     geo_scope_states: override.geo_scope_states,
     geo_scope_unlimited: override.geo_scope_unlimited,
-    active_tort_addons: null,
+    // Backward-compatible: the 13 action routes' header path never sets this,
+    // so it stays null exactly as before. Only the read-surface cookie path
+    // seeds it, to unlock the positive-tort preview case.
+    active_tort_addons: override.active_tort_addons ?? null,
     status: "active",
     current_period_start: now.toISOString(),
     current_period_end: periodEnd.toISOString(),
@@ -192,7 +213,7 @@ export class DemoModeAccessDenied extends Error {
 
 /* ── Internal helpers ──────────────────────────────────────────────────── */
 
-function parseBool(raw: string | null, fallback: boolean): boolean {
+export function parseBool(raw: string | null, fallback: boolean): boolean {
   if (raw === null || raw === undefined) return fallback;
   const trimmed = raw.trim().toLowerCase();
   if (trimmed === "true" || trimmed === "1" || trimmed === "yes") return true;
@@ -200,7 +221,7 @@ function parseBool(raw: string | null, fallback: boolean): boolean {
   return fallback;
 }
 
-function parseCap(raw: string | null): number | null {
+export function parseCap(raw: string | null): number | null {
   if (raw === null || raw === undefined) return null;
   const trimmed = raw.trim().toLowerCase();
   if (trimmed === "" || trimmed === "null" || trimmed === "unlimited") return null;
@@ -209,7 +230,7 @@ function parseCap(raw: string | null): number | null {
   return n;
 }
 
-function parseStates(raw: string | null): string[] {
+export function parseStates(raw: string | null): string[] {
   if (!raw) return [];
   return raw
     .split(",")

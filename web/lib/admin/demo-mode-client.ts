@@ -12,6 +12,7 @@
  */
 
 import {
+  DEMO_COOKIE_NAME,
   DEMO_HEADER_BUYER_TYPE,
   DEMO_HEADER_CAP,
   DEMO_HEADER_GEO_STATES,
@@ -21,7 +22,7 @@ import {
   type BuyerTypeOverride,
 } from "./demo-mode";
 
-const STORAGE_KEY = "lmi_demo_mode_v1";
+const STORAGE_KEY = DEMO_COOKIE_NAME;
 
 export interface DemoModeStored {
   buyer_type: BuyerTypeOverride;
@@ -30,6 +31,12 @@ export interface DemoModeStored {
   monthly_cap: number | null;
   geo_scope_states: string[];
   geo_scope_unlimited: boolean;
+  /**
+   * Tort add-on slugs to preview (optional). Not set by the pill UI today; seed
+   * it here to reach the positive-tort read surface under demo mode. Mirrored
+   * into the cookie so the server read guards see it.
+   */
+  active_tort_addons?: string[];
 }
 
 /**
@@ -61,6 +68,11 @@ export function readDemoModeStored(): DemoModeStored | null {
           )
         : [],
       geo_scope_unlimited: parsed.geo_scope_unlimited ?? false,
+      active_tort_addons: Array.isArray(parsed.active_tort_addons)
+        ? parsed.active_tort_addons.filter(
+            (s): s is string => typeof s === "string",
+          )
+        : undefined,
     };
   } catch {
     return null;
@@ -77,6 +89,21 @@ export function writeDemoModeStored(value: DemoModeStored | null): void {
       window.localStorage.removeItem(STORAGE_KEY);
     } else {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    }
+    // Mirror into a non-httpOnly cookie so SERVER-side read guards
+    // (assertStateAccess / assertTortAccess) see the override on a full
+    // document navigation — custom headers never ride those requests. The
+    // cookie is deliberately client-writable; security rests on the server
+    // re-verifying super_admin from the real profile row, not on cookie
+    // secrecy (same trust model as the forgeable x-demo-mode-* headers).
+    if (typeof document !== "undefined") {
+      if (value === null) {
+        document.cookie = `${DEMO_COOKIE_NAME}=;path=/;max-age=0;samesite=lax`;
+      } else {
+        document.cookie = `${DEMO_COOKIE_NAME}=${encodeURIComponent(
+          JSON.stringify(value),
+        )};path=/;max-age=2592000;samesite=lax`;
+      }
     }
     // Notify other components in the same tab (the storage event only
     // fires for OTHER tabs by spec, not the one that wrote the value).
