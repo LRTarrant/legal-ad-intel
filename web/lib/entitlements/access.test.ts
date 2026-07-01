@@ -13,8 +13,13 @@
  * Mirrors the import-less test/expect style used elsewhere in this package.
  */
 
-import { pickGoverningSubscription, buildAccess } from "./access";
+import {
+  pickGoverningSubscription,
+  buildAccess,
+  resolveDemoOverrideAccess,
+} from "./access";
 import type { ServerSubscription } from "@/lib/campaign-builder/entitlements";
+import type { DemoModeOverride } from "@/lib/admin/demo-mode";
 
 function makeSub(over: Partial<ServerSubscription> = {}): ServerSubscription {
   return {
@@ -95,4 +100,56 @@ test("scoped plan → states + torts carried through", () => {
   expect(a.states).toEqual(["AL", "GA"]);
   expect(a.torts).toEqual(["roundup"]);
   expect(a.source).toBe("firm_owner");
+});
+
+/* ── resolveDemoOverrideAccess ───────────────────────────────────────────── */
+
+function makeOverride(over: Partial<DemoModeOverride> = {}): DemoModeOverride {
+  return {
+    kind: "demo",
+    buyer_type: "law_firm",
+    pi_access: true,
+    mt_access: true,
+    monthly_cap: null,
+    geo_scope_states: ["AL"],
+    geo_scope_unlimited: false,
+    ...over,
+  };
+}
+
+test("PRIVILEGE ESCALATION GUARD: non-super-admin + forged override → null (no override)", () => {
+  // A user/manager/tenant_admin who forges the demo cookie must get NO override
+  // and stay on their real subscription path. The whole security surface.
+  for (const role of ["user", "manager", "tenant_admin", null]) {
+    const forged = makeOverride({ geo_scope_unlimited: true });
+    expect(resolveDemoOverrideAccess(role, forged, "u-1")).toBe(null);
+  }
+});
+
+test("super_admin + scoped override → Access.role null, states enforced, active", () => {
+  const a = resolveDemoOverrideAccess(
+    "super_admin",
+    makeOverride({ geo_scope_states: ["AL"], geo_scope_unlimited: false }),
+    "u-1",
+  );
+  // role null suppresses the passesBaseline super_admin scope bypass so the
+  // synthesized geo scope is actually enforced while previewing.
+  expect(a.role).toBe(null);
+  expect(a.states).toEqual(["AL"]);
+  expect(a.unlimited).toBe(false);
+  expect(a.status).toBe("active");
+  expect(a.hasSubscription).toBe(true);
+});
+
+test("super_admin + positive-tort override → torts carried through", () => {
+  const a = resolveDemoOverrideAccess(
+    "super_admin",
+    makeOverride({ active_tort_addons: ["roundup"] }),
+    "u-1",
+  );
+  expect(a.torts).toEqual(["roundup"]);
+});
+
+test("super_admin + null override → null (real subscription path preserved)", () => {
+  expect(resolveDemoOverrideAccess("super_admin", null, "u-1")).toBe(null);
 });
