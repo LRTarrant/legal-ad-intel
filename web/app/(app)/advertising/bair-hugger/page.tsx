@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -411,6 +412,10 @@ const PLATFORM_COLORS: Record<string, string> = {
 const TORT_SLUG = "bair_hugger";
 
 export default async function BairHuggerPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("bair-hugger");
+  if (denied) return denied;
   const now = new Date();
   const windowEnd = now.toISOString().slice(0, 10);
   const windowStartDate = new Date(now);

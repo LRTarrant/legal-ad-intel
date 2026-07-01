@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { GLP1VisionLossPageData } from "./glp1-vision-loss-client";
@@ -150,6 +151,10 @@ async function fetchPiScores(): Promise<PiRow[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function GLP1VisionLossPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("glp1-vision-loss");
+  if (denied) return denied;
   let glp1Prescriptions: GLP1PrescriptionRow[] = [];
   let obesityPrevalence: ObesityRow[] = [];
   let diabetesPrevalence: DiabetesRow[] = [];

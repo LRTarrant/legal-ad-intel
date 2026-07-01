@@ -169,6 +169,7 @@ export function synthesizeSubscription(
     campaign_builder_monthly_cap: override.monthly_cap,
     geo_scope_states: override.geo_scope_states,
     geo_scope_unlimited: override.geo_scope_unlimited,
+    active_tort_addons: null,
     status: "active",
     current_period_start: now.toISOString(),
     current_period_end: periodEnd.toISOString(),

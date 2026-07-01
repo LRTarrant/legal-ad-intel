@@ -13,6 +13,7 @@ import {
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import {
   ArrowLeft,
   Users,
@@ -112,6 +113,10 @@ export default async function TortAdvertisingCatchallPage({
   const { slug: rawSlug } = await params;
   const tort = await getTortByUrlSlug(rawSlug);
   if (!tort) notFound();
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess(rawSlug, tort.label);
+  if (denied) return denied;
 
   // Legacy DB queries use underscore slugs
   const tortSlug = toDbSlug(rawSlug);

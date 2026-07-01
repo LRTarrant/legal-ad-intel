@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -334,6 +335,10 @@ const PLATFORM_COLORS: Record<string, string> = {
 const TORT_SLUG = "depo_provera";
 
 export default async function DepoProveraPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("depo-provera");
+  if (denied) return denied;
   /* ── Live data fetch from Supabase ─────────────────────────────────── */
   const now = new Date();
   const windowEnd = now.toISOString().slice(0, 10);

@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import { getSupabase } from "@/lib/supabase";
 import { PfasClient, type PfasPageData } from "./pfas-client";
 import { AskAIPanel } from "../../components/ask-ai-panel";
@@ -176,6 +177,10 @@ function normalize(value: number, min: number, max: number): number {
 /* ------------------------------------------------------------------ */
 
 export default async function PfasContaminationPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("pfas-contamination");
+  if (denied) return denied;
   let pfasSites: PfasSiteRow[] = [];
   let cancerRows: CancerRow[] = [];
   let piScores: PiRow[] = [];
