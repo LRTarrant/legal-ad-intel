@@ -1,9 +1,17 @@
 # CURRENT_PRIORITIES.md — Legal Marketing Intelligence
 
-Last updated: 2026-06-30 (Strategy Engine competitive-field + white-space polish shipped + prod-verified — PR #535 merged: firm names link out, ranking source named honestly (pi_search only, "ad library" overclaim removed), Show-all past 6, paid-search defenders revealable. See §0. Prior: PI economics v1 (#533) at §2.F.)
+Last updated: 2026-07-01 (Session wrap — added the confirmed launch sequence + Thread 2 rollup below; product-strategy WHY captured in the vault at `second-brain/strategy/lmi-product-strategy.md`. The #530/#531/#533/#535 tactical detail was already logged in §0 + memory.md via docs PRs #532/#534/#536. Prior 2026-06-30: competitive-field + white-space polish #535, PI economics v1 #533 — see §0.)
 
 This file captures what we are actively working on **right now** so AI tools and humans stay aligned.  
 Keep it short and current — update weekly.
+
+---
+
+## Launch sequence (confirmed 2026-07-01)
+
+**Order: (1) entitlement gating → (2) finish Thread 2 → (3) Stripe → (4) mass torts.** Launch the **PI SKU first** (States + Strategy Engine + Campaign Builder, sold as "buy a state or states + tools"). **Mass Tort is a separate, later SKU** (different buyer, different signals) — a clean split, not a compromise, since the PI SKU is closer to done. The durable WHY behind the product (launch model, pricing/packaging, exclusivity, audience reality, stickiness thesis, AI-native architecture) lives in the vault at `second-brain/strategy/lmi-product-strategy.md` — foundational decisions, not weekly churn, so they are **not** duplicated here.
+
+**Thread 2 (Strategy Engine output UX) — nearly complete.** Done + prod-verified this arc: whitespace read on recommendation cards (#531), PI economics "What your budget buys" (#533), competitive-field + white-space enhancements (#535), Campaign Builder handoff Phase 1 (#530). **Criteria carryover — still pending** (mass-tort criteria centralization, §3 item 3; not touched this session). **Real ad rendering — DEFERRED past launch** (biggest lift, lowest launch impact).
 
 ---
 
