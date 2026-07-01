@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { AiSuicidePageData } from "./ai-suicide-client";
@@ -188,6 +189,10 @@ async function fetchVolumeSignalsByState(): Promise<VolumeSignalRow[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function AiSuicidePage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("ai-suicide");
+  if (denied) return denied;
   let adverseEvents: AiSuicideAdverseEventRow[] = [];
   let timeline: AiSuicideTimelineRow[] = [];
   let qualifyingTiers: AiSuicideQualifyingTierRow[] = [];

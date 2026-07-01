@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { SocialMediaPageData } from "./social-media-client";
@@ -158,6 +159,10 @@ async function fetchPiScores(): Promise<PiRow[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function SocialMediaAddictionPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("social-media-addiction");
+  if (denied) return denied;
   let youthMentalHealth: YouthMentalHealthRow[] = [];
   let teenScreenTime: TeenScreenTimeRow[] = [];
   let stateRegulatory: StateRegulatoryRow[] = [];

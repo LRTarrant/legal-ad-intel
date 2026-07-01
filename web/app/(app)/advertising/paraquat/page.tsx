@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -260,6 +261,10 @@ const PLATFORM_COLORS: Record<string, string> = {
 const TORT_SLUG = "paraquat";
 
 export default async function ParaquatPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("paraquat");
+  if (denied) return denied;
   /* ── Live data fetch from Supabase ─────────────────────────────────── */
   const now = new Date();
   const windowEnd = now.toISOString().slice(0, 10);

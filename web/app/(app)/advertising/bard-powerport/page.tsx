@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { BardPowerPortPageData } from "./bard-powerport-client";
@@ -202,6 +203,10 @@ async function fetchCancerIncidenceByState(): Promise<CancerIncidenceAggregated[
 /* ------------------------------------------------------------------ */
 
 export default async function BardPowerPortPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("bard-powerport");
+  if (denied) return denied;
   let adverseEvents: BardAdverseEventRow[] = [];
   let bellwetherSchedule: BardBellwetherRow[] = [];
   let deviceFailureTimeline: BardDeviceFailureTimelineRow[] = [];

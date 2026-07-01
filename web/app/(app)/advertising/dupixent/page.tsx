@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -250,6 +251,10 @@ const PLATFORM_COLORS: Record<string, string> = {
 const TORT_SLUG = "dupixent";
 
 export default async function DupixentPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("dupixent");
+  if (denied) return denied;
   /* ── Live data fetch from Supabase ─────────────────────────────────── */
   const [segments, platforms, benchmarks] = await Promise.all([
     getSegmentSummary(TORT_SLUG),

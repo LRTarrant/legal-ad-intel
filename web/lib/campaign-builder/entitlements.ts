@@ -45,6 +45,8 @@ export interface ServerSubscription {
   campaign_builder_monthly_cap: number | null;
   geo_scope_states: string[] | null;
   geo_scope_unlimited: boolean;
+  /** Law-firm tort add-ons (array of tort slugs the account has purchased). */
+  active_tort_addons: string[] | null;
   status: "trialing" | "active" | "past_due" | "cancelled";
   current_period_start: string | null;
   current_period_end: string | null;
@@ -118,7 +120,7 @@ export async function getSubscriptionForUser(
       "user_id, buyer_type, " +
         "campaign_builder_mass_tort, campaign_builder_pi, " +
         "campaign_builder_monthly_cap, geo_scope_states, geo_scope_unlimited, " +
-        "status, current_period_start, current_period_end",
+        "active_tort_addons, status, current_period_start, current_period_end",
     )
     .eq("user_id", userId)
     .single()) as {

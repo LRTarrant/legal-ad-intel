@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { RobloxPageData } from "./roblox-client";
@@ -167,6 +168,10 @@ async function fetchPiScores(): Promise<PiRow[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function RobloxAbusePage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("roblox-abuse");
+  if (denied) return denied;
   let youthMentalHealth: YouthMentalHealthRow[] = [];
   let parentalConcern: ParentalConcernRow[] = [];
   let stateEnforcement: StateEnforcementRow[] = [];

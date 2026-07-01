@@ -1,3 +1,4 @@
+import { assertTortAccess } from "@/lib/entitlements/guards";
 import nextDynamic from "next/dynamic";
 import { getSupabase } from "@/lib/supabase";
 import type { OlympusScopesPageData } from "./olympus-scopes-client";
@@ -186,6 +187,10 @@ async function fetchErcpVolumeByState(): Promise<ErcpVolumeRow[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function OlympusScopesPage() {
+
+  // Gate on the account's purchased tort add-ons (tort-keyed surface).
+  const denied = await assertTortAccess("olympus-scopes");
+  if (denied) return denied;
   let adverseEvents: OlympusAdverseEventRow[] = [];
   let deviceFailureTimeline: OlympusDeviceFailureTimelineRow[] = [];
   let qualifyingTiers: OlympusQualifyingTierRow[] = [];
