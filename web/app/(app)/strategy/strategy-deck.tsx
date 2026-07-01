@@ -10,9 +10,15 @@
  * the 3-dot data-depth badge, and the modeled/"est." caveats are preserved.
  */
 
-import { useState, type CSSProperties } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { buildCampaignBuilderHandoff } from "@/lib/strategy-engine/campaign-handoff";
+import {
+  computeEconomics,
+  type ClickToLeadLever,
+  type LeadToSignedLever,
+  type Confidence,
+} from "@/lib/strategy-engine/economics";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -330,6 +336,9 @@ export default function StrategyDeck({ data }: { data: any }) {
         <p className="mt-3 text-sm" style={{ color: MUTED }}>{data.prose?.channel_narrative}</p>
       </Slide>
 
+      {/* 11a. WHAT YOUR BUDGET BUYS (PI economics) */}
+      {data.economics ? <EconomicsSection economics={data.economics} /> : null}
+
       {/* 11b. BEFORE YOU SPEND A DOLLAR */}
       {(data.readiness ?? []).length > 0 ? (
         <Slide eyebrow="Before you spend a dollar" title="Foundation check" sub="A media plan is only as strong as the funnel it points at.">
@@ -371,6 +380,200 @@ export default function StrategyDeck({ data }: { data: any }) {
         )}
       </section>
     </div>
+  );
+}
+
+/* ── PI economics: what the budget buys (live-lever funnel) ──────────────── */
+
+const usd = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
+// Nearest $100 with a ~ prefix — modeled costs shouldn't read as false precision.
+const usdApprox = (n: number) => "~$" + (Math.round(n / 100) * 100).toLocaleString("en-US");
+const shorten = (s: string, n = 22) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+
+const CONF_STYLE: Record<Confidence, { label: string; bg: string; color: string }> = {
+  high: { label: "High conf.", bg: "#ECFDF5", color: "#10B981" },
+  medium: { label: "Medium conf.", bg: CHIP, color: MUTED },
+  low: { label: "Low conf.", bg: WARN_TINT, color: WARN_INK },
+  very_low: { label: "Very low conf.", bg: WARN_TINT, color: WARN_INK },
+};
+
+function ConfidencePill({ c }: { c: Confidence | null | undefined }) {
+  if (!c) return null;
+  const s = CONF_STYLE[c];
+  return (
+    <span className="rounded px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+}
+
+function FunnelStage({ n, label, value, note, chip, conf, highlight }: {
+  n: number; label: string; value: string; note: string;
+  chip?: string | null; conf?: Confidence | null; highlight?: boolean;
+}) {
+  return (
+    <div className="relative rounded-xl border bg-white p-4" style={{ borderColor: highlight ? "var(--lmi-accent)" : BORDER, borderWidth: highlight ? 2 : 1 }}>
+      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--lmi-accent)" }}>{n}. {label}</div>
+      <div className="mt-1 text-2xl font-bold leading-none" style={{ color: NAVY }}>{value}</div>
+      <div className="mt-1 text-[11px]" style={{ color: MUTED }}>{note}</div>
+      {chip || conf ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {chip ? (
+            <span title={chip} style={{ fontFamily: mono, background: CHIP, border: `1px solid ${BORDER}`, color: "#4A5E78" }} className="rounded px-1.5 py-0.5 text-[9px] uppercase tracking-wide">
+              {shorten(chip)}
+            </span>
+          ) : null}
+          <ConfidencePill c={conf} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LeverToggle<T extends string>({ label, options, value, onChange, caveat }: {
+  label: string;
+  options: { key: T; label: string; pct: number }[];
+  value: T;
+  onChange: (v: T) => void;
+  caveat?: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--lmi-accent)" }}>{label}</span>
+        <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white" style={{ background: "var(--lmi-accent)" }}>your lever</span>
+      </div>
+      <div className="flex gap-2">
+        {options.map((o) => {
+          const on = o.key === value;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => onChange(o.key)}
+              className="flex-1 rounded-lg border px-3 py-2 text-left transition-colors"
+              style={{ background: on ? NAVY : "#fff", borderColor: on ? NAVY : BORDER }}
+            >
+              <div className="text-sm font-semibold" style={{ color: on ? "#fff" : NAVY }}>{o.label}</div>
+              <div className="text-xs font-mono" style={{ color: on ? "var(--lmi-accent-2)" : MUTED }}>{o.pct}%</div>
+            </button>
+          );
+        })}
+      </div>
+      {caveat ? <p className="mt-1.5 text-[11px]" style={{ color: MUTED }}>{caveat}</p> : null}
+    </div>
+  );
+}
+
+const ECON_CASE_LABEL: Record<string, string> = { auto: "Auto", trucking: "Trucking", motorcycle: "Motorcycle" };
+const ECON_TIER_LABEL: Record<string, string> = { tier_1: "major metro", tier_2: "mid-size market", small: "small market" };
+
+function EconomicsSection({ economics }: { economics: any }) {
+  const b = economics.benchmark;
+  const [clickToLead, setClickToLead] = useState<ClickToLeadLever>(economics.default_result?.levers?.clickToLead ?? "competent");
+  const [leadToSigned, setLeadToSigned] = useState<LeadToSignedLever>(economics.default_result?.levers?.leadToSigned ?? "average");
+  const r = useMemo(
+    () => computeEconomics(b, economics.monthly_spend.mid, { clickToLead, leadToSigned }),
+    [b, economics.monthly_spend.mid, clickToLead, leadToSigned],
+  );
+  const f = r.funnel;
+  const prov = b.provenance;
+  const caseLabel = ECON_CASE_LABEL[r.case_type] ?? r.case_type;
+  const caseLower = caseLabel.toLowerCase();
+  const tierLabel = ECON_TIER_LABEL[r.market_tier] ?? r.market_tier;
+
+  return (
+    <Slide
+      eyebrow="What your budget buys"
+      title="Realistic cost per signed case"
+      sub={`${caseLabel} · ${tierLabel} · at ${usd(economics.monthly_spend.min)}–${usd(economics.monthly_spend.max)}/mo`}
+      tags={["modeled", prov.reported_vs_estimate ?? "estimate"]}
+    >
+      {/* Headline — frames the LEVER RANGE, not a single number */}
+      <div className="rounded-xl p-6 text-white" style={{ background: NAVY }}>
+        <div className="text-sm" style={{ color: "#9FB1C7" }}>
+          At <b className="text-white">{leadToSigned}</b> intake, {usd(economics.monthly_spend.mid)}/mo buys about
+        </div>
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-4xl font-bold">{f.signed_cases}</span>
+          <span className="text-lg" style={{ color: "var(--lmi-accent-2)" }}>signed {caseLower} {f.signed_cases === 1 ? "case" : "cases"}/mo</span>
+          <span className="text-2xl font-bold">at {usdApprox(r.cost_per_case_typical)}/case</span>
+        </div>
+        <div className="mt-3 text-sm" style={{ color: "#AEBDD0" }}>
+          Intake quality is the variable you control:{" "}
+          <b className="text-white">{usdApprox(r.lever_best_cost_per_case)}/case</b> at elite intake →{" "}
+          <b className="text-white">{usdApprox(r.lever_worst_cost_per_case)}/case</b> at poor intake. Move the levers below.
+        </div>
+      </div>
+
+      {/* The visible funnel — the credibility */}
+      <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <FunnelStage n={1} label="Monthly spend" value={usd(f.monthly_spend)} note="your budget midpoint" />
+        <FunnelStage n={2} label="Clicks" value={String(f.clicks)} note={`at ${usd(f.cpc)} CPC`} chip={prov.cpc_source} conf={prov.cpc_confidence} />
+        <FunnelStage n={3} label="Leads" value={String(f.leads)} note={`${f.click_to_lead_pct}% click→lead`} chip={prov.conversion_source} conf={prov.click_to_lead_confidence} />
+        <FunnelStage n={4} label="Signed cases" value={String(f.signed_cases)} note={`${f.lead_to_signed_pct}% lead→signed`} conf={prov.lead_to_signed_confidence} />
+        <FunnelStage n={5} label="Cost / case" value={usdApprox(r.cost_per_case_typical)} note={`${usdApprox(r.cost_per_case_low)} – ${usdApprox(r.cost_per_case_high)}`} highlight />
+      </div>
+
+      {/* Levers — prominent and obviously interactive (the point of the section) */}
+      <div className="mt-5 grid gap-5 rounded-xl border bg-white p-5 sm:grid-cols-2" style={{ borderColor: BORDER }}>
+        <LeverToggle
+          label="Click → lead"
+          value={clickToLead}
+          onChange={setClickToLead}
+          options={[
+            { key: "weak", label: "Weak", pct: b.click_to_lead.weak },
+            { key: "competent", label: "Competent", pct: b.click_to_lead.competent },
+            { key: "strong", label: "Strong", pct: b.click_to_lead.strong },
+          ]}
+        />
+        <LeverToggle
+          label="Lead → signed"
+          value={leadToSigned}
+          onChange={setLeadToSigned}
+          options={[
+            { key: "poor", label: "Poor", pct: b.lead_to_signed.poor },
+            { key: "average", label: "Average", pct: b.lead_to_signed.average },
+            { key: "elite", label: "Elite", pct: b.lead_to_signed.elite },
+          ]}
+          caveat="The softest input, and the one you most control. Depends on your intake — tighten callback speed and qualification to move it."
+        />
+      </div>
+
+      {/* ROI context — fee-per-case inline with cost-per-case */}
+      {r.case_value_median != null ? (
+        <div className="mt-5 rounded-xl border p-5" style={{ borderColor: BORDER, background: r.fee_covers_acquisition ? "#ECFDF5" : WARN_TINT }}>
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+            <div><span style={{ color: MUTED }}>Median case value </span><b style={{ color: NAVY }}>{usd(r.case_value_median)}</b></div>
+            <div><span style={{ color: MUTED }}>Fee per case ({b.contingency_presuit_pct}%) </span><b style={{ color: NAVY }}>{r.fee_per_case != null ? usd(r.fee_per_case) : "—"}</b></div>
+            <div><span style={{ color: MUTED }}>Cost per case </span><b style={{ color: NAVY }}>{usdApprox(r.cost_per_case_typical)}</b></div>
+          </div>
+          <p className="mt-2 text-sm font-medium" style={{ color: r.fee_covers_acquisition ? "#14707A" : WARN_INK }}>
+            {r.fee_covers_acquisition
+              ? `At this intake level the average ${caseLower} case fee covers acquisition — the economics work.`
+              : `The average ${caseLower} case fee does NOT cover this acquisition cost. Move the levers toward elite intake, or use cheaper channels than paid search.`}
+          </p>
+          {r.case_value_tail != null && r.case_value_tail_note ? (
+            <p className="mt-1 text-[11px]" style={{ color: MUTED }}>Tail: {usd(r.case_value_tail)}+ — {r.case_value_tail_note}.</p>
+          ) : null}
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {prov.case_value_source ? <SourceChip>{shorten(prov.case_value_source, 34)}</SourceChip> : null}
+            <ConfidencePill c={prov.case_value_confidence} />
+          </div>
+        </div>
+      ) : null}
+
+      {/* Honesty footer */}
+      {!r.plausible ? (
+        <p className="mt-3 text-[11px] font-medium" style={{ color: WARN_INK }}>
+          This cost-per-case lands outside the usual band — treat it as a rough signal, not a quote.
+        </p>
+      ) : null}
+      {prov.source_notes ? <p className="mt-3 text-[11px]" style={{ color: MUTED }}>{prov.source_notes}</p> : null}
+      <p className="mt-1 text-[11px]" style={{ fontFamily: mono, color: LABEL }}>
+        Modeled from keyword-level CPC × your intake rates — directional ranges, not a quote. CPC and case value are fixed by market; the two conversion rates are yours to set.
+      </p>
+    </Slide>
   );
 }
 
