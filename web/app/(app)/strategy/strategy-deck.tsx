@@ -13,6 +13,7 @@
 import { useState, useMemo, type CSSProperties } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { buildCampaignBuilderHandoff } from "@/lib/strategy-engine/campaign-handoff";
+import CriteriaSection from "@/components/CriteriaSection";
 import {
   computeEconomics,
   type ClickToLeadLever,
@@ -233,6 +234,16 @@ export default function StrategyDeck({ data }: { data: any }) {
         <WhitespaceChannels channels={data.competitive?.channels ?? []} advertisers={data.competitive?.advertisers ?? []} />
         <WhitespaceLegend />
       </Slide>
+
+      {/* 6a. QUALIFY THE LEAD (PI intake criteria) — bridges white space to the
+           product: winning the click is only half of it; the tie-in points at
+           the lead→signed lever in "What your budget buys" below. */}
+      {data.criteria ? (
+        <CriteriaSection
+          criteria={data.criteria}
+          tieIn={`Good qualification is what moves your lead-to-signed rate — the biggest lever in "What your budget buys" below.`}
+        />
+      ) : null}
 
       {/* 7. DIVIDER */}
       <section className="rounded-2xl p-10 text-white" style={{ background: NAVY }}>
