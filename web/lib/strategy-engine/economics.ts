@@ -20,7 +20,7 @@
  *    worth — absorbable for trucking, not for auto.
  */
 
-export type EconomicsCaseType = "auto" | "trucking" | "motorcycle";
+export type EconomicsCaseType = "auto" | "trucking" | "motorcycle" | "boating";
 export type MarketTier = "tier_1" | "tier_2" | "small";
 export type ClickToLeadLever = "weak" | "competent" | "strong";
 export type LeadToSignedLever = "poor" | "average" | "elite";
@@ -207,11 +207,15 @@ export function computeEconomics(
 
 /** Strategy tort slug (from primaryTort) → economics case_type, or null when
  *  the case type has no PI ad-economics coverage (nursing_home/workers_comp/
- *  boating/general PI) — the route then omits the cost section honestly. */
+ *  general PI) — the route then omits the cost section honestly. `boating`
+ *  resolves to the recreational-boat economics key (single key; the higher
+ *  Jones Act / maritime economics are flagged in the row source_notes, and
+ *  maritime as its own key is a deferred follow-up). */
 const TORT_SLUG_TO_ECONOMICS: Record<string, EconomicsCaseType> = {
   truck_accident: "trucking",
   motor_vehicle: "auto",
   motorcycle: "motorcycle",
+  boating: "boating",
 };
 export function economicsCaseType(tortSlug: string): EconomicsCaseType | null {
   return TORT_SLUG_TO_ECONOMICS[tortSlug] ?? null;

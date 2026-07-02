@@ -45,6 +45,46 @@ export interface StrategyEconomics {
   default_result: EconomicsResult;
 }
 
+/* ── PI qualification / intake criteria block ────────────────────────────── */
+
+/** One screening question, provenance intact. `theory` (e.g. "jones_act") is a
+ *  forward-looking branch tag STORED for a later branched flow; v1 only reads it
+ *  to render a "[Jones Act]" badge — the deck renders every question flat. */
+export interface CriteriaScreeningQuestion {
+  id: string;
+  question: string;
+  purpose: string | null;
+  type: string | null;
+  evidence: "observed" | "inferred" | null;
+  scope: "universal" | "specific" | null;
+  source: string | null;
+  theory: string | null;
+}
+
+/** A disqualifier (from the seed's `item`) or a case-type-specific factor (from
+ *  `factor`), normalized to a single `label`. */
+export interface CriteriaItem {
+  label: string;
+  evidence: "observed" | "inferred" | null;
+  theory: string | null;
+}
+
+/** The universal PI intake block merged with the case-type delta (screening
+ *  questions + disqualifiers concatenated universal-first). Fetched by
+ *  lib/queries/pi-qualification-criteria.ts. Null when the case type has no
+ *  qualification coverage. */
+export interface StrategyQualificationCriteria {
+  case_type: string;
+  screening_questions: CriteriaScreeningQuestion[];
+  disqualifiers: CriteriaItem[];
+  case_type_specific_factors: CriteriaItem[];
+  disqualify_message: string | null;
+  qualify_message: string | null;
+  sol_note: string | null;
+  confidence: string | null;
+  source_notes: string | null;
+}
+
 export type ReadinessAnswer = "yes" | "no" | "unsure";
 
 export interface StrategyInterviewRequest {
@@ -260,6 +300,8 @@ export interface Strategy {
   cost_cents: number | null;
   /** PI ad-economics (budget → signed cases). Null when the case type has no coverage. */
   economics: StrategyEconomics | null;
+  /** PI qualification/intake criteria (universal + case-type delta). Null when the case type has no coverage. */
+  criteria: StrategyQualificationCriteria | null;
 }
 
 /* ── Pure builders ──────────────────────────────────────────────────────── */

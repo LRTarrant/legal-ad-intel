@@ -46,6 +46,7 @@ import {
   DEFAULT_LEVERS,
 } from "@/lib/strategy-engine/economics";
 import { fetchPiEconomicsBenchmark } from "@/lib/queries/pi-economics";
+import { fetchPiQualificationCriteria } from "@/lib/queries/pi-qualification-criteria";
 import { createOpenAICallModel, resolveStrategistModel } from "@/lib/strategy-engine/openai-strategist";
 import {
   strategistToRecommendations,
@@ -285,8 +286,8 @@ export async function POST(req: NextRequest) {
   });
 
   // ── PI ad economics (budget → signed cases) ───────────────────────────────
-  // Only the three motor-vehicle PI case types have economics coverage; others
-  // (nursing_home/workers_comp/boating/general PI) omit the section honestly.
+  // auto/trucking/motorcycle/boating have economics coverage; others
+  // (nursing_home/workers_comp/general PI) omit the section honestly.
   let economics: Strategy["economics"] = null;
   const econCaseType = economicsCaseType(tortSlug);
   if (econCaseType) {
@@ -305,6 +306,15 @@ export async function POST(req: NextRequest) {
         default_result: computeEconomics(benchmark, monthly.mid, DEFAULT_LEVERS),
       };
     }
+  }
+
+  // ── PI qualification / intake criteria (screening by case type) ───────────
+  // Same case_type union as economics (both reference stores are joinable), so
+  // it resolves for auto/trucking/motorcycle/boating and is null otherwise.
+  let criteria: Strategy["criteria"] = null;
+  const criteriaCaseType = economicsCaseType(tortSlug);
+  if (criteriaCaseType) {
+    criteria = await fetchPiQualificationCriteria(sb, criteriaCaseType);
   }
 
   // ── Compose the contract Strategy object ──────────────────────────────────
@@ -355,6 +365,7 @@ export async function POST(req: NextRequest) {
     data_warnings: [...dataErrors, ...strategistOut.warnings],
     cost_cents: tracked.cost_cents ?? null,
     economics,
+    criteria,
   };
   return NextResponse.json(payload);
 }
