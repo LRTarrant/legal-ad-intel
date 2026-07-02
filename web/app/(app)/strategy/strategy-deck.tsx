@@ -237,11 +237,18 @@ export default function StrategyDeck({ data }: { data: any }) {
 
       {/* 6a. QUALIFY THE LEAD (PI intake criteria) — bridges white space to the
            product: winning the click is only half of it; the tie-in points at
-           the lead→signed lever in "What your budget buys" below. */}
+           the lead→signed lever in "What your budget buys" below. The tie-in is
+           gated on data.economics (same condition as the EconomicsSection at
+           ~:327) so it never references a section that didn't render — e.g. on
+           the nursing_home/workers_comp path where economics is null. */}
       {data.criteria ? (
         <CriteriaSection
           criteria={data.criteria}
-          tieIn={`Good qualification is what moves your lead-to-signed rate — the biggest lever in "What your budget buys" below.`}
+          tieIn={
+            data.economics
+              ? `Good qualification is what moves your lead-to-signed rate — the biggest lever in "What your budget buys" below.`
+              : undefined
+          }
         />
       ) : null}
 
